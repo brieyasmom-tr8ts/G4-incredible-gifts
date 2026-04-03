@@ -1042,9 +1042,7 @@
                             <button class="prayer-type-btn active" data-type="prayer">Prayer Request</button>
                             <button class="prayer-type-btn" data-type="encouragement">Encouragement</button>
                         </div>
-                        <select id="prayer-for">
-                            <option value="">For everyone</option>
-                        </select>
+                        <input type="text" id="prayer-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;">
                         <textarea id="prayer-message" placeholder="Share what's on your heart..." maxlength="500"></textarea>
                         <div class="prayer-char-count"><span id="prayer-char">0</span>/500</div>
                         <button class="save-btn" id="prayer-send-btn">Share</button>
@@ -1441,25 +1439,9 @@
                 sendBtn.textContent = 'Share';
             });
 
-            // Load user names for tagging dropdown
-            loadUserDropdown();
             loadPrayerWall();
         }
 
-        async function loadUserDropdown() {
-            try {
-                const users = await apiGet('/api/users');
-                const select = document.getElementById('prayer-for');
-                select.innerHTML = '<option value="">For everyone</option>';
-                users.forEach(u => {
-                    const name = u.last_initial ? u.first_name + ' ' + u.last_initial + '.' : u.first_name;
-                    const opt = document.createElement('option');
-                    opt.value = name;
-                    opt.textContent = name;
-                    select.appendChild(opt);
-                });
-            } catch (e) {}
-        }
 
         const scheduleData = [
             {

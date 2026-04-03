@@ -115,6 +115,291 @@
             }
         }
 
+        /* Staggered card entrance */
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.97);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .card-animate {
+            animation: cardSlideIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+            opacity: 0;
+        }
+
+        /* Floating sparkle particles */
+        .sparkle-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--rose) 0%, transparent 70%);
+            animation: sparkleFloat linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes sparkleFloat {
+            0% { opacity: 0; transform: translateY(100vh) scale(0); }
+            10% { opacity: 0.6; }
+            50% { opacity: 0.3; }
+            90% { opacity: 0.5; }
+            100% { opacity: 0; transform: translateY(-20px) scale(1); }
+        }
+
+        /* Confetti celebration */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        .confetti-piece {
+            position: absolute;
+            width: 8px;
+            height: 12px;
+            top: -20px;
+            animation: confettiFall 3s ease-in forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { top: -10%; opacity: 1; transform: rotateZ(0deg) rotateY(0deg); }
+            50% { opacity: 1; }
+            100% { top: 110%; opacity: 0; transform: rotateZ(720deg) rotateY(360deg); }
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--dark-text);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 10000;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            white-space: nowrap;
+            box-shadow: 0 8px 24px rgba(74, 55, 40, 0.2);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Heart burst for prayer button */
+        @keyframes heartBurst {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.4); }
+            60% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+
+        .pray-btn.burst {
+            animation: heartBurst 0.5s ease-out;
+        }
+
+        @keyframes miniHeartFloat {
+            0% { opacity: 1; transform: translate(0, 0) scale(1); }
+            100% { opacity: 0; transform: translate(var(--tx), -40px) scale(0.5); }
+        }
+
+        .mini-heart {
+            position: absolute;
+            pointer-events: none;
+            font-size: 0.7rem;
+            animation: miniHeartFloat 0.8s ease-out forwards;
+        }
+
+        /* Setup modal entrance */
+        @keyframes modalEntrance {
+            from {
+                opacity: 0;
+                transform: scale(0.85) translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes modalOverlayIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-overlay.animate-in {
+            animation: modalOverlayIn 0.4s ease-out;
+        }
+
+        .modal-overlay.animate-in .modal {
+            animation: modalEntrance 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Countdown timer */
+        .countdown-container {
+            padding: 16px 20px;
+            text-align: center;
+        }
+
+        .countdown-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            color: var(--light-text);
+            margin-bottom: 10px;
+            letter-spacing: 0.04em;
+        }
+
+        .countdown-timer {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .countdown-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .countdown-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--blush);
+            line-height: 1;
+            min-width: 48px;
+        }
+
+        .countdown-name {
+            font-size: 0.65rem;
+            color: var(--light-text);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: 4px;
+        }
+
+        .countdown-separator {
+            font-size: 1.4rem;
+            color: var(--warm-grey);
+            align-self: flex-start;
+            margin-top: 4px;
+        }
+
+        /* Rotating scripture */
+        .scripture-banner {
+            padding: 12px 24px;
+            text-align: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            color: var(--taupe);
+            font-style: italic;
+            line-height: 1.5;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .scripture-banner.visible {
+            opacity: 1;
+        }
+
+        .scripture-ref {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-style: normal;
+            margin-top: 2px;
+        }
+
+        /* Journey completion celebration */
+        .journey-result {
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes resultReveal {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .journey-result.celebrate {
+            animation: resultReveal 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Improved welcome banner */
+        .welcome-banner {
+            padding: 8px 20px;
+            text-align: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
+            color: var(--accent);
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: all 0.6s ease;
+        }
+
+        .welcome-banner.animate-in {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Smooth nav tab indicator */
+        .nav-btn {
+            position: relative;
+        }
+
+        .nav-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--blush);
+            border-radius: 1px;
+            transform: translateX(-50%);
+            transition: width 0.3s ease;
+        }
+
+        .nav-btn.active::after {
+            width: 24px;
+        }
+
+        /* Smooth tab slide */
+        .tab-content {
+            transition: opacity 0.3s ease;
+        }
+
         .header {
             padding: 20px 20px 16px;
             text-align: center;
@@ -632,15 +917,6 @@
             text-align: center;
         }
 
-        /* Welcome banner */
-        .welcome-banner {
-            padding: 8px 20px;
-            text-align: center;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 0.95rem;
-            color: var(--accent);
-        }
-
         /* Prayer Wall */
         .prayer-wall {
             padding: 16px;
@@ -987,6 +1263,9 @@
     </style>
 </head>
 <body>
+    <div class="sparkle-container" id="sparkle-container"></div>
+    <div id="toast" class="toast"></div>
+
     <div class="app-container">
         <div class="header">
             <p class="retreat-label">G4 2026 Women's Retreat</p>
@@ -995,6 +1274,11 @@
         </div>
 
         <div id="welcome-banner" class="welcome-banner" style="display:none;"></div>
+        <div id="countdown-container" class="countdown-container" style="display:none;">
+            <div class="countdown-label">The retreat begins in</div>
+            <div class="countdown-timer" id="countdown-timer"></div>
+        </div>
+        <div id="scripture-banner" class="scripture-banner"></div>
 
         <div class="content-area">
             <!-- HOME TAB -->
@@ -1201,6 +1485,141 @@
         let selectedPostType = 'prayer';
         let prayedPosts = JSON.parse(localStorage.getItem('g4prayed') || '[]');
 
+        // ===== Wow Factor: Sparkle Particles =====
+        function createSparkles() {
+            const container = document.getElementById('sparkle-container');
+            const colors = ['var(--rose)', 'var(--blush)', 'var(--sage)', 'rgba(212,165,154,0.4)', 'rgba(201,144,138,0.3)'];
+            for (let i = 0; i < 15; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.width = (3 + Math.random() * 4) + 'px';
+                sparkle.style.height = sparkle.style.width;
+                sparkle.style.background = `radial-gradient(circle, ${colors[Math.floor(Math.random() * colors.length)]} 0%, transparent 70%)`;
+                sparkle.style.animationDuration = (8 + Math.random() * 12) + 's';
+                sparkle.style.animationDelay = (Math.random() * 10) + 's';
+                container.appendChild(sparkle);
+            }
+        }
+
+        // ===== Wow Factor: Toast Notifications =====
+        function showToast(message, duration = 2500) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), duration);
+        }
+
+        // ===== Wow Factor: Confetti Celebration =====
+        function launchConfetti() {
+            const container = document.createElement('div');
+            container.className = 'confetti-container';
+            document.body.appendChild(container);
+            const colors = ['#c9908a', '#d4a59a', '#8a9e7a', '#b87a6e', '#f7f0eb', '#e8c4bc', '#a8bba8'];
+            for (let i = 0; i < 60; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti-piece';
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDelay = (Math.random() * 1.5) + 's';
+                piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+                piece.style.transform = `rotateZ(${Math.random() * 360}deg)`;
+                piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+                piece.style.width = (6 + Math.random() * 6) + 'px';
+                piece.style.height = (8 + Math.random() * 8) + 'px';
+                container.appendChild(piece);
+            }
+            setTimeout(() => container.remove(), 4000);
+        }
+
+        // ===== Wow Factor: Heart Burst on Prayer =====
+        function heartBurstEffect(button) {
+            button.classList.add('burst');
+            const hearts = ['💛', '🤍', '✨', '💕'];
+            for (let i = 0; i < 4; i++) {
+                const heart = document.createElement('span');
+                heart.className = 'mini-heart';
+                heart.textContent = hearts[i % hearts.length];
+                heart.style.setProperty('--tx', (Math.random() * 40 - 20) + 'px');
+                heart.style.left = '50%';
+                heart.style.top = '0';
+                button.style.position = 'relative';
+                button.appendChild(heart);
+                setTimeout(() => heart.remove(), 800);
+            }
+            setTimeout(() => button.classList.remove('burst'), 500);
+        }
+
+        // ===== Wow Factor: Staggered Card Animation =====
+        function animateCards(container) {
+            const cards = container.querySelectorAll('.card, .gift-card, .journal-entry, .prayer-post, .week-card');
+            cards.forEach((card, i) => {
+                card.classList.add('card-animate');
+                card.style.animationDelay = (i * 0.08) + 's';
+            });
+        }
+
+        // ===== Wow Factor: Countdown Timer =====
+        const RETREAT_START = new Date('2026-04-09T19:00:00-04:00');
+
+        function updateCountdown() {
+            const now = new Date();
+            const diff = RETREAT_START - now;
+            const container = document.getElementById('countdown-container');
+            const timer = document.getElementById('countdown-timer');
+
+            if (diff <= 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'block';
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            timer.innerHTML = `
+                <div class="countdown-unit"><span class="countdown-value">${days}</span><span class="countdown-name">Days</span></div>
+                <span class="countdown-separator">:</span>
+                <div class="countdown-unit"><span class="countdown-value">${String(hours).padStart(2,'0')}</span><span class="countdown-name">Hours</span></div>
+                <span class="countdown-separator">:</span>
+                <div class="countdown-unit"><span class="countdown-value">${String(minutes).padStart(2,'0')}</span><span class="countdown-name">Min</span></div>
+                <span class="countdown-separator">:</span>
+                <div class="countdown-unit"><span class="countdown-value">${String(seconds).padStart(2,'0')}</span><span class="countdown-name">Sec</span></div>
+            `;
+        }
+
+        // ===== Wow Factor: Rotating Scripture =====
+        const scriptures = [
+            { text: '"Every good and perfect gift is from above."', ref: 'James 1:17' },
+            { text: '"For it is by grace you have been saved, through faith\u2014and this is not from yourselves, it is the gift of God."', ref: 'Ephesians 2:8' },
+            { text: '"Each of you should use whatever gift you have received to serve others."', ref: '1 Peter 4:10' },
+            { text: '"Thanks be to God for his indescribable gift!"', ref: '2 Corinthians 9:15' },
+            { text: '"The Lord your God is with you, the Mighty Warrior who saves."', ref: 'Zephaniah 3:17' },
+            { text: '"She is clothed with strength and dignity; she can laugh at the days to come."', ref: 'Proverbs 31:25' },
+            { text: '"He has made everything beautiful in its time."', ref: 'Ecclesiastes 3:11' },
+            { text: '"I praise you because I am fearfully and wonderfully made."', ref: 'Psalm 139:14' },
+        ];
+
+        function showScripture() {
+            const banner = document.getElementById('scripture-banner');
+            const scripture = scriptures[Math.floor(Math.random() * scriptures.length)];
+            banner.classList.remove('visible');
+            setTimeout(() => {
+                banner.innerHTML = scripture.text + '<span class="scripture-ref">\u2014 ' + scripture.ref + '</span>';
+                banner.classList.add('visible');
+            }, 400);
+        }
+
+        // ===== Wow Factor: Time-based Greeting =====
+        function getTimeGreeting() {
+            const hour = new Date().getHours();
+            if (hour < 12) return 'Good morning';
+            if (hour < 17) return 'Good afternoon';
+            return 'Good evening';
+        }
+
         async function apiGet(path) {
             const res = await fetch(API_URL + path);
             return res.json();
@@ -1233,7 +1652,9 @@
                 document.getElementById('prayer-compose').style.display = 'block';
                 return;
             }
-            document.getElementById('setup-modal').style.display = 'flex';
+            const modal = document.getElementById('setup-modal');
+            modal.style.display = 'flex';
+            modal.classList.add('animate-in');
 
             document.getElementById('setup-btn').addEventListener('click', async () => {
                 const firstName = document.getElementById('setup-first').value.trim();
@@ -1255,7 +1676,7 @@
                     });
 
                     if (result.error) {
-                        alert(result.error);
+                        showToast(result.error);
                         btn.disabled = false;
                         btn.textContent = "Let's Go!";
                         return;
@@ -1266,8 +1687,10 @@
                     document.getElementById('setup-modal').style.display = 'none';
                     showWelcome();
                     document.getElementById('prayer-compose').style.display = 'block';
+                    launchConfetti();
+                    showToast('Welcome to the retreat, ' + currentUser.first_name + '! \u2728');
                 } catch (e) {
-                    alert('Could not connect. Please check your connection and try again.');
+                    showToast('Could not connect. Check your connection.');
                     btn.disabled = false;
                     btn.textContent = "Let's Go!";
                 }
@@ -1276,8 +1699,9 @@
 
         function showWelcome() {
             const banner = document.getElementById('welcome-banner');
-            banner.textContent = 'Welcome, ' + currentUser.first_name + '!';
+            banner.textContent = getTimeGreeting() + ', ' + currentUser.first_name + ' \u2728';
             banner.style.display = 'block';
+            setTimeout(() => banner.classList.add('animate-in'), 100);
         }
 
         // ===== Prayer Wall =====
@@ -1353,6 +1777,8 @@
                                 localStorage.setItem('g4prayed', JSON.stringify(prayedPosts));
                                 prayBtn.classList.add('prayed');
                                 prayBtn.querySelector('span').textContent = result.prayer_count;
+                                heartBurstEffect(prayBtn);
+                                showToast('Prayed \ud83d\ude4f');
                             } catch (e) {}
                         });
                         actions.appendChild(prayBtn);
@@ -1405,7 +1831,7 @@
             // Send
             document.getElementById('prayer-send-btn').addEventListener('click', async () => {
                 if (!currentUser) {
-                    alert('Please set up your name first.');
+                    showToast('Please set up your name first.');
                     return;
                 }
                 const messageEl = document.getElementById('prayer-message');
@@ -1425,15 +1851,16 @@
                         message: message
                     });
                     if (result.error) {
-                        alert(result.error);
+                        showToast(result.error);
                     } else {
                         messageEl.value = '';
                         forEl.value = '';
                         document.getElementById('prayer-char').textContent = '0';
                         loadPrayerWall();
+                        showToast(selectedPostType === 'prayer' ? 'Prayer shared \ud83d\ude4f' : 'Encouragement sent \u2764\ufe0f');
                     }
                 } catch (e) {
-                    alert('Could not post. Please try again.');
+                    showToast('Could not post. Please try again.');
                 }
                 sendBtn.disabled = false;
                 sendBtn.textContent = 'Share';
@@ -1511,8 +1938,10 @@
                     navBtns.forEach(b => b.classList.remove('active'));
                     tabContents.forEach(tab => tab.classList.remove('active'));
                     btn.classList.add('active');
-                    document.getElementById(tabName + '-tab').classList.add('active');
+                    const activeTab = document.getElementById(tabName + '-tab');
+                    activeTab.classList.add('active');
                     document.querySelector('.content-area').scrollTop = 0;
+                    animateCards(activeTab);
                 });
             });
         }
@@ -1752,6 +2181,12 @@
             }
             document.getElementById('result-title').textContent = title;
             document.getElementById('result-message').textContent = message;
+            resultContainer.classList.add('celebrate');
+            setTimeout(() => resultContainer.classList.remove('celebrate'), 700);
+            if (responseCount === giftsData.length) {
+                launchConfetti();
+                showToast('All 12 gifts discovered! \ud83c\udf89');
+            }
         }
 
         function buildJournal() {
@@ -1826,6 +2261,8 @@
                     saveState();
                     textarea.value = '';
                     buildJournal();
+                    showToast('Journal entry saved \u2728');
+                    launchConfetti();
                 }
             });
         });
@@ -1888,15 +2325,84 @@
             }
         }
 
+        // ===== Daily Prayer Countdown =====
+        const dailyPrayers = [
+            { day: 14, focus: 'Preparation', prayer: 'Lord, prepare the hearts of every woman attending. Remove distractions and create space for what You want to do.', verse: 'Psalm 51:10' },
+            { day: 13, focus: 'Unity', prayer: 'Father, knit our hearts together in love. Let us come ready to be vulnerable and real with one another.', verse: 'Colossians 3:14' },
+            { day: 12, focus: 'The Speakers', prayer: 'God, anoint the speakers with boldness and clarity. Let Your words flow through them to reach exactly who needs to hear.', verse: 'Jeremiah 1:9' },
+            { day: 11, focus: 'Breakthrough', prayer: 'Holy Spirit, break every chain holding us back. This weekend, set captives free.', verse: 'Isaiah 61:1' },
+            { day: 10, focus: 'Healing', prayer: 'Jesus, the Great Physician\u2014come heal old wounds, mend broken hearts, and restore what the enemy has stolen.', verse: 'Psalm 147:3' },
+            { day: 9, focus: 'Courage', prayer: 'Lord, give us courage to receive what You have for us, even when it feels scary or unfamiliar.', verse: 'Joshua 1:9' },
+            { day: 8, focus: 'Worship', prayer: 'Father, let the worship this weekend be a gateway into Your presence. Tear the veil and draw us near.', verse: 'Psalm 100:4' },
+            { day: 7, focus: 'Rest', prayer: 'God, we bring our tired, worn-out selves to You. Teach us what real rest looks like in Your arms.', verse: 'Matthew 11:28' },
+            { day: 6, focus: 'Sisterhood', prayer: 'Lord, deepen our friendships. Let new connections form and old ones be renewed over this weekend.', verse: 'Ecclesiastes 4:9-10' },
+            { day: 5, focus: 'Surrender', prayer: 'Father, help us let go of control. We surrender our plans and open our hands to receive Your gifts.', verse: 'Proverbs 3:5-6' },
+            { day: 4, focus: 'Joy', prayer: 'Holy Spirit, fill this retreat with unexpected joy\u2014belly laughs, tears of happiness, and the deep joy only You can give.', verse: 'Nehemiah 8:10' },
+            { day: 3, focus: 'Protection', prayer: 'God, we cover this weekend in prayer. Protect every woman traveling, guard the space, and silence the enemy.', verse: 'Psalm 91:11' },
+            { day: 2, focus: 'Expectation', prayer: 'Lord, we come expectant! Do something only You can do. Surprise us with Your goodness.', verse: 'Ephesians 3:20' },
+            { day: 1, focus: 'Here We Go!', prayer: 'Father, it\u2019s almost time. We are ready. Let this weekend change lives forever. We receive every incredible gift You have for us.', verse: 'James 1:17' },
+        ];
+
+        function buildPrayerCountdown() {
+            const now = new Date();
+            const retreatDate = new Date('2026-04-09T00:00:00');
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const daysUntil = Math.ceil((retreatDate - now) / msPerDay);
+
+            if (daysUntil <= 0 || daysUntil > 14) return;
+
+            const todayPrayer = dailyPrayers.find(p => p.day === daysUntil);
+            if (!todayPrayer) return;
+
+            const container = document.getElementById('schedule-container');
+            const prayerSection = document.createElement('div');
+            prayerSection.style.cssText = 'margin: 12px 16px; padding: 20px; background: linear-gradient(135deg, rgba(201,144,138,0.12) 0%, rgba(138,158,122,0.10) 100%); border-radius: 16px; border: 1px solid rgba(201,144,138,0.2); text-align: center;';
+
+            const daysLabel = document.createElement('div');
+            daysLabel.style.cssText = 'font-family: Playfair Display, serif; font-size: 2rem; font-weight: 700; color: var(--blush); margin-bottom: 4px;';
+            daysLabel.textContent = daysUntil;
+
+            const daysText = document.createElement('div');
+            daysText.style.cssText = 'font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--light-text); margin-bottom: 12px;';
+            daysText.textContent = daysUntil === 1 ? 'Day Until Retreat' : 'Days Until Retreat';
+
+            const focusLabel = document.createElement('div');
+            focusLabel.style.cssText = 'font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 600; margin-bottom: 6px;';
+            focusLabel.textContent = '\ud83d\ude4f Today\u2019s Prayer Focus: ' + todayPrayer.focus;
+
+            const prayerText = document.createElement('div');
+            prayerText.style.cssText = 'font-family: Cormorant Garamond, serif; font-size: 1rem; color: var(--taupe); line-height: 1.6; font-style: italic; margin-bottom: 10px; padding: 0 8px;';
+            prayerText.textContent = todayPrayer.prayer;
+
+            const verseRef = document.createElement('div');
+            verseRef.style.cssText = 'font-size: 0.8rem; color: var(--accent); font-weight: 500;';
+            verseRef.textContent = '\u2014 ' + todayPrayer.verse;
+
+            prayerSection.appendChild(daysLabel);
+            prayerSection.appendChild(daysText);
+            prayerSection.appendChild(focusLabel);
+            prayerSection.appendChild(prayerText);
+            prayerSection.appendChild(verseRef);
+
+            container.insertBefore(prayerSection, container.firstChild);
+        }
+
         loadState();
         initTabs();
         buildSchedule();
+        buildPrayerCountdown();
         buildGifts();
         buildJournal();
         buildContinue();
         updateStatus();
         initSetup();
         initPrayerWall();
+        createSparkles();
+        showScripture();
+        setInterval(showScripture, 30000);
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+        animateCards(document.getElementById('home-tab'));
 
         // Refresh prayer wall when switching to tab
         document.querySelector('[data-tab="prayer"]').addEventListener('click', () => {

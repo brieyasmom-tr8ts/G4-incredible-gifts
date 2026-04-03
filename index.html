@@ -3407,7 +3407,11 @@
             const grid = document.getElementById('moments-grid');
             try {
                 const moments = await apiGet('/api/moments');
-                if (!moments || !Array.isArray(moments) || moments.length === 0) {
+                if (!moments || !Array.isArray(moments)) {
+                    grid.innerHTML = '<div class="moments-empty">Moments will be available soon. Stay tuned!</div>';
+                    return;
+                }
+                if (moments.length === 0) {
                     grid.innerHTML = '<div class="moments-empty">No moments shared yet. Be the first to capture something meaningful.</div>';
                     return;
                 }
@@ -3550,7 +3554,7 @@
             overlay.style.zIndex = '1500';
 
             let selectedFile = null;
-            let selectedTag = '';
+            let selectedTags = [];
 
             const giftTags = ['Joy', 'Peace', 'Love', 'Faith', 'Courage', 'Rest', 'Freedom', 'Wisdom', 'Strength', 'Purpose', 'Friendship', 'Worship', 'Fun', 'G4 Spring'];
 
@@ -3616,15 +3620,16 @@
                 reader.readAsDataURL(file);
             });
 
-            // Gift tags
+            // Gift tags - multi-select
             overlay.querySelectorAll('.upload-gift-tag').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    overlay.querySelectorAll('.upload-gift-tag').forEach(b => b.classList.remove('active'));
-                    if (selectedTag === btn.dataset.tag) {
-                        selectedTag = '';
+                    const tag = btn.dataset.tag;
+                    if (selectedTags.includes(tag)) {
+                        selectedTags = selectedTags.filter(t => t !== tag);
+                        btn.classList.remove('active');
                     } else {
+                        selectedTags.push(tag);
                         btn.classList.add('active');
-                        selectedTag = btn.dataset.tag;
                     }
                 });
             });
@@ -3646,11 +3651,15 @@
                         author_name: currentUser.display_name || currentUser.first_name,
                         photo_data: previewImg.src,
                         caption: caption,
-                        gift_tag: selectedTag
+                        gift_tag: selectedTags.join(', ')
                     });
 
                     if (result.error) {
-                        showToast(result.error);
+                        if (result.error === 'Not found') {
+                            showToast('Moments feature is being set up. Try again soon!');
+                        } else {
+                            showToast(result.error);
+                        }
                         submitBtn.disabled = false;
                         submitBtn.textContent = 'Share';
                         return;
@@ -3661,7 +3670,7 @@
                     showToast('Moment shared \u2728');
                     launchConfetti();
                 } catch (e) {
-                    showToast('Could not upload. Try again.');
+                    showToast('Could not upload. Check your connection.');
                     submitBtn.disabled = false;
                     submitBtn.textContent = 'Share';
                 }

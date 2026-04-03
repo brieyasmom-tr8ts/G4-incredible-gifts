@@ -3109,12 +3109,14 @@
             const list = document.getElementById('connect-people-list');
             list.innerHTML = '';
             const query = (filter || '').toLowerCase();
+            // Filter out current user — they have their own card at top
+            const others = allDirectoryUsers.filter(u => !currentUser || u.id !== currentUser.id);
             const filtered = query
-                ? allDirectoryUsers.filter(u => u.first_name.toLowerCase().includes(query) || (u.last_initial && (u.first_name + ' ' + u.last_initial).toLowerCase().includes(query)))
-                : allDirectoryUsers;
+                ? others.filter(u => u.first_name.toLowerCase().includes(query) || (u.last_initial && (u.first_name + ' ' + u.last_initial).toLowerCase().includes(query)))
+                : others;
 
             if (!filtered.length) {
-                list.innerHTML = `<div style="text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">${query ? 'No one found matching "' + query + '"' : 'No one has joined yet. Be the first!'}</div>`;
+                list.innerHTML = `<div style="text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">${query ? 'No one found matching "' + query + '"' : 'No other sisters have joined yet.'}</div>`;
                 return;
             }
             filtered.forEach(u => list.appendChild(renderSisterRow(u)));
@@ -3125,15 +3127,21 @@
             const list = document.getElementById('connect-people-list');
             if (!list) return;
 
-            // Show profile prompt if user hasn't added a photo
+            // Always show "your card" at top — tappable to edit profile
             const prompt = document.getElementById('profile-prompt');
-            if (prompt && !currentUser.photo_data) {
+            if (prompt) {
                 prompt.style.display = 'block';
                 document.getElementById('prompt-name').textContent = currentUser.display_name || currentUser.first_name;
-                document.getElementById('prompt-initial').textContent = currentUser.first_name.charAt(0);
+                const avatarEl = document.getElementById('prompt-avatar');
+                if (currentUser.photo_data) {
+                    avatarEl.innerHTML = `<img src="${currentUser.photo_data}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;" alt="">`;
+                } else {
+                    document.getElementById('prompt-initial').textContent = currentUser.first_name.charAt(0);
+                }
+                // Update CTA text based on profile completeness
+                const setupBtn = prompt.querySelector('div:last-child');
+                if (setupBtn) setupBtn.textContent = currentUser.photo_data ? 'Edit' : 'Set Up';
                 prompt.onclick = () => { openProfile(); };
-            } else if (prompt) {
-                prompt.style.display = 'none';
             }
 
             try {
@@ -3341,6 +3349,7 @@
                     showWelcome();
                     showToast('Profile saved!');
                     overlay.remove();
+                    loadPeople();
                 } catch(e) {
                     showToast('Could not save. Check your connection.');
                     btn.disabled = false;

@@ -3107,9 +3107,9 @@
                 if (user.instagram) socialHTML += `<a href="https://instagram.com/${user.instagram}" target="_blank" rel="noopener" style="${btnStyle}background:linear-gradient(135deg,#E1306C,#F77737);color:white;">📸 Instagram</a>`;
                 if (user.facebook) socialHTML += `<a href="https://facebook.com/${user.facebook}" target="_blank" rel="noopener" style="${btnStyle}background:#1877F2;color:white;">👤 Facebook</a>`;
 
-                // Packing tier badge
+                // Packing tier badge (only if admin toggled show_packing_names on)
                 const dirUser = allDirectoryUsers.find(u => u.id === userId);
-                const packingScore = dirUser ? dirUser.packing_score : null;
+                const packingScore = (gameSettings.show_packing_names === '1' && dirUser) ? dirUser.packing_score : null;
                 const packingTier = getPackingTier(packingScore);
                 let packingHTML = '';
                 if (packingTier) {
@@ -3176,7 +3176,7 @@
                     ${detailLine ? `<div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detailLine}</div>` : ''}
                     ${aboutPreview ? `<div style="font-size:0.78rem;color:var(--taupe);font-style:italic;margin-top:3px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"${aboutPreview}"</div>` : ''}
                 </div>
-                ${(() => { const t = getPackingTier(u.packing_score); return t ? `<div style="flex-shrink:0;background:rgba(201,144,138,0.1);border-radius:10px;padding:4px 8px;font-size:0.65rem;color:var(--accent);font-weight:600;text-align:center;line-height:1.2;">${t.emoji}<br>${u.packing_score}pts</div>` : (u.retreat_years ? `<div style="flex-shrink:0;background:rgba(201,144,138,0.12);border-radius:10px;padding:4px 8px;font-size:0.65rem;color:var(--accent);font-weight:600;text-align:center;line-height:1.2;">${u.retreat_years === 'This is my first!' ? '1st<br>time' : u.retreat_years + '<br>yrs'}</div>` : ''); })()}
+                ${(() => { const t = gameSettings.show_packing_names === '1' ? getPackingTier(u.packing_score) : null; return t ? `<div style="flex-shrink:0;background:rgba(201,144,138,0.1);border-radius:10px;padding:4px 8px;font-size:0.65rem;color:var(--accent);font-weight:600;text-align:center;line-height:1.2;">${t.emoji}<br>${u.packing_score}pts</div>` : (u.retreat_years ? `<div style="flex-shrink:0;background:rgba(201,144,138,0.12);border-radius:10px;padding:4px 8px;font-size:0.65rem;color:var(--accent);font-weight:600;text-align:center;line-height:1.2;">${u.retreat_years === 'This is my first!' ? '1st<br>time' : u.retreat_years + '<br>yrs'}</div>` : ''); })()}
             `;
             return row;
         }
@@ -5663,12 +5663,15 @@
             return { emoji: '🎒', label: 'Light Traveler!' };
         }
 
+        let gameSettings = {};
+
         async function checkGames() {
             if (!currentUser) return;
             const testMode = new URLSearchParams(window.location.search).get('testgames') === '1';
             try {
-                const settings = testMode ? { who_am_i: '1', packing_points: '1' } : await apiGet('/api/games/settings');
-                if (!settings || typeof settings !== 'object') return;
+                gameSettings = testMode ? { who_am_i: '1', packing_points: '1', show_packing_names: '1' } : await apiGet('/api/games/settings');
+                if (!gameSettings || typeof gameSettings !== 'object') { gameSettings = {}; return; }
+                const settings = gameSettings;
 
                 // Who Am I?
                 if (settings.who_am_i === '1') {

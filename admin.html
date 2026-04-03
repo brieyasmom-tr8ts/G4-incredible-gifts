@@ -586,7 +586,14 @@
                             <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
                         </label>
                     </div>
-                    <div style="font-size:0.9rem;color:var(--taupe);">Scores submitted: <strong id="packing-count">0</strong></div>
+                    <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.75rem;">Scores submitted: <strong id="packing-count">0</strong></div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(138,158,122,0.08);border-radius:10px;margin-bottom:0.75rem;">
+                        <span style="font-size:0.9rem;color:var(--taupe);">Show tier names on profiles</span>
+                        <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
+                            <input type="checkbox" id="toggle-show-packing-names" style="opacity:0;width:0;height:0;" onchange="toggleGame('show_packing_names', this.checked)">
+                            <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                        </label>
+                    </div>
                     <div id="packing-leaderboard" style="margin-top:1rem;"></div>
                 </div>
             </div>
@@ -1032,6 +1039,7 @@ async function loadGameSettings() {
         const settings = await apiFetch('/api/games/settings');
         document.getElementById('toggle-who-am-i').checked = settings.who_am_i === '1';
         document.getElementById('toggle-packing-points').checked = settings.packing_points === '1';
+        document.getElementById('toggle-show-packing-names').checked = settings.show_packing_names === '1';
     } catch (e) { console.error('Game settings:', e); }
 }
 

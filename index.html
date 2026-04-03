@@ -543,11 +543,188 @@
             transform: scale(0.97);
         }
 
+        /* You're Not Alone */
+        .not-alone-section {
+            margin: 0 16px 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(201,144,138,0.10) 0%, rgba(138,158,122,0.08) 50%, rgba(212,165,154,0.06) 100%);
+            border-radius: 16px;
+            border: 1px solid rgba(201,144,138,0.15);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .not-alone-section::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: -5px;
+            width: 70px;
+            height: 70px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cellipse cx='30' cy='25' rx='8' ry='14' fill='%23d4a59a' opacity='0.18'/%3E%3Cellipse cx='30' cy='25' rx='8' ry='14' fill='%23d4a59a' opacity='0.14' transform='rotate(60 30 25)'/%3E%3Cellipse cx='30' cy='25' rx='8' ry='14' fill='%23d4a59a' opacity='0.14' transform='rotate(-60 30 25)'/%3E%3Ccircle cx='30' cy='25' r='3.5' fill='%23c9908a' opacity='0.2'/%3E%3Cpath d='M26 40 Q28 33 30 30 Q32 33 34 40' stroke='%238a9e7a' stroke-width='1' fill='none' opacity='0.18'/%3E%3Cellipse cx='24' cy='43' rx='5' ry='2.5' fill='%238a9e7a' opacity='0.14' transform='rotate(-25 24 43)'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: contain;
+            pointer-events: none;
+            opacity: 0.5;
+            transform: rotate(-20deg);
+        }
+
+        .not-alone-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin-bottom: 4px;
+        }
+
+        .not-alone-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            color: var(--light-text);
+            font-style: italic;
+            margin-bottom: 16px;
+        }
+
+        .not-alone-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .insight-card {
+            background: white;
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: var(--shadow-sm);
+            text-align: left;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: insightFadeIn 0.5s ease forwards;
+        }
+
+        @keyframes insightFadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .insight-percent {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--blush);
+            min-width: 56px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .insight-text {
+            font-size: 0.88rem;
+            color: var(--taupe);
+            line-height: 1.4;
+        }
+
+        .insight-text strong {
+            color: var(--dark-text);
+        }
+
+        .not-alone-footer {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
+            color: var(--accent);
+            font-style: italic;
+            margin-top: 16px;
+        }
+
+        .not-alone-participants {
+            font-size: 0.75rem;
+            color: var(--light-text);
+            margin-top: 6px;
+        }
+
+        /* Home preview card */
+        .not-alone-preview {
+            margin: 12px 16px;
+            padding: 16px;
+            background: linear-gradient(135deg, rgba(201,144,138,0.08) 0%, rgba(138,158,122,0.06) 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(201,144,138,0.12);
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .not-alone-preview:active {
+            transform: scale(0.98);
+        }
+
+        .not-alone-preview-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            color: var(--dark-text);
+            margin-bottom: 4px;
+        }
+
+        .not-alone-preview-stat {
+            font-size: 0.85rem;
+            color: var(--taupe);
+            font-style: italic;
+        }
+
+        .not-alone-preview-cta {
+            font-size: 0.75rem;
+            color: var(--accent);
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
         .header {
             padding: 20px 20px 16px;
             text-align: center;
             border-bottom: 1px solid rgba(139, 134, 128, 0.1);
             background: linear-gradient(180deg, #f0e0d8 0%, var(--cream) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before,
+        .header::after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='45' rx='12' ry='18' fill='%23d4a59a' opacity='0.15' transform='rotate(-15 50 45)'/%3E%3Cellipse cx='50' cy='45' rx='12' ry='18' fill='%23d4a59a' opacity='0.12' transform='rotate(15 50 45)'/%3E%3Cellipse cx='50' cy='45' rx='12' ry='18' fill='%23d4a59a' opacity='0.10' transform='rotate(45 50 45)'/%3E%3Cellipse cx='50' cy='45' rx='12' ry='18' fill='%23d4a59a' opacity='0.10' transform='rotate(-45 50 45)'/%3E%3Cellipse cx='50' cy='45' rx='12' ry='18' fill='%23d4a59a' opacity='0.08' transform='rotate(75 50 45)'/%3E%3Ccircle cx='50' cy='45' r='5' fill='%23c9908a' opacity='0.18'/%3E%3Cpath d='M42 65 Q44 55 50 52 Q56 55 58 65' stroke='%238a9e7a' stroke-width='1.5' fill='none' opacity='0.15'/%3E%3Cellipse cx='38' cy='68' rx='6' ry='3' fill='%238a9e7a' opacity='0.12' transform='rotate(-30 38 68)'/%3E%3Cellipse cx='62' cy='68' rx='6' ry='3' fill='%238a9e7a' opacity='0.12' transform='rotate(30 62 68)'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: contain;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .header::before {
+            top: -10px;
+            left: -15px;
+            transform: rotate(-20deg);
+        }
+
+        .header::after {
+            top: -10px;
+            right: -15px;
+            transform: rotate(20deg) scaleX(-1);
+        }
+
+        /* Floral accents for sections */
+        .floral-accent {
+            position: absolute;
+            pointer-events: none;
+            opacity: 0.5;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cellipse cx='30' cy='25' rx='8' ry='14' fill='%23d4a59a' opacity='0.18'/%3E%3Cellipse cx='30' cy='25' rx='8' ry='14' fill='%23d4a59a' opacity='0.14' transform='rotate(60 30 25)'/%3E%3Cellipse cx='30' cy='25' rx='8' ry='14' fill='%23d4a59a' opacity='0.14' transform='rotate(-60 30 25)'/%3E%3Ccircle cx='30' cy='25' r='3.5' fill='%23c9908a' opacity='0.2'/%3E%3Cpath d='M26 40 Q28 33 30 30 Q32 33 34 40' stroke='%238a9e7a' stroke-width='1' fill='none' opacity='0.18'/%3E%3Cellipse cx='24' cy='43' rx='5' ry='2.5' fill='%238a9e7a' opacity='0.14' transform='rotate(-25 24 43)'/%3E%3Cellipse cx='36' cy='43' rx='5' ry='2.5' fill='%238a9e7a' opacity='0.14' transform='rotate(25 36 43)'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: contain;
         }
 
         .retreat-label {
@@ -1292,6 +1469,33 @@
             margin-bottom: 20px;
             background: linear-gradient(135deg, rgba(212, 165, 154, 0.12) 0%, rgba(138, 158, 122, 0.08) 100%);
             border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-hero::before,
+        .info-hero::after {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Cellipse cx='30' cy='25' rx='8' ry='14' fill='%23d4a59a' opacity='0.18'/%3E%3Cellipse cx='30' cy='25' rx='8' ry='14' fill='%23d4a59a' opacity='0.14' transform='rotate(60 30 25)'/%3E%3Cellipse cx='30' cy='25' rx='8' ry='14' fill='%23d4a59a' opacity='0.14' transform='rotate(-60 30 25)'/%3E%3Ccircle cx='30' cy='25' r='3.5' fill='%23c9908a' opacity='0.2'/%3E%3Cpath d='M26 40 Q28 33 30 30 Q32 33 34 40' stroke='%238a9e7a' stroke-width='1' fill='none' opacity='0.18'/%3E%3Cellipse cx='24' cy='43' rx='5' ry='2.5' fill='%238a9e7a' opacity='0.14' transform='rotate(-25 24 43)'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: contain;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .info-hero::before {
+            bottom: -8px;
+            left: -5px;
+            transform: rotate(15deg);
+        }
+
+        .info-hero::after {
+            top: -8px;
+            right: -5px;
+            transform: rotate(-30deg) scaleX(-1);
         }
 
         .info-hero h2 {
@@ -1361,6 +1565,22 @@
             color: var(--taupe);
             font-style: italic;
             line-height: 1.6;
+            position: relative;
+        }
+
+        .info-verse::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cellipse cx='50' cy='45' rx='12' ry='18' fill='%23d4a59a' opacity='0.08' transform='rotate(-15 50 45)'/%3E%3Cellipse cx='50' cy='45' rx='12' ry='18' fill='%23d4a59a' opacity='0.06' transform='rotate(15 50 45)'/%3E%3Cellipse cx='50' cy='45' rx='12' ry='18' fill='%23d4a59a' opacity='0.05' transform='rotate(45 50 45)'/%3E%3Cellipse cx='50' cy='45' rx='12' ry='18' fill='%23d4a59a' opacity='0.05' transform='rotate(-45 50 45)'/%3E%3Cellipse cx='50' cy='45' rx='12' ry='18' fill='%23d4a59a' opacity='0.04' transform='rotate(75 50 45)'/%3E%3Ccircle cx='50' cy='45' r='5' fill='%23c9908a' opacity='0.1'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-size: contain;
+            pointer-events: none;
+            z-index: 0;
         }
 
         .info-verse cite {
@@ -1433,10 +1653,12 @@
                     <span id="status-text">Happening Now</span>
                 </div>
                 <div id="schedule-container"></div>
+                <div id="not-alone-home-preview"></div>
             </div>
 
             <!-- MY JOURNEY TAB -->
             <div id="journey-tab" class="tab-content">
+                <div id="not-alone-container"></div>
                 <div class="p-20">
                     <p style="font-size: 0.95rem; color: var(--light-text); margin-bottom: 16px; line-height: 1.6;">
                         Which of these gifts has God given you? Select one response for each to discover what God is doing in your life right now.
@@ -1497,8 +1719,7 @@
             <div id="info-tab" class="tab-content">
                 <div class="info-page">
                     <div class="info-hero">
-                        <h2>Incredible Gifts</h2>
-                        <div class="info-dates">April 9–11, 2026</div>
+                        <div class="info-dates">April 9–11, 2026 &middot; Ocean City, MD</div>
                         <p>We are so expectant for what God is going to do. Whether you are coming ready, weary, hopeful, or just needing a break… this weekend is for you.</p>
                     </div>
 
@@ -2298,6 +2519,7 @@
                         saveState();
                         buildGifts();
                         updateJourneyResult();
+                        submitJourneyResponse(gift, option);
                     });
                     optionsDiv.appendChild(btn);
                 });
@@ -2527,6 +2749,108 @@
             { day: 2, focus: 'Expectation', prayer: 'Lord, we come expectant! Do something only You can do. Surprise us with Your goodness.', verse: 'Ephesians 3:20' },
             { day: 1, focus: 'Here We Go!', prayer: 'Father, it\u2019s almost time. We are ready. Let this weekend change lives forever. We receive every incredible gift You have for us.', verse: 'James 1:17' },
         ];
+
+        // ===== You're Not Alone =====
+        async function submitJourneyResponse(gift, response) {
+            if (!currentUser) return;
+            try {
+                await apiPost('/api/journey', {
+                    user_id: currentUser.id,
+                    gift: gift,
+                    response: response
+                });
+            } catch (e) {}
+        }
+
+        async function loadNotAloneInsights() {
+            const container = document.getElementById('not-alone-container');
+            const homePreview = document.getElementById('not-alone-home-preview');
+            try {
+                const data = await apiGet('/api/journey/insights');
+                if (!data || data.total_participants < 3) {
+                    container.innerHTML = '';
+                    homePreview.innerHTML = '';
+                    return;
+                }
+
+                const total = data.total_participants;
+                const byGift = {};
+                data.responses.forEach(r => {
+                    if (!byGift[r.gift]) byGift[r.gift] = {};
+                    byGift[r.gift][r.response] = r.count;
+                });
+
+                // Build insight sentences
+                const insights = [];
+                const responseLabels = {
+                    "I've experienced this": { verb: 'have experienced', tone: 'celebrating' },
+                    "I'm walking in this": { verb: 'are walking in', tone: 'growing' },
+                    "I want this": { verb: 'are longing for more', tone: 'seeking' },
+                    "I'm struggling here": { verb: 'are pressing through in', tone: 'honest' }
+                };
+
+                for (const [gift, responses] of Object.entries(byGift)) {
+                    for (const [response, count] of Object.entries(responses)) {
+                        const pct = Math.round((count / total) * 100);
+                        if (pct >= 20) {
+                            const label = responseLabels[response];
+                            if (label) {
+                                insights.push({
+                                    pct,
+                                    text: `<strong>${pct}%</strong> of women ${label.verb} <strong>${gift.toLowerCase()}</strong>`,
+                                    tone: label.tone,
+                                    gift,
+                                    count
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // Sort by most impactful and pick top 5
+                insights.sort((a, b) => b.pct - a.pct);
+                const topInsights = insights.slice(0, 5);
+
+                if (topInsights.length === 0) {
+                    container.innerHTML = '';
+                    homePreview.innerHTML = '';
+                    return;
+                }
+
+                // Build Journey tab section
+                let cardsHTML = '';
+                topInsights.forEach((insight, i) => {
+                    cardsHTML += `<div class="insight-card" style="animation-delay: ${i * 0.12}s">
+                        <div class="insight-percent">${insight.pct}%</div>
+                        <div class="insight-text">${insight.text}</div>
+                    </div>`;
+                });
+
+                container.innerHTML = `
+                    <div class="not-alone-section">
+                        <div class="not-alone-title">You\u2019re Not Alone</div>
+                        <div class="not-alone-subtitle">What you\u2019re walking through, others are too</div>
+                        <div class="not-alone-cards">${cardsHTML}</div>
+                        <div class="not-alone-footer">God is moving in all of you.</div>
+                        <div class="not-alone-participants">${total} women have shared their journey</div>
+                    </div>
+                `;
+
+                // Home preview card
+                const topStat = topInsights[0];
+                homePreview.innerHTML = `
+                    <div class="not-alone-preview" onclick="document.querySelector('[data-tab=journey]').click()">
+                        <div class="not-alone-preview-title">You\u2019re Not Alone</div>
+                        <div class="not-alone-preview-stat">${topStat.text}</div>
+                        <div class="not-alone-preview-cta">See what God is doing \u2192</div>
+                    </div>
+                `;
+
+            } catch (e) {
+                container.innerHTML = '';
+                homePreview.innerHTML = '';
+            }
+        }
 
         function buildPrayerCountdown() {
             const now = new Date();
@@ -2815,6 +3139,7 @@
         initPrayerWall();
         initAudioNote();
         initSummarize();
+        loadNotAloneInsights();
         createSparkles();
         showScripture();
         setInterval(showScripture, 30000);
@@ -2825,6 +3150,11 @@
         // Refresh prayer wall when switching to tab
         document.querySelector('[data-tab="prayer"]').addEventListener('click', () => {
             loadPrayerWall();
+        });
+
+        // Refresh insights when switching to journey tab
+        document.querySelector('[data-tab="journey"]').addEventListener('click', () => {
+            loadNotAloneInsights();
         });
 
         if ('serviceWorker' in navigator) {

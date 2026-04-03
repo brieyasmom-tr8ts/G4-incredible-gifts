@@ -18,6 +18,16 @@ CREATE TABLE users (
   FOREIGN KEY (attendee_id) REFERENCES attendees(id)
 );
 
+CREATE TABLE journey_responses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  gift TEXT NOT NULL,
+  response TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(user_id, gift),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,

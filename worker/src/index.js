@@ -151,6 +151,43 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // ===== JOURNEY RESPONSES =====
+
+      // POST /api/journey - submit or update a gift response
+      if (path === '/api/journey' && request.method === 'POST') {
+        const { user_id, gift, response } = await request.json();
+        if (!user_id || !gift || !response) {
+          return json({ error: 'user_id, gift, and response are required' }, corsHeaders, 400);
+        }
+
+        await env.DB.prepare(
+          `INSERT INTO journey_responses (user_id, gift, response)
+           VALUES (?, ?, ?)
+           ON CONFLICT(user_id, gift) DO UPDATE SET response = excluded.response`
+        ).bind(user_id, gift, response).run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/journey/insights - anonymous aggregated stats
+      if (path === '/api/journey/insights' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          `SELECT gift, response, COUNT(*) as count
+           FROM journey_responses
+           GROUP BY gift, response
+           ORDER BY gift, count DESC`
+        ).all();
+
+        const totalUsers = await env.DB.prepare(
+          'SELECT COUNT(DISTINCT user_id) as total FROM journey_responses'
+        ).first();
+
+        return json({
+          total_participants: totalUsers?.total || 0,
+          responses: results
+        }, corsHeaders);
+      }
+
       return json({ error: 'Not found' }, corsHeaders, 404);
 
     } catch (err) {

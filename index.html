@@ -2511,6 +2511,7 @@
                             <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);margin-bottom:10px;">Add a photo and share your info so your sisters can connect with you.</div>
                             <button id="profile-prompt-btn" style="padding:8px 20px;border:none;background:var(--blush);color:white;border-radius:20px;font-family:Cormorant Garamond,serif;font-size:0.88rem;font-weight:600;cursor:pointer;">Set Up My Profile</button>
                         </div>
+                        <div id="alpha-picker" style="display:none;margin-bottom:12px;"></div>
                         <div id="connect-people-grid" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;"></div>
                     </div>
                     <!-- Prayers Sub-tab -->
@@ -3049,6 +3050,88 @@
         }
 
         // ===== People Directory =====
+        let allDirectoryUsers = [];
+        let activeAlphaLetter = 'ALL';
+
+        function renderPersonCard(u, grid) {
+            const displayName = u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name;
+            const card = document.createElement('div');
+            card.style.cssText = 'background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;padding:14px 8px 12px;text-align:center;cursor:pointer;transition:var(--transition);box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);';
+            card.addEventListener('click', () => showUserCard(u.id, u.first_name));
+
+            const avatarSize = '52px';
+            let avatarHTML;
+            if (u.photo_data) {
+                avatarHTML = `<img src="${u.photo_data}" style="width:${avatarSize};height:${avatarSize};border-radius:50%;object-fit:cover;border:2px solid var(--blush);" alt="">`;
+            } else {
+                avatarHTML = `<div style="width:${avatarSize};height:${avatarSize};border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;margin:0 auto;border:2px solid var(--blush);"><span style="color:white;font-size:1.2rem;font-family:Playfair Display,serif;font-weight:700;">${u.first_name.charAt(0)}</span></div>`;
+            }
+
+            const subtext = u.location || u.job || '';
+            let socialIcons = '';
+            if (u.instagram) socialIcons += '<span style="font-size:0.7rem;">📸</span> ';
+            if (u.facebook) socialIcons += '<span style="font-size:0.7rem;">👤</span>';
+
+            card.innerHTML = `
+                <div style="display:flex;justify-content:center;margin-bottom:6px;">${avatarHTML}</div>
+                <div style="font-family:Playfair Display,serif;font-size:0.8rem;font-weight:600;color:var(--dark-text);line-height:1.2;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${displayName}</div>
+                ${subtext ? `<div style="font-size:0.7rem;color:var(--light-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${subtext}</div>` : ''}
+                ${socialIcons ? `<div style="margin-top:2px;">${socialIcons}</div>` : ''}
+            `;
+            grid.appendChild(card);
+        }
+
+        function renderPeopleGrid(letter) {
+            activeAlphaLetter = letter;
+            const grid = document.getElementById('connect-people-grid');
+            grid.innerHTML = '';
+            const filtered = letter === 'ALL' ? allDirectoryUsers : allDirectoryUsers.filter(u => u.first_name.charAt(0).toUpperCase() === letter);
+            if (!filtered.length) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">No one with that initial yet.</div>';
+                return;
+            }
+            filtered.forEach(u => renderPersonCard(u, grid));
+
+            // Update active state on picker
+            document.querySelectorAll('.alpha-letter').forEach(el => {
+                el.style.background = el.dataset.letter === letter ? 'var(--blush)' : 'none';
+                el.style.color = el.dataset.letter === letter ? 'white' : 'var(--light-text)';
+            });
+        }
+
+        function buildAlphaPicker(users) {
+            const picker = document.getElementById('alpha-picker');
+            if (users.length <= 12) {
+                picker.style.display = 'none';
+                return;
+            }
+            picker.style.display = 'flex';
+            picker.style.cssText = 'display:flex;flex-wrap:wrap;gap:2px;justify-content:center;margin-bottom:12px;';
+
+            const letters = new Set(users.map(u => u.first_name.charAt(0).toUpperCase()));
+            const sortedLetters = [...letters].sort();
+
+            picker.innerHTML = '';
+            // "All" button
+            const allBtn = document.createElement('button');
+            allBtn.className = 'alpha-letter';
+            allBtn.dataset.letter = 'ALL';
+            allBtn.textContent = 'All';
+            allBtn.style.cssText = 'padding:6px 10px;border:none;border-radius:8px;font-family:Cormorant Garamond,serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:var(--transition);background:var(--blush);color:white;min-width:32px;';
+            allBtn.addEventListener('click', () => renderPeopleGrid('ALL'));
+            picker.appendChild(allBtn);
+
+            sortedLetters.forEach(letter => {
+                const btn = document.createElement('button');
+                btn.className = 'alpha-letter';
+                btn.dataset.letter = letter;
+                btn.textContent = letter;
+                btn.style.cssText = 'padding:6px 8px;border:none;border-radius:8px;font-family:Cormorant Garamond,serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:var(--transition);background:none;color:var(--light-text);min-width:28px;';
+                btn.addEventListener('click', () => renderPeopleGrid(letter));
+                picker.appendChild(btn);
+            });
+        }
+
         async function loadPeople() {
             if (!currentUser) return;
             const grid = document.getElementById('connect-people-grid');
@@ -3070,38 +3153,9 @@
                     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">No one has joined yet. Be the first!</div>';
                     return;
                 }
-                grid.innerHTML = '';
-                users.forEach(u => {
-                    const displayName = u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name;
-                    const card = document.createElement('div');
-                    card.style.cssText = 'background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;padding:14px 8px 12px;text-align:center;cursor:pointer;transition:var(--transition);box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);';
-                    card.addEventListener('click', () => showUserCard(u.id, u.first_name));
-
-                    const avatarSize = '52px';
-                    let avatarHTML;
-                    if (u.photo_data) {
-                        avatarHTML = `<img src="${u.photo_data}" style="width:${avatarSize};height:${avatarSize};border-radius:50%;object-fit:cover;border:2px solid var(--blush);" alt="">`;
-                    } else {
-                        avatarHTML = `<div style="width:${avatarSize};height:${avatarSize};border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;margin:0 auto;border:2px solid var(--blush);"><span style="color:white;font-size:1.2rem;font-family:Playfair Display,serif;font-weight:700;">${u.first_name.charAt(0)}</span></div>`;
-                    }
-
-                    let socialIcons = '';
-                    if (u.instagram) socialIcons += '<span style="font-size:0.7rem;">📸</span> ';
-                    if (u.facebook) socialIcons += '<span style="font-size:0.7rem;">👤</span>';
-
-                    let subtextParts = [];
-                    if (u.location) subtextParts.push(u.location);
-                    else if (u.job) subtextParts.push(u.job);
-                    const subtext = subtextParts[0] || '';
-
-                    card.innerHTML = `
-                        <div style="display:flex;justify-content:center;margin-bottom:6px;">${avatarHTML}</div>
-                        <div style="font-family:Playfair Display,serif;font-size:0.8rem;font-weight:600;color:var(--dark-text);line-height:1.2;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${displayName}</div>
-                        ${subtext ? `<div style="font-size:0.7rem;color:var(--light-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${subtext}</div>` : ''}
-                        ${socialIcons ? `<div style="margin-top:2px;">${socialIcons}</div>` : ''}
-                    `;
-                    grid.appendChild(card);
-                });
+                allDirectoryUsers = users;
+                buildAlphaPicker(users);
+                renderPeopleGrid(users.length > 12 ? 'ALL' : 'ALL');
             } catch(e) {
                 console.error('Failed to load people directory:', e);
             }

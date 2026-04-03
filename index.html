@@ -3046,6 +3046,31 @@
             } catch(e) {}
         }
 
+        function getPackingTier(score) {
+            if (score === null || score === undefined) return null;
+            if (score >= 100) return { emoji: '👑', name: 'The Whole Closet Came' };
+            if (score >= 95) return { emoji: '🚚', name: 'U-Haul Energy' };
+            if (score >= 90) return { emoji: '🏠', name: 'Basically Moving In' };
+            if (score >= 85) return { emoji: '🧲', name: 'Packing Magnet' };
+            if (score >= 80) return { emoji: '💅', name: 'Fabulous & Prepared' };
+            if (score >= 75) return { emoji: '🌟', name: 'Glamping Professional' };
+            if (score >= 70) return { emoji: '🎪', name: 'One-Woman Circus Tent' };
+            if (score >= 65) return { emoji: '💼', name: 'CEO of Overpacking' };
+            if (score >= 60) return { emoji: '🧳', name: 'Suitcase Stuffer' };
+            if (score >= 55) return { emoji: '🛍️', name: 'Retail Therapy Packer' };
+            if (score >= 50) return { emoji: '🎒', name: 'Walking Closet' };
+            if (score >= 45) return { emoji: '✨', name: 'Extra & Proud of It' };
+            if (score >= 40) return { emoji: '🧴', name: 'Beauty Supply Store' };
+            if (score >= 35) return { emoji: '👜', name: 'Bag Lady Chic' };
+            if (score >= 30) return { emoji: '🌸', name: 'Cute & Covered' };
+            if (score >= 25) return { emoji: '🎯', name: 'Practically Prepared' };
+            if (score >= 20) return { emoji: '😎', name: 'Chill Packer' };
+            if (score >= 15) return { emoji: '🌊', name: 'Go With the Flow' };
+            if (score >= 10) return { emoji: '🎒', name: 'Light Traveler' };
+            if (score >= 5) return { emoji: '🪶', name: 'Featherweight Packer' };
+            return { emoji: '🏆', name: 'Minimalist Queen' };
+        }
+
         async function showUserCard(userId, fallbackName) {
             if (!userId) return;
             try {
@@ -3083,8 +3108,21 @@
                 if (user.instagram) socialHTML += `<a href="https://instagram.com/${user.instagram}" target="_blank" rel="noopener" style="${btnStyle}background:linear-gradient(135deg,#E1306C,#F77737);color:white;">📸 Instagram</a>`;
                 if (user.facebook) socialHTML += `<a href="https://facebook.com/${user.facebook}" target="_blank" rel="noopener" style="${btnStyle}background:#1877F2;color:white;">👤 Facebook</a>`;
 
+                // Packing tier badge
+                const dirUser = allDirectoryUsers.find(u => u.id === userId);
+                const packingScore = dirUser ? dirUser.packing_score : null;
+                const packingTier = getPackingTier(packingScore);
+                let packingHTML = '';
+                if (packingTier) {
+                    packingHTML = `<div style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(201,144,138,0.1);border-radius:20px;font-size:0.82rem;margin-bottom:10px;">
+                        <span>${packingTier.emoji}</span>
+                        <span style="font-family:Cormorant Garamond,serif;font-weight:600;color:var(--accent);">${packingTier.name}</span>
+                        <span style="font-size:0.72rem;color:var(--light-text);">${packingScore}pts</span>
+                    </div>`;
+                }
+
                 const hasActions = actionsHTML || socialHTML;
-                const hasInfo = aboutHTML || birthdayHTML;
+                const hasInfo = aboutHTML || birthdayHTML || packingHTML;
 
                 const card = document.createElement('div');
                 card.style.cssText = 'background:var(--cream);border-radius:20px;padding:24px;text-align:center;max-width:320px;width:100%;box-shadow:var(--shadow-lg);';
@@ -3093,6 +3131,7 @@
                         ${user.photo_data ? `<img src="${user.photo_data}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="color:white;font-size:1.6rem;font-family:Playfair Display,serif;font-weight:700;">${user.first_name.charAt(0)}</span>`}
                     </div>
                     <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;color:var(--dark-text);margin-bottom:8px;">${displayName}</div>
+                    ${packingHTML}
                     ${aboutHTML ? `<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px;">${aboutHTML}</div>` : ''}
                     ${birthdayHTML}
                     ${actionsHTML ? `<div style="display:flex;gap:8px;margin-bottom:8px;">${actionsHTML}</div>` : ''}
@@ -3138,7 +3177,7 @@
                     ${detailLine ? `<div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detailLine}</div>` : ''}
                     ${aboutPreview ? `<div style="font-size:0.78rem;color:var(--taupe);font-style:italic;margin-top:3px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"${aboutPreview}"</div>` : ''}
                 </div>
-                ${u.retreat_years ? `<div style="flex-shrink:0;background:rgba(201,144,138,0.12);border-radius:10px;padding:4px 8px;font-size:0.65rem;color:var(--accent);font-weight:600;text-align:center;line-height:1.2;">${u.retreat_years === 'This is my first!' ? '1st<br>time' : u.retreat_years + '<br>yrs'}</div>` : ''}
+                ${(() => { const t = getPackingTier(u.packing_score); return t ? `<div style="flex-shrink:0;background:rgba(201,144,138,0.1);border-radius:10px;padding:4px 8px;font-size:0.65rem;color:var(--accent);font-weight:600;text-align:center;line-height:1.2;">${t.emoji}<br>${u.packing_score}pts</div>` : (u.retreat_years ? `<div style="flex-shrink:0;background:rgba(201,144,138,0.12);border-radius:10px;padding:4px 8px;font-size:0.65rem;color:var(--accent);font-weight:600;text-align:center;line-height:1.2;">${u.retreat_years === 'This is my first!' ? '1st<br>time' : u.retreat_years + '<br>yrs'}</div>` : ''); })()}
             `;
             return row;
         }

@@ -86,7 +86,12 @@ export default {
       // GET /api/users/directory - public directory (only shared fields)
       if (path === '/api/users/directory' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about FROM users ORDER BY first_name ASC'
+          `SELECT u.id, u.first_name, u.last_initial, u.photo_data, u.email, u.phone, u.birthday,
+                  u.show_email, u.show_phone, u.show_birthday, u.show_about,
+                  u.instagram, u.facebook, u.location, u.job, u.church, u.retreat_years, u.about,
+                  p.score as packing_score
+           FROM users u LEFT JOIN packing_scores p ON u.id = p.user_id
+           ORDER BY u.first_name ASC`
         ).all();
         const directory = results.map(u => ({
           id: u.id,
@@ -102,7 +107,8 @@ export default {
           job: u.show_about ? (u.job || '') : '',
           church: u.show_about ? (u.church || '') : '',
           retreat_years: u.show_about ? (u.retreat_years || '') : '',
-          about: u.show_about ? (u.about || '') : ''
+          about: u.show_about ? (u.about || '') : '',
+          packing_score: u.packing_score != null ? u.packing_score : null
         }));
         return json(directory, corsHeaders);
       }

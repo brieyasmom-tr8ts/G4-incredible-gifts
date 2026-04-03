@@ -5720,24 +5720,48 @@
         }
 
         let gameSettings = {};
+        const _testParam = new URLSearchParams(window.location.search).get('test') || '';
+        let _testCleared = false;
 
-        async function checkGames() {
-            if (!currentUser) return;
-            const testMode = new URLSearchParams(window.location.search).get('testgames') === '1';
+        function getTestGame() { return _testParam; }
 
-            // In test mode, clear all game flags so popups always show
-            if (testMode) {
+        function clearTestFlags() {
+            if (_testCleared || !currentUser) return;
+            _testCleared = true;
+            const t = getTestGame();
+            if (t === 'whoami' || t === 'all') {
                 localStorage.removeItem('g4funfact_' + currentUser.id);
-                localStorage.removeItem('g4packing_' + currentUser.id);
                 sessionStorage.removeItem('g4funfact_skip');
+            }
+            if (t === 'packing' || t === 'all') {
+                localStorage.removeItem('g4packing_' + currentUser.id);
                 sessionStorage.removeItem('g4packing_skip');
-                // Clear WYR votes
+            }
+            if (t === 'wyr' || t === 'all') {
                 Object.keys(localStorage).filter(k => k.startsWith('g4wyr_')).forEach(k => localStorage.removeItem(k));
                 Object.keys(sessionStorage).filter(k => k.startsWith('g4wyr_skip_')).forEach(k => sessionStorage.removeItem(k));
             }
+            if (t === 'secretsister' || t === 'all') {
+                localStorage.removeItem('g4secretsister_' + currentUser.id);
+                localStorage.removeItem('g4ss_seen_' + currentUser.id);
+                sessionStorage.removeItem('g4ss_skip');
+            }
+        }
+
+        async function checkGames() {
+            if (!currentUser) return;
+            const t = getTestGame();
+            clearTestFlags();
 
             try {
-                gameSettings = testMode ? { who_am_i: '1', packing_points: '1', show_packing_names: '1' } : await apiGet('/api/games/settings');
+                // In test mode, only force the specific game being tested
+                if (t) {
+                    gameSettings = await apiGet('/api/games/settings').catch(() => ({})) || {};
+                    if (t === 'whoami' || t === 'all') gameSettings.who_am_i = '1';
+                    if (t === 'packing' || t === 'all') { gameSettings.packing_points = '1'; gameSettings.show_packing_names = '1'; }
+                } else {
+                    gameSettings = await apiGet('/api/games/settings');
+                }
                 if (!gameSettings || typeof gameSettings !== 'object') { gameSettings = {}; return; }
                 const settings = gameSettings;
 
@@ -5755,7 +5779,6 @@
                     const submitted = localStorage.getItem('g4packing_' + currentUser.id);
                     const skipped = sessionStorage.getItem('g4packing_skip');
                     if (!submitted && !skipped) {
-                        // Small delay so it doesn't compete with fun fact modal
                         const funfactShowing = document.getElementById('funfact-modal').style.display !== 'none';
                         if (!funfactShowing) {
                             showPackingModal();
@@ -6044,13 +6067,8 @@
 
         async function checkSecretSister() {
             if (!currentUser) return;
-            const testMode = new URLSearchParams(window.location.search).get('testgames') === '1';
-
-            if (testMode) {
-                localStorage.removeItem('g4secretsister_' + currentUser.id);
-                localStorage.removeItem('g4ss_seen_' + currentUser.id);
-                sessionStorage.removeItem('g4ss_skip');
-            }
+            const t = getTestGame();
+            if (t === 'secretsister' || t === 'all') gameSettings.secret_sister = '1';
 
             try {
                 const settings = gameSettings;

@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G4 Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Cormorant+Garamond:wght@400;500&display=swap">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --cream: #f7f0eb;
+            --taupe: #7a6b63;
+            --sage: #8a9e7a;
+            --blush: #c9908a;
+            --accent: #b87a6e;
+            --dark-text: #4a3728;
+            --light-text: #8a7b72;
+            --warm-grey: #c8b9b0;
+            --rose: #d4a59a;
+            --shadow-sm: 0 2px 8px rgba(74, 55, 40, 0.06);
+            --shadow-md: 0 4px 16px rgba(74, 55, 40, 0.08);
+            --shadow-lg: 0 12px 32px rgba(74, 55, 40, 0.1);
+        }
+
+        body {
+            font-family: 'Cormorant Garamond', Georgia, serif;
+            background: var(--cream);
+            color: var(--dark-text);
+            min-height: 100vh;
+            font-size: 16px;
+        }
+
+        /* Password Gate */
+        #password-gate {
+            position: fixed; inset: 0;
+            background: var(--cream);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999;
+        }
+        #password-gate.hidden { display: none; }
+        .gate-box {
+            text-align: center;
+            padding: 3rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            max-width: 380px;
+            width: 90%;
+        }
+        .gate-box h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            color: var(--dark-text);
+            margin-bottom: 0.5rem;
+        }
+        .gate-box p {
+            color: var(--light-text);
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+        .gate-box input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--warm-grey);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .gate-box input:focus { border-color: var(--accent); }
+        .gate-box button {
+            margin-top: 1rem;
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .gate-box button:hover { opacity: 0.85; }
+
+        /* Top Bar */
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid rgba(122, 107, 99, 0.12);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+        .top-bar h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--dark-text);
+        }
+        .top-bar-actions {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--sage);
+            display: inline-block;
+            margin-right: 0.3rem;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .status-text {
+            font-size: 0.85rem;
+            color: var(--light-text);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1.1rem;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn-danger {
+            background: #c0392b;
+            color: white;
+        }
+        .btn-danger-outline {
+            background: transparent;
+            color: #c0392b;
+            border: 1.5px solid #c0392b;
+            padding: 0.3rem 0.7rem;
+            font-size: 0.85rem;
+        }
+        .btn-refresh {
+            background: var(--sage);
+            color: white;
+        }
+        .btn-logout {
+            background: var(--taupe);
+            color: white;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 0;
+            background: white;
+            border-bottom: 1px solid rgba(122, 107, 99, 0.1);
+            padding: 0 2rem;
+            overflow-x: auto;
+        }
+        .nav-tab {
+            padding: 0.85rem 1.5rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.95rem;
+            color: var(--light-text);
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+            position: relative;
+        }
+        .nav-tab:hover { color: var(--dark-text); }
+        .nav-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .nav-tab .badge {
+            display: inline-block;
+            background: var(--blush);
+            color: white;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.1rem 0.5rem;
+            border-radius: 10px;
+            margin-left: 0.4rem;
+            vertical-align: middle;
+        }
+
+        /* Main Content */
+        .main { padding: 1.5rem 2rem 3rem; }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Tables */
+        .table-wrap {
+            background: white;
+            border-radius: 14px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead th {
+            background: rgba(122, 107, 99, 0.06);
+            text-align: left;
+            padding: 0.75rem 1rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--taupe);
+            border-bottom: 1px solid rgba(122, 107, 99, 0.1);
+            white-space: nowrap;
+        }
+        tbody td {
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid rgba(122, 107, 99, 0.06);
+            font-size: 0.95rem;
+            vertical-align: middle;
+        }
+        tbody tr:hover { background: rgba(247, 240, 235, 0.5); }
+        tbody tr:last-child td { border-bottom: none; }
+
+        /* Cards Grid */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+        .card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .card-thumb {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: rgba(122, 107, 99, 0.08);
+            display: block;
+        }
+        .card-body {
+            padding: 1rem;
+        }
+        .card-body h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            margin-bottom: 0.3rem;
+        }
+        .card-meta {
+            font-size: 0.85rem;
+            color: var(--light-text);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        .card-tag {
+            display: inline-block;
+            background: rgba(138, 158, 122, 0.15);
+            color: var(--sage);
+            font-size: 0.78rem;
+            padding: 0.15rem 0.55rem;
+            border-radius: 6px;
+            margin-right: 0.3rem;
+            margin-bottom: 0.3rem;
+        }
+        .card-footer {
+            padding: 0 1rem 1rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* Prayer Wall */
+        .prayer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .prayer-item {
+            background: white;
+            border-radius: 14px;
+            box-shadow: var(--shadow-md);
+            padding: 1.25rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+        .prayer-icon {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .prayer-icon.prayer { background: rgba(138, 158, 122, 0.18); }
+        .prayer-icon.praise { background: rgba(201, 144, 138, 0.18); }
+        .prayer-icon.need { background: rgba(184, 122, 110, 0.18); }
+        .prayer-content { flex: 1; min-width: 0; }
+        .prayer-content h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.95rem;
+            margin-bottom: 0.2rem;
+        }
+        .prayer-content .type-badge {
+            font-size: 0.78rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 0.4rem;
+        }
+        .type-badge.prayer { background: rgba(138, 158, 122, 0.15); color: var(--sage); }
+        .type-badge.praise { background: rgba(201, 144, 138, 0.15); color: var(--blush); }
+        .type-badge.need { background: rgba(184, 122, 110, 0.15); color: var(--accent); }
+        .prayer-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--dark-text);
+            margin-bottom: 0.4rem;
+        }
+        .prayer-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+        .prayer-count {
+            font-size: 0.85rem;
+            color: var(--light-text);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--light-text);
+        }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5; }
+        .empty-state p { font-size: 1.1rem; }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 18px; height: 18px;
+            border: 2px solid rgba(122, 107, 99, 0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 0.4rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--dark-text);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            z-index: 10000;
+            transition: transform 0.3s ease;
+            pointer-events: none;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* Confirm Modal */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(74, 55, 40, 0.4);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 5000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        .modal-box {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: var(--shadow-lg);
+            text-align: center;
+        }
+        .modal-box h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            margin-bottom: 0.75rem;
+        }
+        .modal-box p {
+            color: var(--light-text);
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        .modal-actions .btn { min-width: 100px; }
+        .btn-cancel { background: var(--warm-grey); color: white; }
+
+        /* Game toggle slider */
+        .game-slider::before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        input:checked + .game-slider {
+            background: var(--sage);
+        }
+        input:checked + .game-slider::before {
+            transform: translateX(22px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .top-bar { padding: 0.75rem 1rem; }
+            .nav-tabs { padding: 0 1rem; }
+            .nav-tab { padding: 0.75rem 1rem; font-size: 0.88rem; }
+            .main { padding: 1rem; }
+            .card-grid { grid-template-columns: 1fr; }
+            #section-games > div { grid-template-columns: 1fr; }
+            .table-wrap { overflow-x: auto; }
+            table { min-width: 600px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Password Gate -->
+<div id="password-gate">
+    <div class="gate-box">
+        <h1>G4 Admin</h1>
+        <p>Enter the admin password to continue</p>
+        <input type="password" id="gate-password" placeholder="Password" autofocus>
+        <button onclick="authenticate()">Enter</button>
+    </div>
+</div>
+
+<!-- Main App (hidden until authenticated) -->
+<div id="app" style="display:none;">
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <h1>G4 Admin Dashboard</h1>
+        <div class="top-bar-actions">
+            <span class="status-text"><span class="status-dot"></span>Auto-refresh</span>
+            <button class="btn btn-refresh" onclick="refreshAll()">Refresh</button>
+            <button class="btn btn-danger" onclick="confirmResetAll()">Delete All Test Data</button>
+            <button class="btn btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Quick Announce -->
+    <div style="padding:0.75rem 2rem;background:rgba(201,144,138,0.06);border-bottom:1px solid rgba(201,144,138,0.1);">
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:1.1rem;">📢</span>
+            <input type="text" id="announce-input" placeholder="Type an announcement for everyone..." style="flex:1;min-width:200px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
+            <button class="btn btn-refresh" onclick="sendAnnouncement()">Send to All</button>
+            <button class="btn btn-danger-outline" onclick="clearAnnouncement()">Clear Active</button>
+        </div>
+        <div id="active-announcement" style="margin-top:0.5rem;display:none;padding:0.4rem 0.75rem;background:rgba(201,144,138,0.1);border-radius:8px;font-size:0.85rem;color:var(--taupe);"></div>
+    </div>
+
+    <!-- Nav Tabs -->
+    <div class="nav-tabs">
+        <button class="nav-tab active" data-section="users">Users <span class="badge" id="count-users">0</span></button>
+        <button class="nav-tab" data-section="videos">Videos <span class="badge" id="count-videos">0</span></button>
+        <button class="nav-tab" data-section="moments">Moments <span class="badge" id="count-moments">0</span></button>
+        <button class="nav-tab" data-section="prayers">Prayer Wall <span class="badge" id="count-prayers">0</span></button>
+        <button class="nav-tab" data-section="feedback">Feedback <span class="badge" id="count-feedback">0</span></button>
+        <button class="nav-tab" data-section="games">Games</button>
+    </div>
+
+    <!-- Content -->
+    <div class="main">
+
+        <!-- Users -->
+        <div class="section active" id="section-users">
+            <div class="table-wrap">
+                <table id="users-table">
+                    <thead>
+                        <tr>
+                            <th data-sort="id" style="cursor:pointer;">ID <span class="sort-arrow"></span></th>
+                            <th data-sort="first_name" style="cursor:pointer;">First Name <span class="sort-arrow"></span></th>
+                            <th data-sort="last_name" style="cursor:pointer;">Last Name <span class="sort-arrow"></span></th>
+                            <th data-sort="email" style="cursor:pointer;">Email <span class="sort-arrow"></span></th>
+                            <th data-sort="phone" style="cursor:pointer;">Phone <span class="sort-arrow"></span></th>
+                            <th data-sort="birthday" style="cursor:pointer;">Birthday <span class="sort-arrow"></span></th>
+                            <th data-sort="instagram" style="cursor:pointer;">Instagram <span class="sort-arrow"></span></th>
+                            <th data-sort="facebook" style="cursor:pointer;">Facebook <span class="sort-arrow"></span></th>
+                            <th data-sort="created_at" style="cursor:pointer;">Created <span class="sort-arrow"></span></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-body"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="empty-users" style="display:none;">
+                <div class="icon">&#128100;</div>
+                <p>No users found</p>
+            </div>
+        </div>
+
+        <!-- Videos -->
+        <div class="section" id="section-videos">
+            <div class="card-grid" id="videos-grid"></div>
+            <div class="empty-state" id="empty-videos" style="display:none;">
+                <div class="icon">&#127909;</div>
+                <p>No videos found</p>
+            </div>
+        </div>
+
+        <!-- Moments -->
+        <div class="section" id="section-moments">
+            <div class="card-grid" id="moments-grid"></div>
+            <div class="empty-state" id="empty-moments" style="display:none;">
+                <div class="icon">&#128247;</div>
+                <p>No moments found</p>
+            </div>
+        </div>
+
+        <!-- Prayer Wall -->
+        <div class="section" id="section-prayers">
+            <div class="prayer-list" id="prayers-list"></div>
+            <div class="empty-state" id="empty-prayers" style="display:none;">
+                <div class="icon">&#128591;</div>
+                <p>No prayer messages found</p>
+            </div>
+        </div>
+
+        <!-- Games -->
+        <div class="section" id="section-games">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.5rem;">
+                <!-- Who Am I? Toggle -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                        <div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;">🤫 Who Am I?</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:4px;">Everyone submits a secret fact. You read them aloud, everyone guesses.</div>
+                        </div>
+                        <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;margin-left:1rem;">
+                            <input type="checkbox" id="toggle-who-am-i" style="opacity:0;width:0;height:0;" onchange="toggleGame('who_am_i', this.checked)">
+                            <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                        </label>
+                    </div>
+                    <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.5rem;">Submitted facts: <strong id="funfact-count">0</strong></div>
+                    <button class="btn btn-refresh" onclick="loadFunFacts()" style="margin-right:0.5rem;">Refresh</button>
+                    <button class="btn btn-danger-outline" onclick="clearFunFacts()" style="margin-right:0.5rem;">Clear All Facts</button>
+                    <button class="btn" style="background:var(--blush);color:white;" onclick="openTestLink('whoami')">📋 Test Link</button>
+                    <div id="funfacts-list" style="margin-top:1rem;"></div>
+                </div>
+                <!-- Packing Points Toggle -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                        <div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;">🧳 Packing Points</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:4px;">Score points based on how you packed. Fun checklist game.</div>
+                        </div>
+                        <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;margin-left:1rem;">
+                            <input type="checkbox" id="toggle-packing-points" style="opacity:0;width:0;height:0;" onchange="toggleGame('packing_points', this.checked)">
+                            <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                        </label>
+                    </div>
+                    <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.75rem;">Scores submitted: <strong id="packing-count">0</strong>
+                        <button class="btn btn-refresh" onclick="loadPackingScores()" style="margin-left:0.5rem;font-size:0.8rem;padding:0.25rem 0.6rem;">Refresh</button>
+                        <button class="btn btn-danger-outline" onclick="clearPackingScores()" style="margin-left:0.3rem;font-size:0.8rem;padding:0.25rem 0.6rem;">Clear All</button>
+                        <button class="btn" style="background:var(--blush);color:white;margin-left:0.3rem;font-size:0.8rem;padding:0.25rem 0.6rem;" onclick="openTestLink('packing')">📋 Test Link</button>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(138,158,122,0.08);border-radius:10px;margin-bottom:0.75rem;">
+                        <span style="font-size:0.9rem;color:var(--taupe);">Show tier names on profiles</span>
+                        <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
+                            <input type="checkbox" id="toggle-show-packing-names" style="opacity:0;width:0;height:0;" onchange="toggleGame('show_packing_names', this.checked)">
+                            <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                        </label>
+                    </div>
+                    <div id="packing-leaderboard" style="margin-top:1rem;"></div>
+                </div>
+            </div>
+            <!-- Would You Rather -->
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;">🎤 Would You Rather – Live Poll</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:0.5rem;">Create questions, activate one at a time. Everyone gets a popup to vote and sees live results.</div>
+                <div style="margin-bottom:1rem;"><button class="btn" style="background:var(--blush);color:white;font-size:0.8rem;padding:0.25rem 0.6rem;" onclick="openTestLink('wyr')">📋 Test Link</button></div>
+                <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+                    <input type="text" id="wyr-option-a" placeholder="Option A..." style="flex:1;min-width:120px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
+                    <input type="text" id="wyr-option-b" placeholder="Option B..." style="flex:1;min-width:120px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
+                    <button class="btn btn-refresh" onclick="createWYR()">Add Question</button>
+                </div>
+                <button class="btn" style="background:linear-gradient(135deg,#c9908a,#d4a59a);color:white;font-size:0.85rem;padding:0.5rem 1rem;margin-bottom:1rem;border-radius:10px;" onclick="fillWithAI()">✨ Fill with AI Suggestions</button>
+                <div id="ai-wyr-suggestions" style="display:none;margin-bottom:1rem;"></div>
+                <div id="wyr-questions-list"></div>
+            </div>
+            <!-- Secret Sister -->
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                    <div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;">💌 Secret Sister Compliment Drop</div>
+                        <div style="font-size:0.85rem;color:var(--light-text);margin-top:4px;">Randomly assign sisters, they write anonymous encouraging notes to each other.</div>
+                    </div>
+                    <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;margin-left:1rem;">
+                        <input type="checkbox" id="toggle-secret-sister" style="opacity:0;width:0;height:0;" onchange="toggleGame('secret_sister', this.checked)">
+                        <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                    </label>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+                    <button class="btn btn-refresh" onclick="assignSecretSisters()">Assign Sisters</button>
+                    <button class="btn btn-refresh" onclick="loadSecretSisters()">Refresh</button>
+                    <button class="btn btn-danger-outline" onclick="clearSecretSisters()">Clear All</button>
+                    <button class="btn" style="background:var(--blush);color:white;" onclick="openTestLink('secretsister')">📋 Test Link</button>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(201,144,138,0.08);border-radius:10px;margin-bottom:0.75rem;">
+                    <span style="font-size:0.9rem;color:var(--taupe);">Reveal notes to recipients</span>
+                    <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
+                        <input type="checkbox" id="toggle-ss-reveal" style="opacity:0;width:0;height:0;" onchange="toggleGame('secret_sister_reveal', this.checked)">
+                        <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                    </label>
+                </div>
+                <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.5rem;">Pairs: <strong id="ss-count">0</strong> | Notes written: <strong id="ss-notes-count">0</strong></div>
+                <div id="ss-pairs-list" style="margin-top:0.5rem;"></div>
+            </div>
+        </div>
+
+        <!-- Feedback -->
+        <div class="section" id="section-feedback">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Type</th>
+                            <th>Message</th>
+                            <th>Created</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="feedback-body"></tbody>
+                </table>
+            </div>
+            <div class="empty-state" id="empty-feedback" style="display:none;">
+                <div class="icon">&#128172;</div>
+                <p>No feedback found</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="modal">
+    <div class="modal-box">
+        <h2 id="modal-title">Confirm</h2>
+        <p id="modal-message">Are you sure?</p>
+        <div class="modal-actions">
+            <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+            <button class="btn btn-danger" id="modal-confirm">Delete</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const API = 'https://g4-retreat-api.brieyasmom.workers.dev';
+let refreshTimer = null;
+
+// --- Auth ---
+function getKey() { return sessionStorage.getItem('admin_key') || ''; }
+
+function authenticate() {
+    const pw = document.getElementById('gate-password').value.trim();
+    if (!pw) return;
+    sessionStorage.setItem('admin_key', pw);
+    document.getElementById('password-gate').classList.add('hidden');
+    document.getElementById('app').style.display = '';
+    refreshAll();
+    startAutoRefresh();
+}
+
+document.getElementById('gate-password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') authenticate();
+});
+
+function logout() {
+    sessionStorage.removeItem('admin_key');
+    location.reload();
+}
+
+// Check for existing session
+if (getKey()) {
+    document.getElementById('password-gate').classList.add('hidden');
+    document.getElementById('app').style.display = '';
+    refreshAll();
+    startAutoRefresh();
+}
+
+// --- API Helpers ---
+async function apiFetch(path, options = {}) {
+    const headers = { ...(options.headers || {}) };
+    if (options.body && typeof options.body === 'object') {
+        headers['Content-Type'] = 'application/json';
+        options.body = JSON.stringify(options.body);
+    }
+    const res = await fetch(API + path, { ...options, headers });
+    if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`${res.status}: ${text}`);
+    }
+    const ct = res.headers.get('content-type') || '';
+    return ct.includes('json') ? res.json() : res.text();
+}
+
+// --- Toast ---
+function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// --- Modal ---
+function showModal(title, message, onConfirm) {
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-message').textContent = message;
+    const btn = document.getElementById('modal-confirm');
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.addEventListener('click', () => { closeModal(); onConfirm(); });
+    document.getElementById('modal').classList.add('show');
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+// --- Tabs ---
+document.querySelectorAll('.nav-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('section-' + tab.dataset.section).classList.add('active');
+    });
+});
+
+// --- Data Fetch ---
+async function refreshAll() {
+    await Promise.allSettled([
+        loadUsers(),
+        loadVideos(),
+        loadMoments(),
+        loadPrayers(),
+        loadFeedback(),
+        loadGameSettings(),
+        loadFunFacts(),
+        loadPackingScores(),
+        loadSecretSisters(),
+        loadWYRQuestions(),
+        loadActiveAnnouncement()
+    ]);
+}
+
+function startAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(refreshAll, 30000);
+}
+
+function esc(str) {
+    if (str == null) return '';
+    const d = document.createElement('div');
+    d.textContent = String(str);
+    return d.innerHTML;
+}
+
+function fmtDate(d) {
+    if (!d) return '';
+    try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    catch { return d; }
+}
+
+function fmtDateTime(d) {
+    if (!d) return '';
+    try { return new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+    catch { return d; }
+}
+
+function fmtDuration(sec) {
+    if (!sec) return '';
+    const m = Math.floor(sec / 60);
+    const s = Math.round(sec % 60);
+    return m + ':' + String(s).padStart(2, '0');
+}
+
+// --- Users ---
+async function loadUsers() {
+    try {
+        const data = await apiFetch('/api/users');
+        const users = Array.isArray(data) ? data : (data.users || data.data || []);
+        document.getElementById('count-users').textContent = users.length;
+        const tbody = document.getElementById('users-body');
+        const empty = document.getElementById('empty-users');
+        if (!users.length) {
+            tbody.innerHTML = '';
+            empty.style.display = '';
+            return;
+        }
+        empty.style.display = 'none';
+        usersData = users;
+        renderUsersTable();
+    } catch (e) {
+        console.error('Users:', e);
+        document.getElementById('users-body').innerHTML = '';
+        document.getElementById('empty-users').style.display = '';
+    }
+}
+
+let usersData = [];
+let usersSortCol = 'created_at';
+let usersSortAsc = false;
+
+function renderUsersTable() {
+    const sorted = [...usersData].sort((a, b) => {
+        let va = a[usersSortCol] || '';
+        let vb = b[usersSortCol] || '';
+        if (usersSortCol === 'id') { va = Number(va); vb = Number(vb); }
+        else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+        if (va < vb) return usersSortAsc ? -1 : 1;
+        if (va > vb) return usersSortAsc ? 1 : -1;
+        return 0;
+    });
+
+    // Update sort arrows
+    document.querySelectorAll('#users-table th .sort-arrow').forEach(el => el.textContent = '');
+    const activeHeader = document.querySelector(`#users-table th[data-sort="${usersSortCol}"] .sort-arrow`);
+    if (activeHeader) activeHeader.textContent = usersSortAsc ? ' ▲' : ' ▼';
+
+    const tbody = document.getElementById('users-body');
+    tbody.innerHTML = sorted.map(u => `
+        <tr>
+            <td>${esc(u.id)}</td>
+            <td>${esc(u.first_name)}</td>
+            <td>${esc(u.last_name || u.last_initial)}</td>
+            <td>${esc(u.email)}</td>
+            <td>${esc(u.phone)}</td>
+            <td>${fmtDate(u.birthday)}</td>
+            <td>${u.instagram ? `<a href="https://instagram.com/${esc(u.instagram)}" target="_blank">@${esc(u.instagram)}</a>` : ''}</td>
+            <td>${esc(u.facebook)}</td>
+            <td>${fmtDateTime(u.created_at)}</td>
+            <td><button class="btn btn-danger-outline" onclick="deleteUser(${u.id}, '${esc(u.first_name)}')">Delete</button></td>
+        </tr>
+    `).join('');
+}
+
+// Sort click handlers
+document.querySelectorAll('#users-table th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+        const col = th.dataset.sort;
+        if (usersSortCol === col) { usersSortAsc = !usersSortAsc; }
+        else { usersSortCol = col; usersSortAsc = true; }
+        renderUsersTable();
+    });
+});
+
+async function deleteUser(id, name) {
+    showModal('Delete User', `Delete user "${name}" (ID ${id})? This cannot be undone.`, async () => {
+        try {
+            await apiFetch(`/api/users/${id}`, { method: 'DELETE' });
+            showToast('User deleted');
+            loadUsers();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+// --- Videos ---
+async function loadVideos() {
+    try {
+        const data = await apiFetch('/api/videos');
+        const videos = Array.isArray(data) ? data : (data.videos || data.data || []);
+        document.getElementById('count-videos').textContent = videos.length;
+        const grid = document.getElementById('videos-grid');
+        const empty = document.getElementById('empty-videos');
+        if (!videos.length) {
+            grid.innerHTML = '';
+            empty.style.display = '';
+            return;
+        }
+        empty.style.display = 'none';
+        grid.innerHTML = videos.map(v => `
+            <div class="card">
+                ${v.thumbnail_url
+                    ? `<img class="card-thumb" src="${esc(v.thumbnail_url)}" alt="Video thumbnail" loading="lazy" onerror="this.style.display='none'">`
+                    : `<div class="card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--light-text);">&#127909;</div>`
+                }
+                <div class="card-body">
+                    <h3>${esc(v.author_name || v.first_name || 'Unknown')}</h3>
+                    <div class="card-meta">
+                        ${v.session_tag ? `<span class="card-tag">${esc(v.session_tag)}</span>` : ''}
+                        ${v.duration ? `<span class="card-tag">${fmtDuration(v.duration)}</span>` : ''}
+                    </div>
+                    <div class="card-meta">${fmtDateTime(v.created_at)}</div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-danger-outline" onclick="deleteVideo(${v.id})">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error('Videos:', e);
+        document.getElementById('videos-grid').innerHTML = '';
+        document.getElementById('empty-videos').style.display = '';
+    }
+}
+
+async function deleteVideo(id) {
+    showModal('Delete Video', `Delete video ID ${id}? This cannot be undone.`, async () => {
+        try {
+            await apiFetch(`/api/videos/${id}`, { method: 'DELETE', body: { user_id: -1 } });
+            showToast('Video deleted');
+            loadVideos();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+// --- Moments ---
+async function loadMoments() {
+    try {
+        const data = await apiFetch('/api/moments');
+        const moments = Array.isArray(data) ? data : (data.moments || data.data || []);
+        document.getElementById('count-moments').textContent = moments.length;
+        const grid = document.getElementById('moments-grid');
+        const empty = document.getElementById('empty-moments');
+        if (!moments.length) {
+            grid.innerHTML = '';
+            empty.style.display = '';
+            return;
+        }
+        empty.style.display = 'none';
+        grid.innerHTML = moments.map(m => `
+            <div class="card">
+                ${m.photo_url || m.image_url || m.url
+                    ? `<img class="card-thumb" src="${esc(m.photo_url || m.image_url || m.url)}" alt="Moment" loading="lazy" onerror="this.style.display='none'">`
+                    : `<div class="card-thumb" style="display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:var(--light-text);">&#128247;</div>`
+                }
+                <div class="card-body">
+                    <h3>${esc(m.author_name || m.first_name || 'Unknown')}</h3>
+                    <div class="card-meta">${esc(m.caption || '')}</div>
+                    <div class="card-meta">
+                        ${m.gift_tag ? `<span class="card-tag">${esc(m.gift_tag)}</span>` : ''}
+                    </div>
+                    <div class="card-meta">${fmtDateTime(m.created_at)}</div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-danger-outline" onclick="deleteMoment(${m.id})">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) {
+        console.error('Moments:', e);
+        document.getElementById('moments-grid').innerHTML = '';
+        document.getElementById('empty-moments').style.display = '';
+    }
+}
+
+async function deleteMoment(id) {
+    showModal('Delete Moment', `Delete moment ID ${id}? This cannot be undone.`, async () => {
+        try {
+            await apiFetch(`/api/moments/${id}`, { method: 'DELETE', body: { user_id: -1 } });
+            showToast('Moment deleted');
+            loadMoments();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+// --- Prayer Wall ---
+async function loadPrayers() {
+    try {
+        const data = await apiFetch('/api/messages');
+        const messages = Array.isArray(data) ? data : (data.messages || data.data || []);
+        document.getElementById('count-prayers').textContent = messages.length;
+        const list = document.getElementById('prayers-list');
+        const empty = document.getElementById('empty-prayers');
+        if (!messages.length) {
+            list.innerHTML = '';
+            empty.style.display = '';
+            return;
+        }
+        empty.style.display = 'none';
+        list.innerHTML = messages.map(m => {
+            const type = (m.type || 'prayer').toLowerCase();
+            const icon = type === 'praise' ? '&#9728;' : type === 'need' ? '&#10084;' : '&#128591;';
+            return `
+            <div class="prayer-item">
+                <div class="prayer-icon ${esc(type)}">${icon}</div>
+                <div class="prayer-content">
+                    <h3>${esc(m.author_name || m.first_name || 'Anonymous')}</h3>
+                    <span class="type-badge ${esc(type)}">${esc(type)}</span>
+                    <div class="prayer-text">${esc(m.message || m.content || m.text || '')}</div>
+                    <div class="prayer-footer">
+                        <span class="prayer-count">${m.prayer_count || m.prayers || 0} prayers</span>
+                        <button class="btn btn-danger-outline" onclick="deletePrayer(${m.id})">Delete</button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        console.error('Prayers:', e);
+        document.getElementById('prayers-list').innerHTML = '';
+        document.getElementById('empty-prayers').style.display = '';
+    }
+}
+
+async function deletePrayer(id) {
+    showModal('Delete Message', `Delete prayer message ID ${id}?`, async () => {
+        try {
+            await apiFetch(`/api/messages/${id}`, { method: 'DELETE', body: { user_id: -1 } });
+            showToast('Message deleted');
+            loadPrayers();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+// --- Feedback ---
+async function loadFeedback() {
+    try {
+        const data = await apiFetch('/api/feedback');
+        const items = Array.isArray(data) ? data : (data.feedback || data.data || []);
+        document.getElementById('count-feedback').textContent = items.length;
+        const tbody = document.getElementById('feedback-body');
+        const empty = document.getElementById('empty-feedback');
+        if (!items.length) {
+            tbody.innerHTML = '';
+            empty.style.display = '';
+            return;
+        }
+        empty.style.display = 'none';
+        tbody.innerHTML = items.map(f => `
+            <tr>
+                <td>${esc(f.id)}</td>
+                <td>${esc(f.author_name || f.first_name || f.user_id || '')}</td>
+                <td>${esc(f.type || f.category || '')}</td>
+                <td style="max-width:400px;word-break:break-word;">${esc(f.message || f.content || f.text || '')}</td>
+                <td>${fmtDateTime(f.created_at)}</td>
+                <td><button class="btn btn-danger-outline" onclick="deleteFeedback(${f.id})">Delete</button></td>
+            </tr>
+        `).join('');
+    } catch (e) {
+        console.error('Feedback:', e);
+        document.getElementById('feedback-body').innerHTML = '';
+        document.getElementById('empty-feedback').style.display = '';
+    }
+}
+
+async function deleteFeedback(id) {
+    showModal('Delete Feedback', `Delete feedback ID ${id}?`, async () => {
+        try {
+            await apiFetch(`/api/feedback/${id}`, { method: 'DELETE' });
+            showToast('Feedback deleted');
+            loadFeedback();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+// --- Games ---
+async function loadGameSettings() {
+    try {
+        const settings = await apiFetch('/api/games/settings');
+        document.getElementById('toggle-who-am-i').checked = settings.who_am_i === '1';
+        document.getElementById('toggle-packing-points').checked = settings.packing_points === '1';
+        document.getElementById('toggle-show-packing-names').checked = settings.show_packing_names === '1';
+        document.getElementById('toggle-secret-sister').checked = settings.secret_sister === '1';
+        document.getElementById('toggle-ss-reveal').checked = settings.secret_sister_reveal === '1';
+    } catch (e) { console.error('Game settings:', e); }
+}
+
+async function toggleGame(key, enabled) {
+    try {
+        await apiFetch('/api/games/settings', {
+            method: 'POST',
+            body: { key: key, value: enabled ? '1' : '0' }
+        });
+        showToast(`${key.replace(/_/g, ' ')} ${enabled ? 'ON' : 'OFF'}`);
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function loadFunFacts() {
+    try {
+        const data = await apiFetch('/api/games/funfacts');
+        const facts = Array.isArray(data) ? data : [];
+        document.getElementById('funfact-count').textContent = facts.length;
+        const list = document.getElementById('funfacts-list');
+        if (!facts.length) {
+            list.innerHTML = '<div style="color:var(--light-text);font-size:0.9rem;padding:0.5rem 0;">No facts submitted yet.</div>';
+            return;
+        }
+        list.innerHTML = facts.map((f, i) => `
+            <div style="padding:0.6rem 0.8rem;background:rgba(247,240,235,0.5);border-radius:10px;margin-bottom:0.5rem;">
+                <div style="font-weight:600;font-size:0.9rem;color:var(--accent);">#${i + 1} — ${esc(f.author_name)}</div>
+                <div style="font-size:0.95rem;margin-top:4px;line-height:1.4;">"${esc(f.fact)}"</div>
+            </div>
+        `).join('');
+    } catch (e) { console.error('Fun facts:', e); }
+}
+
+function clearFunFacts() {
+    showModal('Clear Fun Facts', 'Delete all submitted fun facts? This cannot be undone.', async () => {
+        try {
+            await apiFetch('/api/games/funfacts', { method: 'DELETE' });
+            showToast('All fun facts cleared');
+            loadFunFacts();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+async function loadPackingScores() {
+    try {
+        const data = await apiFetch('/api/games/packing');
+        const scores = Array.isArray(data) ? data : [];
+        document.getElementById('packing-count').textContent = scores.length;
+        const list = document.getElementById('packing-leaderboard');
+        if (!scores.length) {
+            list.innerHTML = '<div style="color:var(--light-text);font-size:0.9rem;padding:0.5rem 0;">No scores yet.</div>';
+            return;
+        }
+        list.innerHTML = '<div style="font-family:Playfair Display,serif;font-size:0.95rem;margin-bottom:0.5rem;">Leaderboard</div>' +
+            scores.map((s, i) => `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.8rem;background:rgba(247,240,235,0.5);border-radius:8px;margin-bottom:4px;">
+                <span style="font-size:0.9rem;">${i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1) + '.'} ${esc(s.author_name)}</span>
+                <span style="font-weight:700;color:var(--accent);">${s.score} pts</span>
+            </div>
+        `).join('');
+    } catch (e) { console.error('Packing scores:', e); }
+}
+
+async function clearPackingScores() {
+    if (!confirm('Clear all packing scores? This cannot be undone.')) return;
+    try {
+        await apiFetch('/api/games/packing', { method: 'DELETE' });
+        showToast('Packing scores cleared!');
+        loadPackingScores();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+// --- Announcements ---
+async function sendAnnouncement() {
+    const input = document.getElementById('announce-input');
+    const msg = input.value.trim();
+    if (!msg) { showToast('Type a message first'); return; }
+    try {
+        await apiFetch('/api/announcements', { method: 'POST', body: { message: msg } });
+        input.value = '';
+        showToast('Announcement sent!');
+        loadActiveAnnouncement();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function clearAnnouncement() {
+    try {
+        await apiFetch('/api/announcements/active', { method: 'DELETE' });
+        showToast('Announcement cleared');
+        loadActiveAnnouncement();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function loadActiveAnnouncement() {
+    try {
+        const ann = await apiFetch('/api/announcements/active');
+        const el = document.getElementById('active-announcement');
+        if (ann && ann.id) {
+            el.style.display = 'block';
+            el.innerHTML = '<strong>Active:</strong> ' + esc(ann.message);
+        } else {
+            el.style.display = 'none';
+        }
+    } catch (e) {}
+}
+
+// --- Test Links ---
+function openTestLink(game) {
+    window.open('https://g4retreatapp.org/?test=' + game, '_blank');
+}
+
+// --- AI Would You Rather Suggestions ---
+const AI_WYR_SUGGESTIONS = [
+    // Fun & silly
+    { a: "Only speak in song lyrics for 24 hours", b: "Only communicate through interpretive dance for 24 hours" },
+    { a: "Have a personal chef for a year", b: "Have a personal stylist for a year" },
+    { a: "Be able to eat unlimited desserts with no calories", b: "Be able to sleep 4 hours and feel fully rested" },
+    { a: "Always have the perfect outfit", b: "Always have the perfect comeback" },
+    { a: "Live at the beach year-round", b: "Live in the mountains year-round" },
+    { a: "Coffee all day every day", b: "Naps whenever you want" },
+    { a: "Have a theme song that plays when you enter a room", b: "Have a personal hype woman who introduces you everywhere" },
+    { a: "Be early to everything for the rest of your life", b: "Never have to wait in line again" },
+    { a: "Only wear heels for a month", b: "Only wear flip-flops for a month" },
+    { a: "Have a closet that never runs out of new clothes", b: "Have a kitchen that never runs out of home-cooked meals" },
+    // Faith-centered
+    { a: "Speak on stage in front of 1,000 women", b: "Lead worship for 1,000 women" },
+    { a: "Have the gift of prophecy", b: "Have the gift of healing" },
+    { a: "Read the entire Bible in one month", b: "Memorize one book of the Bible word for word" },
+    { a: "Spend a year on the mission field overseas", b: "Plant a church in your hometown" },
+    { a: "Pray with a stranger every day for a year", b: "Write a handwritten letter of encouragement every day for a year" },
+    { a: "Have dinner with Mary (mother of Jesus)", b: "Have dinner with Esther" },
+    { a: "Lead a women's Bible study", b: "Mentor one woman one-on-one for a year" },
+    { a: "Always know the perfect Scripture for every situation", b: "Always know exactly what someone needs to hear" },
+    // Retreat-themed
+    { a: "Room with ocean view but tiny", b: "Huge room but no window" },
+    { a: "Share a room with someone who snores", b: "Share a room with someone who talks in their sleep" },
+    { a: "Be the first one up every morning at retreat", b: "Be the last one still up every night" },
+    { a: "Only eat boardwalk fries the whole retreat", b: "Only eat funnel cake the whole retreat" },
+    { a: "Karaoke night in front of everyone", b: "Talent show solo dance in front of everyone" },
+    { a: "Get lost in Ocean City with no phone", b: "Get stuck in an elevator with 5 strangers" },
+];
+
+let _aiPicks = [];
+
+function fillWithAI() {
+    const container = document.getElementById('ai-wyr-suggestions');
+    const shuffled = [...AI_WYR_SUGGESTIONS].sort(() => Math.random() - 0.5);
+    _aiPicks = shuffled.slice(0, 8);
+
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div style="font-size:0.85rem;font-weight:600;color:var(--taupe);margin-bottom:0.5rem;">✨ AI Suggestions — tap to add:</div>
+        ${_aiPicks.map((q, i) => `
+            <div id="ai-sug-${i}" style="padding:0.6rem 0.75rem;background:rgba(201,144,138,0.06);border:1.5px solid rgba(201,144,138,0.15);border-radius:10px;margin-bottom:0.4rem;cursor:pointer;transition:all 0.2s;" onclick="addAISuggestion(${i})">
+                <span style="color:var(--accent);font-weight:600;font-size:0.88rem;">${esc(q.a)}</span>
+                <span style="color:var(--light-text);font-size:0.85rem;"> vs </span>
+                <span style="color:var(--sage);font-weight:600;font-size:0.88rem;">${esc(q.b)}</span>
+            </div>
+        `).join('')}
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+            <button class="btn btn-refresh" onclick="fillWithAI()" style="font-size:0.8rem;">🔄 More Suggestions</button>
+            <button class="btn" style="font-size:0.8rem;background:transparent;color:var(--light-text);border:1px solid var(--warm-grey);" onclick="document.getElementById('ai-wyr-suggestions').style.display='none'">Close</button>
+        </div>
+    `;
+}
+
+async function addAISuggestion(idx) {
+    const el = document.getElementById('ai-sug-' + idx);
+    const q = _aiPicks[idx];
+    if (!el || !q) return;
+    el.style.opacity = '0.5';
+    el.style.pointerEvents = 'none';
+    try {
+        await apiFetch('/api/games/wyr/questions', { method: 'POST', body: { option_a: q.a, option_b: q.b } });
+        el.innerHTML = '<span style="color:var(--sage);font-size:0.85rem;">✅ Added!</span>';
+        loadWYRQuestions();
+    } catch (e) {
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
+        showToast('Error: ' + e.message);
+    }
+}
+
+// --- Would You Rather ---
+async function createWYR() {
+    const a = document.getElementById('wyr-option-a').value.trim();
+    const b = document.getElementById('wyr-option-b').value.trim();
+    if (!a || !b) { showToast('Enter both options'); return; }
+    try {
+        await apiFetch('/api/games/wyr/questions', { method: 'POST', body: { option_a: a, option_b: b } });
+        document.getElementById('wyr-option-a').value = '';
+        document.getElementById('wyr-option-b').value = '';
+        showToast('Question added!');
+        loadWYRQuestions();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function loadWYRQuestions() {
+    try {
+        const data = await apiFetch('/api/games/wyr/questions');
+        const questions = Array.isArray(data) ? data : [];
+        const list = document.getElementById('wyr-questions-list');
+        if (!questions.length) {
+            list.innerHTML = '<div style="color:var(--light-text);font-size:0.9rem;">No questions yet. Add one above.</div>';
+            return;
+        }
+
+        // Get vote counts for active question
+        let activeData = null;
+        const activeQ = questions.find(q => q.active);
+        if (activeQ) {
+            try { activeData = await apiFetch('/api/games/wyr/active'); } catch(e) {}
+        }
+
+        list.innerHTML = questions.map(q => {
+            const isActive = q.active ? true : false;
+            const showResults = isActive && activeData && activeData.active;
+            return `
+            <div style="padding:0.75rem;background:${isActive ? 'rgba(138,158,122,0.1)' : 'rgba(247,240,235,0.5)'};border-radius:10px;margin-bottom:0.5rem;border:${isActive ? '2px solid var(--sage)' : '1px solid transparent'};">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.4rem;">
+                    <div style="font-size:0.95rem;font-weight:600;flex:1;">
+                        <span style="color:var(--accent);">${esc(q.option_a)}</span>
+                        <span style="color:var(--light-text);"> vs </span>
+                        <span style="color:var(--sage);">${esc(q.option_b)}</span>
+                    </div>
+                    <div style="display:flex;gap:0.3rem;flex-shrink:0;">
+                        ${isActive
+                            ? `<button class="btn btn-danger-outline" onclick="activateWYR(null)" style="font-size:0.75rem;padding:0.2rem 0.5rem;">Deactivate</button>`
+                            : `<button class="btn btn-refresh" onclick="activateWYR(${q.id})" style="font-size:0.75rem;padding:0.2rem 0.5rem;">Activate</button>`
+                        }
+                        <button class="btn btn-danger-outline" onclick="deleteWYR(${q.id})" style="font-size:0.75rem;padding:0.2rem 0.5rem;">Delete</button>
+                    </div>
+                </div>
+                ${isActive ? '<div style="font-size:0.78rem;color:var(--sage);font-weight:600;margin-bottom:0.3rem;">🟢 LIVE NOW</div>' : ''}
+                ${showResults ? `
+                    <div style="display:flex;gap:0.5rem;font-size:0.85rem;margin-top:0.3rem;">
+                        <div style="flex:1;text-align:center;"><strong style="color:var(--accent);">${activeData.pct_a}%</strong> ${esc(q.option_a)}</div>
+                        <div style="flex:1;text-align:center;"><strong style="color:var(--sage);">${activeData.pct_b}%</strong> ${esc(q.option_b)}</div>
+                    </div>
+                    <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;background:rgba(138,158,122,0.12);margin-top:4px;">
+                        <div style="width:${activeData.pct_a}%;background:var(--accent);"></div>
+                        <div style="width:${activeData.pct_b}%;background:var(--sage);"></div>
+                    </div>
+                    <div style="font-size:0.78rem;color:var(--light-text);margin-top:4px;">${activeData.total} votes</div>
+                ` : ''}
+            </div>`;
+        }).join('');
+    } catch (e) { console.error('WYR:', e); }
+}
+
+async function activateWYR(questionId) {
+    try {
+        await apiFetch('/api/games/wyr/activate', { method: 'POST', body: { question_id: questionId } });
+        showToast(questionId ? 'Question is LIVE!' : 'Question deactivated');
+        loadWYRQuestions();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function deleteWYR(id) {
+    showModal('Delete Question', 'Delete this question and all its votes?', async () => {
+        try {
+            await apiFetch(`/api/games/wyr/questions/${id}`, { method: 'DELETE' });
+            showToast('Question deleted');
+            loadWYRQuestions();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+// --- Secret Sister ---
+async function assignSecretSisters() {
+    showModal('Assign Secret Sisters', 'This will randomly pair all current users. Any existing assignments will be replaced. Continue?', async () => {
+        try {
+            const res = await apiFetch('/api/games/secretsister/assign', { method: 'POST', body: {} });
+            showToast(`Assigned ${res.pairs} pairs!`);
+            loadSecretSisters();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+async function loadSecretSisters() {
+    try {
+        const data = await apiFetch('/api/games/secretsister/all');
+        const pairs = Array.isArray(data) ? data : [];
+        const notesWritten = pairs.filter(p => p.note && p.note.trim()).length;
+        document.getElementById('ss-count').textContent = pairs.length;
+        document.getElementById('ss-notes-count').textContent = notesWritten;
+        const list = document.getElementById('ss-pairs-list');
+        if (!pairs.length) {
+            list.innerHTML = '<div style="color:var(--light-text);font-size:0.9rem;">No assignments yet. Click "Assign Sisters" to pair everyone up.</div>';
+            return;
+        }
+        list.innerHTML = pairs.map(p => `
+            <div style="padding:0.6rem 0.8rem;background:rgba(247,240,235,0.5);border-radius:10px;margin-bottom:0.5rem;display:flex;align-items:flex-start;gap:0.5rem;">
+                <div style="flex:1;">
+                    <div style="font-size:0.9rem;"><strong>${esc(p.giver_name)}</strong> → <strong style="color:var(--accent);">${esc(p.receiver_name)}</strong></div>
+                    ${p.note ? `<div style="font-size:0.85rem;color:var(--taupe);font-style:italic;margin-top:4px;line-height:1.4;">"${esc(p.note)}"</div>` : `<div style="font-size:0.8rem;color:var(--light-text);margin-top:2px;">No note yet</div>`}
+                </div>
+                ${p.note ? '<div style="font-size:0.8rem;color:var(--sage);">✓</div>' : ''}
+            </div>
+        `).join('');
+    } catch (e) { console.error('Secret sisters:', e); }
+}
+
+function clearSecretSisters() {
+    showModal('Clear Secret Sisters', 'Delete all assignments and notes? This cannot be undone.', async () => {
+        try {
+            await apiFetch('/api/games/secretsister/all', { method: 'DELETE' });
+            showToast('All assignments cleared');
+            loadSecretSisters();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+// --- Reset All ---
+function confirmResetAll() {
+    showModal(
+        'Delete All Test Data',
+        'This will permanently delete ALL data (users, videos, moments, messages, feedback, game submissions). This cannot be undone.',
+        async () => {
+            try {
+                await apiFetch('/api/admin/reset', { method: 'DELETE' });
+                showToast('All data deleted');
+                refreshAll();
+            } catch (e) { showToast('Error: ' + e.message); }
+        }
+    );
+}
+</script>
+</body>
+</html>

@@ -73,7 +73,7 @@
             overflow-x: hidden;
             max-width: 100vw;
             position: relative;
-            z-index: 2;
+            z-index: 1;
         }
 
         .content-area {
@@ -266,84 +266,49 @@
 
         /* Countdown timer */
         .countdown-container {
-            padding: 20px;
-            margin: 12px 16px;
+            padding: 6px 20px 0;
             text-align: center;
-            background: linear-gradient(135deg, #4a3728 0%, #5d4a3c 50%, #4a3728 100%);
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(74, 55, 40, 0.2);
         }
 
         .countdown-label {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.7);
-            margin-bottom: 12px;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+            display: none;
         }
 
         .countdown-timer {
             display: flex;
             justify-content: center;
-            gap: 12px;
+            gap: 6px;
+            align-items: baseline;
         }
 
         .countdown-unit {
             display: flex;
             flex-direction: column;
             align-items: center;
-            background: rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 10px 6px;
-            min-width: 56px;
+            padding: 0;
+            min-width: auto;
         }
 
         .countdown-value {
             font-family: 'Playfair Display', serif;
-            font-size: 2rem;
+            font-size: 1.3rem;
             font-weight: 700;
-            color: #e8c4bc;
+            color: var(--accent);
             line-height: 1;
         }
 
         .countdown-name {
-            font-size: 0.6rem;
-            color: rgba(255,255,255,0.5);
+            font-size: 0.55rem;
+            color: var(--light-text);
             text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-top: 4px;
+            letter-spacing: 0.08em;
+            margin-top: 2px;
         }
 
         .countdown-separator {
-            font-size: 1.6rem;
-            color: rgba(255,255,255,0.3);
-            align-self: center;
-            margin-top: -4px;
-        }
-
-        /* Rotating scripture */
-        .scripture-banner {
-            padding: 12px 24px;
-            text-align: center;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 0.9rem;
-            color: var(--taupe);
-            font-style: italic;
-            line-height: 1.5;
-            opacity: 0;
-            transition: opacity 0.8s ease;
-        }
-
-        .scripture-banner.visible {
-            opacity: 1;
-        }
-
-        .scripture-ref {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--accent);
-            font-style: normal;
+            font-size: 1rem;
+            color: var(--warm-grey);
+            align-self: flex-start;
             margin-top: 2px;
         }
 
@@ -1044,10 +1009,10 @@
             padding: 20px 20px 16px;
             text-align: center;
             border-bottom: 1px solid rgba(139, 134, 128, 0.1);
-            background: linear-gradient(180deg, rgba(240,224,216,0.9) 0%, rgba(247,240,235,0.85) 100%);
+            background: linear-gradient(180deg, rgba(240,224,216,0.85) 0%, rgba(247,240,235,0.8) 100%);
         }
 
-        /* Floral overlay - uses floral-overlay.png */
+        /* Floral overlay - background behind content cards */
         .floral-overlay {
             position: fixed;
             top: 0;
@@ -1059,8 +1024,8 @@
             background-position: center;
             background-repeat: no-repeat;
             pointer-events: none;
-            z-index: 1;
-            opacity: 0.25;
+            z-index: 0;
+            opacity: 0.35;
         }
 
         .retreat-label {
@@ -1946,14 +1911,13 @@
             <p class="retreat-label">G4 2026 Women's Retreat</p>
             <h1 class="title-serif">Incredible Gifts</h1>
             <p class="tagline">Receive it. Open it. Share it.</p>
+            <div id="countdown-container" class="countdown-container" style="display:none;">
+                <div class="countdown-label">The retreat begins in</div>
+                <div class="countdown-timer" id="countdown-timer"></div>
+            </div>
         </div>
 
         <div id="welcome-banner" class="welcome-banner" style="display:none;"></div>
-        <div id="countdown-container" class="countdown-container" style="display:none;">
-            <div class="countdown-label">The retreat begins in</div>
-            <div class="countdown-timer" id="countdown-timer"></div>
-        </div>
-        <div id="scripture-banner" class="scripture-banner"></div>
 
         <div class="content-area">
             <!-- HOME TAB -->
@@ -2025,12 +1989,20 @@
                         <span id="status-text">Happening Now</span>
                     </div>
 
-                    <!-- Preparing for the Retreat (shows before retreat only) -->
-                    <div id="prep-section" style="display:none;margin:12px 16px 8px;padding:18px 20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);">
-                        <div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);text-align:center;margin-bottom:4px;">Preparing for the Retreat</div>
+                    <div id="prayer-countdown-spot"></div>
+
+                    <!-- Get Ready card: prep details + worship playlist combined -->
+                    <div id="prep-section" style="display:none;margin:8px 16px 10px;padding:18px 20px 14px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:16px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);">
+                        <div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);text-align:center;margin-bottom:4px;">Get Ready</div>
                         <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);text-align:center;font-style:italic;margin-bottom:14px;">April 9–11 · Hyatt Place Ocean City Oceanfront</div>
 
+                        <!-- Spotify playlist inline -->
+                        <div id="playlist-section" style="margin-bottom:12px;">
+                            <iframe style="border-radius:10px;" src="https://open.spotify.com/embed/playlist/5fALXWcfFkJphiINaVB3jh?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                        </div>
+
                         <div id="prep-details" style="display:none;">
+                            <div style="width:40px;height:1px;background:var(--warm-grey);margin:0 auto 14px;opacity:0.4;"></div>
                             <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Location</div>
                             <div style="font-size:0.88rem;color:var(--taupe);line-height:1.6;margin-bottom:14px;">
                                 Check-in is in front of the conference room in the <strong>ocean-side building</strong>. You'll receive your room key there. We're staying in the <strong>new building across the road</strong>, but all gatherings are in the ocean-side building.
@@ -2054,21 +2026,10 @@
                             <div style="text-align:center;padding:12px 0 4px;font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--accent);font-style:italic;">"Every good and perfect gift is from above." — James 1:17</div>
                         </div>
 
-                        <button id="prep-toggle" style="width:100%;padding:10px;border:none;background:none;font-size:0.85rem;color:var(--accent);cursor:pointer;font-weight:600;transition:var(--transition);">See details ▾</button>
+                        <button id="prep-toggle" style="width:100%;padding:8px;border:none;background:none;font-size:0.82rem;color:var(--accent);cursor:pointer;font-weight:600;transition:var(--transition);">Location, packing list & more ▾</button>
                     </div>
-
-                    <!-- Worship Playlist (shows before retreat) -->
-                    <div id="playlist-section" style="display:none;margin:4px 16px 12px;">
-                        <div style="text-align:center;margin-bottom:8px;">
-                            <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:600;color:var(--dark-text);">Start Worshipping Now</div>
-                            <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);font-style:italic;">Get your heart ready for the weekend</div>
-                        </div>
-                        <iframe style="border-radius:12px;" src="https://open.spotify.com/embed/playlist/5fALXWcfFkJphiINaVB3jh?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-                    </div>
-
-                    <div id="prayer-countdown-spot"></div>
                     <div id="schedule-wrapper">
-                        <div id="schedule-toggle" style="display:none;margin:12px 16px;padding:14px 20px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);text-align:center;cursor:pointer;transition:var(--transition);">
+                        <div id="schedule-toggle" style="display:none;margin:8px 16px;padding:14px 20px;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);text-align:center;cursor:pointer;transition:var(--transition);">
                             <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:600;color:var(--dark-text);">View Full Schedule</div>
                             <div style="font-size:0.8rem;color:var(--light-text);margin-top:2px;">3 days · 3 sessions · 1 amazing party night</div>
                         </div>
@@ -3401,36 +3362,17 @@
             if (!todayPrayer) return;
 
             const container = document.getElementById('prayer-countdown-spot');
-            const prayerSection = document.createElement('div');
-            prayerSection.style.cssText = 'margin: 12px 16px; padding: 20px; background: linear-gradient(135deg, rgba(201,144,138,0.12) 0%, rgba(138,158,122,0.10) 100%); border-radius: 16px; border: 1px solid rgba(201,144,138,0.2); text-align: center;';
-
-            const daysLabel = document.createElement('div');
-            daysLabel.style.cssText = 'font-family: Playfair Display, serif; font-size: 2rem; font-weight: 700; color: var(--blush); margin-bottom: 4px;';
-            daysLabel.textContent = daysUntil;
-
-            const daysText = document.createElement('div');
-            daysText.style.cssText = 'font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--light-text); margin-bottom: 12px;';
-            daysText.textContent = daysUntil === 1 ? 'Day Until Retreat' : 'Days Until Retreat';
-
-            const focusLabel = document.createElement('div');
-            focusLabel.style.cssText = 'font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-weight: 600; margin-bottom: 6px;';
-            focusLabel.textContent = '\ud83d\ude4f Today\u2019s Prayer Focus: ' + todayPrayer.focus;
-
-            const prayerText = document.createElement('div');
-            prayerText.style.cssText = 'font-family: Cormorant Garamond, serif; font-size: 1rem; color: var(--taupe); line-height: 1.6; font-style: italic; margin-bottom: 10px; padding: 0 8px;';
-            prayerText.textContent = todayPrayer.prayer;
-
-            const verseRef = document.createElement('div');
-            verseRef.style.cssText = 'font-size: 0.8rem; color: var(--accent); font-weight: 500;';
-            verseRef.textContent = '\u2014 ' + todayPrayer.verse;
-
-            prayerSection.appendChild(daysLabel);
-            prayerSection.appendChild(daysText);
-            prayerSection.appendChild(focusLabel);
-            prayerSection.appendChild(prayerText);
-            prayerSection.appendChild(verseRef);
-
-            container.appendChild(prayerSection);
+            container.innerHTML = `
+                <div style="margin:14px 16px 8px;padding:24px 20px 20px;background:rgba(255,255,255,0.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:18px;border:1px solid rgba(201,144,138,0.18);box-shadow:0 4px 20px rgba(74,55,40,0.08);text-align:center;">
+                    <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:var(--accent);font-weight:600;margin-bottom:10px;">Today\u2019s Prayer Focus</div>
+                    <div style="display:inline-block;width:52px;height:52px;line-height:52px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));color:white;font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;margin-bottom:4px;box-shadow:0 3px 12px rgba(201,144,138,0.3);">${daysUntil}</div>
+                    <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--light-text);margin-bottom:14px;">${daysUntil === 1 ? 'Day Until Retreat' : 'Days Until Retreat'}</div>
+                    <div style="width:40px;height:1px;background:var(--warm-grey);margin:0 auto 14px;opacity:0.5;"></div>
+                    <div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);margin-bottom:10px;">${todayPrayer.focus}</div>
+                    <div style="font-family:Cormorant Garamond,serif;font-size:1.02rem;color:var(--taupe);line-height:1.7;font-style:italic;padding:0 6px;margin-bottom:14px;">\u201C${todayPrayer.prayer}\u201D</div>
+                    <div style="font-size:0.82rem;color:var(--accent);font-weight:500;font-family:Cormorant Garamond,serif;">\u2014 ${todayPrayer.verse}</div>
+                </div>
+            `;
         }
 
         // ===== Audio Note & AI Summary =====
@@ -3968,8 +3910,7 @@
         loadMoments();
         loadNotAloneInsights();
         createSparkles();
-        showScripture();
-        setInterval(showScripture, 30000);
+        // Scripture rotation removed — daily prayer verse is sufficient
         updateCountdown();
         setInterval(updateCountdown, 1000);
         animateCards(document.getElementById('home-tab'));
@@ -4153,16 +4094,15 @@
             const retreatStart = new Date('2026-04-09T19:00:00-04:00');
             if (now < retreatStart) {
                 document.getElementById('prep-section').style.display = 'block';
-                document.getElementById('playlist-section').style.display = 'block';
                 const toggle = document.getElementById('prep-toggle');
                 const details = document.getElementById('prep-details');
                 toggle.addEventListener('click', () => {
                     if (details.style.display === 'none') {
                         details.style.display = 'block';
-                        toggle.textContent = 'Hide details ▴';
+                        toggle.textContent = 'Hide details \u25b4';
                     } else {
                         details.style.display = 'none';
-                        toggle.textContent = 'See details ▾';
+                        toggle.textContent = 'Location, packing list & more \u25be';
                     }
                 });
             }

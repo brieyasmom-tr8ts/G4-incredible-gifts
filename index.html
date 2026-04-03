@@ -5668,6 +5668,15 @@
         async function checkGames() {
             if (!currentUser) return;
             const testMode = new URLSearchParams(window.location.search).get('testgames') === '1';
+
+            // In test mode, clear all game flags so popups always show
+            if (testMode) {
+                localStorage.removeItem('g4funfact_' + currentUser.id);
+                localStorage.removeItem('g4packing_' + currentUser.id);
+                sessionStorage.removeItem('g4funfact_skip');
+                sessionStorage.removeItem('g4packing_skip');
+            }
+
             try {
                 gameSettings = testMode ? { who_am_i: '1', packing_points: '1', show_packing_names: '1' } : await apiGet('/api/games/settings');
                 if (!gameSettings || typeof gameSettings !== 'object') { gameSettings = {}; return; }

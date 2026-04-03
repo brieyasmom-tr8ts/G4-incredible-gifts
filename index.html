@@ -860,6 +860,121 @@
             font-style: italic;
         }
 
+        /* Info Page */
+        .info-page {
+            padding: 20px 16px;
+        }
+
+        .info-hero {
+            text-align: center;
+            padding: 24px 16px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, rgba(212, 165, 154, 0.12) 0%, rgba(138, 158, 122, 0.08) 100%);
+            border-radius: 12px;
+        }
+
+        .info-hero h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--dark-text);
+            margin-bottom: 6px;
+        }
+
+        .info-hero .info-dates {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: 10px;
+        }
+
+        .info-hero p {
+            font-size: 0.9rem;
+            color: var(--taupe);
+            line-height: 1.6;
+            font-style: italic;
+        }
+
+        .info-section {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .info-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .info-item {
+            display: flex;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(139, 134, 128, 0.06);
+            font-size: 0.9rem;
+            color: var(--dark-text);
+            line-height: 1.5;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-icon {
+            flex-shrink: 0;
+            width: 20px;
+            text-align: center;
+        }
+
+        .info-verse {
+            text-align: center;
+            padding: 20px 16px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            color: var(--taupe);
+            font-style: italic;
+            line-height: 1.6;
+        }
+
+        .info-verse cite {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.85rem;
+            font-style: normal;
+            color: var(--accent);
+        }
+
+        .info-tagline {
+            text-align: center;
+            padding: 16px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: var(--accent);
+            font-weight: 500;
+            letter-spacing: 0.08em;
+        }
+
+        .info-signoff {
+            text-align: center;
+            padding: 12px 16px 24px;
+            font-size: 0.85rem;
+            color: var(--light-text);
+            line-height: 1.6;
+        }
+
+        .info-signoff strong {
+            display: block;
+            color: var(--accent);
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
         @media (max-width: 360px) {
             .card {
                 margin: 8px 12px;
@@ -938,6 +1053,105 @@
                 </div>
             </div>
 
+            <!-- INFO TAB -->
+            <div id="info-tab" class="tab-content">
+                <div class="info-page">
+                    <div class="info-hero">
+                        <h2>Incredible Gifts</h2>
+                        <div class="info-dates">April 9–11, 2026</div>
+                        <p>We are so expectant for what God is going to do. Whether you are coming ready, weary, hopeful, or just needing a break… this weekend is for you.</p>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-section-title">Schedule</div>
+                        <div class="info-item">
+                            <span class="info-icon">🏨</span>
+                            <span>Hotel check-in anytime <strong>Thursday April 9th after 3:00 PM</strong></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">🚪</span>
+                            <span>Retreat doors open <strong>Thursday at 7:00 PM</strong></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">👋</span>
+                            <span>We wrap up <strong>Saturday April 11th at 12:00 PM</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-section-title">Location Details</div>
+                        <div class="info-item">
+                            <span class="info-icon">📍</span>
+                            <span>Check-in is in front of the conference room in the <strong>ocean-side building</strong> (the one we've always used)</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">🔑</span>
+                            <span>You will receive your room key at check-in</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">🏢</span>
+                            <span>We are staying in the <strong>new building across the road</strong>, but all gatherings and check-in are in the ocean-side building</span>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-section-title">What to Bring</div>
+                        <div class="info-item">
+                            <span class="info-icon">📖</span>
+                            <span>Bible or Bible app</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">👗</span>
+                            <span>Comfortable clothes for sessions</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">🏊</span>
+                            <span>Swimsuit if you plan to use the pool</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">🧥</span>
+                            <span>Light jacket or sweater (meeting rooms can get chilly)</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">💛</span>
+                            <span>An open heart</span>
+                        </div>
+                    </div>
+
+                    <div class="info-section">
+                        <div class="info-section-title">What to Expect</div>
+                        <div class="info-item">
+                            <span class="info-icon">🎤</span>
+                            <span>Incredible speakers ready to pour into you</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">🎶</span>
+                            <span>Worship that will draw you in</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">🌊</span>
+                            <span>Pool, relaxation, and intentional free time to connect, laugh, and breathe</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-icon">✨</span>
+                            <span>Space for both fun and deep moments with God</span>
+                        </div>
+                    </div>
+
+                    <div class="info-verse">
+                        "Every good and perfect gift is from above."
+                        <cite>James 1:17</cite>
+                    </div>
+
+                    <div class="info-tagline">Gather. Grow. Give. Go.</div>
+
+                    <div class="info-signoff">
+                        <strong>Shine Brightly,</strong>
+                        Your G4 Planning Team
+                    </div>
+                </div>
+            </div>
+
             <!-- CONTINUE TAB -->
             <div id="continue-tab" class="tab-content">
                 <div id="continue-container"></div>
@@ -949,21 +1163,21 @@
                 <span class="nav-icon">📅</span>
                 <span>Home</span>
             </button>
-            <button class="nav-btn" data-tab="journey">
-                <span class="nav-icon">🎁</span>
-                <span>Journey</span>
+            <button class="nav-btn" data-tab="info">
+                <span class="nav-icon">📋</span>
+                <span>Info</span>
             </button>
             <button class="nav-btn" data-tab="prayer">
                 <span class="nav-icon">🙏</span>
                 <span>Prayers</span>
             </button>
+            <button class="nav-btn" data-tab="journey">
+                <span class="nav-icon">🎁</span>
+                <span>Journey</span>
+            </button>
             <button class="nav-btn" data-tab="journal">
                 <span class="nav-icon">✨</span>
                 <span>Journal</span>
-            </button>
-            <button class="nav-btn" data-tab="continue">
-                <span class="nav-icon">🌱</span>
-                <span>Continue</span>
             </button>
         </div>
     </div>
@@ -1249,16 +1463,16 @@
 
         const scheduleData = [
             {
-                day: 'Thursday',
+                day: 'Thursday, April 9',
                 date: 'Day 1',
                 sessions: [
-                    { time: '4:00 PM', title: 'Check-in & Relax', movement: '', listenFor: '', reflection: '' },
+                    { time: '3:00 PM', title: 'Hotel Check-in Opens', movement: '', listenFor: '', reflection: '' },
                     { time: '7:00 PM', title: 'Doors Open', movement: '', listenFor: '', reflection: '' },
                     { time: '7:15 PM – 10:00 PM', title: 'Session 1: Receive the Gift', movement: 'Receive the Gift', listenFor: 'What has God already given that you haven\'t fully received?', reflection: 'What gift have I been resisting or minimizing?' }
                 ]
             },
             {
-                day: 'Friday',
+                day: 'Friday, April 10',
                 date: 'Day 2',
                 sessions: [
                     { time: '9:00 AM – 12:00 PM', title: 'Session 2: Open the Gift', movement: 'Open the Gift', listenFor: 'What am I holding that I haven\'t opened?', reflection: 'What would it look like to walk in this?' },
@@ -1267,7 +1481,7 @@
                 ]
             },
             {
-                day: 'Saturday',
+                day: 'Saturday, April 11',
                 date: 'Day 3',
                 sessions: [
                     { time: '7:00 AM – 9:00 AM', title: 'Breakfast & Checkout', movement: '', listenFor: '', reflection: '' },

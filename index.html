@@ -2986,9 +2986,10 @@
         async function loadUserPhoto() {
             if (!currentUser) return;
             try {
-                const data = await apiGet('/api/users/' + currentUser.id + '/photo');
-                if (data && data.photo_data) {
-                    currentUser.photo_data = data.photo_data;
+                const data = await apiGet('/api/users/' + currentUser.id + '?owner=1');
+                if (data && !data.error) {
+                    const fields = ['photo_data', 'email', 'phone', 'birthday', 'show_email', 'show_phone', 'show_birthday', 'instagram', 'facebook', 'location', 'job', 'retreat_years', 'about'];
+                    fields.forEach(f => { if (data[f] !== undefined) currentUser[f] = data[f]; });
                     localStorage.setItem('g4user', JSON.stringify(currentUser));
                     showWelcome();
                 }
@@ -3014,9 +3015,15 @@
                     socialHTML += `<a href="https://facebook.com/${user.facebook}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#1877F2;color:white;border-radius:20px;text-decoration:none;font-size:0.8rem;font-weight:600;">👤 ${user.facebook}</a>`;
                 }
 
+                let aboutHTML = '';
+                if (user.location) aboutHTML += `<div style="font-size:0.85rem;color:var(--taupe);">📍 ${user.location}</div>`;
+                if (user.job) aboutHTML += `<div style="font-size:0.85rem;color:var(--taupe);">💼 ${user.job}</div>`;
+                if (user.retreat_years) aboutHTML += `<div style="font-size:0.85rem;color:var(--taupe);">🎉 ${user.retreat_years === 'This is my first!' ? 'First retreat!' : user.retreat_years + ' retreats'}</div>`;
+                if (user.about) aboutHTML += `<div style="font-size:0.85rem;color:var(--taupe);font-style:italic;margin-top:4px;line-height:1.4;">"${user.about}"</div>`;
+
                 let detailsHTML = '';
-                if (user.email) detailsHTML += `<div style="font-size:0.85rem;color:var(--taupe);">📧 ${user.email}</div>`;
-                if (user.phone) detailsHTML += `<div style="font-size:0.85rem;color:var(--taupe);">📱 ${user.phone}</div>`;
+                if (user.email) detailsHTML += `<div style="font-size:0.85rem;color:var(--taupe);"><a href="mailto:${user.email}" style="color:var(--accent);text-decoration:none;">📧 ${user.email}</a></div>`;
+                if (user.phone) detailsHTML += `<div style="font-size:0.85rem;color:var(--taupe);"><a href="tel:${user.phone}" style="color:var(--accent);text-decoration:none;">📱 ${user.phone}</a></div>`;
                 if (user.birthday) {
                     const bday = new Date(user.birthday + 'T00:00:00');
                     detailsHTML += `<div style="font-size:0.85rem;color:var(--taupe);">🎂 ${bday.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>`;
@@ -3029,9 +3036,10 @@
                         ${user.photo_data ? `<img src="${user.photo_data}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="color:white;font-size:1.4rem;font-family:Playfair Display,serif;font-weight:700;">${user.first_name.charAt(0)}</span>`}
                     </div>
                     <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;color:var(--dark-text);margin-bottom:8px;">${displayName}</div>
+                    ${aboutHTML ? `<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">${aboutHTML}</div>` : ''}
                     ${detailsHTML ? `<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">${detailsHTML}</div>` : ''}
                     ${socialHTML ? `<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:8px;">${socialHTML}</div>` : ''}
-                    ${!socialHTML && !detailsHTML ? `<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;margin-bottom:8px;">No profile details shared yet</div>` : ''}
+                    ${!socialHTML && !detailsHTML && !aboutHTML ? `<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;margin-bottom:8px;">No profile details shared yet</div>` : ''}
                 `;
 
                 overlay.appendChild(card);
@@ -3081,9 +3089,15 @@
                     if (u.instagram) socialIcons += '<span style="font-size:0.7rem;">📸</span> ';
                     if (u.facebook) socialIcons += '<span style="font-size:0.7rem;">👤</span>';
 
+                    let subtextParts = [];
+                    if (u.location) subtextParts.push(u.location);
+                    else if (u.job) subtextParts.push(u.job);
+                    const subtext = subtextParts[0] || '';
+
                     card.innerHTML = `
                         <div style="display:flex;justify-content:center;margin-bottom:6px;">${avatarHTML}</div>
                         <div style="font-family:Playfair Display,serif;font-size:0.8rem;font-weight:600;color:var(--dark-text);line-height:1.2;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${displayName}</div>
+                        ${subtext ? `<div style="font-size:0.7rem;color:var(--light-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${subtext}</div>` : ''}
                         ${socialIcons ? `<div style="margin-top:2px;">${socialIcons}</div>` : ''}
                     `;
                     grid.appendChild(card);
@@ -3145,7 +3159,38 @@
                     </div>
                 </div>
 
-                <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;margin-top:4px;">Connect</div>
+                <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;margin-top:4px;">About You</div>
+
+                <div class="profile-field">
+                    <label>City & State</label>
+                    <input type="text" id="profile-location" placeholder="Ocean City, MD" value="${currentUser.location || ''}" style="font-size:16px;">
+                </div>
+
+                <div class="profile-field">
+                    <label>Job / What You Do</label>
+                    <input type="text" id="profile-job" placeholder="Teacher, nurse, mom of 3..." value="${currentUser.job || ''}" style="font-size:16px;">
+                </div>
+
+                <div class="profile-field">
+                    <label>How many G4 retreats have you attended?</label>
+                    <select id="profile-retreat-years" style="width:100%;padding:10px 14px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:white;-webkit-appearance:none;">
+                        <option value="">Select...</option>
+                        <option value="This is my first!" ${currentUser.retreat_years === 'This is my first!' ? 'selected' : ''}>This is my first!</option>
+                        <option value="2" ${currentUser.retreat_years === '2' ? 'selected' : ''}>2</option>
+                        <option value="3" ${currentUser.retreat_years === '3' ? 'selected' : ''}>3</option>
+                        <option value="4" ${currentUser.retreat_years === '4' ? 'selected' : ''}>4</option>
+                        <option value="5+" ${currentUser.retreat_years === '5+' ? 'selected' : ''}>5+</option>
+                    </select>
+                </div>
+
+                <div class="profile-field">
+                    <label>A little about me</label>
+                    <textarea id="profile-about" placeholder="Family, hobbies, fun facts — anything you'd like your sisters to know!" maxlength="300" style="width:100%;padding:10px 14px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:white;min-height:70px;resize:vertical;">${currentUser.about || ''}</textarea>
+                </div>
+
+                <div style="font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;margin-bottom:10px;">The fields above are always visible to your sisters</div>
+
+                <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;margin-top:4px;">Social</div>
 
                 <div class="profile-field" style="margin-bottom:10px;">
                     <div style="display:flex;align-items:center;gap:8px;">
@@ -3161,7 +3206,7 @@
                     </div>
                 </div>
 
-                <div style="font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;margin-bottom:14px;">Social links are always visible to other retreat-goers</div>
+                <div style="font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;margin-bottom:14px;">Social links are always visible to your sisters</div>
 
                 <button class="save-btn" id="profile-save-btn" style="width:100%;margin-top:8px;">Save Profile</button>
                 <button style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-size:0.85rem;cursor:pointer;margin-top:8px;" id="profile-close-btn">Close</button>
@@ -3215,6 +3260,10 @@
                     email: sheet.querySelector('#profile-email').value.trim(),
                     phone: sheet.querySelector('#profile-phone').value.trim(),
                     birthday: sheet.querySelector('#profile-birthday').value,
+                    location: sheet.querySelector('#profile-location').value.trim(),
+                    job: sheet.querySelector('#profile-job').value.trim(),
+                    retreat_years: sheet.querySelector('#profile-retreat-years').value,
+                    about: sheet.querySelector('#profile-about').value.trim(),
                     instagram: sheet.querySelector('#profile-instagram').value.trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/\/.*/, ''),
                     facebook: sheet.querySelector('#profile-facebook').value.trim().replace(/^https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/.*/, ''),
                     show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,

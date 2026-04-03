@@ -4941,17 +4941,28 @@
             if (now < retreatStart) {
                 scheduleContainer.style.display = 'none';
                 scheduleToggle.style.display = 'block';
+
+                // Add a "Hide Schedule" button at the bottom of the schedule
+                const collapseBtn = document.createElement('div');
+                collapseBtn.style.cssText = 'text-align:center;padding:12px;margin:4px 16px 12px;cursor:pointer;font-size:0.82rem;color:var(--accent);font-weight:600;';
+                collapseBtn.textContent = 'Hide Schedule \u25B4';
+                scheduleContainer.parentNode.insertBefore(collapseBtn, scheduleContainer.nextSibling);
+                collapseBtn.style.display = 'none';
+
                 scheduleToggle.addEventListener('click', () => {
-                    if (scheduleContainer.style.display === 'none') {
-                        scheduleContainer.style.display = 'block';
-                        animateCards(scheduleContainer);
-                        scheduleToggle.querySelector('div:first-child').textContent = 'Hide Schedule';
-                        scheduleToggle.querySelector('div:last-child').textContent = 'Tap to collapse';
-                    } else {
-                        scheduleContainer.style.display = 'none';
-                        scheduleToggle.querySelector('div:first-child').textContent = 'View Full Schedule';
-                        scheduleToggle.querySelector('div:last-child').textContent = '3 days · 3 sessions · 1 amazing party night';
-                    }
+                    scheduleContainer.style.display = 'block';
+                    scheduleToggle.style.display = 'none';
+                    collapseBtn.style.display = 'block';
+                    animateCards(scheduleContainer);
+                    // Scroll to the schedule
+                    scheduleContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+
+                collapseBtn.addEventListener('click', () => {
+                    scheduleContainer.style.display = 'none';
+                    collapseBtn.style.display = 'none';
+                    scheduleToggle.style.display = 'block';
+                    scheduleToggle.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 });
             }
         })();

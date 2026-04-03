@@ -609,7 +609,7 @@ if (getKey()) {
 
 // --- API Helpers ---
 async function apiFetch(path, options = {}) {
-    const headers = { 'X-Admin-Key': getKey(), ...(options.headers || {}) };
+    const headers = { ...(options.headers || {}) };
     if (options.body && typeof options.body === 'object') {
         headers['Content-Type'] = 'application/json';
         options.body = JSON.stringify(options.body);

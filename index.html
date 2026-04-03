@@ -3198,8 +3198,7 @@
         async function showUserCard(userId, fallbackName) {
             if (!userId) return;
             try {
-                const isMe = currentUser && currentUser.id === userId;
-                const user = await apiGet('/api/users/' + userId + (isMe ? '?owner=1' : ''));
+                const user = await apiGet('/api/users/' + userId);
                 if (!user || user.error) return;
 
                 const displayName = user.last_initial ? `${user.first_name} ${user.last_initial}.` : user.first_name;

@@ -25,6 +25,40 @@ export default {
     }
 
     try {
+      // ===== DB MIGRATION (one-time) =====
+      if (path === '/api/admin/migrate' && request.method === 'POST') {
+        const cols = [
+          ['last_name', 'TEXT DEFAULT ""'],
+          ['show_email', 'INTEGER DEFAULT 0'],
+          ['show_phone', 'INTEGER DEFAULT 0'],
+          ['show_birthday', 'INTEGER DEFAULT 0'],
+          ['show_about', 'INTEGER DEFAULT 0'],
+          ['instagram', 'TEXT DEFAULT ""'],
+          ['facebook', 'TEXT DEFAULT ""'],
+          ['location', 'TEXT DEFAULT ""'],
+          ['job', 'TEXT DEFAULT ""'],
+          ['church', 'TEXT DEFAULT ""'],
+          ['retreat_years', 'TEXT DEFAULT ""'],
+          ['about', 'TEXT DEFAULT ""'],
+        ];
+        const added = [];
+        for (const [col, type] of cols) {
+          try {
+            await env.DB.prepare(`ALTER TABLE users ADD COLUMN ${col} ${type}`).run();
+            added.push(col);
+          } catch(e) { /* already exists */ }
+        }
+        return json({ success: true, columns_added: added, message: added.length ? 'Added missing columns' : 'All columns already exist' }, corsHeaders);
+      }
+
+      // GET /api/admin/debug-user/:id — see raw DB values for a user
+      const debugUserMatch = path.match(/^\/api\/admin\/debug-user\/(\d+)$/);
+      if (debugUserMatch && request.method === 'GET') {
+        const userId = parseInt(debugUserMatch[1]);
+        const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
+        return json(user || { error: 'not found' }, corsHeaders);
+      }
+
       // ===== ATTENDEES =====
 
       // GET /api/attendees - list all attendee names (for tagging)

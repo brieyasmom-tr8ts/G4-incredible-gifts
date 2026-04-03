@@ -79,7 +79,7 @@ export default {
       // GET /api/users - list all users (admin)
       if (path === '/api/users' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, email, phone, birthday, created_at FROM users ORDER BY created_at DESC'
+          'SELECT id, first_name, last_initial, email, phone, birthday, instagram, facebook, created_at FROM users ORDER BY created_at DESC'
         ).all();
         return json(results, corsHeaders);
       }

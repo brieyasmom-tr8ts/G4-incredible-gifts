@@ -482,16 +482,18 @@
         <!-- Users -->
         <div class="section active" id="section-users">
             <div class="table-wrap">
-                <table>
+                <table id="users-table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>First Name</th>
-                            <th>Last Initial</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Birthday</th>
-                            <th>Created</th>
+                            <th data-sort="id" style="cursor:pointer;">ID <span class="sort-arrow"></span></th>
+                            <th data-sort="first_name" style="cursor:pointer;">First Name <span class="sort-arrow"></span></th>
+                            <th data-sort="last_initial" style="cursor:pointer;">Last Initial <span class="sort-arrow"></span></th>
+                            <th data-sort="email" style="cursor:pointer;">Email <span class="sort-arrow"></span></th>
+                            <th data-sort="phone" style="cursor:pointer;">Phone <span class="sort-arrow"></span></th>
+                            <th data-sort="birthday" style="cursor:pointer;">Birthday <span class="sort-arrow"></span></th>
+                            <th data-sort="instagram" style="cursor:pointer;">Instagram <span class="sort-arrow"></span></th>
+                            <th data-sort="facebook" style="cursor:pointer;">Facebook <span class="sort-arrow"></span></th>
+                            <th data-sort="created_at" style="cursor:pointer;">Created <span class="sort-arrow"></span></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -707,24 +709,61 @@ async function loadUsers() {
             return;
         }
         empty.style.display = 'none';
-        tbody.innerHTML = users.map(u => `
-            <tr>
-                <td>${esc(u.id)}</td>
-                <td>${esc(u.first_name)}</td>
-                <td>${esc(u.last_initial)}</td>
-                <td>${esc(u.email)}</td>
-                <td>${esc(u.phone)}</td>
-                <td>${fmtDate(u.birthday)}</td>
-                <td>${fmtDateTime(u.created_at)}</td>
-                <td><button class="btn btn-danger-outline" onclick="deleteUser(${u.id}, '${esc(u.first_name)}')">Delete</button></td>
-            </tr>
-        `).join('');
+        usersData = users;
+        renderUsersTable();
     } catch (e) {
         console.error('Users:', e);
         document.getElementById('users-body').innerHTML = '';
         document.getElementById('empty-users').style.display = '';
     }
 }
+
+let usersData = [];
+let usersSortCol = 'created_at';
+let usersSortAsc = false;
+
+function renderUsersTable() {
+    const sorted = [...usersData].sort((a, b) => {
+        let va = a[usersSortCol] || '';
+        let vb = b[usersSortCol] || '';
+        if (usersSortCol === 'id') { va = Number(va); vb = Number(vb); }
+        else { va = String(va).toLowerCase(); vb = String(vb).toLowerCase(); }
+        if (va < vb) return usersSortAsc ? -1 : 1;
+        if (va > vb) return usersSortAsc ? 1 : -1;
+        return 0;
+    });
+
+    // Update sort arrows
+    document.querySelectorAll('#users-table th .sort-arrow').forEach(el => el.textContent = '');
+    const activeHeader = document.querySelector(`#users-table th[data-sort="${usersSortCol}"] .sort-arrow`);
+    if (activeHeader) activeHeader.textContent = usersSortAsc ? ' ▲' : ' ▼';
+
+    const tbody = document.getElementById('users-body');
+    tbody.innerHTML = sorted.map(u => `
+        <tr>
+            <td>${esc(u.id)}</td>
+            <td>${esc(u.first_name)}</td>
+            <td>${esc(u.last_initial)}</td>
+            <td>${esc(u.email)}</td>
+            <td>${esc(u.phone)}</td>
+            <td>${fmtDate(u.birthday)}</td>
+            <td>${u.instagram ? `<a href="https://instagram.com/${esc(u.instagram)}" target="_blank">@${esc(u.instagram)}</a>` : ''}</td>
+            <td>${esc(u.facebook)}</td>
+            <td>${fmtDateTime(u.created_at)}</td>
+            <td><button class="btn btn-danger-outline" onclick="deleteUser(${u.id}, '${esc(u.first_name)}')">Delete</button></td>
+        </tr>
+    `).join('');
+}
+
+// Sort click handlers
+document.querySelectorAll('#users-table th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+        const col = th.dataset.sort;
+        if (usersSortCol === col) { usersSortAsc = !usersSortAsc; }
+        else { usersSortCol = col; usersSortAsc = true; }
+        renderUsersTable();
+    });
+});
 
 async function deleteUser(id, name) {
     showModal('Delete User', `Delete user "${name}" (ID ${id})? This cannot be undone.`, async () => {

@@ -34,7 +34,17 @@
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        html, body {
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            overflow-x: hidden;
+            overscroll-behavior: none;
+            position: fixed;
+            touch-action: pan-y;
+        }
+
+        body {
             width: 100%;
             height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Georgia, serif;
@@ -42,12 +52,14 @@
             color: var(--dark-text);
             overflow: hidden;
             overflow-x: hidden;
-            overscroll-behavior-x: none;
-        }
-
-        body {
+            overscroll-behavior: none;
             display: flex;
             flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
 
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Cormorant+Garamond:wght@400;500&display=swap');
@@ -1001,25 +1013,25 @@
         .header::after {
             content: '';
             position: absolute;
-            width: 90px;
-            height: 90px;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cdefs%3E%3CradialGradient id='r1' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23e8c4bc' stop-opacity='0.4'/%3E%3Cstop offset='100%25' stop-color='%23d4a59a' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='r2' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23f0ddd6' stop-opacity='0.35'/%3E%3Cstop offset='100%25' stop-color='%23e8c4bc' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cg opacity='0.6'%3E%3Cellipse cx='50' cy='38' rx='10' ry='16' fill='url(%23r2)' transform='rotate(-30 50 38)'/%3E%3Cellipse cx='50' cy='38' rx='10' ry='16' fill='url(%23r2)' transform='rotate(30 50 38)'/%3E%3Cellipse cx='50' cy='38' rx='10' ry='16' fill='url(%23r1)' transform='rotate(-70 50 38)'/%3E%3Cellipse cx='50' cy='38' rx='10' ry='16' fill='url(%23r1)' transform='rotate(70 50 38)'/%3E%3Cellipse cx='50' cy='38' rx='8' ry='13' fill='url(%23r1)' transform='rotate(0 50 38)'/%3E%3Ccircle cx='50' cy='38' r='5' fill='%23e8c4bc' opacity='0.3'/%3E%3Ccircle cx='50' cy='38' r='2.5' fill='%23c9908a' opacity='0.25'/%3E%3C/g%3E%3Cg opacity='0.5'%3E%3Cellipse cx='28' cy='75' rx='7' ry='12' fill='%238a9e7a' opacity='0.2' transform='rotate(-40 28 75)'/%3E%3Cellipse cx='38' cy='80' rx='6' ry='10' fill='%238a9e7a' opacity='0.15' transform='rotate(-20 38 80)'/%3E%3Cellipse cx='72' cy='75' rx='7' ry='12' fill='%238a9e7a' opacity='0.2' transform='rotate(40 72 75)'/%3E%3Cellipse cx='62' cy='80' rx='6' ry='10' fill='%238a9e7a' opacity='0.15' transform='rotate(20 62 80)'/%3E%3Cpath d='M45 55 Q48 48 50 42' stroke='%238a9e7a' stroke-width='1.2' fill='none' opacity='0.2'/%3E%3Cpath d='M55 55 Q52 48 50 42' stroke='%238a9e7a' stroke-width='1.2' fill='none' opacity='0.2'/%3E%3C/g%3E%3Cg opacity='0.35'%3E%3Cellipse cx='85' cy='28' rx='6' ry='10' fill='%23f0ddd6' transform='rotate(-20 85 28)'/%3E%3Cellipse cx='85' cy='28' rx='6' ry='10' fill='%23f0ddd6' transform='rotate(40 85 28)'/%3E%3Cellipse cx='85' cy='28' rx='6' ry='10' fill='%23f0ddd6' transform='rotate(100 85 28)'/%3E%3Cellipse cx='85' cy='28' rx='6' ry='10' fill='%23f0ddd6' transform='rotate(160 85 28)'/%3E%3Cellipse cx='85' cy='28' rx='6' ry='10' fill='%23f0ddd6' transform='rotate(-80 85 28)'/%3E%3Ccircle cx='85' cy='28' r='4' fill='%23d4a59a' opacity='0.2'/%3E%3Cellipse cx='95' cy='45' rx='5' ry='8' fill='%238a9e7a' opacity='0.15' transform='rotate(25 95 45)'/%3E%3C/g%3E%3C/svg%3E");
+            width: 110px;
+            height: 110px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 150 150'%3E%3Cdefs%3E%3CradialGradient id='rose1' cx='50%25' cy='40%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='%23e8c4bc'/%3E%3Cstop offset='40%25' stop-color='%23ddb0a5'/%3E%3Cstop offset='100%25' stop-color='%23d4a59a' stop-opacity='0'/%3E%3C/radialGradient%3E%3CradialGradient id='anem1' cx='50%25' cy='50%25' r='50%25'%3E%3Cstop offset='0%25' stop-color='%23f5ece6'/%3E%3Cstop offset='60%25' stop-color='%23f0ddd6'/%3E%3Cstop offset='100%25' stop-color='%23e8d0c6' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cg opacity='0.55'%3E%3Cpath d='M48 42 C42 30 55 22 52 35 C58 24 65 33 55 40 C66 34 66 46 56 43 C65 50 56 56 52 46 C50 57 42 52 48 44 C38 50 36 38 46 40 Z' fill='url(%23rose1)'/%3E%3Cpath d='M52 39 C49 34 56 31 54 37 C57 33 59 38 55 39 C59 37 58 42 55 40 C58 43 54 45 53 41 Z' fill='%23c9908a' opacity='0.35'/%3E%3Ccircle cx='53' cy='39' r='2' fill='%23b87a6e' opacity='0.3'/%3E%3C/g%3E%3Cg opacity='0.45'%3E%3Cpath d='M100 55 C100 45 110 45 105 52 C112 44 115 52 108 55 C116 52 114 62 108 57 C112 64 104 65 104 57 C100 64 95 58 102 55 C94 58 95 48 100 53 Z' fill='url(%23anem1)'/%3E%3Ccircle cx='105' cy='55' r='4' fill='%23a89080' opacity='0.3'/%3E%3Ccircle cx='104' cy='54' r='1' fill='%23786050' opacity='0.3'/%3E%3Ccircle cx='106' cy='54' r='1' fill='%23786050' opacity='0.3'/%3E%3Ccircle cx='105' cy='56' r='1' fill='%23786050' opacity='0.3'/%3E%3Ccircle cx='103' cy='56' r='1' fill='%23786050' opacity='0.25'/%3E%3Ccircle cx='107' cy='56' r='1' fill='%23786050' opacity='0.25'/%3E%3C/g%3E%3Cg opacity='0.5'%3E%3Cpath d='M40 60 Q35 70 25 80' stroke='%23728c62' stroke-width='1.3' fill='none'/%3E%3Cpath d='M25 80 C20 72 28 68 30 76 C24 68 32 66 30 74' fill='%237a9468' opacity='0.4'/%3E%3Cpath d='M35 68 C30 62 36 58 37 64 C32 58 38 56 37 62' fill='%237a9468' opacity='0.35'/%3E%3Cpath d='M60 50 Q70 60 75 75' stroke='%23728c62' stroke-width='1' fill='none'/%3E%3Cpath d='M70 62 C74 56 78 60 74 64 C78 58 80 62 76 64' fill='%238a9e7a' opacity='0.3'/%3E%3Cpath d='M74 70 C78 64 82 68 78 72 C82 66 84 70 80 72' fill='%238a9e7a' opacity='0.25'/%3E%3C/g%3E%3Cg opacity='0.3'%3E%3Cpath d='M95 85 C95 78 103 78 99 83 C104 77 107 83 101 85 C107 83 106 90 101 87 C104 92 98 93 98 87 C95 92 92 87 97 85 Z' fill='url(%23anem1)'/%3E%3Ccircle cx='99' cy='85' r='2.5' fill='%23a89080' opacity='0.25'/%3E%3Cpath d='M92 90 Q88 96 82 100' stroke='%23728c62' stroke-width='0.8' fill='none'/%3E%3Cpath d='M87 95 C84 90 88 88 88 92' fill='%238a9e7a' opacity='0.2'/%3E%3C/g%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-size: contain;
             pointer-events: none;
         }
 
         .header::before {
-            top: -15px;
-            left: -20px;
-            opacity: 0.8;
+            top: -20px;
+            left: -25px;
+            opacity: 1;
         }
 
         .header::after {
-            top: -15px;
-            right: -20px;
+            top: -20px;
+            right: -25px;
             transform: scaleX(-1);
-            opacity: 0.8;
+            opacity: 1;
         }
 
         .retreat-label {
@@ -3451,7 +3463,7 @@
             const grid = document.getElementById('moments-grid');
             try {
                 const moments = await apiGet('/api/moments');
-                if (!moments || moments.length === 0) {
+                if (!moments || !Array.isArray(moments) || moments.length === 0) {
                     grid.innerHTML = '<div class="moments-empty">No moments shared yet. Be the first to capture something meaningful.</div>';
                     return;
                 }
@@ -3596,7 +3608,7 @@
             let selectedFile = null;
             let selectedTag = '';
 
-            const giftTags = ['Joy', 'Peace', 'Love', 'Faith', 'Courage', 'Rest', 'Freedom', 'Wisdom', 'Strength', 'Purpose'];
+            const giftTags = ['Joy', 'Peace', 'Love', 'Faith', 'Courage', 'Rest', 'Freedom', 'Wisdom', 'Strength', 'Purpose', 'Friendship', 'Worship', 'Fun', 'G4 Spring'];
 
             overlay.innerHTML = `
                 <div class="upload-modal">
@@ -3725,6 +3737,7 @@
         initAudioNote();
         initSummarize();
         initMomentsUpload();
+        loadMoments();
         loadNotAloneInsights();
         createSparkles();
         showScripture();

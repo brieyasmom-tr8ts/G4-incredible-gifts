@@ -400,6 +400,149 @@
             transition: opacity 0.3s ease;
         }
 
+        /* Audio Note */
+        .audio-note-section {
+            margin-bottom: 12px;
+        }
+
+        .audio-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 16px;
+            background: white;
+            border: 1.5px dashed var(--warm-grey);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            color: var(--taupe);
+        }
+
+        .audio-btn:hover, .audio-btn:active {
+            border-color: var(--blush);
+            background: rgba(201,144,138,0.04);
+        }
+
+        .audio-btn.recording {
+            border-color: var(--accent);
+            border-style: solid;
+            background: rgba(201,144,138,0.08);
+            animation: recordingGlow 1.5s ease-in-out infinite;
+        }
+
+        @keyframes recordingGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(201,144,138,0.2); }
+            50% { box-shadow: 0 0 0 8px rgba(201,144,138,0); }
+        }
+
+        .audio-btn-icon {
+            font-size: 1.3rem;
+        }
+
+        .audio-btn-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+        }
+
+        .audio-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+
+        .audio-pulse-ring {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+
+        /* Journal actions row */
+        .journal-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .journal-actions .save-btn {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        .summarize-btn {
+            flex: 0 0 auto;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, var(--sage) 0%, #7a9170 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .summarize-btn:active {
+            transform: scale(0.97);
+            opacity: 0.9;
+        }
+
+        .summarize-btn:disabled {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        /* AI Summary card */
+        .ai-summary {
+            background: linear-gradient(135deg, rgba(138,158,122,0.08) 0%, rgba(201,144,138,0.08) 100%);
+            border: 1px solid rgba(138,158,122,0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .ai-summary-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--sage);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ai-summary-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: var(--dark-text);
+            line-height: 1.6;
+        }
+
+        .ai-summary-use-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: var(--sage);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .ai-summary-use-btn:active {
+            transform: scale(0.97);
+        }
+
         .header {
             padding: 20px 20px 16px;
             text-align: center;
@@ -1308,8 +1451,21 @@
             <div id="journal-tab" class="tab-content">
                 <div class="journal-container">
                     <p class="journal-prompt">What is God showing you right now?</p>
-                    <textarea class="journal-textarea" id="journal-textarea" placeholder="Write freely..."></textarea>
-                    <button class="save-btn" id="save-journal-btn">Save</button>
+                    <div class="audio-note-section">
+                        <button class="audio-btn" id="audio-btn" title="Record a voice note">
+                            <span class="audio-btn-icon" id="audio-btn-icon">🎙️</span>
+                            <span class="audio-btn-text" id="audio-btn-text">Tap to record a voice note</span>
+                        </button>
+                        <div class="audio-status" id="audio-status" style="display:none;">
+                            <div class="audio-pulse-ring"></div>
+                            <span id="audio-status-text">Listening...</span>
+                        </div>
+                    </div>
+                    <textarea class="journal-textarea" id="journal-textarea" placeholder="Write freely or use the mic above..."></textarea>
+                    <div class="journal-actions">
+                        <button class="save-btn" id="save-journal-btn">Save</button>
+                        <button class="summarize-btn" id="summarize-btn" style="display:none;">Summarize</button>
+                    </div>
                     <div class="journal-entries" id="journal-entries"></div>
                 </div>
             </div>
@@ -2301,13 +2457,43 @@
 
         function updateStatus() {
             const now = new Date();
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            const retreatStart = new Date('2026-04-09T00:00:00');
+            const retreatEnd = new Date('2026-04-12T00:00:00');
+
+            // Before the retreat: show "Happening Now" with pre-retreat context
+            if (now < retreatStart) {
+                const msPerDay = 1000 * 60 * 60 * 24;
+                const daysUntil = Math.ceil((retreatStart - now) / msPerDay);
+                indicator.style.display = 'inline-flex';
+                if (daysUntil === 1) {
+                    statusText.textContent = 'Tomorrow! Get ready \u2728';
+                } else if (daysUntil <= 7) {
+                    statusText.textContent = daysUntil + ' days away \u2013 start packing!';
+                } else {
+                    statusText.textContent = 'April 9\u201311 \u2013 Ocean City, MD';
+                }
+                return;
+            }
+
+            // After the retreat
+            if (now >= retreatEnd) {
+                indicator.style.display = 'inline-flex';
+                statusText.textContent = 'Keep walking in your gifts \u2728';
+                return;
+            }
+
+            // During the retreat: match current session
             const nowHours = now.getHours();
             const nowMinutes = now.getMinutes();
             const nowTime = nowHours * 60 + nowMinutes;
             let happening = null;
-            scheduleData.forEach(day => {
-                day.sessions.forEach(session => {
-                    const timeParts = session.time.split('–')[0].trim().split(':');
+            const dayIndex = now.getDate() - 9;
+            const todaySchedule = scheduleData[dayIndex];
+            if (todaySchedule) {
+                todaySchedule.sessions.forEach(session => {
+                    const timeParts = session.time.split('\u2013')[0].trim().split(':');
                     const sessionHours = parseInt(timeParts[0]);
                     const isPM = session.time.includes('PM');
                     let adjHours = sessionHours;
@@ -2317,12 +2503,9 @@
                     const sessionTime = adjHours * 60 + sessionMinutes;
                     if (Math.abs(nowTime - sessionTime) < 120) happening = session.title;
                 });
-            });
-            const indicator = document.getElementById('status-indicator');
-            if (happening) {
-                indicator.style.display = 'inline-flex';
-                document.getElementById('status-text').textContent = happening;
             }
+            indicator.style.display = 'inline-flex';
+            statusText.textContent = happening ? 'Happening Now: ' + happening : todaySchedule ? todaySchedule.day : 'Retreat Weekend \u2728';
         }
 
         // ===== Daily Prayer Countdown =====
@@ -2387,6 +2570,237 @@
             container.insertBefore(prayerSection, container.firstChild);
         }
 
+        // ===== Audio Note & AI Summary =====
+        let isRecording = false;
+        let recognition = null;
+        let finalTranscript = '';
+
+        function initAudioNote() {
+            const audioBtn = document.getElementById('audio-btn');
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                audioBtn.querySelector('.audio-btn-text').textContent = 'Voice notes not supported in this browser';
+                audioBtn.style.opacity = '0.5';
+                audioBtn.style.cursor = 'default';
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript + ' ';
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                const textarea = document.getElementById('journal-textarea');
+                textarea.value = finalTranscript + interimTranscript;
+                updateSummarizeBtn();
+            };
+
+            recognition.onerror = (event) => {
+                if (event.error !== 'no-speech') {
+                    stopRecording();
+                    showToast('Microphone error. Please try again.');
+                }
+            };
+
+            recognition.onend = () => {
+                if (isRecording) {
+                    // Auto-restart if still recording (browser sometimes stops)
+                    try { recognition.start(); } catch(e) { stopRecording(); }
+                }
+            };
+
+            audioBtn.addEventListener('click', () => {
+                if (isRecording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+            });
+        }
+
+        function startRecording() {
+            isRecording = true;
+            finalTranscript = document.getElementById('journal-textarea').value;
+            if (finalTranscript) finalTranscript += ' ';
+
+            const audioBtn = document.getElementById('audio-btn');
+            audioBtn.classList.add('recording');
+            document.getElementById('audio-btn-icon').textContent = '🔴';
+            document.getElementById('audio-btn-text').textContent = 'Tap to stop recording';
+            document.getElementById('audio-status').style.display = 'flex';
+
+            try {
+                recognition.start();
+                showToast('Listening... speak freely');
+            } catch(e) {
+                stopRecording();
+                showToast('Could not start recording.');
+            }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            if (recognition) {
+                try { recognition.stop(); } catch(e) {}
+            }
+
+            const audioBtn = document.getElementById('audio-btn');
+            audioBtn.classList.remove('recording');
+            document.getElementById('audio-btn-icon').textContent = '🎙️';
+            document.getElementById('audio-btn-text').textContent = 'Tap to record a voice note';
+            document.getElementById('audio-status').style.display = 'none';
+            updateSummarizeBtn();
+
+            if (document.getElementById('journal-textarea').value.trim()) {
+                showToast('Voice note captured \u2728');
+            }
+        }
+
+        function updateSummarizeBtn() {
+            const text = document.getElementById('journal-textarea').value.trim();
+            const btn = document.getElementById('summarize-btn');
+            btn.style.display = text.length > 50 ? 'block' : 'none';
+        }
+
+        function summarizeText(text) {
+            // AI-style summarization using extractive approach
+            // Identifies key spiritual themes and creates a reflective summary
+            const sentences = text.replace(/([.!?])\s+/g, '$1|').split('|').filter(s => s.trim().length > 10);
+
+            const spiritualKeywords = {
+                gratitude: ['thank', 'grateful', 'gratitude', 'blessed', 'blessing', 'appreciate'],
+                growth: ['grow', 'learn', 'change', 'transform', 'new', 'becoming', 'journey', 'step'],
+                struggle: ['hard', 'difficult', 'struggle', 'pain', 'hurt', 'broken', 'fear', 'worry', 'anxious', 'lost'],
+                faith: ['faith', 'trust', 'believe', 'pray', 'prayer', 'god', 'jesus', 'lord', 'spirit', 'holy', 'church'],
+                love: ['love', 'heart', 'care', 'compassion', 'kind', 'grace', 'mercy', 'forgive'],
+                peace: ['peace', 'calm', 'rest', 'still', 'quiet', 'surrender', 'release', 'let go'],
+                purpose: ['purpose', 'calling', 'gift', 'serve', 'mission', 'meant', 'destiny', 'plan'],
+                joy: ['joy', 'happy', 'celebrate', 'laugh', 'delight', 'hope', 'excited']
+            };
+
+            const lower = text.toLowerCase();
+            const themes = [];
+            const themeLabels = {
+                gratitude: 'Gratitude & Thanksgiving',
+                growth: 'Growth & Transformation',
+                struggle: 'Honest Struggle',
+                faith: 'Faith & Devotion',
+                love: 'Love & Grace',
+                peace: 'Peace & Surrender',
+                purpose: 'Purpose & Calling',
+                joy: 'Joy & Hope'
+            };
+
+            for (const [theme, keywords] of Object.entries(spiritualKeywords)) {
+                const count = keywords.filter(kw => lower.includes(kw)).length;
+                if (count > 0) themes.push({ theme, count, label: themeLabels[theme] });
+            }
+            themes.sort((a, b) => b.count - a.count);
+
+            const topThemes = themes.slice(0, 3);
+            const wordCount = text.split(/\s+/).length;
+
+            // Build the summary
+            let summary = '';
+
+            if (topThemes.length > 0) {
+                const themeNames = topThemes.map(t => t.label.toLowerCase());
+                summary += 'Your reflection touches on ';
+                if (themeNames.length === 1) summary += themeNames[0];
+                else if (themeNames.length === 2) summary += themeNames[0] + ' and ' + themeNames[1];
+                else summary += themeNames[0] + ', ' + themeNames[1] + ', and ' + themeNames[2];
+                summary += '. ';
+            }
+
+            // Pick the most meaningful sentences (longest, likely most substantive)
+            if (sentences.length > 2) {
+                const ranked = sentences.map((s, i) => ({ text: s.trim(), score: s.length + (i === 0 ? 5 : 0) }));
+                ranked.sort((a, b) => b.score - a.score);
+                const keyInsight = ranked[0].text;
+                summary += 'A key thought: "' + (keyInsight.length > 120 ? keyInsight.substring(0, 117) + '...' : keyInsight) + '"';
+            } else if (sentences.length > 0) {
+                summary += sentences[0].trim();
+            }
+
+            // Add an encouraging closing based on themes
+            if (themes.find(t => t.theme === 'struggle')) {
+                summary += '\n\nGod sees you here. Keep pressing in\u2014He is doing a new thing.';
+            } else if (themes.find(t => t.theme === 'gratitude')) {
+                summary += '\n\nWhat a beautiful heart of thanksgiving. Let this gratitude carry you forward.';
+            } else if (themes.find(t => t.theme === 'growth')) {
+                summary += '\n\nYou are being transformed. Keep saying yes to what God is doing.';
+            } else if (themes.find(t => t.theme === 'peace')) {
+                summary += '\n\nRest in what God is whispering to you. His peace is your anchor.';
+            } else {
+                summary += '\n\nKeep listening. God is speaking through every word you wrote.';
+            }
+
+            return summary;
+        }
+
+        function initSummarize() {
+            const summarizeBtn = document.getElementById('summarize-btn');
+            const textarea = document.getElementById('journal-textarea');
+
+            textarea.addEventListener('input', updateSummarizeBtn);
+
+            summarizeBtn.addEventListener('click', () => {
+                const text = textarea.value.trim();
+                if (text.length < 50) return;
+
+                summarizeBtn.disabled = true;
+                summarizeBtn.textContent = 'Thinking...';
+
+                // Small delay for feel
+                setTimeout(() => {
+                    const summary = summarizeText(text);
+
+                    // Remove existing summary if any
+                    const existing = document.querySelector('.ai-summary');
+                    if (existing) existing.remove();
+
+                    const summaryCard = document.createElement('div');
+                    summaryCard.className = 'ai-summary';
+                    summaryCard.innerHTML = `
+                        <div class="ai-summary-label">\u2728 Reflection Summary</div>
+                        <div class="ai-summary-text">${summary.replace(/\n/g, '<br>')}</div>
+                        <button class="ai-summary-use-btn" id="use-summary-btn">Save summary as journal entry</button>
+                    `;
+
+                    const journalActions = document.querySelector('.journal-actions');
+                    journalActions.parentNode.insertBefore(summaryCard, journalActions.nextSibling);
+
+                    document.getElementById('use-summary-btn').addEventListener('click', () => {
+                        appState.journalEntries.unshift({
+                            date: new Date().toISOString(),
+                            text: '\ud83d\udcdd Summary:\n' + summary + '\n\n\ud83d\udcd6 Full reflection:\n' + text
+                        });
+                        saveState();
+                        textarea.value = '';
+                        summaryCard.remove();
+                        buildJournal();
+                        showToast('Summary saved \u2728');
+                        launchConfetti();
+                        updateSummarizeBtn();
+                    });
+
+                    summarizeBtn.disabled = false;
+                    summarizeBtn.textContent = 'Summarize';
+                    showToast('Summary ready!');
+                }, 800);
+            });
+        }
+
         loadState();
         initTabs();
         buildSchedule();
@@ -2397,6 +2811,8 @@
         updateStatus();
         initSetup();
         initPrayerWall();
+        initAudioNote();
+        initSummarize();
         createSparkles();
         showScripture();
         setInterval(showScripture, 30000);

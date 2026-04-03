@@ -2692,10 +2692,6 @@
         function buildSchedule() {
             const container = document.getElementById('schedule-container');
             container.innerHTML = '';
-            const tzNote = document.createElement('div');
-            tzNote.style.cssText = 'text-align:center;padding:8px 16px 0;font-size:0.72rem;color:var(--light-text);letter-spacing:0.05em;text-transform:uppercase;';
-            tzNote.textContent = 'All times Eastern (ET)';
-            container.appendChild(tzNote);
             scheduleData.forEach((day, dayIndex) => {
                 const daySection = document.createElement('div');
                 daySection.className = 'day-section';

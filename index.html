@@ -1625,7 +1625,8 @@
                         content.appendChild(notesInput);
                         card.appendChild(content);
                     }
-                    card.addEventListener('click', () => {
+                    card.addEventListener('click', (e) => {
+                        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
                         const cardContent = card.querySelector('.card-content');
                         if (cardContent) {
                             card.classList.toggle('expanded');

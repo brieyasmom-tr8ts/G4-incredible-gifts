@@ -5595,13 +5595,33 @@
             { text: 'Packed more than one swimsuit', points: 3 },
             { text: 'Brought a blanket or throw', points: 3 },
             { text: 'Your toiletry bag is bigger than your clothes bag', points: 5 },
+            { text: 'Brought a ring light or selfie light', points: 5 },
+            { text: 'Packed a steamer or wrinkle spray', points: 4 },
+            { text: 'Have more chargers than devices', points: 3 },
+            { text: 'Brought dry shampoo', points: 2 },
+            { text: 'Packed a separate bag just for makeup', points: 4 },
+            { text: 'Brought slippers or house shoes', points: 3 },
+            { text: 'Packed an extension cord or power strip', points: 4 },
+            { text: 'Brought a devotional book besides your Bible', points: 2 },
+            { text: 'Packed a robe', points: 3 },
+            { text: 'Brought your own coffee mug or tumbler', points: 2 },
+            { text: 'Have a "just in case" fancy dress', points: 4 },
+            { text: 'Packed candles or essential oils', points: 5 },
+            { text: 'Brought a portable speaker', points: 3 },
+            { text: 'Packed flip flops AND shower shoes AND regular shoes', points: 4 },
+            { text: 'Brought a neck pillow for the drive', points: 3 },
+            { text: 'Packed enough hair products to open a salon', points: 5 },
+            { text: 'Brought a book you probably won\'t have time to read', points: 3 },
+            { text: 'Packed a heating pad or hot water bottle', points: 4 },
+            { text: 'Your bag was so full you had to sit on it to close it', points: 5 },
+            { text: 'Brought an entire pharmacy of vitamins and supplements', points: 4 },
         ];
 
         function getPackingLabels(score) {
-            if (score >= 45) return { emoji: '👑', label: 'The Over-Packer Queen!' };
-            if (score >= 35) return { emoji: '💅', label: 'Extra and Proud of It!' };
-            if (score >= 25) return { emoji: '🧳', label: 'Prepared for Anything!' };
-            if (score >= 15) return { emoji: '😎', label: 'Practical Packer!' };
+            if (score >= 80) return { emoji: '👑', label: 'The Over-Packer Queen!' };
+            if (score >= 60) return { emoji: '💅', label: 'Extra and Proud of It!' };
+            if (score >= 40) return { emoji: '🧳', label: 'Prepared for Anything!' };
+            if (score >= 20) return { emoji: '😎', label: 'Practical Packer!' };
             return { emoji: '🎒', label: 'Light Traveler!' };
         }
 

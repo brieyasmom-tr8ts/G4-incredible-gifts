@@ -87,7 +87,7 @@ export default {
       // GET /api/users/directory - public directory (only shared fields)
       if (path === '/api/users/directory' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, instagram, facebook, location, job, retreat_years, about FROM users ORDER BY first_name ASC'
+          'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, instagram, facebook, location, job, church, retreat_years, about FROM users ORDER BY first_name ASC'
         ).all();
         const directory = results.map(u => ({
           id: u.id,
@@ -101,6 +101,7 @@ export default {
           facebook: u.facebook || '',
           location: u.location || '',
           job: u.job || '',
+          church: u.church || '',
           retreat_years: u.retreat_years || '',
           about: u.about || ''
         }));
@@ -112,7 +113,7 @@ export default {
       if (userGetMatch && request.method === 'GET') {
         const userId = parseInt(userGetMatch[1]);
         const user = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, instagram, facebook, location, job, retreat_years, about, created_at FROM users WHERE id = ?'
+          'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, instagram, facebook, location, job, church, retreat_years, about, created_at FROM users WHERE id = ?'
         ).bind(userId).first();
         if (!user) return json({ error: 'User not found' }, corsHeaders, 404);
 
@@ -133,6 +134,7 @@ export default {
           facebook: user.facebook || '',
           location: user.location || '',
           job: user.job || '',
+          church: user.church || '',
           retreat_years: user.retreat_years || '',
           about: user.about || '',
           created_at: user.created_at
@@ -145,7 +147,7 @@ export default {
         const userId = parseInt(profileMatch[1]);
         const body = await request.json();
 
-        const allowed = ['email', 'phone', 'birthday', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'instagram', 'facebook', 'location', 'job', 'retreat_years', 'about'];
+        const allowed = ['email', 'phone', 'birthday', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
         const fields = [];
         const values = [];
         for (const key of allowed) {

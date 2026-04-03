@@ -2511,8 +2511,14 @@
                             <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);margin-bottom:10px;">Add a photo and share your info so your sisters can connect with you.</div>
                             <button id="profile-prompt-btn" style="padding:8px 20px;border:none;background:var(--blush);color:white;border-radius:20px;font-family:Cormorant Garamond,serif;font-size:0.88rem;font-weight:600;cursor:pointer;">Set Up My Profile</button>
                         </div>
-                        <div id="alpha-picker" style="display:none;margin-bottom:12px;"></div>
-                        <div id="connect-people-grid" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;"></div>
+                        <div id="sisters-count" style="display:none;text-align:center;margin-bottom:12px;">
+                            <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--accent);line-height:1;"><span id="sisters-num">0</span></div>
+                            <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;">sisters on this journey with you</div>
+                        </div>
+                        <div style="margin-bottom:14px;">
+                            <input type="text" id="sisters-search" placeholder="Search by name..." style="width:100%;padding:10px 16px;border:1px solid rgba(139,134,128,0.2);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);background:rgba(255,255,255,0.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);outline:none;transition:var(--transition);">
+                        </div>
+                        <div id="connect-people-list" style="display:flex;flex-direction:column;gap:10px;"></div>
                     </div>
                     <!-- Prayers Sub-tab -->
                     <div id="connect-prayers" class="connect-panel" style="display:none;">
@@ -2989,7 +2995,7 @@
             try {
                 const data = await apiGet('/api/users/' + currentUser.id + '?owner=1');
                 if (data && !data.error) {
-                    const fields = ['photo_data', 'email', 'phone', 'birthday', 'show_email', 'show_phone', 'show_birthday', 'instagram', 'facebook', 'location', 'job', 'retreat_years', 'about'];
+                    const fields = ['photo_data', 'email', 'phone', 'birthday', 'show_email', 'show_phone', 'show_birthday', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
                     fields.forEach(f => { if (data[f] !== undefined) currentUser[f] = data[f]; });
                     localStorage.setItem('g4user', JSON.stringify(currentUser));
                     showWelcome();
@@ -3019,6 +3025,7 @@
                 let aboutHTML = '';
                 if (user.location) aboutHTML += `<div style="font-size:0.85rem;color:var(--taupe);">📍 ${user.location}</div>`;
                 if (user.job) aboutHTML += `<div style="font-size:0.85rem;color:var(--taupe);">💼 ${user.job}</div>`;
+                if (user.church) aboutHTML += `<div style="font-size:0.85rem;color:var(--taupe);">⛪ ${user.church}</div>`;
                 if (user.retreat_years) aboutHTML += `<div style="font-size:0.85rem;color:var(--taupe);">🎉 ${user.retreat_years === 'This is my first!' ? 'First retreat!' : user.retreat_years + ' retreats'}</div>`;
                 if (user.about) aboutHTML += `<div style="font-size:0.85rem;color:var(--taupe);font-style:italic;margin-top:4px;line-height:1.4;">"${user.about}"</div>`;
 
@@ -3051,91 +3058,60 @@
 
         // ===== People Directory =====
         let allDirectoryUsers = [];
-        let activeAlphaLetter = 'ALL';
 
-        function renderPersonCard(u, grid) {
+        function renderSisterRow(u) {
             const displayName = u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name;
-            const card = document.createElement('div');
-            card.style.cssText = 'background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;padding:14px 8px 12px;text-align:center;cursor:pointer;transition:var(--transition);box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);';
-            card.addEventListener('click', () => showUserCard(u.id, u.first_name));
-
-            const avatarSize = '52px';
+            const avatarSize = '48px';
             let avatarHTML;
             if (u.photo_data) {
                 avatarHTML = `<img src="${u.photo_data}" style="width:${avatarSize};height:${avatarSize};border-radius:50%;object-fit:cover;border:2px solid var(--blush);" alt="">`;
             } else {
-                avatarHTML = `<div style="width:${avatarSize};height:${avatarSize};border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;margin:0 auto;border:2px solid var(--blush);"><span style="color:white;font-size:1.2rem;font-family:Playfair Display,serif;font-weight:700;">${u.first_name.charAt(0)}</span></div>`;
+                avatarHTML = `<div style="width:${avatarSize};height:${avatarSize};border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid var(--blush);"><span style="color:white;font-size:1.1rem;font-family:Playfair Display,serif;font-weight:700;">${u.first_name.charAt(0)}</span></div>`;
             }
 
-            const subtext = u.location || u.job || '';
-            let socialIcons = '';
-            if (u.instagram) socialIcons += '<span style="font-size:0.7rem;">📸</span> ';
-            if (u.facebook) socialIcons += '<span style="font-size:0.7rem;">👤</span>';
+            let detailParts = [];
+            if (u.location) detailParts.push(u.location);
+            if (u.church) detailParts.push(u.church);
+            else if (u.job) detailParts.push(u.job);
+            const detailLine = detailParts.join(' · ');
 
-            card.innerHTML = `
-                <div style="display:flex;justify-content:center;margin-bottom:6px;">${avatarHTML}</div>
-                <div style="font-family:Playfair Display,serif;font-size:0.8rem;font-weight:600;color:var(--dark-text);line-height:1.2;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${displayName}</div>
-                ${subtext ? `<div style="font-size:0.7rem;color:var(--light-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${subtext}</div>` : ''}
-                ${socialIcons ? `<div style="margin-top:2px;">${socialIcons}</div>` : ''}
+            const aboutPreview = u.about ? (u.about.length > 60 ? u.about.substring(0, 60) + '...' : u.about) : '';
+
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);cursor:pointer;transition:var(--transition);';
+            row.addEventListener('click', () => showUserCard(u.id, u.first_name));
+
+            row.innerHTML = `
+                <div style="flex-shrink:0;">${avatarHTML}</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--dark-text);line-height:1.2;">${displayName}</div>
+                    ${detailLine ? `<div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detailLine}</div>` : ''}
+                    ${aboutPreview ? `<div style="font-size:0.78rem;color:var(--taupe);font-style:italic;margin-top:3px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"${aboutPreview}"</div>` : ''}
+                </div>
+                ${u.retreat_years ? `<div style="flex-shrink:0;background:rgba(201,144,138,0.12);border-radius:10px;padding:4px 8px;font-size:0.65rem;color:var(--accent);font-weight:600;text-align:center;line-height:1.2;">${u.retreat_years === 'This is my first!' ? '1st<br>time' : u.retreat_years + '<br>yrs'}</div>` : ''}
             `;
-            grid.appendChild(card);
+            return row;
         }
 
-        function renderPeopleGrid(letter) {
-            activeAlphaLetter = letter;
-            const grid = document.getElementById('connect-people-grid');
-            grid.innerHTML = '';
-            const filtered = letter === 'ALL' ? allDirectoryUsers : allDirectoryUsers.filter(u => u.first_name.charAt(0).toUpperCase() === letter);
+        function renderSistersList(filter) {
+            const list = document.getElementById('connect-people-list');
+            list.innerHTML = '';
+            const query = (filter || '').toLowerCase();
+            const filtered = query
+                ? allDirectoryUsers.filter(u => u.first_name.toLowerCase().includes(query) || (u.last_initial && (u.first_name + ' ' + u.last_initial).toLowerCase().includes(query)))
+                : allDirectoryUsers;
+
             if (!filtered.length) {
-                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">No one with that initial yet.</div>';
+                list.innerHTML = `<div style="text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">${query ? 'No one found matching "' + query + '"' : 'No one has joined yet. Be the first!'}</div>`;
                 return;
             }
-            filtered.forEach(u => renderPersonCard(u, grid));
-
-            // Update active state on picker
-            document.querySelectorAll('.alpha-letter').forEach(el => {
-                el.style.background = el.dataset.letter === letter ? 'var(--blush)' : 'none';
-                el.style.color = el.dataset.letter === letter ? 'white' : 'var(--light-text)';
-            });
-        }
-
-        function buildAlphaPicker(users) {
-            const picker = document.getElementById('alpha-picker');
-            if (users.length <= 12) {
-                picker.style.display = 'none';
-                return;
-            }
-            picker.style.display = 'flex';
-            picker.style.cssText = 'display:flex;flex-wrap:wrap;gap:2px;justify-content:center;margin-bottom:12px;';
-
-            const letters = new Set(users.map(u => u.first_name.charAt(0).toUpperCase()));
-            const sortedLetters = [...letters].sort();
-
-            picker.innerHTML = '';
-            // "All" button
-            const allBtn = document.createElement('button');
-            allBtn.className = 'alpha-letter';
-            allBtn.dataset.letter = 'ALL';
-            allBtn.textContent = 'All';
-            allBtn.style.cssText = 'padding:6px 10px;border:none;border-radius:8px;font-family:Cormorant Garamond,serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:var(--transition);background:var(--blush);color:white;min-width:32px;';
-            allBtn.addEventListener('click', () => renderPeopleGrid('ALL'));
-            picker.appendChild(allBtn);
-
-            sortedLetters.forEach(letter => {
-                const btn = document.createElement('button');
-                btn.className = 'alpha-letter';
-                btn.dataset.letter = letter;
-                btn.textContent = letter;
-                btn.style.cssText = 'padding:6px 8px;border:none;border-radius:8px;font-family:Cormorant Garamond,serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:var(--transition);background:none;color:var(--light-text);min-width:28px;';
-                btn.addEventListener('click', () => renderPeopleGrid(letter));
-                picker.appendChild(btn);
-            });
+            filtered.forEach(u => list.appendChild(renderSisterRow(u)));
         }
 
         async function loadPeople() {
             if (!currentUser) return;
-            const grid = document.getElementById('connect-people-grid');
-            if (!grid) return;
+            const list = document.getElementById('connect-people-list');
+            if (!list) return;
 
             // Show profile prompt if user hasn't added a photo
             const prompt = document.getElementById('profile-prompt');
@@ -3150,12 +3126,21 @@
             try {
                 const users = await apiGet('/api/users/directory');
                 if (!users || !users.length) {
-                    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">No one has joined yet. Be the first!</div>';
+                    list.innerHTML = '<div style="text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">No one has joined yet. Be the first!</div>';
                     return;
                 }
                 allDirectoryUsers = users;
-                buildAlphaPicker(users);
-                renderPeopleGrid(users.length > 12 ? 'ALL' : 'ALL');
+
+                // Show count
+                const countEl = document.getElementById('sisters-count');
+                document.getElementById('sisters-num').textContent = users.length;
+                countEl.style.display = 'block';
+
+                // Search
+                const searchInput = document.getElementById('sisters-search');
+                searchInput.oninput = () => renderSistersList(searchInput.value);
+
+                renderSistersList('');
             } catch(e) {
                 console.error('Failed to load people directory:', e);
             }
@@ -3223,6 +3208,11 @@
                 <div class="profile-field">
                     <label>Job / What You Do</label>
                     <input type="text" id="profile-job" placeholder="Teacher, nurse, mom of 3..." value="${currentUser.job || ''}" style="font-size:16px;">
+                </div>
+
+                <div class="profile-field">
+                    <label>Home Church</label>
+                    <input type="text" id="profile-church" placeholder="Your church name" value="${currentUser.church || ''}" style="font-size:16px;">
                 </div>
 
                 <div class="profile-field">
@@ -3316,6 +3306,7 @@
                     birthday: sheet.querySelector('#profile-birthday').value,
                     location: sheet.querySelector('#profile-location').value.trim(),
                     job: sheet.querySelector('#profile-job').value.trim(),
+                    church: sheet.querySelector('#profile-church').value.trim(),
                     retreat_years: sheet.querySelector('#profile-retreat-years').value,
                     about: sheet.querySelector('#profile-about').value.trim(),
                     instagram: sheet.querySelector('#profile-instagram').value.trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/\/.*/, ''),

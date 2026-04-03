@@ -84,6 +84,25 @@ export default {
         return json(results, corsHeaders);
       }
 
+      // GET /api/users/directory - public directory (only shared fields)
+      if (path === '/api/users/directory' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, instagram, facebook FROM users ORDER BY first_name ASC'
+        ).all();
+        const directory = results.map(u => ({
+          id: u.id,
+          first_name: u.first_name,
+          last_initial: u.last_initial || '',
+          photo_data: u.photo_data || '',
+          email: u.show_email ? (u.email || '') : '',
+          phone: u.show_phone ? (u.phone || '') : '',
+          birthday: u.show_birthday ? (u.birthday || '') : '',
+          instagram: u.instagram || '',
+          facebook: u.facebook || ''
+        }));
+        return json(directory, corsHeaders);
+      }
+
       // GET /api/users/:id - get user profile (public view — respects visibility)
       const userGetMatch = path.match(/^\/api\/users\/(\d+)$/);
       if (userGetMatch && request.method === 'GET') {
@@ -106,6 +125,8 @@ export default {
           show_email: user.show_email || 0,
           show_phone: user.show_phone || 0,
           show_birthday: user.show_birthday || 0,
+          instagram: user.instagram || '',
+          facebook: user.facebook || '',
           created_at: user.created_at
         }, corsHeaders);
       }

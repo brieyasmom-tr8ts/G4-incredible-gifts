@@ -2432,6 +2432,14 @@
                         </div>
                         <div id="schedule-container"></div>
                     </div>
+                    <!-- People Directory -->
+                    <div id="people-section" style="display:none;margin:12px 16px;">
+                        <div style="text-align:center;margin-bottom:12px;">
+                            <div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);">Meet Your Sisters</div>
+                            <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);font-style:italic;">The women on this journey with you</div>
+                        </div>
+                        <div id="people-grid" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;"></div>
+                    </div>
                     <div id="not-alone-home-preview"></div>
                     <div id="continue-home-link" style="display:none;"></div>
                 </div>
@@ -2881,6 +2889,7 @@
                 document.getElementById('prayer-compose').style.display = 'block';
                 document.getElementById('moments-upload').style.display = 'block';
                 document.getElementById('video-section').style.display = 'block';
+                loadPeople();
                 return;
             }
             const modal = document.getElementById('setup-modal');
@@ -2920,6 +2929,7 @@
                     document.getElementById('prayer-compose').style.display = 'block';
                     document.getElementById('moments-upload').style.display = 'block';
                     document.getElementById('video-section').style.display = 'block';
+                    loadPeople();
                     launchConfetti();
                     showToast('Welcome to the retreat, ' + currentUser.first_name + '! \u2728');
                 } catch (e) {
@@ -3004,6 +3014,49 @@
                 document.body.appendChild(overlay);
                 overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
             } catch(e) {}
+        }
+
+        // ===== People Directory =====
+        async function loadPeople() {
+            if (!currentUser) return;
+            const grid = document.getElementById('people-grid');
+            if (!grid) return;
+            try {
+                const users = await apiGet('/api/users/directory');
+                if (!users || !users.length) {
+                    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">No one has joined yet. Be the first!</div>';
+                    return;
+                }
+                grid.innerHTML = '';
+                users.forEach(u => {
+                    const displayName = u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name;
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;padding:14px 8px 12px;text-align:center;cursor:pointer;transition:var(--transition);box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);';
+                    card.addEventListener('click', () => showUserCard(u.id, u.first_name));
+
+                    const avatarSize = '52px';
+                    let avatarHTML;
+                    if (u.photo_data) {
+                        avatarHTML = `<img src="${u.photo_data}" style="width:${avatarSize};height:${avatarSize};border-radius:50%;object-fit:cover;border:2px solid var(--blush);" alt="">`;
+                    } else {
+                        avatarHTML = `<div style="width:${avatarSize};height:${avatarSize};border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;margin:0 auto;border:2px solid var(--blush);"><span style="color:white;font-size:1.2rem;font-family:Playfair Display,serif;font-weight:700;">${u.first_name.charAt(0)}</span></div>`;
+                    }
+
+                    let socialIcons = '';
+                    if (u.instagram) socialIcons += '<span style="font-size:0.7rem;">📸</span> ';
+                    if (u.facebook) socialIcons += '<span style="font-size:0.7rem;">👤</span>';
+
+                    card.innerHTML = `
+                        <div style="display:flex;justify-content:center;margin-bottom:6px;">${avatarHTML}</div>
+                        <div style="font-family:Playfair Display,serif;font-size:0.8rem;font-weight:600;color:var(--dark-text);line-height:1.2;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${displayName}</div>
+                        ${socialIcons ? `<div style="margin-top:2px;">${socialIcons}</div>` : ''}
+                    `;
+                    grid.appendChild(card);
+                });
+                document.getElementById('people-section').style.display = 'block';
+            } catch(e) {
+                console.error('Failed to load people directory:', e);
+            }
         }
 
         function openProfile() {

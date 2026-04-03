@@ -2937,7 +2937,7 @@
             const avatarHTML = currentUser.photo_data
                 ? `<img class="welcome-avatar" src="${currentUser.photo_data}" alt="">`
                 : `<div class="welcome-avatar-placeholder">${currentUser.first_name.charAt(0)}</div>`;
-            banner.innerHTML = avatarHTML + `<span>${getTimeGreeting()}, ${currentUser.first_name} \u2728</span>`;
+            banner.innerHTML = avatarHTML + `<span>${getTimeGreeting()}, ${currentUser.first_name} \u2728</span><span style="font-size:0.7rem;color:var(--warm-grey);border:1px solid var(--warm-grey);border-radius:12px;padding:2px 8px;white-space:nowrap;">My Profile</span>`;
             banner.style.display = 'flex';
             banner.addEventListener('click', openProfile);
             setTimeout(() => banner.classList.add('animate-in'), 100);

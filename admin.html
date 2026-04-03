@@ -1233,17 +1233,18 @@ const AI_WYR_SUGGESTIONS = [
     { a: "Get lost in Ocean City with no phone", b: "Get stuck in an elevator with 5 strangers" },
 ];
 
+let _aiPicks = [];
+
 function fillWithAI() {
     const container = document.getElementById('ai-wyr-suggestions');
-    // Shuffle and pick 8 random suggestions
     const shuffled = [...AI_WYR_SUGGESTIONS].sort(() => Math.random() - 0.5);
-    const picks = shuffled.slice(0, 8);
+    _aiPicks = shuffled.slice(0, 8);
 
     container.style.display = 'block';
     container.innerHTML = `
         <div style="font-size:0.85rem;font-weight:600;color:var(--taupe);margin-bottom:0.5rem;">✨ AI Suggestions — tap to add:</div>
-        ${picks.map((q, i) => `
-            <div id="ai-sug-${i}" style="padding:0.6rem 0.75rem;background:rgba(201,144,138,0.06);border:1.5px solid rgba(201,144,138,0.15);border-radius:10px;margin-bottom:0.4rem;cursor:pointer;transition:all 0.2s;" onclick="addAISuggestion(${i}, '${esc(q.a).replace(/'/g, "\\'")}', '${esc(q.b).replace(/'/g, "\\'")}')">
+        ${_aiPicks.map((q, i) => `
+            <div id="ai-sug-${i}" style="padding:0.6rem 0.75rem;background:rgba(201,144,138,0.06);border:1.5px solid rgba(201,144,138,0.15);border-radius:10px;margin-bottom:0.4rem;cursor:pointer;transition:all 0.2s;" onclick="addAISuggestion(${i})">
                 <span style="color:var(--accent);font-weight:600;font-size:0.88rem;">${esc(q.a)}</span>
                 <span style="color:var(--light-text);font-size:0.85rem;"> vs </span>
                 <span style="color:var(--sage);font-weight:600;font-size:0.88rem;">${esc(q.b)}</span>
@@ -1256,13 +1257,14 @@ function fillWithAI() {
     `;
 }
 
-async function addAISuggestion(idx, a, b) {
+async function addAISuggestion(idx) {
     const el = document.getElementById('ai-sug-' + idx);
-    if (!el) return;
+    const q = _aiPicks[idx];
+    if (!el || !q) return;
     el.style.opacity = '0.5';
     el.style.pointerEvents = 'none';
     try {
-        await apiFetch('/api/games/wyr/questions', { method: 'POST', body: { option_a: a, option_b: b } });
+        await apiFetch('/api/games/wyr/questions', { method: 'POST', body: { option_a: q.a, option_b: q.b } });
         el.innerHTML = '<span style="color:var(--sage);font-size:0.85rem;">✅ Added!</span>';
         loadWYRQuestions();
     } catch (e) {

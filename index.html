@@ -6,10 +6,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Incredible Gifts">
-    <meta name="theme-color" content="#f5f1ed">
-    <title>Incredible Gifts</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23f5f1ed' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23d4a5a5' opacity='0.6'/><path d='M96 50 L110 85 L145 85 L118 110 L130 145 L96 120 L62 145 L74 110 L47 85 L82 85 Z' fill='%23d4a5a5'/></svg>">
-    <link rel="manifest" href="data:application/json,{%22name%22:%22Incredible%20Gifts%22,%22short_name%22:%22Gifts%22,%22start_url%22:%22./%22,%22display%22:%22standalone%22,%22scope%22:%22./%22,%22background_color%22:%22%23f5f1ed%22,%22theme_color%22:%22%23f5f1ed%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23f5f1ed' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23d4a5a5' opacity='0.6'/><path d='M96 50 L110 85 L145 85 L118 110 L130 145 L96 120 L62 145 L74 110 L47 85 L82 85 Z' fill='%23d4a5a5'/></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
+    <meta name="theme-color" content="#f7f0eb">
+    <title>G4 2026 - Incredible Gifts</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23f7f0eb' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23c9908a' opacity='0.6'/><path d='M96 50 L110 85 L145 85 L118 110 L130 145 L96 120 L62 145 L74 110 L47 85 L82 85 Z' fill='%23c9908a'/></svg>">
+    <link rel="manifest" href="data:application/json,{%22name%22:%22Incredible%20Gifts%22,%22short_name%22:%22Gifts%22,%22start_url%22:%22./%22,%22display%22:%22standalone%22,%22scope%22:%22./%22,%22background_color%22:%22%23f5f1ed%22,%22theme_color%22:%22%23f5f1ed%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23f7f0eb' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23c9908a' opacity='0.6'/><path d='M96 50 L110 85 L145 85 L118 110 L130 145 L96 120 L62 145 L74 110 L47 85 L82 85 Z' fill='%23c9908a'/></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
     <style>
         * {
             margin: 0;
@@ -19,17 +19,18 @@
         }
 
         :root {
-            --cream: #f5f1ed;
-            --taupe: #8b8680;
-            --sage: #a8bba8;
-            --blush: #d4a5a5;
-            --warm-grey: #c4bfb8;
-            --dark-text: #3d3a38;
-            --light-text: #7a7671;
-            --accent: #c97f6b;
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
+            --cream: #f7f0eb;
+            --taupe: #7a6b63;
+            --sage: #8a9e7a;
+            --blush: #c9908a;
+            --warm-grey: #c8b9b0;
+            --dark-text: #4a3728;
+            --light-text: #8a7b72;
+            --accent: #b87a6e;
+            --rose: #d4a59a;
+            --shadow-sm: 0 2px 8px rgba(74, 55, 40, 0.06);
+            --shadow-md: 0 4px 16px rgba(74, 55, 40, 0.08);
+            --shadow-lg: 0 12px 32px rgba(74, 55, 40, 0.1);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
@@ -51,8 +52,8 @@
 
         .title-serif {
             font-family: 'Playfair Display', serif;
-            font-size: 1.5rem;
-            font-weight: 600;
+            font-size: 1.6rem;
+            font-weight: 700;
             line-height: 1.2;
             color: var(--dark-text);
         }
@@ -115,10 +116,20 @@
         }
 
         .header {
-            padding: 16px 20px;
+            padding: 20px 20px 16px;
             text-align: center;
             border-bottom: 1px solid rgba(139, 134, 128, 0.1);
-            background: var(--cream);
+            background: linear-gradient(180deg, #f0e0d8 0%, var(--cream) 100%);
+        }
+
+        .retreat-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            margin-bottom: 2px;
         }
 
         .tagline {
@@ -573,6 +584,7 @@
 <body>
     <div class="app-container">
         <div class="header">
+            <p class="retreat-label">G4 2026 Women's Retreat</p>
             <h1 class="title-serif">Incredible Gifts</h1>
             <p class="tagline">Receive it. Open it. Share it.</p>
         </div>

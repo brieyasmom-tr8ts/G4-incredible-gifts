@@ -3261,7 +3261,24 @@
                 list.innerHTML = `<div style="text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">${query ? 'No one found matching "' + query + '"' : 'No other sisters have joined yet.'}</div>`;
                 return;
             }
-            filtered.forEach(u => list.appendChild(renderSisterRow(u)));
+
+            // Show profiles-first (photo/about filled in), then newest
+            const showAll = !!query;
+            const display = showAll ? filtered : [...filtered].sort((a, b) => {
+                const aProfile = (a.photo_data ? 1 : 0) + (a.about ? 1 : 0) + (a.location ? 1 : 0);
+                const bProfile = (b.photo_data ? 1 : 0) + (b.about ? 1 : 0) + (b.location ? 1 : 0);
+                if (bProfile !== aProfile) return bProfile - aProfile;
+                return b.id - a.id;
+            });
+            const toShow = showAll ? display : display.slice(0, 10);
+            toShow.forEach(u => list.appendChild(renderSisterRow(u)));
+
+            if (!showAll && filtered.length > 10) {
+                const more = document.createElement('div');
+                more.style.cssText = 'text-align:center;padding:14px 0;font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;';
+                more.textContent = `+ ${filtered.length - 10} more sisters — search by name to find them!`;
+                list.appendChild(more);
+            }
         }
 
         async function loadPeople() {

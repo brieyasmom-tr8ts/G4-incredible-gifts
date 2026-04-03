@@ -2001,6 +2001,9 @@
                             <iframe style="border-radius:10px;" src="https://open.spotify.com/embed/playlist/5fALXWcfFkJphiINaVB3jh?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
                         </div>
 
+                        <!-- Weather forecast for Ocean City -->
+                        <div id="weather-forecast" style="display:none;margin-bottom:12px;padding:14px 16px;background:linear-gradient(135deg,rgba(138,158,122,0.08) 0%,rgba(201,144,138,0.06) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.12);"></div>
+
                         <div id="prep-details" style="display:none;">
                             <div style="width:40px;height:1px;background:var(--warm-grey);margin:0 auto 14px;opacity:0.4;"></div>
                             <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Location</div>
@@ -4109,6 +4112,91 @@
         })();
 
         checkPostRetreat();
+
+        // Fetch weather forecast for Ocean City, MD
+        (async function loadWeather() {
+            const now = new Date();
+            const retreatStart = new Date('2026-04-09T00:00:00');
+            if (now >= retreatStart) return;
+
+            const container = document.getElementById('weather-forecast');
+            if (!container) return;
+
+            try {
+                const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=38.3365&longitude=-75.0849&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_probability_max&temperature_unit=fahrenheit&timezone=America/New_York&forecast_days=14');
+                const data = await res.json();
+                if (!data.daily) return;
+
+                const retreatDates = ['2026-04-09', '2026-04-10', '2026-04-11'];
+                const dayNames = ['Thu', 'Fri', 'Sat'];
+                const dayLabels = ['Apr 9', 'Apr 10', 'Apr 11'];
+
+                // Find indices for retreat dates
+                const indices = retreatDates.map(d => data.daily.time.indexOf(d)).filter(i => i !== -1);
+                if (indices.length === 0) {
+                    // Retreat dates not in forecast range yet — show message
+                    container.style.display = 'block';
+                    container.innerHTML = `
+                        <div style="font-size:0.72rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Ocean City Forecast</div>
+                        <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;">Weather forecast will appear as the retreat gets closer</div>
+                    `;
+                    return;
+                }
+
+                function weatherIcon(code) {
+                    if (code <= 1) return '\u2600\uFE0F';
+                    if (code <= 3) return '\u26C5';
+                    if (code <= 48) return '\u2601\uFE0F';
+                    if (code <= 67) return '\uD83C\uDF27\uFE0F';
+                    if (code <= 77) return '\u2744\uFE0F';
+                    if (code <= 82) return '\uD83C\uDF26\uFE0F';
+                    if (code >= 95) return '\u26C8\uFE0F';
+                    return '\u2601\uFE0F';
+                }
+
+                function weatherLabel(code) {
+                    if (code <= 1) return 'Sunny';
+                    if (code <= 3) return 'Partly cloudy';
+                    if (code <= 48) return 'Cloudy';
+                    if (code <= 55) return 'Drizzle';
+                    if (code <= 67) return 'Rain';
+                    if (code <= 77) return 'Snow';
+                    if (code <= 82) return 'Showers';
+                    if (code >= 95) return 'Storms';
+                    return 'Cloudy';
+                }
+
+                let forecastHTML = `<div style="font-size:0.72rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Ocean City Forecast</div>`;
+                forecastHTML += `<div style="display:flex;justify-content:center;gap:12px;">`;
+
+                indices.forEach((idx, i) => {
+                    const hi = Math.round(data.daily.temperature_2m_max[idx]);
+                    const lo = Math.round(data.daily.temperature_2m_min[idx]);
+                    const code = data.daily.weathercode[idx];
+                    const rain = data.daily.precipitation_probability_max[idx];
+                    const icon = weatherIcon(code);
+                    const label = weatherLabel(code);
+
+                    forecastHTML += `
+                        <div style="flex:1;text-align:center;padding:8px 4px;background:rgba(255,255,255,0.6);border-radius:10px;">
+                            <div style="font-size:0.7rem;font-weight:600;color:var(--dark-text);margin-bottom:4px;">${dayNames[i]}</div>
+                            <div style="font-size:0.65rem;color:var(--light-text);margin-bottom:6px;">${dayLabels[i]}</div>
+                            <div style="font-size:1.5rem;line-height:1;margin-bottom:4px;">${icon}</div>
+                            <div style="font-size:0.65rem;color:var(--light-text);margin-bottom:4px;">${label}</div>
+                            <div style="font-size:0.95rem;font-weight:700;color:var(--dark-text);">${hi}\u00B0</div>
+                            <div style="font-size:0.75rem;color:var(--light-text);">${lo}\u00B0</div>
+                            ${rain > 20 ? `<div style="font-size:0.6rem;color:var(--sage);margin-top:3px;">\uD83D\uDCA7 ${rain}%</div>` : ''}
+                        </div>
+                    `;
+                });
+
+                forecastHTML += `</div>`;
+                container.innerHTML = forecastHTML;
+                container.style.display = 'block';
+            } catch (e) {
+                // Silently fail - weather is a nice-to-have
+            }
+        })();
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { event.waitUntil(caches.open('v1').then(cache => cache.addAll(['/']))) }); self.addEventListener('fetch', event => { event.respondWith(caches.match(event.request).then(response => response || fetch(event.request))) });`)).catch(() => {});

@@ -39,6 +39,18 @@ CREATE TABLE moments (
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+CREATE TABLE feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  name TEXT DEFAULT 'Anonymous',
+  rating INTEGER NOT NULL,
+  favorite TEXT DEFAULT '',
+  improve TEXT DEFAULT '',
+  come_again TEXT DEFAULT '',
+  other TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,

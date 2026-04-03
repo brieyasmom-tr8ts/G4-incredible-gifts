@@ -1958,13 +1958,76 @@
         <div class="content-area">
             <!-- HOME TAB -->
             <div id="home-tab" class="tab-content active">
-                <div id="status-indicator" class="status-indicator" style="display:none;">
-                    <span class="status-dot"></span>
-                    <span id="status-text">Happening Now</span>
+                <!-- Post-retreat home (hidden until retreat ends) -->
+                <div id="post-retreat-home" style="display:none;">
+                    <div style="text-align:center;padding:24px 20px 8px;">
+                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--dark-text);margin-bottom:6px;">Thank You</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--light-text);font-style:italic;line-height:1.6;padding:0 12px;">What a weekend. What a God. Thank you for showing up, being open, and letting Him move. You are seen, you are loved, and you are carrying something incredible home with you.</div>
+                    </div>
+
+                    <!-- Moments Slideshow -->
+                    <div id="post-retreat-slideshow" style="margin:16px;border-radius:14px;overflow:hidden;position:relative;aspect-ratio:4/3;background:var(--warm-grey);box-shadow:var(--shadow-md);">
+                        <img id="slideshow-img" style="width:100%;height:100%;object-fit:cover;transition:opacity 0.6s ease;" alt="Retreat moment">
+                        <div id="slideshow-caption" style="position:absolute;bottom:0;left:0;right:0;padding:12px 16px;background:linear-gradient(transparent,rgba(0,0,0,0.5));color:white;font-size:0.85rem;font-family:Cormorant Garamond,serif;"></div>
+                    </div>
+
+                    <!-- Continue the Journey -->
+                    <div id="post-retreat-continue" style="margin:12px 16px;padding:18px 20px;background:linear-gradient(135deg,rgba(138,158,122,0.12) 0%,rgba(201,144,138,0.10) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.2);text-align:center;cursor:pointer;">
+                        <div style="font-family:Playfair Display,serif;font-size:1.05rem;color:var(--dark-text);margin-bottom:4px;">Continue the Journey</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;">12 weeks to keep growing in your gifts</div>
+                    </div>
+
+                    <!-- Feedback Form -->
+                    <div style="margin:12px 16px 24px;padding:20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);">
+                        <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:600;color:var(--dark-text);text-align:center;margin-bottom:4px;">We\u2019d Love Your Feedback</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);text-align:center;font-style:italic;margin-bottom:16px;">Help us make the next retreat even better</div>
+
+                        <div style="margin-bottom:14px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">How would you rate the retreat overall?</label>
+                            <div id="feedback-stars" style="display:flex;gap:8px;justify-content:center;font-size:1.8rem;cursor:pointer;">
+                                <span data-star="1">☆</span><span data-star="2">☆</span><span data-star="3">☆</span><span data-star="4">☆</span><span data-star="5">☆</span>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:14px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">What was your favorite part?</label>
+                            <textarea id="feedback-favorite" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="The worship, a session, the sisterhood..."></textarea>
+                        </div>
+
+                        <div style="margin-bottom:14px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">What could we improve?</label>
+                            <textarea id="feedback-improve" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="Anything at all \u2014 we want to hear it"></textarea>
+                        </div>
+
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Would you come again next year?</label>
+                            <div id="feedback-again" style="display:flex;gap:8px;">
+                                <button class="feedback-option" data-value="Absolutely!" style="flex:1;padding:10px;border:1.5px solid var(--warm-grey);border-radius:8px;background:white;font-size:0.85rem;color:var(--taupe);cursor:pointer;transition:var(--transition);">Absolutely!</button>
+                                <button class="feedback-option" data-value="Probably" style="flex:1;padding:10px;border:1.5px solid var(--warm-grey);border-radius:8px;background:white;font-size:0.85rem;color:var(--taupe);cursor:pointer;transition:var(--transition);">Probably</button>
+                                <button class="feedback-option" data-value="Not sure" style="flex:1;padding:10px;border:1.5px solid var(--warm-grey);border-radius:8px;background:white;font-size:0.85rem;color:var(--taupe);cursor:pointer;transition:var(--transition);">Not sure</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Anything else on your heart?</label>
+                            <textarea id="feedback-other" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="Share anything..."></textarea>
+                        </div>
+
+                        <button class="save-btn" id="feedback-submit-btn" style="margin-top:0;">Send Feedback</button>
+                        <div id="feedback-thanks" style="display:none;text-align:center;padding:16px;font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--accent);font-style:italic;">Thank you for sharing your heart with us. We love you!</div>
+                    </div>
                 </div>
-                <div id="schedule-container"></div>
-                <div id="not-alone-home-preview"></div>
-                <div id="continue-home-link" style="display:none;"></div>
+
+                <!-- Regular home (schedule, countdown, etc.) -->
+                <div id="regular-home">
+                    <div id="status-indicator" class="status-indicator" style="display:none;">
+                        <span class="status-dot"></span>
+                        <span id="status-text">Happening Now</span>
+                    </div>
+                    <div id="schedule-container"></div>
+                    <div id="not-alone-home-preview"></div>
+                    <div id="continue-home-link" style="display:none;"></div>
+                </div>
             </div>
 
             <!-- MY JOURNEY TAB -->
@@ -3876,6 +3939,142 @@
         document.querySelector('[data-tab="moments"]').addEventListener('click', () => {
             loadMoments();
         });
+
+        // ===== Post-Retreat Home =====
+        function checkPostRetreat() {
+            const now = new Date();
+            const retreatEnd = new Date('2026-04-11T12:00:00-04:00');
+            if (now >= retreatEnd) {
+                document.getElementById('post-retreat-home').style.display = 'block';
+                document.getElementById('regular-home').style.display = 'none';
+                initSlideshow();
+                initFeedbackForm();
+                document.getElementById('post-retreat-continue').addEventListener('click', () => {
+                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                    document.getElementById('continue-tab').classList.add('active');
+                    document.querySelector('.content-area').scrollTop = 0;
+                });
+            }
+        }
+
+        let slideshowMoments = [];
+        let slideshowIndex = 0;
+
+        async function initSlideshow() {
+            try {
+                const moments = await apiGet('/api/moments');
+                if (!moments || !Array.isArray(moments) || moments.length === 0) {
+                    document.getElementById('post-retreat-slideshow').style.display = 'none';
+                    return;
+                }
+                slideshowMoments = moments;
+                showSlide(0);
+                setInterval(() => {
+                    slideshowIndex = (slideshowIndex + 1) % slideshowMoments.length;
+                    showSlide(slideshowIndex);
+                }, 4000);
+            } catch (e) {
+                document.getElementById('post-retreat-slideshow').style.display = 'none';
+            }
+        }
+
+        function showSlide(index) {
+            const img = document.getElementById('slideshow-img');
+            const caption = document.getElementById('slideshow-caption');
+            const moment = slideshowMoments[index];
+            img.style.opacity = '0';
+            setTimeout(() => {
+                img.src = moment.photo_data;
+                caption.textContent = moment.caption || '';
+                img.style.opacity = '1';
+            }, 300);
+        }
+
+        let feedbackRating = 0;
+        let feedbackAgain = '';
+
+        function initFeedbackForm() {
+            // Check if already submitted
+            if (localStorage.getItem('g4feedback_sent')) {
+                document.getElementById('feedback-submit-btn').style.display = 'none';
+                document.getElementById('feedback-thanks').style.display = 'block';
+                return;
+            }
+
+            // Star rating
+            const stars = document.querySelectorAll('#feedback-stars span');
+            stars.forEach(star => {
+                star.addEventListener('click', () => {
+                    feedbackRating = parseInt(star.dataset.star);
+                    stars.forEach(s => {
+                        s.textContent = parseInt(s.dataset.star) <= feedbackRating ? '★' : '☆';
+                        s.style.color = parseInt(s.dataset.star) <= feedbackRating ? 'var(--blush)' : 'var(--warm-grey)';
+                    });
+                });
+            });
+
+            // Come again buttons
+            document.querySelectorAll('.feedback-option').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    feedbackAgain = btn.dataset.value;
+                    document.querySelectorAll('.feedback-option').forEach(b => {
+                        b.style.borderColor = 'var(--warm-grey)';
+                        b.style.background = 'white';
+                        b.style.color = 'var(--taupe)';
+                    });
+                    btn.style.borderColor = 'var(--blush)';
+                    btn.style.background = 'rgba(201,144,138,0.08)';
+                    btn.style.color = 'var(--accent)';
+                });
+            });
+
+            // Submit
+            document.getElementById('feedback-submit-btn').addEventListener('click', async () => {
+                const btn = document.getElementById('feedback-submit-btn');
+                const favorite = document.getElementById('feedback-favorite').value.trim();
+                const improve = document.getElementById('feedback-improve').value.trim();
+                const other = document.getElementById('feedback-other').value.trim();
+
+                if (!feedbackRating) {
+                    showToast('Please tap a star rating');
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+
+                try {
+                    const feedbackData = {
+                        user_id: currentUser ? currentUser.id : null,
+                        name: currentUser ? (currentUser.display_name || currentUser.first_name) : 'Anonymous',
+                        rating: feedbackRating,
+                        favorite: favorite,
+                        improve: improve,
+                        come_again: feedbackAgain,
+                        other: other
+                    };
+                    await apiPost('/api/feedback', feedbackData);
+                } catch (e) {
+                    // Save locally even if API fails
+                }
+
+                localStorage.setItem('g4feedback_sent', JSON.stringify({
+                    rating: feedbackRating,
+                    favorite: favorite,
+                    improve: improve,
+                    come_again: feedbackAgain,
+                    other: other
+                }));
+
+                btn.style.display = 'none';
+                document.getElementById('feedback-thanks').style.display = 'block';
+                showToast('Thank you for your feedback!');
+                launchConfetti();
+            });
+        }
+
+        checkPostRetreat();
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { event.waitUntil(caches.open('v1').then(cache => cache.addAll(['/']))) }); self.addEventListener('fetch', event => { event.respondWith(caches.match(event.request).then(response => response || fetch(event.request))) });`)).catch(() => {});

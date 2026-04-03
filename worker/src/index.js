@@ -253,6 +253,31 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // ===== FEEDBACK =====
+
+      // POST /api/feedback - submit retreat feedback
+      if (path === '/api/feedback' && request.method === 'POST') {
+        const { user_id, name, rating, favorite, improve, come_again, other } = await request.json();
+
+        if (!rating) {
+          return json({ error: 'Rating is required' }, corsHeaders, 400);
+        }
+
+        await env.DB.prepare(
+          'INSERT INTO feedback (user_id, name, rating, favorite, improve, come_again, other) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).bind(user_id || null, name || 'Anonymous', rating, favorite || '', improve || '', come_again || '', other || '').run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/feedback - get all feedback (for you to review)
+      if (path === '/api/feedback' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM feedback ORDER BY created_at DESC'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
       return json({ error: 'Not found' }, corsHeaders, 404);
 
     } catch (err) {

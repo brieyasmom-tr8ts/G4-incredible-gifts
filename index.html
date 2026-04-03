@@ -1122,7 +1122,7 @@
         }
 
         .card-content.expanded {
-            max-height: 800px;
+            max-height: 2000px;
             opacity: 1;
         }
 
@@ -2955,10 +2955,10 @@
                     }
                     card.addEventListener('click', (e) => {
                         if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
-                        const cardContent = card.querySelector('.card-content');
-                        if (cardContent) {
+                        const cardContents = card.querySelectorAll('.card-content');
+                        if (cardContents.length) {
                             card.classList.toggle('expanded');
-                            cardContent.classList.toggle('expanded');
+                            cardContents.forEach(c => c.classList.toggle('expanded'));
                         }
                     });
                     daySection.appendChild(card);

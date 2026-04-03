@@ -1458,7 +1458,7 @@
                 date: 'Day 2',
                 sessions: [
                     { time: '9:00 AM – 12:00 PM', title: 'Session 2: Open the Gift', movement: 'Open the Gift', listenFor: 'What am I holding that I haven\'t opened?', reflection: 'What would it look like to walk in this?' },
-                    { time: '12:00 PM – 5:00 PM', title: 'Free Time (Activities 1–4 PM)', movement: '', listenFor: '', reflection: '' },
+                    { time: '12:00 PM – 5:00 PM', title: 'Lunch Break / Free Time', movement: '', listenFor: '', reflection: 'This is YOUR time! Take a nap, hang with friends, swim in the pool, walk the boardwalk, or grab lunch. The conference room will be open from 1–4 PM for optional hangout time with board games and beading.', freeTimeLinks: true },
                     { time: '5:30 PM – 9:00 PM', title: 'Dinner & Party', movement: '', listenFor: '', reflection: '' }
                 ]
             },
@@ -1553,7 +1553,7 @@
                         cardHeader.appendChild(badge);
                     }
                     card.appendChild(cardHeader);
-                    if (session.listenFor || session.reflection || session.hotelLink) {
+                    if (session.listenFor || session.reflection || session.hotelLink || session.freeTimeLinks) {
                         const content = document.createElement('div');
                         content.className = 'card-content';
                         if (session.movement) {
@@ -1601,13 +1601,36 @@
                             reflectionGroup.className = 'reflection-group';
                             const reflectionLabel = document.createElement('span');
                             reflectionLabel.className = 'reflection-label';
-                            reflectionLabel.textContent = session.hotelLink ? 'Check-in Details:' : 'Reflection:';
+                            reflectionLabel.textContent = session.hotelLink ? 'Check-in Details:' : session.freeTimeLinks ? '' : 'Reflection:';
                             const reflectionText = document.createElement('div');
                             reflectionText.className = 'reflection-text';
                             reflectionText.textContent = session.reflection;
                             reflectionGroup.appendChild(reflectionLabel);
                             reflectionGroup.appendChild(reflectionText);
                             content.appendChild(reflectionGroup);
+                        }
+                        if (session.freeTimeLinks) {
+                            const lunchGroup = document.createElement('div');
+                            lunchGroup.className = 'reflection-group';
+                            const lunchLabel = document.createElement('span');
+                            lunchLabel.className = 'reflection-label';
+                            lunchLabel.textContent = 'Nearby Lunch Spots:';
+                            lunchGroup.appendChild(lunchLabel);
+                            const spots = [
+                                { name: 'Liquid Assets', url: 'https://www.liquidassetsoc.com/' },
+                                { name: 'Blu Crabhouse', url: 'https://blucrabhouse.com/' },
+                                { name: 'Fractured Prune (donuts!)', url: 'https://fracturedprune.com/' },
+                                { name: 'Longboard Cafe', url: 'https://www.longboardcafe.com/' }
+                            ];
+                            spots.forEach(spot => {
+                                const link = document.createElement('a');
+                                link.href = spot.url;
+                                link.target = '_blank';
+                                link.textContent = spot.name;
+                                link.style.cssText = 'display:block;padding:6px 0;color:var(--accent);text-decoration:none;font-size:0.85rem;';
+                                lunchGroup.appendChild(link);
+                            });
+                            content.appendChild(lunchGroup);
                         }
                         const notesLabel = document.createElement('span');
                         notesLabel.className = 'reflection-label';

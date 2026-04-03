@@ -1448,7 +1448,7 @@
                 day: 'Thursday, April 9',
                 date: 'Day 1',
                 sessions: [
-                    { time: '3:00 PM', title: 'Hotel Check-in Opens', movement: '', listenFor: '', reflection: '' },
+                    { time: '3:00 PM', title: 'Hotel Check-in Opens', movement: '', listenFor: 'Hyatt Place Ocean City Oceanfront\n16th Street, Ocean City, MD', reflection: 'Check-in is in front of the conference room in the ocean-side building. You will receive your room key there. We are staying in the new building across the road, but all gatherings are in the ocean-side building.', hotelLink: 'https://www.hyatt.com/hyatt-place/en-US/oxbzo-hyatt-place-ocean-city-oceanfront' },
                     { time: '7:00 PM', title: 'Doors Open', movement: '', listenFor: '', reflection: '' },
                     { time: '7:15 PM – 10:00 PM', title: 'Session 1: Receive the Gift', movement: 'Receive the Gift', listenFor: 'What has God already given that you haven\'t fully received?', reflection: 'What gift have I been resisting or minimizing?' }
                 ]
@@ -1553,14 +1553,37 @@
                         cardHeader.appendChild(badge);
                     }
                     card.appendChild(cardHeader);
-                    if (session.listenFor || session.reflection) {
+                    if (session.listenFor || session.reflection || session.hotelLink) {
                         const content = document.createElement('div');
                         content.className = 'card-content';
-                        const movementBadge = document.createElement('div');
-                        movementBadge.className = 'card-movement';
-                        movementBadge.textContent = session.movement;
-                        content.appendChild(movementBadge);
-                        if (session.listenFor) {
+                        if (session.movement) {
+                            const movementBadge = document.createElement('div');
+                            movementBadge.className = 'card-movement';
+                            movementBadge.textContent = session.movement;
+                            content.appendChild(movementBadge);
+                        }
+                        if (session.hotelLink) {
+                            const hotelGroup = document.createElement('div');
+                            hotelGroup.className = 'reflection-group';
+                            hotelGroup.style.marginTop = '8px';
+                            const hotelLabel = document.createElement('span');
+                            hotelLabel.className = 'reflection-label';
+                            hotelLabel.textContent = 'Location:';
+                            const hotelText = document.createElement('div');
+                            hotelText.className = 'reflection-text';
+                            hotelText.style.fontStyle = 'normal';
+                            hotelText.innerHTML = 'Hyatt Place Ocean City Oceanfront<br>16th Street, Ocean City, MD';
+                            const hotelBtn = document.createElement('a');
+                            hotelBtn.href = session.hotelLink;
+                            hotelBtn.target = '_blank';
+                            hotelBtn.style.cssText = 'display:inline-block;margin-top:10px;padding:8px 16px;background:var(--blush);color:white;border-radius:8px;text-decoration:none;font-size:0.85rem;font-weight:600;';
+                            hotelBtn.textContent = 'View Hotel Website';
+                            hotelGroup.appendChild(hotelLabel);
+                            hotelGroup.appendChild(hotelText);
+                            hotelGroup.appendChild(hotelBtn);
+                            content.appendChild(hotelGroup);
+                        }
+                        if (session.listenFor && !session.hotelLink) {
                             const listenGroup = document.createElement('div');
                             listenGroup.className = 'reflection-group';
                             const listenLabel = document.createElement('span');
@@ -1578,7 +1601,7 @@
                             reflectionGroup.className = 'reflection-group';
                             const reflectionLabel = document.createElement('span');
                             reflectionLabel.className = 'reflection-label';
-                            reflectionLabel.textContent = 'Reflection:';
+                            reflectionLabel.textContent = session.hotelLink ? 'Check-in Details:' : 'Reflection:';
                             const reflectionText = document.createElement('div');
                             reflectionText.className = 'reflection-text';
                             reflectionText.textContent = session.reflection;

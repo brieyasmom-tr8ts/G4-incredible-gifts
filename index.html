@@ -2607,7 +2607,7 @@
                     { time: '9:00 AM – 12:00 PM', title: 'Session 2: Open the Gift', movement: 'Open the Gift', listenFor: 'What am I holding that I haven\'t opened?', reflection: 'What would it look like to walk in this?' },
                     { time: '12:00 PM – 5:00 PM', title: 'Lunch Break / Free Time', movement: '', listenFor: '', reflection: 'This is YOUR time! Take a nap, hang with friends, swim in the pool, walk the boardwalk, or grab lunch. The conference room will be open from 1–4 PM for optional hangout time with board games and beading.', freeTimeLinks: true, infoOnly: true },
                     { time: '5:30 PM – 9:00 PM', title: 'Dinner & Party Night', movement: '', listenFor: '', reflection: '', infoOnly: true, partyNight: true, partySections: [
-                        { title: '🍽️ Dinner — OC Kebab', content: '', menuItems: ['Greek Salad', 'Tossed Salad', 'Spanakopita', 'Pita & Rice', 'Chicken Kebabs', 'Steak Kebabs', 'Veggie Kebabs'] },
+                        { title: 'Dinner', subtitle: 'Catered by OC Kebab', menuItems: ['Greek Salad', 'Tossed Salad', 'Spanakopita', 'Pita & Rice', 'Chicken Kebabs', 'Steak Kebabs', 'Veggie Kebabs'] },
                         { title: '🎉 Party Games', content: 'Get ready for a night you won\'t forget! We\'re turning up the fun with multiple rounds of Bingo — each one showcasing an era of music and fun times, with surprises and chances to win prizes. 🎁 Whether you\'re a Bingo pro or just in it for the fun, there\'s something for everyone!\n\nWe\'re also mixing things up with some fast-paced Minute-to-Win-It games that will have you cheering, laughing, and maybe even showing off some hidden talents.\n\nExpect great vibes, friendly competition, and unforgettable memories. Grab your cards, bring your best dauber moves, and let\'s make Friday night a highlight of the retreat!' },
                         { title: '🍦 Dessert', content: 'Make-Your-Own Sundaes! Build your dream sundae with all your favorite toppings. Take a sweet break, mingle, and recharge for even more fun ahead!' }
                     ] }
@@ -2711,32 +2711,50 @@
                         content.className = 'card-content';
                         session.partySections.forEach(section => {
                             const sectionDiv = document.createElement('div');
-                            sectionDiv.style.cssText = 'margin-bottom:16px;padding:14px;background:rgba(201,144,138,0.06);border-radius:10px;border:1px solid rgba(201,144,138,0.12);';
-                            const sectionTitle = document.createElement('div');
-                            sectionTitle.style.cssText = 'font-family:Playfair Display,serif;font-size:1rem;font-weight:600;color:var(--dark-text);margin-bottom:8px;';
-                            sectionTitle.textContent = section.title;
-                            sectionDiv.appendChild(sectionTitle);
+                            sectionDiv.style.cssText = 'margin-bottom:16px;padding:16px 20px;background:rgba(201,144,138,0.06);border-radius:12px;border:1px solid rgba(201,144,138,0.12);';
+
                             if (section.menuItems) {
-                                const menuGrid = document.createElement('div');
-                                menuGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;';
+                                // Elegant menu card
+                                sectionDiv.style.cssText = 'margin-bottom:16px;padding:20px 24px;background:white;border-radius:12px;border:1px solid rgba(201,144,138,0.15);text-align:center;box-shadow:0 2px 8px rgba(74,55,40,0.04);';
+                                const menuTitle = document.createElement('div');
+                                menuTitle.style.cssText = 'font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;color:var(--dark-text);margin-bottom:2px;';
+                                menuTitle.textContent = section.title;
+                                sectionDiv.appendChild(menuTitle);
+                                if (section.subtitle) {
+                                    const menuSub = document.createElement('div');
+                                    menuSub.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--accent);font-style:italic;margin-bottom:14px;';
+                                    menuSub.textContent = section.subtitle;
+                                    sectionDiv.appendChild(menuSub);
+                                }
+                                const dividerTop = document.createElement('div');
+                                dividerTop.style.cssText = 'width:40px;height:1px;background:var(--warm-grey);margin:0 auto 14px;';
+                                sectionDiv.appendChild(dividerTop);
                                 section.menuItems.forEach(item => {
                                     const menuItem = document.createElement('div');
-                                    menuItem.style.cssText = 'font-size:0.88rem;color:var(--taupe);padding:4px 0;';
-                                    menuItem.textContent = '• ' + item;
-                                    menuGrid.appendChild(menuItem);
+                                    menuItem.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--dark-text);padding:5px 0;letter-spacing:0.02em;';
+                                    menuItem.textContent = item;
+                                    sectionDiv.appendChild(menuItem);
                                 });
-                                sectionDiv.appendChild(menuGrid);
-                            } else if (section.content) {
-                                const sectionText = document.createElement('div');
-                                sectionText.style.cssText = 'font-size:0.88rem;color:var(--taupe);line-height:1.65;';
-                                section.content.split('\n\n').forEach((para, pi) => {
-                                    if (pi > 0) sectionText.appendChild(document.createElement('br'));
-                                    const p = document.createElement('p');
-                                    p.style.marginBottom = '8px';
-                                    p.textContent = para;
-                                    sectionText.appendChild(p);
-                                });
-                                sectionDiv.appendChild(sectionText);
+                                const dividerBot = document.createElement('div');
+                                dividerBot.style.cssText = 'width:40px;height:1px;background:var(--warm-grey);margin:14px auto 0;';
+                                sectionDiv.appendChild(dividerBot);
+                            } else {
+                                const sectionTitle = document.createElement('div');
+                                sectionTitle.style.cssText = 'font-family:Playfair Display,serif;font-size:1rem;font-weight:600;color:var(--dark-text);margin-bottom:8px;';
+                                sectionTitle.textContent = section.title;
+                                sectionDiv.appendChild(sectionTitle);
+                                if (section.content) {
+                                    const sectionText = document.createElement('div');
+                                    sectionText.style.cssText = 'font-size:0.88rem;color:var(--taupe);line-height:1.65;';
+                                    section.content.split('\n\n').forEach((para, pi) => {
+                                        if (pi > 0) sectionText.appendChild(document.createElement('br'));
+                                        const p = document.createElement('p');
+                                        p.style.marginBottom = '8px';
+                                        p.textContent = para;
+                                        sectionText.appendChild(p);
+                                    });
+                                    sectionDiv.appendChild(sectionText);
+                                }
                             }
                             content.appendChild(sectionDiv);
                         });

@@ -1457,7 +1457,7 @@
                 day: 'Friday, April 10',
                 date: 'Day 2',
                 sessions: [
-                    { time: '6:30 AM – 8:45 AM', title: 'Breakfast', movement: '', listenFor: '', reflection: 'Complimentary breakfast buffet at the hotel — eggs, bacon, sausage, fresh fruit, yogurt, pastries, coffee, and juice.' },
+                    { time: '6:30 AM – 8:45 AM', title: 'Breakfast', movement: '', listenFor: '', reflection: 'Complimentary breakfast buffet at the hotel — eggs, bacon, sausage, fresh fruit, yogurt, pastries, coffee, and juice.', infoOnly: true },
                     { time: '9:00 AM – 12:00 PM', title: 'Session 2: Open the Gift', movement: 'Open the Gift', listenFor: 'What am I holding that I haven\'t opened?', reflection: 'What would it look like to walk in this?' },
                     { time: '12:00 PM – 5:00 PM', title: 'Lunch Break / Free Time', movement: '', listenFor: '', reflection: 'This is YOUR time! Take a nap, hang with friends, swim in the pool, walk the boardwalk, or grab lunch. The conference room will be open from 1–4 PM for optional hangout time with board games and beading.', freeTimeLinks: true },
                     { time: '5:30 PM – 9:00 PM', title: 'Dinner & Party', movement: '', listenFor: '', reflection: '' }
@@ -1467,7 +1467,7 @@
                 day: 'Saturday, April 11',
                 date: 'Day 3',
                 sessions: [
-                    { time: '6:30 AM – 9:00 AM', title: 'Breakfast & Checkout', movement: '', listenFor: '', reflection: 'Complimentary breakfast buffet at the hotel. Please check out of your room and bring luggage to your vehicle before our morning session.' },
+                    { time: '6:30 AM – 9:00 AM', title: 'Breakfast & Checkout', movement: '', listenFor: '', reflection: 'Complimentary breakfast buffet at the hotel. Please check out of your room and bring luggage to your vehicle before our morning session.', infoOnly: true },
                     { time: '9:00 AM – 12:00 PM', title: 'Session 3: Share the Gift', movement: 'Share the Gift', listenFor: 'Who is impacted when I step into this?', reflection: 'Where is God asking me to share this?' }
                 ]
             }
@@ -1602,7 +1602,7 @@
                             reflectionGroup.className = 'reflection-group';
                             const reflectionLabel = document.createElement('span');
                             reflectionLabel.className = 'reflection-label';
-                            reflectionLabel.textContent = session.hotelLink ? 'Check-in Details:' : session.freeTimeLinks ? '' : 'Reflection:';
+                            reflectionLabel.textContent = session.hotelLink ? 'Check-in Details:' : session.freeTimeLinks ? '' : session.infoOnly ? '' : 'Reflection:';
                             const reflectionText = document.createElement('div');
                             reflectionText.className = 'reflection-text';
                             reflectionText.textContent = session.reflection;
@@ -1655,7 +1655,7 @@
                             });
                             content.appendChild(thingsGroup);
                         }
-                        if (!session.hotelLink) {
+                        if (!session.hotelLink && !session.infoOnly) {
                         const notesLabel = document.createElement('span');
                         notesLabel.className = 'reflection-label';
                         notesLabel.style.marginTop = '16px';

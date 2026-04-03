@@ -2506,6 +2506,11 @@
                     </div>
                     <!-- Sisters Sub-tab -->
                     <div id="connect-sisters" class="connect-panel" style="margin:0 16px;">
+                        <div id="profile-prompt" style="display:none;margin-bottom:14px;padding:16px 18px;background:linear-gradient(135deg,rgba(201,144,138,0.12),rgba(138,158,122,0.08));border-radius:14px;border:1px solid rgba(201,144,138,0.2);text-align:center;">
+                            <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);margin-bottom:4px;">Complete Your Profile</div>
+                            <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);margin-bottom:10px;">Add a photo and share your info so your sisters can connect with you.</div>
+                            <button id="profile-prompt-btn" style="padding:8px 20px;border:none;background:var(--blush);color:white;border-radius:20px;font-family:Cormorant Garamond,serif;font-size:0.88rem;font-weight:600;cursor:pointer;">Set Up My Profile</button>
+                        </div>
                         <div id="connect-people-grid" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;"></div>
                     </div>
                     <!-- Prayers Sub-tab -->
@@ -3040,6 +3045,17 @@
             if (!currentUser) return;
             const grid = document.getElementById('connect-people-grid');
             if (!grid) return;
+
+            // Show profile prompt if user hasn't added a photo
+            const prompt = document.getElementById('profile-prompt');
+            const promptBtn = document.getElementById('profile-prompt-btn');
+            if (prompt && !currentUser.photo_data) {
+                prompt.style.display = 'block';
+                promptBtn.onclick = () => { openProfile(); };
+            } else if (prompt) {
+                prompt.style.display = 'none';
+            }
+
             try {
                 const users = await apiGet('/api/users/directory');
                 if (!users || !users.length) {

@@ -562,9 +562,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(247, 240, 235, 0.55);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+            background: rgba(247, 240, 235, 0.35);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
         }
 
         .journey-locked-overlay.unlocked {
@@ -2961,6 +2961,51 @@
             } catch(e) {}
         }
 
+        async function showUserCard(userId, fallbackName) {
+            if (!userId) return;
+            try {
+                const user = await apiGet('/api/users/' + userId);
+                if (!user || user.error) return;
+
+                const displayName = user.last_initial ? `${user.first_name} ${user.last_initial}.` : user.first_name;
+
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+                let socialHTML = '';
+                if (user.instagram) {
+                    socialHTML += `<a href="https://instagram.com/${user.instagram}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:linear-gradient(135deg,#E1306C,#F77737);color:white;border-radius:20px;text-decoration:none;font-size:0.8rem;font-weight:600;">📸 @${user.instagram}</a> `;
+                }
+                if (user.facebook) {
+                    socialHTML += `<a href="https://facebook.com/${user.facebook}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;padding:8px 14px;background:#1877F2;color:white;border-radius:20px;text-decoration:none;font-size:0.8rem;font-weight:600;">👤 ${user.facebook}</a>`;
+                }
+
+                let detailsHTML = '';
+                if (user.email) detailsHTML += `<div style="font-size:0.85rem;color:var(--taupe);">📧 ${user.email}</div>`;
+                if (user.phone) detailsHTML += `<div style="font-size:0.85rem;color:var(--taupe);">📱 ${user.phone}</div>`;
+                if (user.birthday) {
+                    const bday = new Date(user.birthday + 'T00:00:00');
+                    detailsHTML += `<div style="font-size:0.85rem;color:var(--taupe);">🎂 ${bday.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</div>`;
+                }
+
+                const card = document.createElement('div');
+                card.style.cssText = 'background:var(--cream);border-radius:20px;padding:24px;text-align:center;max-width:300px;width:100%;box-shadow:var(--shadow-lg);';
+                card.innerHTML = `
+                    <div style="width:64px;height:64px;border-radius:50%;margin:0 auto 10px;overflow:hidden;border:2px solid var(--blush);background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;">
+                        ${user.photo_data ? `<img src="${user.photo_data}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="color:white;font-size:1.4rem;font-family:Playfair Display,serif;font-weight:700;">${user.first_name.charAt(0)}</span>`}
+                    </div>
+                    <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;color:var(--dark-text);margin-bottom:8px;">${displayName}</div>
+                    ${detailsHTML ? `<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">${detailsHTML}</div>` : ''}
+                    ${socialHTML ? `<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:8px;">${socialHTML}</div>` : ''}
+                    ${!socialHTML && !detailsHTML ? `<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;margin-bottom:8px;">No profile details shared yet</div>` : ''}
+                `;
+
+                overlay.appendChild(card);
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+            } catch(e) {}
+        }
+
         function openProfile() {
             if (!currentUser) return;
 
@@ -3083,8 +3128,8 @@
                     email: sheet.querySelector('#profile-email').value.trim(),
                     phone: sheet.querySelector('#profile-phone').value.trim(),
                     birthday: sheet.querySelector('#profile-birthday').value,
-                    instagram: sheet.querySelector('#profile-instagram').value.trim(),
-                    facebook: sheet.querySelector('#profile-facebook').value.trim(),
+                    instagram: sheet.querySelector('#profile-instagram').value.trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/\/.*/, ''),
+                    facebook: sheet.querySelector('#profile-facebook').value.trim().replace(/^https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/.*/, ''),
                     show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,
                     show_phone: sheet.querySelector('#toggle-phone').classList.contains('on') ? 1 : 0,
                     show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,
@@ -3137,11 +3182,15 @@
                     top.style.alignItems = 'center';
                     top.style.gap = '8px';
 
-                    // Avatar
+                    // Avatar (tappable to view profile)
+                    const avatarWrap = document.createElement('div');
+                    avatarWrap.style.cursor = 'pointer';
+                    avatarWrap.addEventListener('click', (e) => { e.stopPropagation(); showUserCard(msg.user_id, msg.author_name); });
                     const avatarEl = document.createElement('div');
                     avatarEl.className = 'msg-avatar-placeholder';
                     avatarEl.textContent = msg.author_name.charAt(0);
-                    top.appendChild(avatarEl);
+                    avatarWrap.appendChild(avatarEl);
+                    top.appendChild(avatarWrap);
                     // Try to load photo
                     loadAvatar(msg.user_id, avatarEl, msg.author_name.charAt(0));
 

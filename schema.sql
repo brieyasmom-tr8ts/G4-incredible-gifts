@@ -51,6 +51,18 @@ CREATE TABLE feedback (
   created_at TEXT DEFAULT (datetime('now'))
 );
 
+CREATE TABLE video_moments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  author_name TEXT NOT NULL,
+  session_tag TEXT DEFAULT '',
+  video_data TEXT NOT NULL,
+  thumbnail_data TEXT DEFAULT '',
+  duration REAL DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,

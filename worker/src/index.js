@@ -253,6 +253,81 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // ===== VIDEO MOMENTS =====
+
+      // GET /api/videos - get all video moments (metadata only, no video_data)
+      if (path === '/api/videos' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          `SELECT id, user_id, author_name, session_tag, thumbnail_data, duration, created_at
+           FROM video_moments ORDER BY created_at DESC LIMIT 100`
+        ).all();
+        return json(results, corsHeaders);
+      }
+
+      // GET /api/videos/:id - get single video with full data
+      const videoGetMatch = path.match(/^\/api\/videos\/(\d+)$/);
+      if (videoGetMatch && request.method === 'GET') {
+        const videoId = parseInt(videoGetMatch[1]);
+        const video = await env.DB.prepare(
+          'SELECT id, user_id, author_name, session_tag, video_data, thumbnail_data, duration, created_at FROM video_moments WHERE id = ?'
+        ).bind(videoId).first();
+
+        if (!video) {
+          return json({ error: 'Video not found' }, corsHeaders, 404);
+        }
+        return json(video, corsHeaders);
+      }
+
+      // POST /api/videos - upload a video moment (max 3 per user)
+      if (path === '/api/videos' && request.method === 'POST') {
+        const { user_id, author_name, session_tag, video_data, thumbnail_data, duration } = await request.json();
+
+        if (!user_id || !author_name || !video_data) {
+          return json({ error: 'user_id, author_name, and video_data are required' }, corsHeaders, 400);
+        }
+
+        // Check upload limit
+        const count = await env.DB.prepare(
+          'SELECT COUNT(*) as cnt FROM video_moments WHERE user_id = ?'
+        ).bind(user_id).first();
+
+        if (count && count.cnt >= 3) {
+          return json({ error: 'You can share up to 3 video moments. Delete one to add more.' }, corsHeaders, 400);
+        }
+
+        // Limit video size (~4MB base64)
+        if (video_data.length > 5500000) {
+          return json({ error: 'Video is too large. Please try a shorter clip.' }, corsHeaders, 400);
+        }
+
+        const result = await env.DB.prepare(
+          'INSERT INTO video_moments (user_id, author_name, session_tag, video_data, thumbnail_data, duration) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(user_id, author_name, session_tag || '', video_data, thumbnail_data || '', duration || 0).run();
+
+        return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
+      }
+
+      // DELETE /api/videos/:id - delete own video
+      const deleteVideoMatch = path.match(/^\/api\/videos\/(\d+)$/);
+      if (deleteVideoMatch && request.method === 'DELETE') {
+        const videoId = parseInt(deleteVideoMatch[1]);
+        const { user_id } = await request.json();
+
+        const video = await env.DB.prepare(
+          'SELECT user_id FROM video_moments WHERE id = ?'
+        ).bind(videoId).first();
+
+        if (!video) {
+          return json({ error: 'Video not found' }, corsHeaders, 404);
+        }
+        if (video.user_id !== user_id) {
+          return json({ error: 'You can only delete your own videos' }, corsHeaders, 403);
+        }
+
+        await env.DB.prepare('DELETE FROM video_moments WHERE id = ?').bind(videoId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
       // ===== FEEDBACK =====
 
       // POST /api/feedback - submit retreat feedback

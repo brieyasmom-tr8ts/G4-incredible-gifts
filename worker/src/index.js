@@ -320,14 +320,19 @@ export default {
         const videoId = result.meta.last_row_id;
 
         // Decode base64 and store in R2
-        const base64Body = video_data.split(',')[1] || video_data;
-        const binaryStr = atob(base64Body);
-        const bytes = new Uint8Array(binaryStr.length);
-        for (let i = 0; i < binaryStr.length; i++) {
-          bytes[i] = binaryStr.charCodeAt(i);
+        let base64Body = video_data;
+        if (base64Body.includes(',')) {
+          base64Body = base64Body.split(',')[1];
         }
+        // Clean any whitespace or invalid chars
+        base64Body = base64Body.replace(/\s/g, '');
 
-        await env.VIDEOS.put(`video-${videoId}`, bytes, {
+        // Use fetch to decode base64 reliably
+        const dataUrl = `data:${content_type || 'video/webm'};base64,${base64Body}`;
+        const videoResponse = await fetch(dataUrl);
+        const videoBlob = await videoResponse.arrayBuffer();
+
+        await env.VIDEOS.put(`video-${videoId}`, videoBlob, {
           httpMetadata: { contentType: content_type || 'video/webm' }
         });
 

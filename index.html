@@ -2444,7 +2444,7 @@
                             <p>Record a short video sharing your takeaway</p>
                         </div>
                         <button class="moments-upload-btn" id="video-record-btn">
-                            <span>🎥</span> Record a Video (30 sec max)
+                            <span>🎥</span> Record a Video (60 sec max)
                         </button>
                         <div id="video-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
                     </div>
@@ -4371,7 +4371,7 @@
             overlay.innerHTML = `
                 <div style="width:100%;max-width:360px;padding:0 16px;">
                     <video id="rec-preview" playsinline muted autoplay style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:16px;background:#000;transform:scaleX(-1);"></video>
-                    <div class="video-record-timer" id="rec-timer" style="text-align:center;">0:00</div>
+                    <div class="video-record-timer" id="rec-timer" style="text-align:center;">1:00</div>
                     <div class="video-record-controls" style="justify-content:center;">
                         <button class="video-record-btn-circle" id="rec-toggle"></button>
                     </div>
@@ -4395,7 +4395,7 @@
             let timerInterval = null;
             let startTime = 0;
             let isRecording = false;
-            const MAX_DURATION = 30;
+            const MAX_DURATION = 60;
 
             const preview = overlay.querySelector('#rec-preview');
             const toggleBtn = overlay.querySelector('#rec-toggle');
@@ -4443,10 +4443,14 @@
                     isRecording = true;
                     startTime = Date.now();
                     toggleBtn.classList.add('recording');
+                    timerEl.style.color = 'white';
                     timerInterval = setInterval(() => {
                         const elapsed = (Date.now() - startTime) / 1000;
-                        const secs = Math.floor(elapsed);
-                        timerEl.textContent = '0:' + String(secs).padStart(2, '0');
+                        const remaining = Math.ceil(MAX_DURATION - elapsed);
+                        const mins = Math.floor(remaining / 60);
+                        const secs = remaining % 60;
+                        timerEl.textContent = mins + ':' + String(secs).padStart(2, '0');
+                        if (remaining <= 10) timerEl.style.color = '#ff6b6b';
                         if (elapsed >= MAX_DURATION) {
                             mediaRecorder.stop();
                             clearInterval(timerInterval);

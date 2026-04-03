@@ -2751,6 +2751,36 @@
         </div>
     </div>
 
+    <!-- Would You Rather Modal -->
+    <div class="modal-overlay" id="wyr-modal" style="display:none;">
+        <div class="modal" style="text-align:center;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">🎤</div>
+            <h2 style="font-family:Playfair Display,serif;font-size:1.2rem;margin-bottom:14px;">Would You Rather...</h2>
+            <div id="wyr-buttons" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+                <button id="wyr-btn-a" class="wyr-choice" style="padding:16px;border:2px solid rgba(201,144,138,0.3);border-radius:14px;background:rgba(255,255,255,0.8);font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;color:var(--dark-text);cursor:pointer;transition:var(--transition);text-align:center;position:relative;overflow:hidden;"></button>
+                <div style="font-family:Playfair Display,serif;font-size:0.85rem;color:var(--light-text);font-weight:600;">— OR —</div>
+                <button id="wyr-btn-b" class="wyr-choice" style="padding:16px;border:2px solid rgba(138,158,122,0.3);border-radius:14px;background:rgba(255,255,255,0.8);font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;color:var(--dark-text);cursor:pointer;transition:var(--transition);text-align:center;position:relative;overflow:hidden;"></button>
+            </div>
+            <div id="wyr-results" style="display:none;margin-bottom:16px;">
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                    <div style="flex:1;text-align:center;">
+                        <div id="wyr-pct-a" style="font-family:Playfair Display,serif;font-size:2rem;font-weight:700;color:var(--accent);"></div>
+                    </div>
+                    <div style="flex:1;text-align:center;">
+                        <div id="wyr-pct-b" style="font-family:Playfair Display,serif;font-size:2rem;font-weight:700;color:var(--sage);"></div>
+                    </div>
+                </div>
+                <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;background:rgba(138,158,122,0.15);">
+                    <div id="wyr-bar-a" style="background:var(--accent);transition:width 0.6s ease;"></div>
+                    <div id="wyr-bar-b" style="background:var(--sage);transition:width 0.6s ease;"></div>
+                </div>
+                <div id="wyr-total" style="font-size:0.8rem;color:var(--light-text);margin-top:6px;"></div>
+            </div>
+            <button id="wyr-close" class="save-btn" style="width:100%;display:none;">Got It!</button>
+            <button id="wyr-skip" style="background:none;border:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);cursor:pointer;padding:6px;">Skip</button>
+        </div>
+    </div>
+
     <!-- Secret Sister Assignment Modal -->
     <div class="modal-overlay" id="secretsister-modal" style="display:none;">
         <div class="modal" style="text-align:center;">
@@ -5701,6 +5731,9 @@
                 localStorage.removeItem('g4packing_' + currentUser.id);
                 sessionStorage.removeItem('g4funfact_skip');
                 sessionStorage.removeItem('g4packing_skip');
+                // Clear WYR votes
+                Object.keys(localStorage).filter(k => k.startsWith('g4wyr_')).forEach(k => localStorage.removeItem(k));
+                Object.keys(sessionStorage).filter(k => k.startsWith('g4wyr_skip_')).forEach(k => sessionStorage.removeItem(k));
             }
 
             try {
@@ -5875,6 +5908,86 @@
             };
         }
 
+        // ===== WOULD YOU RATHER =====
+        async function checkWouldYouRather() {
+            if (!currentUser) return;
+            try {
+                const data = await apiGet('/api/games/wyr/active');
+                if (!data || !data.active) return;
+
+                const voted = localStorage.getItem('g4wyr_' + data.id + '_' + currentUser.id);
+                const skipped = sessionStorage.getItem('g4wyr_skip_' + data.id);
+                if (voted || skipped) return;
+
+                // Don't show if another popup is open
+                const modals = ['funfact-modal', 'packing-modal', 'secretsister-modal', 'ss-received-modal'];
+                if (modals.some(id => document.getElementById(id).style.display !== 'none')) return;
+
+                showWYRModal(data);
+            } catch (e) { /* silently fail */ }
+        }
+
+        function showWYRModal(data) {
+            const modal = document.getElementById('wyr-modal');
+            modal.style.display = 'flex';
+            modal.classList.add('animate-in');
+
+            const btnA = document.getElementById('wyr-btn-a');
+            const btnB = document.getElementById('wyr-btn-b');
+            btnA.textContent = data.option_a;
+            btnB.textContent = data.option_b;
+            btnA.style.border = '2px solid rgba(201,144,138,0.3)';
+            btnB.style.border = '2px solid rgba(138,158,122,0.3)';
+            btnA.disabled = false;
+            btnB.disabled = false;
+            document.getElementById('wyr-results').style.display = 'none';
+            document.getElementById('wyr-close').style.display = 'none';
+            document.getElementById('wyr-skip').style.display = '';
+            document.getElementById('wyr-buttons').style.display = '';
+
+            async function vote(choice) {
+                btnA.disabled = true;
+                btnB.disabled = true;
+
+                if (choice === 'A') {
+                    btnA.style.border = '3px solid var(--accent)';
+                    btnA.style.background = 'rgba(201,144,138,0.15)';
+                } else {
+                    btnB.style.border = '3px solid var(--sage)';
+                    btnB.style.background = 'rgba(138,158,122,0.15)';
+                }
+
+                try {
+                    const res = await apiPost('/api/games/wyr/vote', {
+                        user_id: currentUser.id,
+                        question_id: data.id,
+                        choice: choice
+                    });
+
+                    localStorage.setItem('g4wyr_' + data.id + '_' + currentUser.id, choice);
+
+                    // Show results
+                    document.getElementById('wyr-pct-a').textContent = res.pct_a + '%';
+                    document.getElementById('wyr-pct-b').textContent = res.pct_b + '%';
+                    document.getElementById('wyr-bar-a').style.width = res.pct_a + '%';
+                    document.getElementById('wyr-bar-b').style.width = res.pct_b + '%';
+                    document.getElementById('wyr-total').textContent = res.total + ' vote' + (res.total !== 1 ? 's' : '');
+                    document.getElementById('wyr-results').style.display = '';
+                    document.getElementById('wyr-close').style.display = '';
+                    document.getElementById('wyr-skip').style.display = 'none';
+                } catch (e) { showToast('Could not vote. Try again.'); btnA.disabled = false; btnB.disabled = false; }
+            }
+
+            btnA.onclick = () => vote('A');
+            btnB.onclick = () => vote('B');
+
+            document.getElementById('wyr-close').onclick = () => { modal.style.display = 'none'; };
+            document.getElementById('wyr-skip').onclick = () => {
+                sessionStorage.setItem('g4wyr_skip_' + data.id, '1');
+                modal.style.display = 'none';
+            };
+        }
+
         // ===== SECRET SISTER =====
         function showSecretSisterModal(receiverName) {
             const modal = document.getElementById('secretsister-modal');
@@ -5969,8 +6082,8 @@
         // Check for active games after user is loaded
         setTimeout(() => {
             checkGames();
-            // Check secret sister slightly after other games
-            setTimeout(() => checkSecretSister(), 2000);
+            setTimeout(() => checkWouldYouRather(), 1500);
+            setTimeout(() => checkSecretSister(), 3000);
         }, 1500);
 
         if ('serviceWorker' in navigator) {

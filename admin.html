@@ -597,6 +597,17 @@
                     <div id="packing-leaderboard" style="margin-top:1rem;"></div>
                 </div>
             </div>
+            <!-- Would You Rather -->
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;">🎤 Would You Rather – Live Poll</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">Create questions, activate one at a time. Everyone gets a popup to vote and sees live results.</div>
+                <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+                    <input type="text" id="wyr-option-a" placeholder="Option A..." style="flex:1;min-width:120px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
+                    <input type="text" id="wyr-option-b" placeholder="Option B..." style="flex:1;min-width:120px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
+                    <button class="btn btn-refresh" onclick="createWYR()">Add Question</button>
+                </div>
+                <div id="wyr-questions-list"></div>
+            </div>
             <!-- Secret Sister -->
             <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
@@ -757,7 +768,8 @@ async function refreshAll() {
         loadGameSettings(),
         loadFunFacts(),
         loadPackingScores(),
-        loadSecretSisters()
+        loadSecretSisters(),
+        loadWYRQuestions()
     ]);
 }
 
@@ -1130,6 +1142,91 @@ async function loadPackingScores() {
             </div>
         `).join('');
     } catch (e) { console.error('Packing scores:', e); }
+}
+
+// --- Would You Rather ---
+async function createWYR() {
+    const a = document.getElementById('wyr-option-a').value.trim();
+    const b = document.getElementById('wyr-option-b').value.trim();
+    if (!a || !b) { showToast('Enter both options'); return; }
+    try {
+        await apiFetch('/api/games/wyr/questions', { method: 'POST', body: { option_a: a, option_b: b } });
+        document.getElementById('wyr-option-a').value = '';
+        document.getElementById('wyr-option-b').value = '';
+        showToast('Question added!');
+        loadWYRQuestions();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function loadWYRQuestions() {
+    try {
+        const data = await apiFetch('/api/games/wyr/questions');
+        const questions = Array.isArray(data) ? data : [];
+        const list = document.getElementById('wyr-questions-list');
+        if (!questions.length) {
+            list.innerHTML = '<div style="color:var(--light-text);font-size:0.9rem;">No questions yet. Add one above.</div>';
+            return;
+        }
+
+        // Get vote counts for active question
+        let activeData = null;
+        const activeQ = questions.find(q => q.active);
+        if (activeQ) {
+            try { activeData = await apiFetch('/api/games/wyr/active'); } catch(e) {}
+        }
+
+        list.innerHTML = questions.map(q => {
+            const isActive = q.active ? true : false;
+            const showResults = isActive && activeData && activeData.active;
+            return `
+            <div style="padding:0.75rem;background:${isActive ? 'rgba(138,158,122,0.1)' : 'rgba(247,240,235,0.5)'};border-radius:10px;margin-bottom:0.5rem;border:${isActive ? '2px solid var(--sage)' : '1px solid transparent'};">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.4rem;">
+                    <div style="font-size:0.95rem;font-weight:600;flex:1;">
+                        <span style="color:var(--accent);">${esc(q.option_a)}</span>
+                        <span style="color:var(--light-text);"> vs </span>
+                        <span style="color:var(--sage);">${esc(q.option_b)}</span>
+                    </div>
+                    <div style="display:flex;gap:0.3rem;flex-shrink:0;">
+                        ${isActive
+                            ? `<button class="btn btn-danger-outline" onclick="activateWYR(null)" style="font-size:0.75rem;padding:0.2rem 0.5rem;">Deactivate</button>`
+                            : `<button class="btn btn-refresh" onclick="activateWYR(${q.id})" style="font-size:0.75rem;padding:0.2rem 0.5rem;">Activate</button>`
+                        }
+                        <button class="btn btn-danger-outline" onclick="deleteWYR(${q.id})" style="font-size:0.75rem;padding:0.2rem 0.5rem;">Delete</button>
+                    </div>
+                </div>
+                ${isActive ? '<div style="font-size:0.78rem;color:var(--sage);font-weight:600;margin-bottom:0.3rem;">🟢 LIVE NOW</div>' : ''}
+                ${showResults ? `
+                    <div style="display:flex;gap:0.5rem;font-size:0.85rem;margin-top:0.3rem;">
+                        <div style="flex:1;text-align:center;"><strong style="color:var(--accent);">${activeData.pct_a}%</strong> ${esc(q.option_a)}</div>
+                        <div style="flex:1;text-align:center;"><strong style="color:var(--sage);">${activeData.pct_b}%</strong> ${esc(q.option_b)}</div>
+                    </div>
+                    <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;background:rgba(138,158,122,0.12);margin-top:4px;">
+                        <div style="width:${activeData.pct_a}%;background:var(--accent);"></div>
+                        <div style="width:${activeData.pct_b}%;background:var(--sage);"></div>
+                    </div>
+                    <div style="font-size:0.78rem;color:var(--light-text);margin-top:4px;">${activeData.total} votes</div>
+                ` : ''}
+            </div>`;
+        }).join('');
+    } catch (e) { console.error('WYR:', e); }
+}
+
+async function activateWYR(questionId) {
+    try {
+        await apiFetch('/api/games/wyr/activate', { method: 'POST', body: { question_id: questionId } });
+        showToast(questionId ? 'Question is LIVE!' : 'Question deactivated');
+        loadWYRQuestions();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function deleteWYR(id) {
+    showModal('Delete Question', 'Delete this question and all its votes?', async () => {
+        try {
+            await apiFetch(`/api/games/wyr/questions/${id}`, { method: 'DELETE' });
+            showToast('Question deleted');
+            loadWYRQuestions();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
 }
 
 // --- Secret Sister ---

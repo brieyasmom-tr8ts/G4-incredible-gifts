@@ -203,6 +203,8 @@ export default {
         await env.DB.prepare('DELETE FROM fun_facts').run();
         await env.DB.prepare('DELETE FROM packing_scores').run();
         await env.DB.prepare('DELETE FROM secret_sister').run();
+        await env.DB.prepare('DELETE FROM wyr_votes').run();
+        await env.DB.prepare('DELETE FROM wyr_questions').run();
         await env.DB.prepare('DELETE FROM users').run();
         // Clear R2 videos
         const listed = await env.VIDEOS.list();
@@ -601,6 +603,110 @@ export default {
           'SELECT id, user_id, author_name, score, created_at FROM packing_scores ORDER BY score DESC'
         ).all();
         return json(results, corsHeaders);
+      }
+
+      // ===== WOULD YOU RATHER =====
+
+      // GET /api/games/wyr/questions - get all questions (admin)
+      if (path === '/api/games/wyr/questions' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT id, option_a, option_b, active, created_at FROM wyr_questions ORDER BY id DESC'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
+      // POST /api/games/wyr/questions - create a new question (admin)
+      if (path === '/api/games/wyr/questions' && request.method === 'POST') {
+        const { option_a, option_b } = await request.json();
+        if (!option_a || !option_b) return json({ error: 'Both options required' }, corsHeaders, 400);
+        const result = await env.DB.prepare(
+          'INSERT INTO wyr_questions (option_a, option_b, active) VALUES (?, ?, 0)'
+        ).bind(option_a.trim(), option_b.trim()).run();
+        return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
+      }
+
+      // POST /api/games/wyr/activate - activate a question (deactivates others)
+      if (path === '/api/games/wyr/activate' && request.method === 'POST') {
+        const { question_id } = await request.json();
+        // Deactivate all
+        await env.DB.prepare('UPDATE wyr_questions SET active = 0').run();
+        if (question_id) {
+          await env.DB.prepare('UPDATE wyr_questions SET active = 1 WHERE id = ?').bind(question_id).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/games/wyr/active - get the currently active question + results
+      if (path === '/api/games/wyr/active' && request.method === 'GET') {
+        const question = await env.DB.prepare(
+          'SELECT id, option_a, option_b FROM wyr_questions WHERE active = 1'
+        ).first();
+        if (!question) return json({ active: false }, corsHeaders);
+
+        const { results: votes } = await env.DB.prepare(
+          'SELECT choice, COUNT(*) as count FROM wyr_votes WHERE question_id = ? GROUP BY choice'
+        ).bind(question.id).all();
+
+        let countA = 0, countB = 0;
+        for (const v of votes) {
+          if (v.choice === 'A') countA = v.count;
+          if (v.choice === 'B') countB = v.count;
+        }
+        const total = countA + countB;
+
+        return json({
+          active: true,
+          id: question.id,
+          option_a: question.option_a,
+          option_b: question.option_b,
+          count_a: countA,
+          count_b: countB,
+          total: total,
+          pct_a: total ? Math.round((countA / total) * 100) : 0,
+          pct_b: total ? Math.round((countB / total) * 100) : 0
+        }, corsHeaders);
+      }
+
+      // POST /api/games/wyr/vote - cast a vote
+      if (path === '/api/games/wyr/vote' && request.method === 'POST') {
+        const { user_id, question_id, choice } = await request.json();
+        if (!user_id || !question_id || !choice) return json({ error: 'user_id, question_id, choice required' }, corsHeaders, 400);
+        if (choice !== 'A' && choice !== 'B') return json({ error: 'choice must be A or B' }, corsHeaders, 400);
+
+        // Upsert — one vote per user per question
+        await env.DB.prepare(
+          'INSERT INTO wyr_votes (user_id, question_id, choice) VALUES (?, ?, ?) ON CONFLICT(user_id, question_id) DO UPDATE SET choice = excluded.choice'
+        ).bind(user_id, question_id, choice).run();
+
+        // Return updated results
+        const { results: votes } = await env.DB.prepare(
+          'SELECT choice, COUNT(*) as count FROM wyr_votes WHERE question_id = ? GROUP BY choice'
+        ).bind(question_id).all();
+
+        let countA = 0, countB = 0;
+        for (const v of votes) {
+          if (v.choice === 'A') countA = v.count;
+          if (v.choice === 'B') countB = v.count;
+        }
+        const total = countA + countB;
+
+        return json({
+          success: true,
+          count_a: countA,
+          count_b: countB,
+          total: total,
+          pct_a: total ? Math.round((countA / total) * 100) : 0,
+          pct_b: total ? Math.round((countB / total) * 100) : 0
+        }, corsHeaders);
+      }
+
+      // DELETE /api/games/wyr/questions/:id - delete a question and its votes
+      const wyrDeleteMatch = path.match(/^\/api\/games\/wyr\/questions\/(\d+)$/);
+      if (wyrDeleteMatch && request.method === 'DELETE') {
+        const qId = parseInt(wyrDeleteMatch[1]);
+        await env.DB.prepare('DELETE FROM wyr_votes WHERE question_id = ?').bind(qId).run();
+        await env.DB.prepare('DELETE FROM wyr_questions WHERE id = ?').bind(qId).run();
+        return json({ success: true }, corsHeaders);
       }
 
       // ===== SECRET SISTER =====

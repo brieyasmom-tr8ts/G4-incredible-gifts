@@ -47,13 +47,26 @@ export default {
 
         const cleanName = first_name.trim();
         const cleanInitial = (last_initial || '').trim().charAt(0).toUpperCase();
+        const displayName = cleanInitial ? `${cleanName} ${cleanInitial}.` : cleanName;
+
+        // Check for duplicate display name
+        const existing = await env.DB.prepare(
+          'SELECT id FROM users WHERE first_name = ? AND last_initial = ?'
+        ).bind(cleanName, cleanInitial).first();
+
+        if (existing) {
+          return json({
+            error: cleanInitial
+              ? `"${displayName}" is already taken. Try a different last initial or use your full first name.`
+              : `"${cleanName}" is already taken. Please add your last initial to make it unique.`
+          }, corsHeaders, 409);
+        }
 
         const result = await env.DB.prepare(
           'INSERT INTO users (first_name, last_initial, attendee_id) VALUES (?, ?, ?)'
         ).bind(cleanName, cleanInitial, attendee_id || null).run();
 
         const userId = result.meta.last_row_id;
-        const displayName = cleanInitial ? `${cleanName} ${cleanInitial}.` : cleanName;
 
         return json({
           id: userId,

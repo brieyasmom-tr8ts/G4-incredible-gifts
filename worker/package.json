@@ -1,0 +1,11 @@
+{
+  "name": "g4-retreat-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute G4retreat --remote --file=../schema.sql",
+    "db:seed": "wrangler d1 execute G4retreat --remote --file=../seed.sql"
+  }
+}

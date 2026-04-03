@@ -570,7 +570,7 @@
             padding: 20px;
         }
 
-        /* Name Selection Modal */
+        /* Setup Modal */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -588,11 +588,9 @@
         .modal {
             background: var(--cream);
             border-radius: 16px;
-            padding: 24px;
-            max-width: 400px;
+            padding: 28px 24px;
+            max-width: 360px;
             width: 100%;
-            max-height: 80vh;
-            overflow-y: auto;
             box-shadow: var(--shadow-lg);
         }
 
@@ -611,54 +609,27 @@
             margin-bottom: 16px;
         }
 
-        .name-search {
+        .modal-input {
             width: 100%;
-            padding: 10px 14px;
+            padding: 12px 14px;
             border: 1px solid var(--warm-grey);
             border-radius: 8px;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             color: var(--dark-text);
             background: white;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
-        .name-search:focus {
+        .modal-input:focus {
             outline: none;
             border-color: var(--blush);
         }
 
-        .name-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            max-height: 50vh;
-            overflow-y: auto;
-        }
-
-        .name-item {
-            padding: 10px 14px;
-            background: white;
-            border: 1px solid rgba(139, 134, 128, 0.1);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            color: var(--dark-text);
-            transition: var(--transition);
-        }
-
-        .name-item:active {
-            transform: scale(0.98);
-        }
-
-        .name-item.claimed {
-            opacity: 0.4;
-            cursor: default;
-            text-decoration: line-through;
-        }
-
-        .name-item:not(.claimed):hover {
-            border-color: var(--blush);
-            background: rgba(201, 144, 138, 0.06);
+        .modal-hint {
+            font-size: 0.75rem;
+            color: var(--light-text);
+            margin-bottom: 16px;
+            text-align: center;
         }
 
         /* Welcome banner */
@@ -690,14 +661,40 @@
             font-size: 0.85rem;
             color: var(--light-text);
             margin-top: 4px;
+            font-style: italic;
         }
 
         .prayer-compose {
             background: white;
             border-radius: 12px;
             padding: 14px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             box-shadow: var(--shadow-sm);
+        }
+
+        .prayer-type-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .prayer-type-btn {
+            flex: 1;
+            padding: 8px 10px;
+            border: 1px solid var(--warm-grey);
+            background: white;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--light-text);
+            text-align: center;
+        }
+
+        .prayer-type-btn.active {
+            border-color: var(--blush);
+            background: var(--blush);
+            color: white;
         }
 
         .prayer-compose select {
@@ -737,20 +734,60 @@
             background: white;
         }
 
+        .prayer-char-count {
+            font-size: 0.7rem;
+            color: var(--light-text);
+            text-align: right;
+            margin: -6px 0 8px;
+        }
+
         .prayer-post {
             background: white;
             border-radius: 10px;
             padding: 14px;
             margin-bottom: 10px;
             box-shadow: var(--shadow-sm);
+            position: relative;
+        }
+
+        .prayer-post.type-prayer {
+            border-left: 3px solid var(--sage);
+        }
+
+        .prayer-post.type-encouragement {
             border-left: 3px solid var(--rose);
+        }
+
+        .prayer-post-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
         }
 
         .prayer-post-author {
             font-size: 0.8rem;
             font-weight: 600;
             color: var(--accent);
-            margin-bottom: 2px;
+        }
+
+        .prayer-post-type {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .prayer-post-type.type-prayer {
+            color: var(--sage);
+            background: rgba(138, 158, 122, 0.12);
+        }
+
+        .prayer-post-type.type-encouragement {
+            color: var(--rose);
+            background: rgba(212, 165, 154, 0.15);
         }
 
         .prayer-post-for {
@@ -765,10 +802,55 @@
             line-height: 1.5;
         }
 
+        .prayer-post-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
         .prayer-post-time {
             font-size: 0.7rem;
             color: var(--light-text);
-            margin-top: 6px;
+        }
+
+        .prayer-post-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pray-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border: 1px solid var(--warm-grey);
+            background: white;
+            border-radius: 14px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--light-text);
+        }
+
+        .pray-btn:active {
+            transform: scale(0.95);
+        }
+
+        .pray-btn.prayed {
+            border-color: var(--sage);
+            color: var(--sage);
+            background: rgba(138, 158, 122, 0.08);
+        }
+
+        .delete-btn {
+            border: none;
+            background: none;
+            font-size: 0.7rem;
+            color: var(--warm-grey);
+            cursor: pointer;
+            padding: 4px;
         }
 
         .prayer-empty {
@@ -837,15 +919,20 @@
             <div id="prayer-tab" class="tab-content">
                 <div class="prayer-wall">
                     <div class="prayer-wall-header">
-                        <h2>Prayer & Encouragement Wall</h2>
+                        <h2>Prayer & Encouragement</h2>
                         <p>Lift each other up</p>
                     </div>
                     <div class="prayer-compose" id="prayer-compose" style="display:none;">
+                        <div class="prayer-type-toggle">
+                            <button class="prayer-type-btn active" data-type="prayer">Prayer Request</button>
+                            <button class="prayer-type-btn" data-type="encouragement">Encouragement</button>
+                        </div>
                         <select id="prayer-for">
                             <option value="">For everyone</option>
                         </select>
-                        <textarea id="prayer-message" placeholder="Write a prayer or encouragement..."></textarea>
-                        <button class="save-btn" id="prayer-send-btn">Post</button>
+                        <textarea id="prayer-message" placeholder="Share what's on your heart..." maxlength="500"></textarea>
+                        <div class="prayer-char-count"><span id="prayer-char">0</span>/500</div>
+                        <button class="save-btn" id="prayer-send-btn">Share</button>
                     </div>
                     <div id="prayer-posts"></div>
                 </div>
@@ -881,13 +968,15 @@
         </div>
     </div>
 
-    <!-- Name Selection Modal -->
-    <div class="modal-overlay" id="name-modal" style="display:none;">
+    <!-- Welcome Setup Modal -->
+    <div class="modal-overlay" id="setup-modal" style="display:none;">
         <div class="modal">
-            <h2>Welcome!</h2>
-            <p>Find your name and tap "That's me"</p>
-            <input type="text" class="name-search" id="name-search" placeholder="Search your name...">
-            <div class="name-list" id="name-list"></div>
+            <h2>Welcome to the Retreat!</h2>
+            <p>Tell us a little about yourself</p>
+            <input type="text" class="modal-input" id="setup-first" placeholder="First name *" autocomplete="given-name">
+            <input type="text" class="modal-input" id="setup-last-initial" placeholder="Last initial (optional)" maxlength="1" autocomplete="off">
+            <div class="modal-hint">Your name will appear on prayers and encouragements</div>
+            <button class="save-btn" id="setup-btn">Let's Go!</button>
         </div>
     </div>
 
@@ -896,17 +985,9 @@
         // IMPORTANT: Update this URL after deploying your Worker
         const API_URL = 'https://g4-retreat-api.YOUR_SUBDOMAIN.workers.dev';
 
-        let allAttendees = [];
         let currentUser = null;
-
-        function getDisplayName(attendee) {
-            const last = attendee.last_name ? ' ' + attendee.last_name.charAt(0) + '.' : '';
-            return attendee.first_name + last;
-        }
-
-        function getFullName(attendee) {
-            return attendee.last_name ? attendee.first_name + ' ' + attendee.last_name : attendee.first_name;
-        }
+        let selectedPostType = 'prayer';
+        let prayedPosts = JSON.parse(localStorage.getItem('g4prayed') || '[]');
 
         async function apiGet(path) {
             const res = await fetch(API_URL + path);
@@ -922,8 +1003,17 @@
             return res.json();
         }
 
-        // ===== Name Selection =====
-        async function initNameSelection() {
+        async function apiDelete(path, body) {
+            const res = await fetch(API_URL + path, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            return res.json();
+        }
+
+        // ===== User Setup =====
+        function initSetup() {
             const saved = localStorage.getItem('g4user');
             if (saved) {
                 currentUser = JSON.parse(saved);
@@ -931,56 +1021,45 @@
                 document.getElementById('prayer-compose').style.display = 'block';
                 return;
             }
-            // Show modal
-            document.getElementById('name-modal').style.display = 'flex';
-            try {
-                allAttendees = await apiGet('/api/attendees');
-                renderNameList(allAttendees);
-            } catch (e) {
-                document.getElementById('name-list').innerHTML = '<p style="text-align:center;color:var(--light-text);padding:20px;">Could not load names. Check your connection.</p>';
-            }
+            document.getElementById('setup-modal').style.display = 'flex';
 
-            document.getElementById('name-search').addEventListener('input', (e) => {
-                const query = e.target.value.toLowerCase();
-                const filtered = allAttendees.filter(a =>
-                    a.first_name.toLowerCase().includes(query) ||
-                    a.last_name.toLowerCase().includes(query)
-                );
-                renderNameList(filtered);
-            });
-        }
+            document.getElementById('setup-btn').addEventListener('click', async () => {
+                const firstName = document.getElementById('setup-first').value.trim();
+                const lastInitial = document.getElementById('setup-last-initial').value.trim();
 
-        function renderNameList(attendees) {
-            const list = document.getElementById('name-list');
-            list.innerHTML = '';
-            attendees.forEach(a => {
-                const item = document.createElement('div');
-                item.className = 'name-item' + (a.claimed ? ' claimed' : '');
-                item.textContent = getFullName(a);
-                if (!a.claimed) {
-                    item.addEventListener('click', () => claimName(a));
-                }
-                list.appendChild(item);
-            });
-        }
-
-        async function claimName(attendee) {
-            if (!confirm(`That's you — ${getFullName(attendee)}?`)) return;
-            try {
-                const result = await apiPost('/api/attendees/claim', { id: attendee.id });
-                if (result.error) {
-                    alert(result.error);
+                if (!firstName) {
+                    document.getElementById('setup-first').style.borderColor = 'var(--accent)';
                     return;
                 }
-                currentUser = { id: attendee.id, first_name: attendee.first_name, last_name: attendee.last_name };
-                localStorage.setItem('g4user', JSON.stringify(currentUser));
-                document.getElementById('name-modal').style.display = 'none';
-                showWelcome();
-                document.getElementById('prayer-compose').style.display = 'block';
-                loadAttendeeList();
-            } catch (e) {
-                alert('Something went wrong. Please try again.');
-            }
+
+                const btn = document.getElementById('setup-btn');
+                btn.disabled = true;
+                btn.textContent = 'Setting up...';
+
+                try {
+                    const result = await apiPost('/api/users', {
+                        first_name: firstName,
+                        last_initial: lastInitial
+                    });
+
+                    if (result.error) {
+                        alert(result.error);
+                        btn.disabled = false;
+                        btn.textContent = "Let's Go!";
+                        return;
+                    }
+
+                    currentUser = result;
+                    localStorage.setItem('g4user', JSON.stringify(currentUser));
+                    document.getElementById('setup-modal').style.display = 'none';
+                    showWelcome();
+                    document.getElementById('prayer-compose').style.display = 'block';
+                } catch (e) {
+                    alert('Could not connect. Please check your connection and try again.');
+                    btn.disabled = false;
+                    btn.textContent = "Let's Go!";
+                }
+            });
         }
 
         function showWelcome() {
@@ -990,41 +1069,36 @@
         }
 
         // ===== Prayer Wall =====
-        async function loadAttendeeList() {
-            try {
-                if (allAttendees.length === 0) {
-                    allAttendees = await apiGet('/api/attendees');
-                }
-                const select = document.getElementById('prayer-for');
-                select.innerHTML = '<option value="">For everyone</option>';
-                allAttendees.forEach(a => {
-                    const opt = document.createElement('option');
-                    opt.value = getFullName(a);
-                    opt.textContent = getFullName(a);
-                    select.appendChild(opt);
-                });
-            } catch (e) {}
-        }
-
         async function loadPrayerWall() {
             const container = document.getElementById('prayer-posts');
             try {
                 const messages = await apiGet('/api/messages');
-                if (messages.length === 0) {
-                    container.innerHTML = '<div class="prayer-empty">Be the first to share a prayer or encouragement!</div>';
+                if (!messages || messages.length === 0) {
+                    container.innerHTML = '<div class="prayer-empty">Be the first to share a prayer or encouragement.</div>';
                     return;
                 }
                 container.innerHTML = '';
                 messages.forEach(msg => {
                     const post = document.createElement('div');
-                    post.className = 'prayer-post';
+                    post.className = 'prayer-post type-' + msg.type;
+
+                    // Top row: author + type badge
+                    const top = document.createElement('div');
+                    top.className = 'prayer-post-top';
 
                     const author = document.createElement('div');
                     author.className = 'prayer-post-author';
                     author.textContent = msg.author_name;
 
-                    post.appendChild(author);
+                    const typeBadge = document.createElement('span');
+                    typeBadge.className = 'prayer-post-type type-' + msg.type;
+                    typeBadge.textContent = msg.type === 'prayer' ? 'Prayer' : 'Encouragement';
 
+                    top.appendChild(author);
+                    top.appendChild(typeBadge);
+                    post.appendChild(top);
+
+                    // Tagged name
                     if (msg.tagged_name) {
                         const forEl = document.createElement('div');
                         forEl.className = 'prayer-post-for';
@@ -1032,18 +1106,64 @@
                         post.appendChild(forEl);
                     }
 
+                    // Message
                     const message = document.createElement('div');
                     message.className = 'prayer-post-message';
                     message.textContent = msg.message;
                     post.appendChild(message);
+
+                    // Footer: time + actions
+                    const footer = document.createElement('div');
+                    footer.className = 'prayer-post-footer';
 
                     const time = document.createElement('div');
                     time.className = 'prayer-post-time';
                     time.textContent = new Date(msg.created_at + 'Z').toLocaleDateString('en-US', {
                         weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                     });
-                    post.appendChild(time);
+                    footer.appendChild(time);
 
+                    const actions = document.createElement('div');
+                    actions.className = 'prayer-post-actions';
+
+                    // "I prayed for you" button
+                    if (msg.type === 'prayer') {
+                        const prayBtn = document.createElement('button');
+                        prayBtn.className = 'pray-btn' + (prayedPosts.includes(msg.id) ? ' prayed' : '');
+                        prayBtn.innerHTML = '🙏 <span>' + (msg.prayer_count || 0) + '</span>';
+                        prayBtn.title = 'I prayed for you';
+                        prayBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            if (prayedPosts.includes(msg.id)) return;
+                            try {
+                                const result = await apiPost('/api/messages/' + msg.id + '/pray', {});
+                                prayedPosts.push(msg.id);
+                                localStorage.setItem('g4prayed', JSON.stringify(prayedPosts));
+                                prayBtn.classList.add('prayed');
+                                prayBtn.querySelector('span').textContent = result.prayer_count;
+                            } catch (e) {}
+                        });
+                        actions.appendChild(prayBtn);
+                    }
+
+                    // Delete button (only for own posts)
+                    if (currentUser && msg.user_id === currentUser.id) {
+                        const delBtn = document.createElement('button');
+                        delBtn.className = 'delete-btn';
+                        delBtn.textContent = 'Delete';
+                        delBtn.addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            if (!confirm('Delete this post?')) return;
+                            try {
+                                await apiDelete('/api/messages/' + msg.id, { user_id: currentUser.id });
+                                loadPrayerWall();
+                            } catch (e) {}
+                        });
+                        actions.appendChild(delBtn);
+                    }
+
+                    footer.appendChild(actions);
+                    post.appendChild(footer);
                     container.appendChild(post);
                 });
             } catch (e) {
@@ -1052,10 +1172,28 @@
         }
 
         function initPrayerWall() {
-            const sendBtn = document.getElementById('prayer-send-btn');
-            sendBtn.addEventListener('click', async () => {
+            // Type toggle
+            document.querySelectorAll('.prayer-type-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.prayer-type-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    selectedPostType = btn.dataset.type;
+                    const msgEl = document.getElementById('prayer-message');
+                    msgEl.placeholder = selectedPostType === 'prayer'
+                        ? 'Share your prayer request...'
+                        : 'Write an encouragement...';
+                });
+            });
+
+            // Character count
+            document.getElementById('prayer-message').addEventListener('input', (e) => {
+                document.getElementById('prayer-char').textContent = e.target.value.length;
+            });
+
+            // Send
+            document.getElementById('prayer-send-btn').addEventListener('click', async () => {
                 if (!currentUser) {
-                    alert('Please select your name first.');
+                    alert('Please set up your name first.');
                     return;
                 }
                 const messageEl = document.getElementById('prayer-message');
@@ -1063,27 +1201,50 @@
                 const message = messageEl.value.trim();
                 if (!message) return;
 
+                const sendBtn = document.getElementById('prayer-send-btn');
                 sendBtn.disabled = true;
-                sendBtn.textContent = 'Posting...';
+                sendBtn.textContent = 'Sharing...';
                 try {
-                    await apiPost('/api/messages', {
-                        author_id: currentUser.id,
-                        author_name: currentUser.first_name,
+                    const result = await apiPost('/api/messages', {
+                        user_id: currentUser.id,
+                        author_name: currentUser.display_name || currentUser.first_name,
+                        type: selectedPostType,
                         tagged_name: forEl.value || null,
                         message: message
                     });
-                    messageEl.value = '';
-                    forEl.value = '';
-                    loadPrayerWall();
+                    if (result.error) {
+                        alert(result.error);
+                    } else {
+                        messageEl.value = '';
+                        forEl.value = '';
+                        document.getElementById('prayer-char').textContent = '0';
+                        loadPrayerWall();
+                    }
                 } catch (e) {
                     alert('Could not post. Please try again.');
                 }
                 sendBtn.disabled = false;
-                sendBtn.textContent = 'Post';
+                sendBtn.textContent = 'Share';
             });
 
-            loadAttendeeList();
+            // Load attendee names for tagging dropdown
+            loadAttendeeDropdown();
             loadPrayerWall();
+        }
+
+        async function loadAttendeeDropdown() {
+            try {
+                const attendees = await apiGet('/api/attendees');
+                const select = document.getElementById('prayer-for');
+                select.innerHTML = '<option value="">For everyone</option>';
+                attendees.forEach(a => {
+                    const name = a.last_name ? a.first_name + ' ' + a.last_name.charAt(0) + '.' : a.first_name;
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    select.appendChild(opt);
+                });
+            } catch (e) {}
         }
 
         const scheduleData = [
@@ -1429,10 +1590,10 @@
         buildJournal();
         buildContinue();
         updateStatus();
-        initNameSelection();
+        initSetup();
         initPrayerWall();
 
-        // Refresh prayer wall when tab is clicked
+        // Refresh prayer wall when switching to tab
         document.querySelector('[data-tab="prayer"]').addEventListener('click', () => {
             loadPrayerWall();
         });

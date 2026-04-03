@@ -86,7 +86,7 @@ export default {
       // GET /api/users/directory - public directory (only shared fields)
       if (path === '/api/users/directory' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, instagram, facebook, location, job, church, retreat_years, about FROM users ORDER BY first_name ASC'
+          'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about FROM users ORDER BY first_name ASC'
         ).all();
         const directory = results.map(u => ({
           id: u.id,
@@ -98,11 +98,11 @@ export default {
           birthday: u.show_birthday ? (u.birthday || '') : '',
           instagram: u.instagram || '',
           facebook: u.facebook || '',
-          location: u.location || '',
-          job: u.job || '',
-          church: u.church || '',
-          retreat_years: u.retreat_years || '',
-          about: u.about || ''
+          location: u.show_about ? (u.location || '') : '',
+          job: u.show_about ? (u.job || '') : '',
+          church: u.show_about ? (u.church || '') : '',
+          retreat_years: u.show_about ? (u.retreat_years || '') : '',
+          about: u.show_about ? (u.about || '') : ''
         }));
         return json(directory, corsHeaders);
       }
@@ -112,7 +112,7 @@ export default {
       if (userGetMatch && request.method === 'GET') {
         const userId = parseInt(userGetMatch[1]);
         const user = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, instagram, facebook, location, job, church, retreat_years, about, created_at FROM users WHERE id = ?'
+          'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, created_at FROM users WHERE id = ?'
         ).bind(userId).first();
         if (!user) return json({ error: 'User not found' }, corsHeaders, 404);
 
@@ -131,11 +131,12 @@ export default {
           show_birthday: user.show_birthday || 0,
           instagram: user.instagram || '',
           facebook: user.facebook || '',
-          location: user.location || '',
-          job: user.job || '',
-          church: user.church || '',
-          retreat_years: user.retreat_years || '',
-          about: user.about || '',
+          show_about: user.show_about || 0,
+          location: (isOwner || user.show_about) ? (user.location || '') : '',
+          job: (isOwner || user.show_about) ? (user.job || '') : '',
+          church: (isOwner || user.show_about) ? (user.church || '') : '',
+          retreat_years: (isOwner || user.show_about) ? (user.retreat_years || '') : '',
+          about: (isOwner || user.show_about) ? (user.about || '') : '',
           created_at: user.created_at
         }, corsHeaders);
       }
@@ -146,7 +147,7 @@ export default {
         const userId = parseInt(profileMatch[1]);
         const body = await request.json();
 
-        const allowed = ['email', 'phone', 'birthday', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
+        const allowed = ['email', 'phone', 'birthday', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
         const fields = [];
         const values = [];
         for (const key of allowed) {

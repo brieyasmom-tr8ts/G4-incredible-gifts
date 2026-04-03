@@ -597,6 +597,33 @@
                     <div id="packing-leaderboard" style="margin-top:1rem;"></div>
                 </div>
             </div>
+            <!-- Secret Sister -->
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                    <div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;">💌 Secret Sister Compliment Drop</div>
+                        <div style="font-size:0.85rem;color:var(--light-text);margin-top:4px;">Randomly assign sisters, they write anonymous encouraging notes to each other.</div>
+                    </div>
+                    <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;margin-left:1rem;">
+                        <input type="checkbox" id="toggle-secret-sister" style="opacity:0;width:0;height:0;" onchange="toggleGame('secret_sister', this.checked)">
+                        <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                    </label>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+                    <button class="btn btn-refresh" onclick="assignSecretSisters()">Assign Sisters</button>
+                    <button class="btn btn-refresh" onclick="loadSecretSisters()">Refresh</button>
+                    <button class="btn btn-danger-outline" onclick="clearSecretSisters()">Clear All</button>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(201,144,138,0.08);border-radius:10px;margin-bottom:0.75rem;">
+                    <span style="font-size:0.9rem;color:var(--taupe);">Reveal notes to recipients</span>
+                    <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
+                        <input type="checkbox" id="toggle-ss-reveal" style="opacity:0;width:0;height:0;" onchange="toggleGame('secret_sister_reveal', this.checked)">
+                        <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                    </label>
+                </div>
+                <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.5rem;">Pairs: <strong id="ss-count">0</strong> | Notes written: <strong id="ss-notes-count">0</strong></div>
+                <div id="ss-pairs-list" style="margin-top:0.5rem;"></div>
+            </div>
         </div>
 
         <!-- Feedback -->
@@ -729,7 +756,8 @@ async function refreshAll() {
         loadFeedback(),
         loadGameSettings(),
         loadFunFacts(),
-        loadPackingScores()
+        loadPackingScores(),
+        loadSecretSisters()
     ]);
 }
 
@@ -1040,6 +1068,8 @@ async function loadGameSettings() {
         document.getElementById('toggle-who-am-i').checked = settings.who_am_i === '1';
         document.getElementById('toggle-packing-points').checked = settings.packing_points === '1';
         document.getElementById('toggle-show-packing-names').checked = settings.show_packing_names === '1';
+        document.getElementById('toggle-secret-sister').checked = settings.secret_sister === '1';
+        document.getElementById('toggle-ss-reveal').checked = settings.secret_sister_reveal === '1';
     } catch (e) { console.error('Game settings:', e); }
 }
 
@@ -1100,6 +1130,51 @@ async function loadPackingScores() {
             </div>
         `).join('');
     } catch (e) { console.error('Packing scores:', e); }
+}
+
+// --- Secret Sister ---
+async function assignSecretSisters() {
+    showModal('Assign Secret Sisters', 'This will randomly pair all current users. Any existing assignments will be replaced. Continue?', async () => {
+        try {
+            const res = await apiFetch('/api/games/secretsister/assign', { method: 'POST', body: {} });
+            showToast(`Assigned ${res.pairs} pairs!`);
+            loadSecretSisters();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+async function loadSecretSisters() {
+    try {
+        const data = await apiFetch('/api/games/secretsister/all');
+        const pairs = Array.isArray(data) ? data : [];
+        const notesWritten = pairs.filter(p => p.note && p.note.trim()).length;
+        document.getElementById('ss-count').textContent = pairs.length;
+        document.getElementById('ss-notes-count').textContent = notesWritten;
+        const list = document.getElementById('ss-pairs-list');
+        if (!pairs.length) {
+            list.innerHTML = '<div style="color:var(--light-text);font-size:0.9rem;">No assignments yet. Click "Assign Sisters" to pair everyone up.</div>';
+            return;
+        }
+        list.innerHTML = pairs.map(p => `
+            <div style="padding:0.6rem 0.8rem;background:rgba(247,240,235,0.5);border-radius:10px;margin-bottom:0.5rem;display:flex;align-items:flex-start;gap:0.5rem;">
+                <div style="flex:1;">
+                    <div style="font-size:0.9rem;"><strong>${esc(p.giver_name)}</strong> → <strong style="color:var(--accent);">${esc(p.receiver_name)}</strong></div>
+                    ${p.note ? `<div style="font-size:0.85rem;color:var(--taupe);font-style:italic;margin-top:4px;line-height:1.4;">"${esc(p.note)}"</div>` : `<div style="font-size:0.8rem;color:var(--light-text);margin-top:2px;">No note yet</div>`}
+                </div>
+                ${p.note ? '<div style="font-size:0.8rem;color:var(--sage);">✓</div>' : ''}
+            </div>
+        `).join('');
+    } catch (e) { console.error('Secret sisters:', e); }
+}
+
+function clearSecretSisters() {
+    showModal('Clear Secret Sisters', 'Delete all assignments and notes? This cannot be undone.', async () => {
+        try {
+            await apiFetch('/api/games/secretsister/all', { method: 'DELETE' });
+            showToast('All assignments cleared');
+            loadSecretSisters();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
 }
 
 // --- Reset All ---

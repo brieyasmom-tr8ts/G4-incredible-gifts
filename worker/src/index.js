@@ -202,6 +202,7 @@ export default {
         await env.DB.prepare('DELETE FROM feedback').run();
         await env.DB.prepare('DELETE FROM fun_facts').run();
         await env.DB.prepare('DELETE FROM packing_scores').run();
+        await env.DB.prepare('DELETE FROM secret_sister').run();
         await env.DB.prepare('DELETE FROM users').run();
         // Clear R2 videos
         const listed = await env.VIDEOS.list();
@@ -600,6 +601,96 @@ export default {
           'SELECT id, user_id, author_name, score, created_at FROM packing_scores ORDER BY score DESC'
         ).all();
         return json(results, corsHeaders);
+      }
+
+      // ===== SECRET SISTER =====
+
+      // POST /api/games/secretsister/assign - admin: randomly pair all users
+      if (path === '/api/games/secretsister/assign' && request.method === 'POST') {
+        // Get all users
+        const { results: users } = await env.DB.prepare(
+          'SELECT id, first_name, last_initial FROM users ORDER BY id'
+        ).all();
+
+        if (users.length < 2) {
+          return json({ error: 'Need at least 2 users to assign sisters' }, corsHeaders, 400);
+        }
+
+        // Shuffle users into a random cycle: each person writes to the next
+        const shuffled = [...users];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+
+        // Clear old assignments
+        await env.DB.prepare('DELETE FROM secret_sister').run();
+
+        // Create cycle: person i writes to person (i+1), last writes to first
+        for (let i = 0; i < shuffled.length; i++) {
+          const giver = shuffled[i];
+          const receiver = shuffled[(i + 1) % shuffled.length];
+          const giverName = giver.last_initial ? `${giver.first_name} ${giver.last_initial}.` : giver.first_name;
+          const receiverName = receiver.last_initial ? `${receiver.first_name} ${receiver.last_initial}.` : receiver.first_name;
+          await env.DB.prepare(
+            'INSERT INTO secret_sister (giver_id, receiver_id, giver_name, receiver_name) VALUES (?, ?, ?, ?)'
+          ).bind(giver.id, receiver.id, giverName, receiverName).run();
+        }
+
+        return json({ success: true, pairs: shuffled.length }, corsHeaders);
+      }
+
+      // GET /api/games/secretsister/mine - get my assignment (who I write to) + note written for me
+      const ssMatch = path.match(/^\/api\/games\/secretsister\/mine$/);
+      if (ssMatch && request.method === 'GET') {
+        const userId = parseInt(url.searchParams.get('user_id'));
+        if (!userId) return json({ error: 'user_id required' }, corsHeaders, 400);
+
+        // Who am I assigned to write to?
+        const assignment = await env.DB.prepare(
+          'SELECT receiver_id, receiver_name FROM secret_sister WHERE giver_id = ?'
+        ).bind(userId).first();
+
+        // Has someone written a note for me?
+        const received = await env.DB.prepare(
+          'SELECT note FROM secret_sister WHERE receiver_id = ?'
+        ).bind(userId).first();
+
+        return json({
+          assignment: assignment ? { receiver_id: assignment.receiver_id, receiver_name: assignment.receiver_name } : null,
+          received_note: (received && received.note) ? received.note : null
+        }, corsHeaders);
+      }
+
+      // POST /api/games/secretsister/note - submit my note for my assigned sister
+      if (path === '/api/games/secretsister/note' && request.method === 'POST') {
+        const { user_id, note } = await request.json();
+        if (!user_id || !note || !note.trim()) {
+          return json({ error: 'user_id and note are required' }, corsHeaders, 400);
+        }
+        if (containsBlockedWords(note)) {
+          return json({ error: 'Please keep it kind and uplifting!' }, corsHeaders, 400);
+        }
+
+        await env.DB.prepare(
+          'UPDATE secret_sister SET note = ? WHERE giver_id = ?'
+        ).bind(note.trim(), user_id).run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/games/secretsister/all - admin: see all pairings
+      if (path === '/api/games/secretsister/all' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT id, giver_id, giver_name, receiver_id, receiver_name, note, created_at FROM secret_sister ORDER BY id'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
+      // DELETE /api/games/secretsister/all - admin: clear all assignments
+      if (path === '/api/games/secretsister/all' && request.method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM secret_sister').run();
+        return json({ success: true }, corsHeaders);
       }
 
       // ===== FEEDBACK =====

@@ -2751,6 +2751,32 @@
         </div>
     </div>
 
+    <!-- Secret Sister Assignment Modal -->
+    <div class="modal-overlay" id="secretsister-modal" style="display:none;">
+        <div class="modal" style="text-align:center;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">💌</div>
+            <h2 style="font-family:Playfair Display,serif;font-size:1.3rem;margin-bottom:6px;">Secret Sister!</h2>
+            <p style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--light-text);margin-bottom:16px;line-height:1.5;">You've been assigned a secret sister! Write her an encouraging note — she'll never know it's from you.</p>
+            <div id="ss-assigned-name" style="font-family:Playfair Display,serif;font-size:1.4rem;font-weight:700;color:var(--accent);margin-bottom:16px;"></div>
+            <textarea id="ss-note-input" placeholder="Write something beautiful for your sister..." maxlength="300" style="width:100%;min-height:100px;padding:12px 14px;border:1.5px solid rgba(139,134,128,0.2);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);resize:none;outline:none;background:rgba(255,255,255,0.8);"></textarea>
+            <div style="text-align:right;font-size:0.75rem;color:var(--light-text);margin:4px 4px 12px 0;"><span id="ss-char">0</span>/300</div>
+            <button class="save-btn" id="ss-submit" style="width:100%;margin-bottom:8px;">Send My Note 💛</button>
+            <button id="ss-skip" style="background:none;border:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);cursor:pointer;padding:6px;">I'll do it later</button>
+        </div>
+    </div>
+
+    <!-- Secret Sister Received Note Modal -->
+    <div class="modal-overlay" id="ss-received-modal" style="display:none;">
+        <div class="modal" style="text-align:center;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">🎁</div>
+            <h2 style="font-family:Playfair Display,serif;font-size:1.3rem;margin-bottom:6px;">You Have a Secret Note!</h2>
+            <p style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--light-text);margin-bottom:16px;line-height:1.5;">A sister wrote this just for you...</p>
+            <div id="ss-received-note" style="font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--dark-text);line-height:1.6;padding:16px 20px;background:rgba(201,144,138,0.08);border-radius:14px;border:1px solid rgba(201,144,138,0.15);font-style:italic;margin-bottom:16px;"></div>
+            <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);margin-bottom:16px;">— Your Secret Sister 💛</div>
+            <button class="save-btn" id="ss-received-close" style="width:100%;">That Made My Day!</button>
+        </div>
+    </div>
+
     <script>
         // ===== API Configuration =====
         // IMPORTANT: Update this URL after deploying your Worker
@@ -5849,8 +5875,103 @@
             };
         }
 
+        // ===== SECRET SISTER =====
+        function showSecretSisterModal(receiverName) {
+            const modal = document.getElementById('secretsister-modal');
+            modal.style.display = 'flex';
+            modal.classList.add('animate-in');
+            document.getElementById('ss-assigned-name').textContent = receiverName;
+            const input = document.getElementById('ss-note-input');
+            input.value = '';
+            document.getElementById('ss-char').textContent = '0';
+
+            input.addEventListener('input', () => {
+                document.getElementById('ss-char').textContent = input.value.length;
+            });
+
+            document.getElementById('ss-submit').onclick = async () => {
+                const note = input.value.trim();
+                if (!note) { showToast('Please write a note!'); return; }
+                const btn = document.getElementById('ss-submit');
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+                try {
+                    const res = await apiPost('/api/games/secretsister/note', {
+                        user_id: currentUser.id,
+                        note: note
+                    });
+                    if (res.error) { showToast(res.error); }
+                    else {
+                        localStorage.setItem('g4secretsister_' + currentUser.id, '1');
+                        modal.style.display = 'none';
+                        showToast('Note sent with love!');
+                    }
+                } catch (e) { showToast('Could not send. Try again.'); }
+                btn.disabled = false;
+                btn.textContent = 'Send My Note 💛';
+            };
+
+            document.getElementById('ss-skip').onclick = () => {
+                sessionStorage.setItem('g4ss_skip', '1');
+                modal.style.display = 'none';
+            };
+        }
+
+        function showReceivedNoteModal(note) {
+            const modal = document.getElementById('ss-received-modal');
+            modal.style.display = 'flex';
+            modal.classList.add('animate-in');
+            document.getElementById('ss-received-note').textContent = note;
+            localStorage.setItem('g4ss_seen_' + currentUser.id, '1');
+
+            document.getElementById('ss-received-close').onclick = () => {
+                modal.style.display = 'none';
+            };
+        }
+
+        async function checkSecretSister() {
+            if (!currentUser) return;
+            const testMode = new URLSearchParams(window.location.search).get('testgames') === '1';
+
+            if (testMode) {
+                localStorage.removeItem('g4secretsister_' + currentUser.id);
+                localStorage.removeItem('g4ss_seen_' + currentUser.id);
+                sessionStorage.removeItem('g4ss_skip');
+            }
+
+            try {
+                const settings = gameSettings;
+                if (settings.secret_sister !== '1') return;
+
+                const data = await apiGet('/api/games/secretsister/mine?user_id=' + currentUser.id);
+                if (!data) return;
+
+                // Show assignment popup if they haven't written their note yet
+                if (data.assignment && !localStorage.getItem('g4secretsister_' + currentUser.id) && !sessionStorage.getItem('g4ss_skip')) {
+                    // Don't show if another game popup is open
+                    const otherOpen = document.getElementById('funfact-modal').style.display !== 'none' || document.getElementById('packing-modal').style.display !== 'none';
+                    if (!otherOpen) {
+                        showSecretSisterModal(data.assignment.receiver_name);
+                        return;
+                    }
+                }
+
+                // Show received note if admin toggled reveal and they haven't seen it
+                if (settings.secret_sister_reveal === '1' && data.received_note && !localStorage.getItem('g4ss_seen_' + currentUser.id)) {
+                    const otherOpen = document.getElementById('funfact-modal').style.display !== 'none' || document.getElementById('packing-modal').style.display !== 'none' || document.getElementById('secretsister-modal').style.display !== 'none';
+                    if (!otherOpen) {
+                        showReceivedNoteModal(data.received_note);
+                    }
+                }
+            } catch (e) { /* silently fail */ }
+        }
+
         // Check for active games after user is loaded
-        setTimeout(() => checkGames(), 1500);
+        setTimeout(() => {
+            checkGames();
+            // Check secret sister slightly after other games
+            setTimeout(() => checkSecretSister(), 2000);
+        }, 1500);
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { event.waitUntil(caches.open('v1').then(cache => cache.addAll(['/']))) }); self.addEventListener('fetch', event => { event.respondWith(caches.match(event.request).then(response => response || fetch(event.request))) });`)).catch(() => {});

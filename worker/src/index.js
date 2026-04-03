@@ -204,7 +204,7 @@ export default {
 
       // DELETE /api/admin/reset - clear all test data
       if (path === '/api/admin/reset' && request.method === 'DELETE') {
-        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'users'];
+        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'users'];
         for (const t of tables) {
           try { await env.DB.prepare(`DELETE FROM ${t}`).run(); } catch(e) { /* table may not exist */ }
         }
@@ -866,6 +866,143 @@ export default {
           'SELECT * FROM feedback ORDER BY created_at DESC'
         ).all();
         return json(results, corsHeaders);
+      }
+
+      // ===== POLLS / Q&A =====
+
+      // POST /api/polls - create a poll (admin)
+      if (path === '/api/polls' && request.method === 'POST') {
+        const { question, type, options } = await request.json();
+        if (!question || !question.trim()) return json({ error: 'Question required' }, corsHeaders, 400);
+        if (!type || (type !== 'open' && type !== 'multiple_choice')) return json({ error: 'type must be open or multiple_choice' }, corsHeaders, 400);
+        if (type === 'multiple_choice' && (!options || options.length < 2)) return json({ error: 'Multiple choice needs at least 2 options' }, corsHeaders, 400);
+
+        // Create table if not exists
+        await env.DB.prepare(`CREATE TABLE IF NOT EXISTS polls (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          question TEXT NOT NULL,
+          type TEXT NOT NULL,
+          options TEXT DEFAULT '',
+          active INTEGER DEFAULT 0,
+          created_at TEXT DEFAULT (datetime('now'))
+        )`).run();
+        await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poll_responses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          poll_id INTEGER NOT NULL,
+          user_id INTEGER NOT NULL,
+          user_name TEXT NOT NULL,
+          response TEXT NOT NULL,
+          created_at TEXT DEFAULT (datetime('now')),
+          UNIQUE(poll_id, user_id)
+        )`).run();
+
+        const result = await env.DB.prepare(
+          'INSERT INTO polls (question, type, options, active) VALUES (?, ?, ?, 0)'
+        ).bind(question.trim(), type, type === 'multiple_choice' ? JSON.stringify(options) : '').run();
+
+        return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
+      }
+
+      // GET /api/polls - list all polls (admin)
+      if (path === '/api/polls' && request.method === 'GET') {
+        try {
+          const { results } = await env.DB.prepare(
+            'SELECT id, question, type, options, active, created_at FROM polls ORDER BY id DESC'
+          ).all();
+          // Get response counts
+          for (const poll of results) {
+            const cnt = await env.DB.prepare(
+              'SELECT COUNT(*) as count FROM poll_responses WHERE poll_id = ?'
+            ).bind(poll.id).first();
+            poll.response_count = cnt?.count || 0;
+          }
+          return json(results, corsHeaders);
+        } catch (e) {
+          return json([], corsHeaders);
+        }
+      }
+
+      // POST /api/polls/activate - activate a poll (deactivates others)
+      if (path === '/api/polls/activate' && request.method === 'POST') {
+        const { poll_id } = await request.json();
+        await env.DB.prepare('UPDATE polls SET active = 0').run();
+        if (poll_id) {
+          await env.DB.prepare('UPDATE polls SET active = 1 WHERE id = ?').bind(poll_id).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/polls/active - get the currently active poll
+      if (path === '/api/polls/active' && request.method === 'GET') {
+        try {
+          const poll = await env.DB.prepare(
+            'SELECT id, question, type, options, created_at FROM polls WHERE active = 1'
+          ).first();
+          if (!poll) return json({ active: false }, corsHeaders);
+
+          // Get response count
+          const cnt = await env.DB.prepare(
+            'SELECT COUNT(*) as count FROM poll_responses WHERE poll_id = ?'
+          ).bind(poll.id).first();
+
+          // For multiple choice, get aggregated counts
+          let option_counts = null;
+          if (poll.type === 'multiple_choice') {
+            const { results } = await env.DB.prepare(
+              'SELECT response, COUNT(*) as count FROM poll_responses WHERE poll_id = ? GROUP BY response'
+            ).bind(poll.id).all();
+            option_counts = {};
+            for (const r of results) option_counts[r.response] = r.count;
+          }
+
+          return json({
+            active: true,
+            id: poll.id,
+            question: poll.question,
+            type: poll.type,
+            options: poll.options ? JSON.parse(poll.options) : [],
+            response_count: cnt?.count || 0,
+            option_counts: option_counts
+          }, corsHeaders);
+        } catch (e) {
+          return json({ active: false }, corsHeaders);
+        }
+      }
+
+      // POST /api/polls/respond - submit a response
+      if (path === '/api/polls/respond' && request.method === 'POST') {
+        const { poll_id, user_id, user_name, response } = await request.json();
+        if (!poll_id || !user_id || !response || !response.trim()) {
+          return json({ error: 'poll_id, user_id, and response required' }, corsHeaders, 400);
+        }
+        if (containsBlockedWords(response)) {
+          return json({ error: 'Please keep responses kind and uplifting.' }, corsHeaders, 400);
+        }
+
+        await env.DB.prepare(
+          'INSERT INTO poll_responses (poll_id, user_id, user_name, response) VALUES (?, ?, ?, ?) ON CONFLICT(poll_id, user_id) DO UPDATE SET response = excluded.response'
+        ).bind(poll_id, user_id, user_name || '', response.trim()).run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/polls/:id/responses - get all responses (admin)
+      const pollResponsesMatch = path.match(/^\/api\/polls\/(\d+)\/responses$/);
+      if (pollResponsesMatch && request.method === 'GET') {
+        const pollId = parseInt(pollResponsesMatch[1]);
+        const { results } = await env.DB.prepare(
+          'SELECT id, user_id, user_name, response, created_at FROM poll_responses WHERE poll_id = ? ORDER BY created_at DESC'
+        ).bind(pollId).all();
+        return json(results, corsHeaders);
+      }
+
+      // DELETE /api/polls/:id - delete a poll and its responses
+      const pollDeleteMatch = path.match(/^\/api\/polls\/(\d+)$/);
+      if (pollDeleteMatch && request.method === 'DELETE') {
+        const pollId = parseInt(pollDeleteMatch[1]);
+        await env.DB.prepare('DELETE FROM poll_responses WHERE poll_id = ?').bind(pollId).run();
+        await env.DB.prepare('DELETE FROM polls WHERE id = ?').bind(pollId).run();
+        return json({ success: true }, corsHeaders);
       }
 
       return json({ error: 'Not found' }, corsHeaders, 404);

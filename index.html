@@ -2767,6 +2767,20 @@
         </div>
     </div>
 
+    <!-- Poll/Q&A Modal -->
+    <div class="modal-overlay" id="poll-modal" style="display:none;">
+        <div class="modal" style="text-align:center;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">📊</div>
+            <h2 id="poll-modal-question" style="font-family:Playfair Display,serif;font-size:1.15rem;margin-bottom:14px;line-height:1.4;"></h2>
+            <div id="poll-modal-body"></div>
+            <div id="poll-modal-thanks" style="display:none;padding:14px;background:rgba(138,158,122,0.1);border-radius:14px;margin-bottom:12px;">
+                <div style="font-size:1.5rem;margin-bottom:6px;">✨</div>
+                <div style="font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--taupe);">Thank you for sharing!</div>
+            </div>
+            <button class="save-btn" id="poll-close" style="width:100%;display:none;">Close</button>
+        </div>
+    </div>
+
     <!-- Would You Rather Modal -->
     <div class="modal-overlay" id="wyr-modal" style="display:none;">
         <div class="modal" style="text-align:center;">
@@ -5813,6 +5827,84 @@
             }
         })();
 
+        // ===== POLLS / Q&A =====
+        async function checkPolls() {
+            if (!currentUser) return;
+            try {
+                const poll = await apiGet('/api/polls/active');
+                if (!poll || !poll.active) return;
+                const answered = localStorage.getItem('g4poll_' + poll.id);
+                if (answered) return;
+
+                const modal = document.getElementById('poll-modal');
+                document.getElementById('poll-modal-question').textContent = poll.question;
+                const body = document.getElementById('poll-modal-body');
+                const thanks = document.getElementById('poll-modal-thanks');
+                const closeBtn = document.getElementById('poll-close');
+                thanks.style.display = 'none';
+                closeBtn.style.display = 'none';
+
+                if (poll.type === 'multiple_choice' && poll.options.length > 0) {
+                    // Multiple choice buttons
+                    body.innerHTML = poll.options.map(opt => `
+                        <button class="poll-mc-btn" style="display:block;width:100%;padding:14px 16px;margin-bottom:8px;border:2px solid rgba(201,144,138,0.25);border-radius:14px;background:rgba(255,255,255,0.8);font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;color:var(--dark-text);cursor:pointer;transition:all 0.2s;text-align:center;" data-option="${opt.replace(/"/g, '&quot;')}">${opt}</button>
+                    `).join('');
+
+                    body.querySelectorAll('.poll-mc-btn').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            const choice = btn.dataset.option;
+                            try {
+                                await apiPost('/api/polls/respond', {
+                                    poll_id: poll.id,
+                                    user_id: currentUser.id,
+                                    user_name: currentUser.first_name + (currentUser.last_initial ? ' ' + currentUser.last_initial + '.' : ''),
+                                    response: choice
+                                });
+                                localStorage.setItem('g4poll_' + poll.id, '1');
+                                // Highlight selected
+                                body.querySelectorAll('.poll-mc-btn').forEach(b => {
+                                    b.style.opacity = '0.5';
+                                    b.style.pointerEvents = 'none';
+                                });
+                                btn.style.opacity = '1';
+                                btn.style.background = 'rgba(138,158,122,0.15)';
+                                btn.style.borderColor = 'var(--sage)';
+                                thanks.style.display = 'block';
+                                closeBtn.style.display = 'block';
+                            } catch (e) { /* silently fail */ }
+                        });
+                    });
+                } else {
+                    // Open-ended text input
+                    body.innerHTML = `
+                        <textarea id="poll-open-input" placeholder="Type your answer..." style="width:100%;min-height:80px;padding:12px;border:1.5px solid var(--warm-grey);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--dark-text);resize:vertical;margin-bottom:10px;"></textarea>
+                        <button id="poll-submit-btn" class="save-btn" style="width:100%;">Submit</button>
+                    `;
+                    document.getElementById('poll-submit-btn').addEventListener('click', async () => {
+                        const input = document.getElementById('poll-open-input');
+                        const answer = input.value.trim();
+                        if (!answer) return;
+                        try {
+                            await apiPost('/api/polls/respond', {
+                                poll_id: poll.id,
+                                user_id: currentUser.id,
+                                user_name: currentUser.first_name + (currentUser.last_initial ? ' ' + currentUser.last_initial + '.' : ''),
+                                response: answer
+                            });
+                            localStorage.setItem('g4poll_' + poll.id, '1');
+                            body.style.display = 'none';
+                            thanks.style.display = 'block';
+                            closeBtn.style.display = 'block';
+                        } catch (e) { /* silently fail */ }
+                    });
+                }
+
+                closeBtn.onclick = () => { modal.style.display = 'none'; };
+                modal.style.display = 'flex';
+                modal.classList.add('animate-in');
+            } catch (e) { /* silently fail */ }
+        }
+
         // ===== ANNOUNCEMENTS =====
         async function checkAnnouncements() {
             if (!currentUser) return;
@@ -6261,9 +6353,10 @@
         // Check for announcements and games after user is loaded
         setTimeout(() => {
             checkAnnouncements();
-            setTimeout(() => checkGames(), 1000);
-            setTimeout(() => checkWouldYouRather(), 2500);
-            setTimeout(() => checkSecretSister(), 4000);
+            setTimeout(() => checkPolls(), 800);
+            setTimeout(() => checkGames(), 1500);
+            setTimeout(() => checkWouldYouRather(), 3000);
+            setTimeout(() => checkSecretSister(), 4500);
         }, 1500);
 
         if ('serviceWorker' in navigator) {

@@ -78,6 +78,27 @@ CREATE TABLE video_moments (
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+CREATE TABLE polls (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  question TEXT NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('open', 'multiple_choice')),
+  options TEXT DEFAULT '',
+  active INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE poll_responses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  poll_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  user_name TEXT NOT NULL,
+  response TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(poll_id, user_id),
+  FOREIGN KEY (poll_id) REFERENCES polls(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,

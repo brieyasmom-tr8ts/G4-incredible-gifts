@@ -505,6 +505,7 @@
         <button class="nav-tab" data-section="moments">Moments <span class="badge" id="count-moments">0</span></button>
         <button class="nav-tab" data-section="prayers">Prayer Wall <span class="badge" id="count-prayers">0</span></button>
         <button class="nav-tab" data-section="feedback">Feedback <span class="badge" id="count-feedback">0</span></button>
+        <button class="nav-tab" data-section="polls">Polls/Q&A <span class="badge" id="count-polls">0</span></button>
         <button class="nav-tab" data-section="games">Games</button>
     </div>
 
@@ -562,6 +563,56 @@
             <div class="empty-state" id="empty-prayers" style="display:none;">
                 <div class="icon">&#128591;</div>
                 <p>No prayer messages found</p>
+            </div>
+        </div>
+
+        <!-- Polls/Q&A -->
+        <div class="section" id="section-polls">
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.25rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">📊 Create a Poll or Question</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">Ask a question — either free-text (everyone types their answer) or multiple choice. Activate one at a time — everyone sees it in the app.</div>
+
+                <!-- Type selector -->
+                <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                    <button class="btn" id="poll-type-open" onclick="setPollType('open')" style="background:var(--accent);color:white;font-size:0.85rem;padding:0.4rem 1rem;border-radius:8px;">Open-Ended</button>
+                    <button class="btn" id="poll-type-mc" onclick="setPollType('multiple_choice')" style="background:var(--warm-grey);color:white;font-size:0.85rem;padding:0.4rem 1rem;border-radius:8px;">Multiple Choice</button>
+                </div>
+
+                <!-- Question input -->
+                <input type="text" id="poll-question" placeholder="Type your question..." style="width:100%;padding:0.6rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.95rem;margin-bottom:0.75rem;">
+
+                <!-- MC options (hidden by default) -->
+                <div id="poll-mc-options" style="display:none;margin-bottom:0.75rem;">
+                    <div id="poll-options-list">
+                        <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+                            <input type="text" class="poll-option-input" placeholder="Option 1..." style="flex:1;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
+                        </div>
+                        <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+                            <input type="text" class="poll-option-input" placeholder="Option 2..." style="flex:1;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
+                        </div>
+                    </div>
+                    <button class="btn" onclick="addPollOption()" style="background:rgba(138,158,122,0.15);color:var(--sage);font-size:0.8rem;padding:0.3rem 0.8rem;border-radius:8px;">+ Add Option</button>
+                </div>
+
+                <button class="btn btn-refresh" onclick="createPoll()">Create Poll</button>
+            </div>
+
+            <!-- Active poll -->
+            <div id="active-poll-banner" style="display:none;background:rgba(138,158,122,0.08);border:1px solid rgba(138,158,122,0.15);border-radius:14px;padding:1rem 1.5rem;margin-bottom:1.25rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div>
+                        <span style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--sage);font-weight:600;">Active Now</span>
+                        <div id="active-poll-question" style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;margin-top:4px;"></div>
+                    </div>
+                    <button class="btn btn-danger-outline" onclick="deactivatePoll()" style="font-size:0.8rem;padding:0.3rem 0.8rem;">Deactivate</button>
+                </div>
+            </div>
+
+            <!-- All polls list -->
+            <div id="polls-list"></div>
+            <div class="empty-state" id="empty-polls" style="display:none;">
+                <div class="icon">📊</div>
+                <p>No polls created yet</p>
             </div>
         </div>
 
@@ -790,7 +841,8 @@ async function refreshAll() {
         loadPackingScores(),
         loadSecretSisters(),
         loadWYRQuestions(),
-        loadActiveAnnouncement()
+        loadActiveAnnouncement(),
+        loadPolls()
     ]);
 }
 
@@ -1172,6 +1224,174 @@ async function clearPackingScores() {
         showToast('Packing scores cleared!');
         loadPackingScores();
     } catch (e) { showToast('Error: ' + e.message); }
+}
+
+// --- Polls/Q&A ---
+let currentPollType = 'open';
+let allPolls = [];
+
+function setPollType(type) {
+    currentPollType = type;
+    document.getElementById('poll-type-open').style.background = type === 'open' ? 'var(--accent)' : 'var(--warm-grey)';
+    document.getElementById('poll-type-mc').style.background = type === 'multiple_choice' ? 'var(--accent)' : 'var(--warm-grey)';
+    document.getElementById('poll-mc-options').style.display = type === 'multiple_choice' ? 'block' : 'none';
+}
+
+function addPollOption() {
+    const list = document.getElementById('poll-options-list');
+    const count = list.querySelectorAll('.poll-option-input').length + 1;
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;gap:0.5rem;margin-bottom:0.5rem;';
+    div.innerHTML = `<input type="text" class="poll-option-input" placeholder="Option ${count}..." style="flex:1;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
+        <button class="btn btn-danger-outline" onclick="this.parentElement.remove()" style="font-size:0.75rem;padding:0.25rem 0.5rem;">✕</button>`;
+    list.appendChild(div);
+}
+
+async function createPoll() {
+    const question = document.getElementById('poll-question').value.trim();
+    if (!question) { showToast('Type a question first'); return; }
+
+    let options = [];
+    if (currentPollType === 'multiple_choice') {
+        options = [...document.querySelectorAll('.poll-option-input')].map(i => i.value.trim()).filter(v => v);
+        if (options.length < 2) { showToast('Need at least 2 options'); return; }
+    }
+
+    try {
+        await apiFetch('/api/polls', { method: 'POST', body: { question, type: currentPollType, options } });
+        document.getElementById('poll-question').value = '';
+        document.querySelectorAll('.poll-option-input').forEach(i => i.value = '');
+        showToast('Poll created!');
+        loadPolls();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function activatePoll(id) {
+    try {
+        await apiFetch('/api/polls/activate', { method: 'POST', body: { poll_id: id } });
+        showToast('Poll activated!');
+        loadPolls();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function deactivatePoll() {
+    try {
+        await apiFetch('/api/polls/activate', { method: 'POST', body: { poll_id: null } });
+        showToast('Poll deactivated');
+        loadPolls();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function deletePoll(id) {
+    showModal('Delete Poll', 'Delete this poll and all its responses?', async () => {
+        try {
+            await apiFetch('/api/polls/' + id, { method: 'DELETE' });
+            showToast('Poll deleted');
+            loadPolls();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+async function viewResponses(id) {
+    try {
+        const responses = await apiFetch('/api/polls/' + id + '/responses');
+        const poll = allPolls.find(p => p.id === id);
+        const list = document.getElementById('polls-list');
+
+        // Find or create responses container
+        let container = document.getElementById('poll-responses-' + id);
+        if (container && container.style.display !== 'none') {
+            container.style.display = 'none';
+            return;
+        }
+
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'poll-responses-' + id;
+            // Insert after the poll card
+            const card = document.getElementById('poll-card-' + id);
+            if (card) card.after(container);
+        }
+
+        if (responses.length === 0) {
+            container.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--light-text);font-style:italic;">No responses yet</div>';
+        } else if (poll && poll.type === 'multiple_choice') {
+            const opts = poll.options ? JSON.parse(poll.options) : [];
+            const counts = {};
+            opts.forEach(o => counts[o] = 0);
+            responses.forEach(r => { if (counts[r.response] !== undefined) counts[r.response]++; });
+            const total = responses.length;
+            container.innerHTML = '<div style="background:rgba(247,240,235,0.5);border-radius:12px;padding:1rem;margin-bottom:1rem;">' +
+                '<div style="font-family:Playfair Display,serif;font-size:0.95rem;margin-bottom:0.75rem;">Results (' + total + ' responses)</div>' +
+                opts.map(o => {
+                    const pct = total ? Math.round((counts[o] / total) * 100) : 0;
+                    return `<div style="margin-bottom:8px;">
+                        <div style="display:flex;justify-content:space-between;font-size:0.9rem;margin-bottom:4px;"><span>${esc(o)}</span><strong>${pct}%</strong></div>
+                        <div style="height:8px;background:var(--warm-grey);border-radius:4px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--accent);border-radius:4px;transition:width 0.3s;"></div></div>
+                    </div>`;
+                }).join('') +
+                '<div style="margin-top:0.75rem;font-size:0.85rem;color:var(--light-text);">' +
+                responses.map(r => `<span style="display:inline-block;margin:2px 4px;padding:2px 8px;background:rgba(201,144,138,0.1);border-radius:6px;">${esc(r.user_name)}: ${esc(r.response)}</span>`).join('') +
+                '</div></div>';
+        } else {
+            container.innerHTML = '<div style="background:rgba(247,240,235,0.5);border-radius:12px;padding:1rem;margin-bottom:1rem;">' +
+                '<div style="font-family:Playfair Display,serif;font-size:0.95rem;margin-bottom:0.75rem;">Responses (' + responses.length + ')</div>' +
+                responses.map(r => `<div style="padding:0.6rem 0.8rem;background:white;border-radius:8px;margin-bottom:6px;border:1px solid rgba(122,107,99,0.08);">
+                    <div style="font-size:0.8rem;color:var(--accent);font-weight:600;margin-bottom:2px;">${esc(r.user_name)}</div>
+                    <div style="font-size:0.9rem;color:var(--dark-text);">${esc(r.response)}</div>
+                </div>`).join('') +
+                '</div>';
+        }
+        container.style.display = 'block';
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function loadPolls() {
+    try {
+        const polls = await apiFetch('/api/polls');
+        allPolls = polls;
+        document.getElementById('count-polls').textContent = polls.length;
+        const list = document.getElementById('polls-list');
+        const empty = document.getElementById('empty-polls');
+        const banner = document.getElementById('active-poll-banner');
+
+        const activePoll = polls.find(p => p.active);
+        if (activePoll) {
+            banner.style.display = 'block';
+            document.getElementById('active-poll-question').textContent = activePoll.question;
+        } else {
+            banner.style.display = 'none';
+        }
+
+        if (polls.length === 0) {
+            list.innerHTML = '';
+            empty.style.display = '';
+            return;
+        }
+        empty.style.display = 'none';
+
+        list.innerHTML = polls.map(p => `
+            <div id="poll-card-${p.id}" style="background:white;border-radius:14px;box-shadow:var(--shadow-sm);padding:1rem 1.25rem;margin-bottom:0.75rem;border-left:4px solid ${p.active ? 'var(--sage)' : 'var(--warm-grey)'};">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;">
+                    <div style="flex:1;">
+                        <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;">${esc(p.question)}</div>
+                        <div style="font-size:0.8rem;color:var(--light-text);margin-top:4px;">
+                            ${p.type === 'open' ? '💬 Open-ended' : '📊 Multiple choice'} · ${p.response_count} response${p.response_count !== 1 ? 's' : ''} · ${fmtDateTime(p.created_at)}
+                            ${p.active ? ' · <span style="color:var(--sage);font-weight:600;">ACTIVE</span>' : ''}
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.4rem;flex-shrink:0;">
+                        <button class="btn" style="background:var(--blush);color:white;font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="viewResponses(${p.id})">View</button>
+                        ${p.active ?
+                            `<button class="btn btn-danger-outline" style="font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="deactivatePoll()">Stop</button>` :
+                            `<button class="btn btn-refresh" style="font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="activatePoll(${p.id})">Activate</button>`
+                        }
+                        <button class="btn btn-danger-outline" style="font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="deletePoll(${p.id})">🗑</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (e) { console.error('Polls:', e); }
 }
 
 // --- Announcements ---

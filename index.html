@@ -2739,7 +2739,8 @@
         <div class="modal" style="text-align:center;max-height:85vh;overflow-y:auto;">
             <div style="font-size:2.2rem;margin-bottom:8px;">🧳</div>
             <h2 style="font-family:Playfair Display,serif;font-size:1.3rem;margin-bottom:6px;">Packing Points!</h2>
-            <p style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--light-text);margin-bottom:16px;line-height:1.5;">How did you pack for this retreat? Check everything that applies and see your score!</p>
+            <p style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--light-text);margin-bottom:16px;line-height:1.5;">How did you pack for this retreat? Check everything that applies — you have 90 seconds!</p>
+            <div id="packing-timer" style="font-family:Playfair Display,serif;font-size:2.2rem;font-weight:700;color:var(--accent);margin-bottom:12px;">1:30</div>
             <div id="packing-checklist" style="text-align:left;margin-bottom:16px;"></div>
             <button class="save-btn" id="packing-submit" style="width:100%;margin-bottom:8px;">See My Score!</button>
             <button id="packing-skip" style="background:none;border:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);cursor:pointer;padding:6px;">Maybe later</button>
@@ -5682,6 +5683,41 @@
             };
         }
 
+        let packingTimer = null;
+
+        function submitPackingScore() {
+            if (packingTimer) { clearInterval(packingTimer); packingTimer = null; }
+            const checklist = document.getElementById('packing-checklist');
+            const checks = checklist.querySelectorAll('input[type=checkbox]:checked');
+            let score = 0;
+            const answers = [];
+            checks.forEach(cb => {
+                score += parseInt(cb.dataset.points);
+                answers.push(parseInt(cb.dataset.index));
+            });
+
+            // Disable all checkboxes
+            checklist.querySelectorAll('input[type=checkbox]').forEach(cb => cb.disabled = true);
+
+            const { emoji, label } = getPackingLabels(score);
+            document.getElementById('packing-score-display').textContent = `${emoji} ${score} Points!`;
+            document.getElementById('packing-score-label').textContent = label;
+            document.getElementById('packing-result').style.display = '';
+            document.getElementById('packing-submit').style.display = 'none';
+            document.getElementById('packing-skip').style.display = 'none';
+            document.getElementById('packing-timer').textContent = "Time's up!";
+
+            // Save to server
+            apiPost('/api/games/packing', {
+                user_id: currentUser.id,
+                author_name: currentUser.display_name || currentUser.first_name,
+                score: score,
+                answers: JSON.stringify(answers)
+            }).then(() => {
+                localStorage.setItem('g4packing_' + currentUser.id, '1');
+            }).catch(() => {});
+        }
+
         function showPackingModal() {
             const modal = document.getElementById('packing-modal');
             modal.style.display = 'flex';
@@ -5697,39 +5733,41 @@
 
             document.getElementById('packing-result').style.display = 'none';
             document.getElementById('packing-submit').style.display = '';
+            document.getElementById('packing-skip').style.display = '';
 
-            document.getElementById('packing-submit').onclick = async () => {
-                const checks = checklist.querySelectorAll('input[type=checkbox]:checked');
-                let score = 0;
-                const answers = [];
-                checks.forEach(cb => {
-                    score += parseInt(cb.dataset.points);
-                    answers.push(parseInt(cb.dataset.index));
-                });
+            // Start 90-second countdown
+            let timeLeft = 90;
+            const timerEl = document.getElementById('packing-timer');
+            timerEl.style.color = 'var(--accent)';
+            timerEl.textContent = '1:30';
 
-                const { emoji, label } = getPackingLabels(score);
-                document.getElementById('packing-score-display').textContent = `${emoji} ${score} Points!`;
-                document.getElementById('packing-score-label').textContent = label;
-                document.getElementById('packing-result').style.display = '';
-                document.getElementById('packing-submit').style.display = 'none';
+            if (packingTimer) clearInterval(packingTimer);
+            packingTimer = setInterval(() => {
+                timeLeft--;
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                timerEl.textContent = mins + ':' + String(secs).padStart(2, '0');
 
-                // Save to server
-                try {
-                    await apiPost('/api/games/packing', {
-                        user_id: currentUser.id,
-                        author_name: currentUser.display_name || currentUser.first_name,
-                        score: score,
-                        answers: JSON.stringify(answers)
-                    });
-                    localStorage.setItem('g4packing_' + currentUser.id, '1');
-                } catch (e) { /* ok */ }
-            };
+                // Turn red in last 10 seconds
+                if (timeLeft <= 10) {
+                    timerEl.style.color = '#c0392b';
+                    timerEl.style.animation = 'heartBurst 0.5s ease-out';
+                    setTimeout(() => timerEl.style.animation = '', 500);
+                }
+
+                if (timeLeft <= 0) {
+                    submitPackingScore();
+                }
+            }, 1000);
+
+            document.getElementById('packing-submit').onclick = () => submitPackingScore();
 
             document.getElementById('packing-done').onclick = () => {
                 modal.style.display = 'none';
             };
 
             document.getElementById('packing-skip').onclick = () => {
+                if (packingTimer) { clearInterval(packingTimer); packingTimer = null; }
                 sessionStorage.setItem('g4packing_skip', '1');
                 modal.style.display = 'none';
             };

@@ -1,153 +1,16 @@
-// Blocked words filter
-const BLOCKED_WORDS = [
-  'damn', 'hell', 'shit', 'fuck', 'ass', 'bitch', 'crap',
-  'bastard', 'dick', 'piss', 'slut', 'whore'
-];
-
-function containsBlockedWords(text) {
-  const lower = text.toLowerCase();
-  return BLOCKED_WORDS.some(w => lower.includes(w));
-}
-
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const path = url.pathname;
-
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    };
-
-    if (request.method === 'OPTIONS') {
-      return new Response(null, { headers: corsHeaders });
-    }
-
-    try {
-      if (path === '/api/attendees' && request.method === 'GET') {
-        const { results } = await env.DB.prepare(
-          'SELECT id, first_name, last_name FROM attendees ORDER BY first_name, last_name'
-        ).all();
-        return json(results, corsHeaders);
-      }
-
-      if (path === '/api/users' && request.method === 'POST') {
-        const { first_name, last_initial, attendee_id } = await request.json();
-
-        if (!first_name || !first_name.trim()) {
-          return json({ error: 'First name is required' }, corsHeaders, 400);
-        }
-
-        const cleanName = first_name.trim();
-        const cleanInitial = (last_initial || '').trim().charAt(0).toUpperCase();
-        const displayName = cleanInitial ? `${cleanName} ${cleanInitial}.` : cleanName;
-
-        const existing = await env.DB.prepare(
-          'SELECT id FROM users WHERE first_name = ? AND last_initial = ?'
-        ).bind(cleanName, cleanInitial).first();
-
-        if (existing) {
-          return json({
-            error: cleanInitial
-              ? `"${displayName}" is already taken. Try a different last initial or use your full first name.`
-              : `"${cleanName}" is already taken. Please add your last initial to make it unique.`
-          }, corsHeaders, 409);
-        }
-
-        const result = await env.DB.prepare(
-          'INSERT INTO users (first_name, last_initial, attendee_id) VALUES (?, ?, ?)'
-        ).bind(cleanName, cleanInitial, attendee_id || null).run();
-
-        const userId = result.meta.last_row_id;
-
-        return json({
-          id: userId,
-          first_name: cleanName,
-          last_initial: cleanInitial,
-          display_name: displayName
-        }, corsHeaders);
-      }
-
-      if (path === '/api/messages' && request.method === 'GET') {
-        const { results } = await env.DB.prepare(
-          `SELECT id, user_id, author_name, type, tagged_name, message, prayer_count, created_at
-           FROM messages ORDER BY created_at DESC LIMIT 200`
-        ).all();
-        return json(results, corsHeaders);
-      }
-
-      if (path === '/api/messages' && request.method === 'POST') {
-        const { user_id, author_name, type, tagged_name, message } = await request.json();
-
-        if (!user_id || !author_name || !message || !type) {
-          return json({ error: 'user_id, author_name, type, and message are required' }, corsHeaders, 400);
-        }
-
-        if (type !== 'prayer' && type !== 'encouragement') {
-          return json({ error: 'type must be "prayer" or "encouragement"' }, corsHeaders, 400);
-        }
-
-        if (containsBlockedWords(message)) {
-          return json({ error: 'Please keep messages kind and uplifting.' }, corsHeaders, 400);
-        }
-
-        if (message.length > 500) {
-          return json({ error: 'Message must be 500 characters or less.' }, corsHeaders, 400);
-        }
-
-        const result = await env.DB.prepare(
-          'INSERT INTO messages (user_id, author_name, type, tagged_name, message) VALUES (?, ?, ?, ?, ?)'
-        ).bind(user_id, author_name, type, tagged_name || null, message).run();
-
-        return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
-      }
-
-      const prayMatch = path.match(/^\/api\/messages\/(\d+)\/pray$/);
-      if (prayMatch && request.method === 'POST') {
-        const msgId = parseInt(prayMatch[1]);
-        await env.DB.prepare(
-          'UPDATE messages SET prayer_count = prayer_count + 1 WHERE id = ?'
-        ).bind(msgId).run();
-
-        const updated = await env.DB.prepare(
-          'SELECT prayer_count FROM messages WHERE id = ?'
-        ).bind(msgId).first();
-
-        return json({ success: true, prayer_count: updated?.prayer_count || 0 }, corsHeaders);
-      }
-
-      const deleteMatch = path.match(/^\/api\/messages\/(\d+)$/);
-      if (deleteMatch && request.method === 'DELETE') {
-        const msgId = parseInt(deleteMatch[1]);
-        const { user_id } = await request.json();
-
-        const msg = await env.DB.prepare(
-          'SELECT user_id FROM messages WHERE id = ?'
-        ).bind(msgId).first();
-
-        if (!msg) {
-          return json({ error: 'Message not found' }, corsHeaders, 404);
-        }
-        if (msg.user_id !== user_id) {
-          return json({ error: 'You can only delete your own posts' }, corsHeaders, 403);
-        }
-
-        await env.DB.prepare('DELETE FROM messages WHERE id = ?').bind(msgId).run();
-        return json({ success: true }, corsHeaders);
-      }
-
-      return json({ error: 'Not found' }, corsHeaders, 404);
-
-    } catch (err) {
-      return json({ error: err.message }, corsHeaders, 500);
-    }
-  }
-};
-
-function json(data, corsHeaders, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders }
-  });
-}
+const BLOCKED_WORDS = ['damn','hell','shit','fuck','ass','bitch','crap','bastard','dick','piss','slut','whore'];
+function bad(t){return BLOCKED_WORDS.some(w=>t.toLowerCase().includes(w))}
+export default{async fetch(r,env){
+const u=new URL(r.url),p=u.pathname;
+const h={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,DELETE,OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
+if(r.method==='OPTIONS')return new Response(null,{headers:h});
+const j=(d,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{...h,'Content-Type':'application/json'}});
+try{
+if(p==='/api/users'&&r.method==='GET'){const{results}=await env.DB.prepare('SELECT id,first_name,last_initial FROM users ORDER BY first_name').all();return j(results)}
+if(p==='/api/users'&&r.method==='POST'){const{first_name,last_initial}=await r.json();if(!first_name||!first_name.trim())return j({error:'First name is required'},400);const n=first_name.trim(),li=(last_initial||'').trim().charAt(0).toUpperCase(),dn=li?n+' '+li+'.':n;const ex=await env.DB.prepare('SELECT id FROM users WHERE first_name=? AND last_initial=?').bind(n,li).first();if(ex)return j({error:li?'"'+dn+'" is taken. Try a different initial.':'"'+n+'" is taken. Add your last initial.'},409);const res=await env.DB.prepare('INSERT INTO users(first_name,last_initial)VALUES(?,?)').bind(n,li).run();return j({id:res.meta.last_row_id,first_name:n,last_initial:li,display_name:dn})}
+if(p==='/api/messages'&&r.method==='GET'){const{results}=await env.DB.prepare('SELECT id,user_id,author_name,type,tagged_name,message,prayer_count,created_at FROM messages ORDER BY created_at DESC LIMIT 200').all();return j(results)}
+if(p==='/api/messages'&&r.method==='POST'){const{user_id,author_name,type,tagged_name,message}=await r.json();if(!user_id||!author_name||!message||!type)return j({error:'Missing fields'},400);if(type!=='prayer'&&type!=='encouragement')return j({error:'Invalid type'},400);if(bad(message))return j({error:'Please keep messages kind and uplifting.'},400);if(message.length>500)return j({error:'Message too long'},400);const res=await env.DB.prepare('INSERT INTO messages(user_id,author_name,type,tagged_name,message)VALUES(?,?,?,?,?)').bind(user_id,author_name,type,tagged_name||null,message).run();return j({success:true,id:res.meta.last_row_id})}
+const pm=p.match(/^\/api\/messages\/(\d+)\/pray$/);if(pm&&r.method==='POST'){const id=+pm[1];await env.DB.prepare('UPDATE messages SET prayer_count=prayer_count+1 WHERE id=?').bind(id).run();const u=await env.DB.prepare('SELECT prayer_count FROM messages WHERE id=?').bind(id).first();return j({success:true,prayer_count:u?.prayer_count||0})}
+const dm=p.match(/^\/api\/messages\/(\d+)$/);if(dm&&r.method==='DELETE'){const id=+dm[1];const{user_id}=await r.json();const m=await env.DB.prepare('SELECT user_id FROM messages WHERE id=?').bind(id).first();if(!m)return j({error:'Not found'},404);if(m.user_id!==user_id)return j({error:'Not yours'},403);await env.DB.prepare('DELETE FROM messages WHERE id=?').bind(id).run();return j({success:true})}
+return j({error:'Not found'},404);
+}catch(e){return j({error:e.message},500)}}};

@@ -1441,18 +1441,18 @@
                 sendBtn.textContent = 'Share';
             });
 
-            // Load attendee names for tagging dropdown
-            loadAttendeeDropdown();
+            // Load user names for tagging dropdown
+            loadUserDropdown();
             loadPrayerWall();
         }
 
-        async function loadAttendeeDropdown() {
+        async function loadUserDropdown() {
             try {
-                const attendees = await apiGet('/api/attendees');
+                const users = await apiGet('/api/users');
                 const select = document.getElementById('prayer-for');
                 select.innerHTML = '<option value="">For everyone</option>';
-                attendees.forEach(a => {
-                    const name = a.last_name ? a.first_name + ' ' + a.last_name.charAt(0) + '.' : a.first_name;
+                users.forEach(u => {
+                    const name = u.last_initial ? u.first_name + ' ' + u.last_initial + '.' : u.first_name;
                     const opt = document.createElement('option');
                     opt.value = name;
                     opt.textContent = name;

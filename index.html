@@ -2318,6 +2318,10 @@
 
         <div id="welcome-banner" class="welcome-banner" style="display:none;"></div>
 
+        <div id="playlist-section" style="margin:0 20px 6px;display:none;opacity:0.85;">
+            <iframe style="border-radius:10px;" src="https://open.spotify.com/embed/playlist/5fALXWcfFkJphiINaVB3jh?utm_source=generator&theme=1" width="100%" height="52" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+
         <div class="content-area">
             <!-- HOME TAB -->
             <div id="home-tab" class="tab-content active">
@@ -2395,10 +2399,6 @@
                         <div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);text-align:center;margin-bottom:4px;">Get Ready</div>
                         <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);text-align:center;font-style:italic;margin-bottom:14px;">April 9–11 · Hyatt Place Ocean City Oceanfront</div>
 
-                        <!-- Spotify playlist inline -->
-                        <div id="playlist-section" style="margin-bottom:12px;">
-                            <iframe style="border-radius:8px;" src="https://open.spotify.com/embed/playlist/5fALXWcfFkJphiINaVB3jh?utm_source=generator&theme=1" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-                        </div>
 
                         <div id="prep-details">
                             <div style="width:40px;height:1px;background:var(--warm-grey);margin:0 auto 14px;opacity:0.4;"></div>
@@ -3123,6 +3123,9 @@
             banner.textContent = getTimeGreeting() + ', ' + currentUser.first_name + ' \u2728';
             banner.style.display = 'block';
             setTimeout(() => banner.classList.add('animate-in'), 100);
+
+            // Show Spotify player
+            document.getElementById('playlist-section').style.display = 'block';
 
             // Header profile button
             const profileBtn = document.getElementById('header-profile-btn');

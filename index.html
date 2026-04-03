@@ -1979,6 +1979,11 @@
             margin-bottom: 10px;
         }
 
+        .connect-tab-btn.active {
+            background: var(--blush) !important;
+            color: white !important;
+        }
+
         .prayer-type-btn {
             flex: 1;
             padding: 8px 10px;
@@ -2432,14 +2437,7 @@
                         </div>
                         <div id="schedule-container"></div>
                     </div>
-                    <!-- People Directory -->
-                    <div id="people-section" style="display:none;margin:12px 16px;">
-                        <div style="text-align:center;margin-bottom:12px;">
-                            <div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);">Meet Your Sisters</div>
-                            <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);font-style:italic;">The women on this journey with you</div>
-                        </div>
-                        <div id="people-grid" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;"></div>
-                    </div>
+                    <!-- People Directory moved to Connect tab -->
                     <div id="not-alone-home-preview"></div>
                     <div id="continue-home-link" style="display:none;"></div>
                 </div>
@@ -2497,20 +2495,39 @@
             <div id="prayer-tab" class="tab-content">
                 <div class="prayer-wall">
                     <div class="prayer-wall-header">
-                        <h2>Prayer & Encouragement</h2>
-                        <p>Lift each other up</p>
+                        <h2>Connect</h2>
+                        <p>Know each other. Lift each other up.</p>
                     </div>
-                    <div class="prayer-compose" id="prayer-compose" style="display:none;">
-                        <div class="prayer-type-toggle">
-                            <button class="prayer-type-btn active" data-type="prayer">Prayer Request</button>
-                            <button class="prayer-type-btn" data-type="encouragement">Encouragement</button>
+                    <!-- Connect Sub-tabs -->
+                    <div id="connect-sub-tabs" style="display:flex;gap:0;margin:0 16px 12px;border-radius:12px;overflow:hidden;border:1px solid rgba(139,134,128,0.15);background:rgba(255,255,255,0.5);">
+                        <button class="connect-tab-btn active" data-connect="sisters" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);position:relative;">Sisters</button>
+                        <button class="connect-tab-btn" data-connect="prayers" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);border-right:1px solid rgba(139,134,128,0.12);">Prayers</button>
+                        <button class="connect-tab-btn" data-connect="encouragement" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">Encouragement</button>
+                    </div>
+                    <!-- Sisters Sub-tab -->
+                    <div id="connect-sisters" class="connect-panel" style="margin:0 16px;">
+                        <div id="connect-people-grid" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;"></div>
+                    </div>
+                    <!-- Prayers Sub-tab -->
+                    <div id="connect-prayers" class="connect-panel" style="display:none;">
+                        <div class="prayer-compose" id="prayer-compose" style="display:none;">
+                            <input type="text" id="prayer-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;font-size:16px;">
+                            <textarea id="prayer-message" placeholder="Share your prayer request..." maxlength="500" style="font-size:16px;"></textarea>
+                            <div class="prayer-char-count"><span id="prayer-char">0</span>/500</div>
+                            <button class="save-btn" id="prayer-send-btn">Share Prayer</button>
                         </div>
-                        <input type="text" id="prayer-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;">
-                        <textarea id="prayer-message" placeholder="Share what's on your heart..." maxlength="500"></textarea>
-                        <div class="prayer-char-count"><span id="prayer-char">0</span>/500</div>
-                        <button class="save-btn" id="prayer-send-btn">Share</button>
+                        <div id="prayer-posts"></div>
                     </div>
-                    <div id="prayer-posts"></div>
+                    <!-- Encouragement Sub-tab -->
+                    <div id="connect-encouragement" class="connect-panel" style="display:none;">
+                        <div class="prayer-compose" id="encourage-compose" style="display:none;">
+                            <input type="text" id="encourage-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;font-size:16px;">
+                            <textarea id="encourage-message" placeholder="Write an encouragement..." maxlength="500" style="font-size:16px;"></textarea>
+                            <div class="prayer-char-count"><span id="encourage-char">0</span>/500</div>
+                            <button class="save-btn" id="encourage-send-btn">Share Encouragement</button>
+                        </div>
+                        <div id="encourage-posts"></div>
+                    </div>
                 </div>
             </div>
 
@@ -2658,8 +2675,8 @@
                 <span>Moments</span>
             </button>
             <button class="nav-btn" data-tab="prayer">
-                <span class="nav-icon">🙏</span>
-                <span>Prayers</span>
+                <span class="nav-icon">💛</span>
+                <span>Connect</span>
             </button>
             <button class="nav-btn" data-tab="journey">
                 <span class="nav-icon">🎁</span>
@@ -2887,6 +2904,7 @@
                 currentUser = JSON.parse(saved);
                 showWelcome();
                 document.getElementById('prayer-compose').style.display = 'block';
+                document.getElementById('encourage-compose').style.display = 'block';
                 document.getElementById('moments-upload').style.display = 'block';
                 document.getElementById('video-section').style.display = 'block';
                 loadPeople();
@@ -2927,6 +2945,7 @@
                     document.getElementById('setup-modal').style.display = 'none';
                     showWelcome();
                     document.getElementById('prayer-compose').style.display = 'block';
+                    document.getElementById('encourage-compose').style.display = 'block';
                     document.getElementById('moments-upload').style.display = 'block';
                     document.getElementById('video-section').style.display = 'block';
                     loadPeople();
@@ -3019,7 +3038,7 @@
         // ===== People Directory =====
         async function loadPeople() {
             if (!currentUser) return;
-            const grid = document.getElementById('people-grid');
+            const grid = document.getElementById('connect-people-grid');
             if (!grid) return;
             try {
                 const users = await apiGet('/api/users/directory');
@@ -3053,7 +3072,6 @@
                     `;
                     grid.appendChild(card);
                 });
-                document.getElementById('people-section').style.display = 'block';
             } catch(e) {
                 console.error('Failed to load people directory:', e);
             }
@@ -3215,16 +3233,16 @@
         }
 
         // ===== Prayer Wall =====
-        async function loadPrayerWall() {
-            const container = document.getElementById('prayer-posts');
-            try {
-                const messages = await apiGet('/api/messages');
-                if (!messages || messages.length === 0) {
-                    container.innerHTML = '<div class="prayer-empty">No prayers yet — be the first to lift someone up.</div>';
-                    return;
-                }
-                container.innerHTML = '';
-                messages.forEach(msg => {
+        function renderMessages(messages, container, type) {
+            const filtered = messages.filter(m => m.type === type);
+            if (!filtered.length) {
+                container.innerHTML = type === 'prayer'
+                    ? '<div class="prayer-empty">No prayer requests yet — be the first to lift someone up.</div>'
+                    : '<div class="prayer-empty">No encouragements yet — be the first to brighten someone\'s day.</div>';
+                return;
+            }
+            container.innerHTML = '';
+            filtered.forEach(msg => {
                     const post = document.createElement('div');
                     post.className = 'prayer-post type-' + msg.type;
 
@@ -3254,12 +3272,7 @@
                     author.className = 'prayer-post-author';
                     author.textContent = msg.author_name;
 
-                    const typeBadge = document.createElement('span');
-                    typeBadge.className = 'prayer-post-type type-' + msg.type;
-                    typeBadge.textContent = msg.type === 'prayer' ? 'Prayer' : 'Encouragement';
-
                     authorWrap.appendChild(author);
-                    authorWrap.appendChild(typeBadge);
                     top.appendChild(authorWrap);
                     post.appendChild(top);
 
@@ -3334,25 +3347,37 @@
                     container.appendChild(post);
                 });
             } catch (e) {
-                container.innerHTML = '<div class="prayer-empty">Could not load messages. Check your connection.</div>';
+                console.error('renderMessages error:', e);
+            }
+        }
+
+        let allMessages = [];
+        async function loadPrayerWall() {
+            try {
+                const messages = await apiGet('/api/messages');
+                allMessages = messages || [];
+                renderMessages(allMessages, document.getElementById('prayer-posts'), 'prayer');
+                renderMessages(allMessages, document.getElementById('encourage-posts'), 'encouragement');
+            } catch (e) {
+                document.getElementById('prayer-posts').innerHTML = '<div class="prayer-empty">Could not load messages.</div>';
+                document.getElementById('encourage-posts').innerHTML = '<div class="prayer-empty">Could not load messages.</div>';
             }
         }
 
         function initPrayerWall() {
-            // Type toggle
-            document.querySelectorAll('.prayer-type-btn').forEach(btn => {
+            // Connect sub-tab switching
+            document.querySelectorAll('.connect-tab-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    document.querySelectorAll('.prayer-type-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.connect-tab-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
-                    selectedPostType = btn.dataset.type;
-                    const msgEl = document.getElementById('prayer-message');
-                    msgEl.placeholder = selectedPostType === 'prayer'
-                        ? 'Share your prayer request...'
-                        : 'Write an encouragement...';
+                    document.querySelectorAll('.connect-panel').forEach(p => p.style.display = 'none');
+                    const panel = document.getElementById('connect-' + btn.dataset.connect);
+                    if (panel) panel.style.display = 'block';
+                    if (btn.dataset.connect === 'sisters') loadPeople();
                 });
             });
 
-            // Character count
+            // Prayer compose - character count
             document.getElementById('prayer-message').addEventListener('input', (e) => {
                 document.getElementById('prayer-char').textContent = e.target.value.length;
             });
@@ -3375,27 +3400,60 @@
                     const result = await apiPost('/api/messages', {
                         user_id: currentUser.id,
                         author_name: currentUser.display_name || currentUser.first_name,
-                        type: selectedPostType,
+                        type: 'prayer',
                         tagged_name: forEl.value || null,
                         message: message
                     });
-                    if (result.error) {
-                        showToast(result.error);
-                    } else {
+                    if (result.error) { showToast(result.error); }
+                    else {
                         messageEl.value = '';
                         forEl.value = '';
                         document.getElementById('prayer-char').textContent = '0';
                         loadPrayerWall();
-                        showToast(selectedPostType === 'prayer' ? 'Prayer shared \ud83d\ude4f' : 'Encouragement sent \u2764\ufe0f');
+                        showToast('Prayer shared \ud83d\ude4f');
                     }
-                } catch (e) {
-                    showToast('Could not post. Please try again.');
-                }
+                } catch (e) { showToast('Could not post. Please try again.'); }
                 sendBtn.disabled = false;
-                sendBtn.textContent = 'Share';
+                sendBtn.textContent = 'Share Prayer';
+            });
+
+            // Encouragement compose
+            document.getElementById('encourage-message').addEventListener('input', (e) => {
+                document.getElementById('encourage-char').textContent = e.target.value.length;
+            });
+
+            document.getElementById('encourage-send-btn').addEventListener('click', async () => {
+                if (!currentUser) { showToast('Please set up your name first.'); return; }
+                const messageEl = document.getElementById('encourage-message');
+                const forEl = document.getElementById('encourage-for');
+                const message = messageEl.value.trim();
+                if (!message) return;
+                const sendBtn = document.getElementById('encourage-send-btn');
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'Sharing...';
+                try {
+                    const result = await apiPost('/api/messages', {
+                        user_id: currentUser.id,
+                        author_name: currentUser.display_name || currentUser.first_name,
+                        type: 'encouragement',
+                        tagged_name: forEl.value || null,
+                        message: message
+                    });
+                    if (result.error) { showToast(result.error); }
+                    else {
+                        messageEl.value = '';
+                        forEl.value = '';
+                        document.getElementById('encourage-char').textContent = '0';
+                        loadPrayerWall();
+                        showToast('Encouragement sent \u2764\ufe0f');
+                    }
+                } catch (e) { showToast('Could not post. Please try again.'); }
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Share Encouragement';
             });
 
             loadPrayerWall();
+            loadPeople();
         }
 
 

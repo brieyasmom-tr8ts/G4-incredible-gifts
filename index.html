@@ -5606,8 +5606,9 @@
 
         async function checkGames() {
             if (!currentUser) return;
+            const testMode = new URLSearchParams(window.location.search).get('testgames') === '1';
             try {
-                const settings = await apiGet('/api/games/settings');
+                const settings = testMode ? { who_am_i: '1', packing_points: '1' } : await apiGet('/api/games/settings');
                 if (!settings || typeof settings !== 'object') return;
 
                 // Who Am I?

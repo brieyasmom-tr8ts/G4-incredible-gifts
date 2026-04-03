@@ -39,32 +39,31 @@ export default {
 
       // POST /api/users - create or retrieve user
       if (path === '/api/users' && request.method === 'POST') {
-        const { first_name, last_initial, attendee_id } = await request.json();
+        const { first_name, last_initial, last_name, attendee_id } = await request.json();
 
         if (!first_name || !first_name.trim()) {
           return json({ error: 'First name is required' }, corsHeaders, 400);
         }
 
         const cleanName = first_name.trim();
-        const cleanInitial = (last_initial || '').trim().charAt(0).toUpperCase();
+        const cleanLastName = (last_name || '').trim();
+        const cleanInitial = cleanLastName ? cleanLastName.charAt(0).toUpperCase() : (last_initial || '').trim().charAt(0).toUpperCase();
         const displayName = cleanInitial ? `${cleanName} ${cleanInitial}.` : cleanName;
 
-        // Check for duplicate display name
+        // Check for duplicate
         const existing = await env.DB.prepare(
           'SELECT id FROM users WHERE first_name = ? AND last_initial = ?'
         ).bind(cleanName, cleanInitial).first();
 
         if (existing) {
           return json({
-            error: cleanInitial
-              ? `"${displayName}" is already taken. Try a different last initial or use your full first name.`
-              : `"${cleanName}" is already taken. Please add your last initial to make it unique.`
+            error: `"${displayName}" is already taken. If that's you, try clearing your app data. Otherwise, try a nickname.`
           }, corsHeaders, 409);
         }
 
         const result = await env.DB.prepare(
-          'INSERT INTO users (first_name, last_initial, attendee_id) VALUES (?, ?, ?)'
-        ).bind(cleanName, cleanInitial, attendee_id || null).run();
+          'INSERT INTO users (first_name, last_initial, last_name, attendee_id) VALUES (?, ?, ?, ?)'
+        ).bind(cleanName, cleanInitial, cleanLastName, attendee_id || null).run();
 
         const userId = result.meta.last_row_id;
 
@@ -79,7 +78,7 @@ export default {
       // GET /api/users - list all users (admin)
       if (path === '/api/users' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, email, phone, birthday, instagram, facebook, created_at FROM users ORDER BY created_at DESC'
+          'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, created_at FROM users ORDER BY created_at DESC'
         ).all();
         return json(results, corsHeaders);
       }

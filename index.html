@@ -2449,8 +2449,8 @@
                     <div class="journey-locked-content">
                         <div class="locked-icon">🎁</div>
                         <p class="journey-locked-title">This Gift Opens on Day 2</p>
+                        <p class="journey-locked-hint" style="margin-top:4px;">April 10, 2026</p>
                         <p class="journey-locked-message">The Journey opens Friday morning during the retreat. For now, keep receiving what God has for you.</p>
-                        <p class="journey-locked-hint">April 10, 2026</p>
                     </div>
                 </div>
                 <div id="journey-inner">
@@ -2706,8 +2706,8 @@
         <div class="modal">
             <h2>Welcome to the Retreat!</h2>
             <p>Tell us a little about yourself</p>
-            <input type="text" class="modal-input" id="setup-first" placeholder="First name *" autocomplete="given-name">
-            <input type="text" class="modal-input" id="setup-last-initial" placeholder="Last initial (optional)" maxlength="1" autocomplete="off">
+            <input type="text" class="modal-input" id="setup-first" placeholder="First name *" autocomplete="given-name" style="font-size:16px;">
+            <input type="text" class="modal-input" id="setup-last-name" placeholder="Last name *" autocomplete="family-name" style="font-size:16px;">
             <div class="modal-hint">Your name will appear on prayers and encouragements</div>
             <button class="save-btn" id="setup-btn">Let's Go!</button>
         </div>
@@ -2928,12 +2928,15 @@
 
             document.getElementById('setup-btn').addEventListener('click', async () => {
                 const firstName = document.getElementById('setup-first').value.trim();
-                const lastInitial = document.getElementById('setup-last-initial').value.trim();
+                const lastName = document.getElementById('setup-last-name').value.trim();
 
-                if (!firstName) {
-                    document.getElementById('setup-first').style.borderColor = 'var(--accent)';
+                if (!firstName || !lastName) {
+                    if (!firstName) document.getElementById('setup-first').style.borderColor = 'var(--accent)';
+                    if (!lastName) document.getElementById('setup-last-name').style.borderColor = 'var(--accent)';
                     return;
                 }
+
+                const lastInitial = lastName.charAt(0).toUpperCase();
 
                 const btn = document.getElementById('setup-btn');
                 btn.disabled = true;
@@ -2942,7 +2945,8 @@
                 try {
                     const result = await apiPost('/api/users', {
                         first_name: firstName,
-                        last_initial: lastInitial
+                        last_initial: lastInitial,
+                        last_name: lastName
                     });
 
                     if (result.error) {

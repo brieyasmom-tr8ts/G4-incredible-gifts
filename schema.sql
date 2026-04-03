@@ -28,6 +28,17 @@ CREATE TABLE journey_responses (
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+CREATE TABLE moments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  author_name TEXT NOT NULL,
+  photo_data TEXT NOT NULL,
+  caption TEXT DEFAULT '',
+  gift_tag TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 CREATE TABLE messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,

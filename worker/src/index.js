@@ -188,6 +188,71 @@ export default {
         }, corsHeaders);
       }
 
+      // ===== MOMENTS =====
+
+      // GET /api/moments - get all moments
+      if (path === '/api/moments' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          `SELECT id, user_id, author_name, photo_data, caption, gift_tag, created_at
+           FROM moments ORDER BY created_at DESC LIMIT 200`
+        ).all();
+        return json(results, corsHeaders);
+      }
+
+      // POST /api/moments - upload a moment (max 5 per user)
+      if (path === '/api/moments' && request.method === 'POST') {
+        const { user_id, author_name, photo_data, caption, gift_tag } = await request.json();
+
+        if (!user_id || !author_name || !photo_data) {
+          return json({ error: 'user_id, author_name, and photo_data are required' }, corsHeaders, 400);
+        }
+
+        if (caption && containsBlockedWords(caption)) {
+          return json({ error: 'Please keep captions kind and uplifting.' }, corsHeaders, 400);
+        }
+
+        // Check upload limit
+        const count = await env.DB.prepare(
+          'SELECT COUNT(*) as cnt FROM moments WHERE user_id = ?'
+        ).bind(user_id).first();
+
+        if (count && count.cnt >= 5) {
+          return json({ error: 'You can share up to 5 moments. Delete one to add more.' }, corsHeaders, 400);
+        }
+
+        // Limit photo size (~2MB base64)
+        if (photo_data.length > 2800000) {
+          return json({ error: 'Photo is too large. Please choose a smaller image.' }, corsHeaders, 400);
+        }
+
+        const result = await env.DB.prepare(
+          'INSERT INTO moments (user_id, author_name, photo_data, caption, gift_tag) VALUES (?, ?, ?, ?, ?)'
+        ).bind(user_id, author_name, photo_data, caption || '', gift_tag || '').run();
+
+        return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
+      }
+
+      // DELETE /api/moments/:id - delete own moment
+      const deleteMomentMatch = path.match(/^\/api\/moments\/(\d+)$/);
+      if (deleteMomentMatch && request.method === 'DELETE') {
+        const momentId = parseInt(deleteMomentMatch[1]);
+        const { user_id } = await request.json();
+
+        const moment = await env.DB.prepare(
+          'SELECT user_id FROM moments WHERE id = ?'
+        ).bind(momentId).first();
+
+        if (!moment) {
+          return json({ error: 'Moment not found' }, corsHeaders, 404);
+        }
+        if (moment.user_id !== user_id) {
+          return json({ error: 'You can only delete your own moments' }, corsHeaders, 403);
+        }
+
+        await env.DB.prepare('DELETE FROM moments WHERE id = ?').bind(momentId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
       return json({ error: 'Not found' }, corsHeaders, 404);
 
     } catch (err) {

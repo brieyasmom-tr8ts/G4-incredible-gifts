@@ -683,6 +683,307 @@
             font-weight: 600;
         }
 
+        /* Retreat Moments */
+        .moments-page {
+            padding: 16px;
+        }
+
+        .moments-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .moments-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            color: var(--dark-text);
+        }
+
+        .moments-header p {
+            font-size: 0.85rem;
+            color: var(--light-text);
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .moments-upload-btn {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            border: 1.5px dashed var(--warm-grey);
+            border-radius: 12px;
+            font-size: 0.9rem;
+            color: var(--taupe);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .moments-upload-btn:active {
+            border-color: var(--blush);
+            background: rgba(201,144,138,0.04);
+            transform: scale(0.98);
+        }
+
+        .moments-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .moment-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .moment-card:active {
+            transform: scale(0.97);
+        }
+
+        .moment-card img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            display: block;
+        }
+
+        .moment-card-info {
+            padding: 10px 12px;
+        }
+
+        .moment-caption {
+            font-size: 0.82rem;
+            color: var(--dark-text);
+            line-height: 1.4;
+            margin-bottom: 4px;
+        }
+
+        .moment-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .moment-author {
+            font-size: 0.7rem;
+            color: var(--light-text);
+        }
+
+        .moment-gift-tag {
+            font-size: 0.6rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--blush);
+            background: rgba(201,144,138,0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        /* Moment expanded overlay */
+        .moment-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(74, 55, 40, 0.85);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .moment-overlay img {
+            max-width: 100%;
+            max-height: 60vh;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        .moment-overlay-caption {
+            color: white;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            text-align: center;
+            margin-top: 16px;
+            line-height: 1.5;
+            max-width: 300px;
+        }
+
+        .moment-overlay-meta {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.8rem;
+            margin-top: 8px;
+        }
+
+        .moment-overlay-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .moment-overlay-delete {
+            margin-top: 16px;
+            background: none;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: rgba(255,255,255,0.7);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Upload modal */
+        .upload-modal {
+            background: var(--cream);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 360px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        .upload-modal h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            color: var(--dark-text);
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .upload-preview {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        .upload-select-area {
+            width: 100%;
+            aspect-ratio: 1;
+            border: 2px dashed var(--warm-grey);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-bottom: 14px;
+            color: var(--light-text);
+            font-size: 0.85rem;
+        }
+
+        .upload-select-area:active {
+            border-color: var(--blush);
+        }
+
+        .upload-select-icon {
+            font-size: 2rem;
+        }
+
+        .upload-caption-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--warm-grey);
+            border-radius: 8px;
+            font-family: Georgia, serif;
+            font-size: 0.9rem;
+            color: var(--dark-text);
+            background: white;
+            margin-bottom: 10px;
+            resize: none;
+        }
+
+        .upload-caption-input:focus {
+            outline: none;
+            border-color: var(--blush);
+        }
+
+        .upload-gift-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 14px;
+        }
+
+        .upload-gift-tag {
+            padding: 6px 12px;
+            border: 1px solid var(--warm-grey);
+            background: white;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--light-text);
+        }
+
+        .upload-gift-tag.active {
+            border-color: var(--blush);
+            background: var(--blush);
+            color: white;
+        }
+
+        .upload-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .upload-cancel-btn {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            border: 1px solid var(--warm-grey);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: var(--light-text);
+            cursor: pointer;
+        }
+
+        .moments-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--light-text);
+            font-style: italic;
+        }
+
+        .moments-today-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
         .header {
             padding: 20px 20px 16px;
             text-align: center;
@@ -1813,6 +2114,23 @@
                 </div>
             </div>
 
+            <!-- MOMENTS TAB -->
+            <div id="moments-tab" class="tab-content">
+                <div class="moments-page">
+                    <div class="moments-header">
+                        <h2>Retreat Moments</h2>
+                        <p>Capturing what matters most</p>
+                    </div>
+                    <div id="moments-upload" style="display:none;">
+                        <button class="moments-upload-btn" id="moments-upload-btn">
+                            <span>📸</span> Share a Moment
+                        </button>
+                    </div>
+                    <div id="moments-today-section"></div>
+                    <div id="moments-grid" class="moments-grid"></div>
+                </div>
+            </div>
+
             <!-- CONTINUE TAB -->
             <div id="continue-tab" class="tab-content">
                 <div id="continue-container"></div>
@@ -1824,9 +2142,9 @@
                 <span class="nav-icon">📅</span>
                 <span>Home</span>
             </button>
-            <button class="nav-btn" data-tab="info">
-                <span class="nav-icon">📋</span>
-                <span>Info</span>
+            <button class="nav-btn" data-tab="moments">
+                <span class="nav-icon">📸</span>
+                <span>Moments</span>
             </button>
             <button class="nav-btn" data-tab="prayer">
                 <span class="nav-icon">🙏</span>
@@ -2029,6 +2347,7 @@
                 currentUser = JSON.parse(saved);
                 showWelcome();
                 document.getElementById('prayer-compose').style.display = 'block';
+                document.getElementById('moments-upload').style.display = 'block';
                 return;
             }
             const modal = document.getElementById('setup-modal');
@@ -2066,6 +2385,7 @@
                     document.getElementById('setup-modal').style.display = 'none';
                     showWelcome();
                     document.getElementById('prayer-compose').style.display = 'block';
+                    document.getElementById('moments-upload').style.display = 'block';
                     launchConfetti();
                     showToast('Welcome to the retreat, ' + currentUser.first_name + '! \u2728');
                 } catch (e) {
@@ -2686,11 +3006,14 @@
             const retreatStart = new Date('2026-04-09T00:00:00');
             const retreatEnd = new Date('2026-04-12T00:00:00');
 
-            // Before the retreat: show "Happening Now" with pre-retreat context
+            const statusDot = indicator.querySelector('.status-dot');
+
+            // Before the retreat: show countdown info (no pulsing dot)
             if (now < retreatStart) {
                 const msPerDay = 1000 * 60 * 60 * 24;
                 const daysUntil = Math.ceil((retreatStart - now) / msPerDay);
                 indicator.style.display = 'inline-flex';
+                statusDot.style.display = 'none';
                 if (daysUntil === 1) {
                     statusText.textContent = 'Tomorrow! Get ready \u2728';
                 } else if (daysUntil <= 7) {
@@ -2704,9 +3027,12 @@
             // After the retreat
             if (now >= retreatEnd) {
                 indicator.style.display = 'inline-flex';
+                statusDot.style.display = 'none';
                 statusText.textContent = 'Keep walking in your gifts \u2728';
                 return;
             }
+
+            statusDot.style.display = 'block';
 
             // During the retreat: match current session
             const nowHours = now.getHours();
@@ -3127,6 +3453,272 @@
             });
         }
 
+        // ===== Retreat Moments =====
+        async function loadMoments() {
+            const grid = document.getElementById('moments-grid');
+            try {
+                const moments = await apiGet('/api/moments');
+                if (!moments || moments.length === 0) {
+                    grid.innerHTML = '<div class="moments-empty">No moments shared yet. Be the first to capture something meaningful.</div>';
+                    return;
+                }
+                grid.innerHTML = '';
+
+                // Group by today
+                const today = new Date().toDateString();
+                const todayMoments = moments.filter(m => new Date(m.created_at + 'Z').toDateString() === today);
+                const todaySection = document.getElementById('moments-today-section');
+
+                if (todayMoments.length > 0) {
+                    todaySection.innerHTML = '<div class="moments-today-label">Moments from Today</div>';
+                } else {
+                    todaySection.innerHTML = '';
+                }
+
+                moments.forEach(moment => {
+                    const card = document.createElement('div');
+                    card.className = 'moment-card card-animate';
+
+                    const img = document.createElement('img');
+                    img.src = moment.photo_data;
+                    img.alt = moment.caption || 'Retreat moment';
+                    img.loading = 'lazy';
+
+                    const info = document.createElement('div');
+                    info.className = 'moment-card-info';
+
+                    if (moment.caption) {
+                        const caption = document.createElement('div');
+                        caption.className = 'moment-caption';
+                        caption.textContent = moment.caption;
+                        info.appendChild(caption);
+                    }
+
+                    const meta = document.createElement('div');
+                    meta.className = 'moment-meta';
+
+                    const author = document.createElement('span');
+                    author.className = 'moment-author';
+                    author.textContent = moment.author_name;
+                    meta.appendChild(author);
+
+                    if (moment.gift_tag) {
+                        const tag = document.createElement('span');
+                        tag.className = 'moment-gift-tag';
+                        tag.textContent = moment.gift_tag;
+                        meta.appendChild(tag);
+                    }
+
+                    info.appendChild(meta);
+                    card.appendChild(img);
+                    card.appendChild(info);
+
+                    card.addEventListener('click', () => openMomentOverlay(moment));
+
+                    grid.appendChild(card);
+                });
+
+                animateCards(grid);
+            } catch (e) {
+                grid.innerHTML = '<div class="moments-empty">Could not load moments. Check your connection.</div>';
+            }
+        }
+
+        function openMomentOverlay(moment) {
+            const overlay = document.createElement('div');
+            overlay.className = 'moment-overlay';
+
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'moment-overlay-close';
+            closeBtn.textContent = '\u2715';
+            closeBtn.addEventListener('click', () => overlay.remove());
+
+            const img = document.createElement('img');
+            img.src = moment.photo_data;
+            img.alt = moment.caption || 'Retreat moment';
+
+            overlay.appendChild(closeBtn);
+            overlay.appendChild(img);
+
+            if (moment.caption) {
+                const caption = document.createElement('div');
+                caption.className = 'moment-overlay-caption';
+                caption.textContent = moment.caption;
+                overlay.appendChild(caption);
+            }
+
+            const meta = document.createElement('div');
+            meta.className = 'moment-overlay-meta';
+            let metaText = moment.author_name;
+            if (moment.gift_tag) metaText += ' \u00b7 ' + moment.gift_tag;
+            meta.textContent = metaText;
+            overlay.appendChild(meta);
+
+            // Delete button for own moments
+            if (currentUser && moment.user_id === currentUser.id) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'moment-overlay-delete';
+                delBtn.textContent = 'Delete this moment';
+                delBtn.addEventListener('click', async () => {
+                    if (!confirm('Delete this moment?')) return;
+                    try {
+                        await apiDelete('/api/moments/' + moment.id, { user_id: currentUser.id });
+                        overlay.remove();
+                        loadMoments();
+                        showToast('Moment removed');
+                    } catch (e) {}
+                });
+                overlay.appendChild(delBtn);
+            }
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+
+            document.body.appendChild(overlay);
+        }
+
+        function initMomentsUpload() {
+            const uploadBtn = document.getElementById('moments-upload-btn');
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+
+            uploadBtn.addEventListener('click', () => {
+                if (!currentUser) {
+                    showToast('Please set up your name first.');
+                    return;
+                }
+                showUploadModal();
+            });
+        }
+
+        function showUploadModal() {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay animate-in';
+            overlay.style.zIndex = '1500';
+
+            let selectedFile = null;
+            let selectedTag = '';
+
+            const giftTags = ['Joy', 'Peace', 'Love', 'Faith', 'Courage', 'Rest', 'Freedom', 'Wisdom', 'Strength', 'Purpose'];
+
+            overlay.innerHTML = `
+                <div class="upload-modal">
+                    <h3>Share a Moment</h3>
+                    <img class="upload-preview" id="upload-preview-img">
+                    <div class="upload-select-area" id="upload-select-area">
+                        <span class="upload-select-icon">📷</span>
+                        <span>Tap to choose a photo</span>
+                    </div>
+                    <input type="file" id="upload-file-input" accept="image/*" style="display:none;">
+                    <textarea class="upload-caption-input" id="upload-caption" placeholder="What made this moment meaningful?" rows="2" maxlength="200"></textarea>
+                    <div class="upload-gift-tags" id="upload-gift-tags">
+                        ${giftTags.map(t => `<button class="upload-gift-tag" data-tag="${t}">${t}</button>`).join('')}
+                    </div>
+                    <div class="upload-actions">
+                        <button class="upload-cancel-btn" id="upload-cancel">Cancel</button>
+                        <button class="save-btn" id="upload-submit" style="flex:1;margin-top:0;" disabled>Share</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const fileInput = overlay.querySelector('#upload-file-input');
+            const selectArea = overlay.querySelector('#upload-select-area');
+            const previewImg = overlay.querySelector('#upload-preview-img');
+            const submitBtn = overlay.querySelector('#upload-submit');
+            const cancelBtn = overlay.querySelector('#upload-cancel');
+
+            selectArea.addEventListener('click', () => fileInput.click());
+            previewImg.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                selectedFile = file;
+
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    // Resize image to reduce size
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxSize = 800;
+                        let w = img.width, h = img.height;
+                        if (w > maxSize || h > maxSize) {
+                            if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                            else { w = Math.round(w * maxSize / h); h = maxSize; }
+                        }
+                        canvas.width = w;
+                        canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        const resized = canvas.toDataURL('image/jpeg', 0.7);
+                        previewImg.src = resized;
+                        previewImg.style.display = 'block';
+                        selectArea.style.display = 'none';
+                        submitBtn.disabled = false;
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Gift tags
+            overlay.querySelectorAll('.upload-gift-tag').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    overlay.querySelectorAll('.upload-gift-tag').forEach(b => b.classList.remove('active'));
+                    if (selectedTag === btn.dataset.tag) {
+                        selectedTag = '';
+                    } else {
+                        btn.classList.add('active');
+                        selectedTag = btn.dataset.tag;
+                    }
+                });
+            });
+
+            cancelBtn.addEventListener('click', () => overlay.remove());
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+
+            submitBtn.addEventListener('click', async () => {
+                if (!previewImg.src) return;
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sharing...';
+
+                try {
+                    const caption = overlay.querySelector('#upload-caption').value.trim();
+                    const result = await apiPost('/api/moments', {
+                        user_id: currentUser.id,
+                        author_name: currentUser.display_name || currentUser.first_name,
+                        photo_data: previewImg.src,
+                        caption: caption,
+                        gift_tag: selectedTag
+                    });
+
+                    if (result.error) {
+                        showToast(result.error);
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Share';
+                        return;
+                    }
+
+                    overlay.remove();
+                    loadMoments();
+                    showToast('Moment shared \u2728');
+                    launchConfetti();
+                } catch (e) {
+                    showToast('Could not upload. Try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Share';
+                }
+            });
+        }
+
         loadState();
         initTabs();
         buildSchedule();
@@ -3139,6 +3731,7 @@
         initPrayerWall();
         initAudioNote();
         initSummarize();
+        initMomentsUpload();
         loadNotAloneInsights();
         createSparkles();
         showScripture();
@@ -3155,6 +3748,11 @@
         // Refresh insights when switching to journey tab
         document.querySelector('[data-tab="journey"]').addEventListener('click', () => {
             loadNotAloneInsights();
+        });
+
+        // Load moments when switching to tab
+        document.querySelector('[data-tab="moments"]').addEventListener('click', () => {
+            loadMoments();
         });
 
         if ('serviceWorker' in navigator) {

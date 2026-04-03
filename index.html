@@ -421,6 +421,70 @@
             width: 24px;
         }
 
+        /* Journey locked overlay */
+        .journey-locked-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(247, 240, 235, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .journey-locked-overlay.unlocked {
+            display: none;
+        }
+
+        .journey-locked-content {
+            text-align: center;
+            padding: 32px 24px;
+            max-width: 300px;
+        }
+
+        .journey-locked-content .locked-icon {
+            font-size: 3.5rem;
+            margin-bottom: 16px;
+        }
+
+        .journey-locked-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin-bottom: 10px;
+        }
+
+        .journey-locked-message {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: var(--taupe);
+            line-height: 1.6;
+            font-style: italic;
+            margin-bottom: 12px;
+        }
+
+        .journey-locked-hint {
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        #journey-tab {
+            position: relative;
+        }
+
+        #journey-inner.blurred {
+            filter: blur(6px);
+            pointer-events: none;
+            user-select: none;
+        }
+
         /* Smooth tab slide */
         .tab-content {
             transition: opacity 0.3s ease;
@@ -1908,16 +1972,26 @@
 
             <!-- MY JOURNEY TAB -->
             <div id="journey-tab" class="tab-content">
-                <div id="not-alone-container"></div>
-                <div class="p-20">
-                    <p style="font-size: 0.95rem; color: var(--light-text); margin-bottom: 16px; line-height: 1.6;">
-                        Which of these gifts has God given you? Select one response for each to discover what God is doing in your life right now.
-                    </p>
+                <div id="journey-locked-overlay" class="journey-locked-overlay">
+                    <div class="journey-locked-content">
+                        <div class="locked-icon">🎁</div>
+                        <p class="journey-locked-title">This Gift Opens on Day 2</p>
+                        <p class="journey-locked-message">The Journey opens Friday morning during the retreat. For now, keep receiving what God has for you.</p>
+                        <p class="journey-locked-hint">April 10, 2026</p>
+                    </div>
                 </div>
-                <div id="gifts-container"></div>
-                <div id="journey-result" class="journey-result" style="display: none;">
-                    <div class="result-title" id="result-title"></div>
-                    <p class="result-message" id="result-message"></p>
+                <div id="journey-inner">
+                    <div id="not-alone-container"></div>
+                    <div class="p-20">
+                        <p style="font-size: 0.95rem; color: var(--light-text); margin-bottom: 16px; line-height: 1.6;">
+                            Which of these gifts has God given you? Select one response for each to discover what God is doing in your life right now.
+                        </p>
+                    </div>
+                    <div id="gifts-container"></div>
+                    <div id="journey-result" class="journey-result" style="display: none;">
+                        <div class="result-title" id="result-title"></div>
+                        <p class="result-message" id="result-message"></p>
+                    </div>
                 </div>
             </div>
 
@@ -2760,6 +2834,22 @@
                 });
                 container.appendChild(daySection);
             });
+        }
+
+        function checkJourneyLock() {
+            const now = new Date();
+            // Unlock on Day 2: Friday April 10, 2026 at 9:00 AM ET (Session 2 start)
+            const unlockDate = new Date('2026-04-10T09:00:00-04:00');
+            const overlay = document.getElementById('journey-locked-overlay');
+            const inner = document.getElementById('journey-inner');
+
+            if (now >= unlockDate) {
+                overlay.classList.add('unlocked');
+                inner.classList.remove('blurred');
+            } else {
+                overlay.classList.remove('unlocked');
+                inner.classList.add('blurred');
+            }
         }
 
         function buildGifts() {
@@ -3682,6 +3772,7 @@
         buildSchedule();
         buildPrayerCountdown();
         buildGifts();
+        checkJourneyLock();
         buildJournal();
         buildContinue();
         updateStatus();

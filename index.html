@@ -4203,7 +4203,7 @@
 
             try {
                 const fullVideo = await apiGet('/api/videos/' + videoMeta.id);
-                if (!fullVideo || !fullVideo.video_data) {
+                if (!fullVideo) {
                     overlay.remove();
                     showToast('Could not load video.');
                     return;
@@ -4213,7 +4213,7 @@
                 if (loadingEl) loadingEl.remove();
 
                 const video = document.createElement('video');
-                video.src = fullVideo.video_data;
+                video.src = API_URL + '/api/videos/' + videoMeta.id + '/stream';
                 video.controls = true;
                 video.autoplay = true;
                 video.playsInline = true;
@@ -4475,24 +4475,8 @@
                 try {
                     const thumbnail = await generateThumbnail(blob);
                     const videoBase64 = await blobToBase64(blob);
-
-                    // Check size — if too big, try compression
-                    let finalBase64 = videoBase64;
-                    let finalDuration = Math.min(duration, MAX_DURATION);
-
-                    if (videoBase64.length > 5500000) {
-                        // Try to compress
-                        overlay.querySelector('div').innerHTML = '<div style="font-size:1.2rem;margin-bottom:8px;">Compressing...</div><div style="font-size:0.85rem;opacity:0.7;">This may take a moment</div>';
-                        const compressed = await compressVideo(blob, MAX_DURATION);
-                        finalBase64 = await blobToBase64(compressed.blob);
-                        finalDuration = compressed.duration;
-
-                        if (finalBase64.length > 5500000) {
-                            showToast('Video is too large even after compression. Try a shorter clip.');
-                            overlay.remove();
-                            return;
-                        }
-                    }
+                    const finalDuration = Math.min(duration, MAX_DURATION);
+                    const contentType = blob.type || 'video/webm';
 
                     overlay.querySelector('div').innerHTML = '<div style="font-size:1.2rem;margin-bottom:8px;">Uploading...</div>';
 
@@ -4500,9 +4484,10 @@
                         user_id: currentUser.id,
                         author_name: currentUser.display_name || currentUser.first_name,
                         session_tag: selectedTag,
-                        video_data: finalBase64,
+                        video_data: videoBase64,
                         thumbnail_data: thumbnail,
-                        duration: finalDuration
+                        duration: finalDuration,
+                        content_type: contentType
                     });
 
                     if (result.error) {

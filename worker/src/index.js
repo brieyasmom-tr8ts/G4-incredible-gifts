@@ -253,9 +253,9 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
-      // ===== VIDEO MOMENTS =====
+      // ===== VIDEO MOMENTS (R2 storage) =====
 
-      // GET /api/videos - get all video moments (metadata only, no video_data)
+      // GET /api/videos - list all video moments (metadata + thumbnails only)
       if (path === '/api/videos' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
           `SELECT id, user_id, author_name, session_tag, thumbnail_data, duration, created_at
@@ -264,12 +264,12 @@ export default {
         return json(results, corsHeaders);
       }
 
-      // GET /api/videos/:id - get single video with full data
+      // GET /api/videos/:id - get video metadata (for playback info)
       const videoGetMatch = path.match(/^\/api\/videos\/(\d+)$/);
       if (videoGetMatch && request.method === 'GET') {
         const videoId = parseInt(videoGetMatch[1]);
         const video = await env.DB.prepare(
-          'SELECT id, user_id, author_name, session_tag, video_data, thumbnail_data, duration, created_at FROM video_moments WHERE id = ?'
+          'SELECT id, user_id, author_name, session_tag, thumbnail_data, duration, created_at FROM video_moments WHERE id = ?'
         ).bind(videoId).first();
 
         if (!video) {
@@ -278,9 +278,26 @@ export default {
         return json(video, corsHeaders);
       }
 
-      // POST /api/videos - upload a video moment (max 3 per user)
+      // GET /api/videos/:id/stream - stream actual video from R2
+      const videoStreamMatch = path.match(/^\/api\/videos\/(\d+)\/stream$/);
+      if (videoStreamMatch && request.method === 'GET') {
+        const videoId = parseInt(videoStreamMatch[1]);
+        const obj = await env.VIDEOS.get(`video-${videoId}`);
+        if (!obj) {
+          return new Response('Video not found', { status: 404, headers: corsHeaders });
+        }
+        return new Response(obj.body, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': obj.httpMetadata?.contentType || 'video/webm',
+            'Cache-Control': 'public, max-age=86400',
+          }
+        });
+      }
+
+      // POST /api/videos - upload a video moment to R2
       if (path === '/api/videos' && request.method === 'POST') {
-        const { user_id, author_name, session_tag, video_data, thumbnail_data, duration } = await request.json();
+        const { user_id, author_name, session_tag, video_data, thumbnail_data, duration, content_type } = await request.json();
 
         if (!user_id || !author_name || !video_data) {
           return json({ error: 'user_id, author_name, and video_data are required' }, corsHeaders, 400);
@@ -295,16 +312,26 @@ export default {
           return json({ error: 'You can share up to 3 video moments. Delete one to add more.' }, corsHeaders, 400);
         }
 
-        // Limit video size (~4MB base64)
-        if (video_data.length > 5500000) {
-          return json({ error: 'Video is too large. Please try a shorter clip.' }, corsHeaders, 400);
-        }
-
+        // Insert metadata into D1 (no video_data)
         const result = await env.DB.prepare(
           'INSERT INTO video_moments (user_id, author_name, session_tag, video_data, thumbnail_data, duration) VALUES (?, ?, ?, ?, ?, ?)'
-        ).bind(user_id, author_name, session_tag || '', video_data, thumbnail_data || '', duration || 0).run();
+        ).bind(user_id, author_name, session_tag || '', '', thumbnail_data || '', duration || 0).run();
 
-        return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
+        const videoId = result.meta.last_row_id;
+
+        // Decode base64 and store in R2
+        const base64Body = video_data.split(',')[1] || video_data;
+        const binaryStr = atob(base64Body);
+        const bytes = new Uint8Array(binaryStr.length);
+        for (let i = 0; i < binaryStr.length; i++) {
+          bytes[i] = binaryStr.charCodeAt(i);
+        }
+
+        await env.VIDEOS.put(`video-${videoId}`, bytes, {
+          httpMetadata: { contentType: content_type || 'video/webm' }
+        });
+
+        return json({ success: true, id: videoId }, corsHeaders);
       }
 
       // DELETE /api/videos/:id - delete own video
@@ -324,7 +351,9 @@ export default {
           return json({ error: 'You can only delete your own videos' }, corsHeaders, 403);
         }
 
+        // Delete from both D1 and R2
         await env.DB.prepare('DELETE FROM video_moments WHERE id = ?').bind(videoId).run();
+        await env.VIDEOS.delete(`video-${videoId}`);
         return json({ success: true }, corsHeaders);
       }
 

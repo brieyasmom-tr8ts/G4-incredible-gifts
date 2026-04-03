@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Incredible Gifts">
+    <meta name="theme-color" content="#f5f1ed">
+    <title>Incredible Gifts</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23f5f1ed' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23d4a5a5' opacity='0.6'/><path d='M96 50 L110 85 L145 85 L118 110 L130 145 L96 120 L62 145 L74 110 L47 85 L82 85 Z' fill='%23d4a5a5'/></svg>">
+    <link rel="manifest" href="data:application/json,{%22name%22:%22Incredible%20Gifts%22,%22short_name%22:%22Gifts%22,%22start_url%22:%22./%22,%22display%22:%22standalone%22,%22scope%22:%22./%22,%22background_color%22:%22%23f5f1ed%22,%22theme_color%22:%22%23f5f1ed%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23f5f1ed' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23d4a5a5' opacity='0.6'/><path d='M96 50 L110 85 L145 85 L118 110 L130 145 L96 120 L62 145 L74 110 L47 85 L82 85 Z' fill='%23d4a5a5'/></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --cream: #f5f1ed;
+            --taupe: #8b8680;
+            --sage: #a8bba8;
+            --blush: #d4a5a5;
+            --warm-grey: #c4bfb8;
+            --dark-text: #3d3a38;
+            --light-text: #7a7671;
+            --accent: #c97f6b;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Georgia, serif;
+            background: var(--cream);
+            color: var(--dark-text);
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Cormorant+Garamond:wght@400;500&display=swap');
+
+        .title-serif {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            line-height: 1.2;
+            color: var(--dark-text);
+        }
+
+        .subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--light-text);
+            letter-spacing: 0.02em;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: var(--cream);
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+
+        .content-area::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .content-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: var(--warm-grey);
+            border-radius: 2px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            padding: 16px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(139, 134, 128, 0.1);
+            background: var(--cream);
+        }
+
+        .tagline {
+            font-size: 0.85rem;
+            color: var(--light-text);
+            font-style: italic;
+            letter-spacing: 0.03em;
+            margin-top: 4px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 16px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(139, 134, 128, 0.08);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .card:active {
+            transform: scale(0.98);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card.expanded {
+            box-shadow: var(--shadow-md);
+            border-color: var(--blush);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .card-left {
+            flex: 1;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+
+        .card-time {
+            font-size: 0.8rem;
+            color: var(--light-text);
+            margin-top: 4px;
+        }
+
+        .card-badge {
+            display: inline-block;
+            background: var(--blush);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .card-movement {
+            display: inline-block;
+            background: var(--sage);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .card-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+        }
+
+        .card-content.expanded {
+            max-height: 800px;
+            opacity: 1;
+        }
+
+        .reflection-group {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(139, 134, 128, 0.1);
+        }
+
+        .reflection-label {
+            font-size: 0.8rem;
+            color: var(--light-text);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .reflection-text {
+            font-size: 0.95rem;
+            color: var(--taupe);
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .notes-input {
+            width: 100%;
+            margin-top: 12px;
+            padding: 10px;
+            border: 1px solid var(--warm-grey);
+            border-radius: 8px;
+            font-family: Georgia, serif;
+            font-size: 0.9rem;
+            color: var(--dark-text);
+            background: #fafaf8;
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .notes-input:focus {
+            outline: none;
+            border-color: var(--blush);
+            background: white;
+        }
+
+        .day-section {
+            margin: 20px 0;
+        }
+
+        .day-header {
+            padding: 16px 20px 8px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+
+        .day-subtitle {
+            padding: 0 20px 12px;
+            font-size: 0.85rem;
+            color: var(--light-text);
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+            margin: 12px 20px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .gifts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 16px;
+            margin-top: 8px;
+        }
+
+        .gift-card {
+            background: white;
+            padding: 12px;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .gift-card:active {
+            transform: scale(0.96);
+        }
+
+        .gift-card.selected {
+            border-color: var(--blush);
+            background: rgba(212, 165, 165, 0.08);
+            box-shadow: var(--shadow-md);
+        }
+
+        .gift-name {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--dark-text);
+            margin-bottom: 12px;
+        }
+
+        .gift-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .option-btn {
+            padding: 6px 4px;
+            border: 1px solid var(--warm-grey);
+            background: white;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--light-text);
+        }
+
+        .option-btn.active {
+            background: var(--blush);
+            color: white;
+            border-color: var(--blush);
+        }
+
+        .option-btn:active {
+            transform: scale(0.95);
+        }
+
+        .journey-result {
+            background: linear-gradient(135deg, rgba(212, 165, 165, 0.1) 0%, rgba(168, 187, 168, 0.1) 100%);
+            border: 1px solid var(--blush);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px;
+            text-align: center;
+        }
+
+        .result-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark-text);
+            margin-bottom: 8px;
+        }
+
+        .result-message {
+            font-size: 0.95rem;
+            color: var(--taupe);
+            line-height: 1.6;
+            font-style: italic;
+        }
+
+        .journal-container {
+            padding: 16px;
+        }
+
+        .journal-prompt {
+            font-size: 1.2rem;
+            color: var(--dark-text);
+            margin-bottom: 16px;
+            font-style: italic;
+        }
+
+        .journal-textarea {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid var(--warm-grey);
+            border-radius: 8px;
+            font-family: Georgia, serif;
+            font-size: 0.95rem;
+            color: var(--dark-text);
+            background: white;
+            resize: vertical;
+            min-height: 180px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .journal-textarea:focus {
+            outline: none;
+            border-color: var(--blush);
+            box-shadow: var(--shadow-md);
+        }
+
+        .save-btn {
+            background: var(--blush);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 12px;
+            cursor: pointer;
+            width: 100%;
+            transition: var(--transition);
+        }
+
+        .save-btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        .journal-entries {
+            margin-top: 24px;
+        }
+
+        .journal-entry {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .entry-date {
+            font-size: 0.8rem;
+            color: var(--light-text);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .entry-text {
+            font-size: 0.95rem;
+            color: var(--dark-text);
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .continue-locked {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .locked-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .locked-message {
+            font-size: 1.1rem;
+            color: var(--taupe);
+            margin-bottom: 8px;
+        }
+
+        .week-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 16px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(139, 134, 128, 0.08);
+        }
+
+        .week-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--sage);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        .week-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark-text);
+            margin-bottom: 12px;
+        }
+
+        .week-content {
+            font-size: 0.9rem;
+            color: var(--light-text);
+            line-height: 1.6;
+        }
+
+        .week-content strong {
+            display: block;
+            color: var(--dark-text);
+            margin-bottom: 4px;
+            margin-top: 12px;
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid rgba(139, 134, 128, 0.1);
+            display: flex;
+            justify-content: space-around;
+            height: 68px;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 8px;
+            color: var(--light-text);
+            font-size: 0.7rem;
+            transition: var(--transition);
+        }
+
+        .nav-btn.active {
+            color: var(--blush);
+        }
+
+        .nav-icon {
+            font-size: 1.4rem;
+        }
+
+        .p-20 {
+            padding: 20px;
+        }
+
+        @media (max-width: 360px) {
+            .card {
+                margin: 8px 12px;
+            }
+            .gifts-grid {
+                gap: 8px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1 class="title-serif">Incredible Gifts</h1>
+            <p class="tagline">Receive it. Open it. Share it.</p>
+        </div>
+
+        <div class="content-area">
+            <!-- HOME TAB -->
+            <div id="home-tab" class="tab-content active">
+                <div id="status-indicator" class="status-indicator" style="display:none;">
+                    <span class="status-dot"></span>
+                    <span id="status-text">Happening Now</span>
+                </div>
+                <div id="schedule-container"></div>
+            </div>
+
+            <!-- MY JOURNEY TAB -->
+            <div id="journey-tab" class="tab-content">
+                <div class="p-20">
+                    <p style="font-size: 0.95rem; color: var(--light-text); margin-bottom: 16px; line-height: 1.6;">
+                        Which of these gifts has God given you? Select one response for each to discover what God is doing in your life right now.
+                    </p>
+                </div>
+                <div id="gifts-container"></div>
+                <div id="journey-result" class="journey-result" style="display: none;">
+                    <div class="result-title" id="result-title"></div>
+                    <p class="result-message" id="result-message"></p>
+                </div>
+            </div>
+
+            <!-- JOURNAL TAB -->
+            <div id="journal-tab" class="tab-content">
+                <div class="journal-container">
+                    <p class="journal-prompt">What is God showing you right now?</p>
+                    <textarea class="journal-textarea" id="journal-textarea" placeholder="Write freely..."></textarea>
+                    <button class="save-btn" id="save-journal-btn">Save</button>
+                    <div class="journal-entries" id="journal-entries"></div>
+                </div>
+            </div>
+
+            <!-- CONTINUE TAB -->
+            <div id="continue-tab" class="tab-content">
+                <div id="continue-container"></div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <button class="nav-btn active" data-tab="home">
+                <span class="nav-icon">📅</span>
+                <span>Home</span>
+            </button>
+            <button class="nav-btn" data-tab="journey">
+                <span class="nav-icon">🎁</span>
+                <span>My Journey</span>
+            </button>
+            <button class="nav-btn" data-tab="journal">
+                <span class="nav-icon">✨</span>
+                <span>Journal</span>
+            </button>
+            <button class="nav-btn" data-tab="continue">
+                <span class="nav-icon">🌱</span>
+                <span>Continue</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const scheduleData = [
+            {
+                day: 'Thursday',
+                date: 'Day 1',
+                sessions: [
+                    { time: '4:00 PM', title: 'Check-in & Relax', movement: '', listenFor: '', reflection: '' },
+                    { time: '7:00 PM', title: 'Doors Open', movement: '', listenFor: '', reflection: '' },
+                    { time: '7:15 PM – 10:00 PM', title: 'Session 1: Receive the Gift', movement: 'Receive the Gift', listenFor: 'What has God already given that you haven\'t fully received?', reflection: 'What gift have I been resisting or minimizing?' }
+                ]
+            },
+            {
+                day: 'Friday',
+                date: 'Day 2',
+                sessions: [
+                    { time: '9:00 AM – 12:00 PM', title: 'Session 2: Open the Gift', movement: 'Open the Gift', listenFor: 'What am I holding that I haven\'t opened?', reflection: 'What would it look like to walk in this?' },
+                    { time: '12:00 PM – 5:00 PM', title: 'Free Time (Activities 1–4 PM)', movement: '', listenFor: '', reflection: '' },
+                    { time: '5:30 PM – 9:00 PM', title: 'Dinner & Party', movement: '', listenFor: '', reflection: '' }
+                ]
+            },
+            {
+                day: 'Saturday',
+                date: 'Day 3',
+                sessions: [
+                    { time: '7:00 AM – 9:00 AM', title: 'Breakfast & Checkout', movement: '', listenFor: '', reflection: '' },
+                    { time: '9:00 AM – 12:00 PM', title: 'Session 3: Share the Gift', movement: 'Share the Gift', listenFor: 'Who is impacted when I step into this?', reflection: 'Where is God asking me to share this?' }
+                ]
+            }
+        ];
+
+        const giftsData = ['Eternal Life', 'Identity', 'Love', 'Peace', 'Joy', 'Freedom', 'Rest', 'Wisdom', 'Courage', 'Strength', 'Faith', 'Purpose'];
+        const giftOptions = ['I\'ve experienced this', 'I\'m walking in this', 'I want this', 'I\'m struggling here'];
+
+        const weeks12 = [
+            { week: 1, title: 'The Gift of Receiving', question: 'What am I still learning to receive from God?', action: 'Name one thing you\'re holding too tightly.' },
+            { week: 2, title: 'The Gift of Identity', question: 'Who does God say I am?', action: 'Write down 3 truths about your identity in Christ.' },
+            { week: 3, title: 'The Gift of Love', question: 'How is God\'s love changing me?', action: 'Tell one person how God has loved you.' },
+            { week: 4, title: 'The Gift of Peace', question: 'Where do I need peace most right now?', action: 'Spend 10 minutes in silence listening to God.' },
+            { week: 5, title: 'The Gift of Joy', question: 'What steals my joy and what restores it?', action: 'Do one thing this week that brings you joy.' },
+            { week: 6, title: 'The Gift of Freedom', question: 'What am I being freed from?', action: 'Identify one area where you\'re finding new freedom.' },
+            { week: 7, title: 'The Gift of Rest', question: 'How am I honoring rest in my life?', action: 'Take one full day to rest without guilt.' },
+            { week: 8, title: 'The Gift of Wisdom', question: 'Where do I need God\'s wisdom most?', action: 'Ask God for wisdom about one decision.' },
+            { week: 9, title: 'The Gift of Courage', question: 'What am I being called to do courageously?', action: 'Take one small brave step this week.' },
+            { week: 10, title: 'The Gift of Strength', question: 'How is God strengthening me?', action: 'Share your story of strength with someone.' },
+            { week: 11, title: 'The Gift of Faith', question: 'What does it look like to trust God more?', action: 'Pray about one thing and watch God work.' },
+            { week: 12, title: 'Living It Out', question: 'How has God changed my understanding of His gifts?', action: 'Share this journey with someone else.' }
+        ];
+
+        let appState = { journeyResponses: {}, journalEntries: [] };
+
+        function loadState() {
+            const saved = localStorage.getItem('incredibleGiftState');
+            if (saved) appState = JSON.parse(saved);
+        }
+
+        function saveState() {
+            localStorage.setItem('incredibleGiftState', JSON.stringify(appState));
+        }
+
+        function initTabs() {
+            const navBtns = document.querySelectorAll('.nav-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            navBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabName = btn.dataset.tab;
+                    navBtns.forEach(b => b.classList.remove('active'));
+                    tabContents.forEach(tab => tab.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById(tabName + '-tab').classList.add('active');
+                    document.querySelector('.content-area').scrollTop = 0;
+                });
+            });
+        }
+
+        function buildSchedule() {
+            const container = document.getElementById('schedule-container');
+            container.innerHTML = '';
+            scheduleData.forEach((day, dayIndex) => {
+                const daySection = document.createElement('div');
+                daySection.className = 'day-section';
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.textContent = day.day;
+                const daySubtitle = document.createElement('div');
+                daySubtitle.className = 'day-subtitle';
+                daySubtitle.textContent = day.date;
+                daySection.appendChild(dayHeader);
+                daySection.appendChild(daySubtitle);
+                day.sessions.forEach((session, sessionIndex) => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    const cardHeader = document.createElement('div');
+                    cardHeader.className = 'card-header';
+                    const cardLeft = document.createElement('div');
+                    cardLeft.className = 'card-left';
+                    const title = document.createElement('div');
+                    title.className = 'card-title';
+                    title.textContent = session.title;
+                    const time = document.createElement('div');
+                    time.className = 'card-time';
+                    time.textContent = session.time;
+                    cardLeft.appendChild(title);
+                    cardLeft.appendChild(time);
+                    cardHeader.appendChild(cardLeft);
+                    if (session.movement) {
+                        const badge = document.createElement('span');
+                        badge.className = 'card-badge';
+                        badge.textContent = '✨';
+                        cardHeader.appendChild(badge);
+                    }
+                    card.appendChild(cardHeader);
+                    if (session.listenFor || session.reflection) {
+                        const content = document.createElement('div');
+                        content.className = 'card-content';
+                        const movementBadge = document.createElement('div');
+                        movementBadge.className = 'card-movement';
+                        movementBadge.textContent = session.movement;
+                        content.appendChild(movementBadge);
+                        if (session.listenFor) {
+                            const listenGroup = document.createElement('div');
+                            listenGroup.className = 'reflection-group';
+                            const listenLabel = document.createElement('span');
+                            listenLabel.className = 'reflection-label';
+                            listenLabel.textContent = 'What to listen for:';
+                            const listenText = document.createElement('div');
+                            listenText.className = 'reflection-text';
+                            listenText.textContent = session.listenFor;
+                            listenGroup.appendChild(listenLabel);
+                            listenGroup.appendChild(listenText);
+                            content.appendChild(listenGroup);
+                        }
+                        if (session.reflection) {
+                            const reflectionGroup = document.createElement('div');
+                            reflectionGroup.className = 'reflection-group';
+                            const reflectionLabel = document.createElement('span');
+                            reflectionLabel.className = 'reflection-label';
+                            reflectionLabel.textContent = 'Reflection:';
+                            const reflectionText = document.createElement('div');
+                            reflectionText.className = 'reflection-text';
+                            reflectionText.textContent = session.reflection;
+                            reflectionGroup.appendChild(reflectionLabel);
+                            reflectionGroup.appendChild(reflectionText);
+                            content.appendChild(reflectionGroup);
+                        }
+                        const notesLabel = document.createElement('span');
+                        notesLabel.className = 'reflection-label';
+                        notesLabel.style.marginTop = '16px';
+                        notesLabel.textContent = 'My Notes:';
+                        content.appendChild(notesLabel);
+                        const notesInput = document.createElement('textarea');
+                        notesInput.className = 'notes-input';
+                        notesInput.placeholder = 'Write what resonates...';
+                        const noteKey = `session-${dayIndex}-${sessionIndex}`;
+                        notesInput.value = localStorage.getItem(noteKey) || '';
+                        notesInput.addEventListener('change', () => {
+                            localStorage.setItem(noteKey, notesInput.value);
+                        });
+                        content.appendChild(notesInput);
+                        card.appendChild(content);
+                    }
+                    card.addEventListener('click', () => {
+                        const cardContent = card.querySelector('.card-content');
+                        if (cardContent) {
+                            card.classList.toggle('expanded');
+                            cardContent.classList.toggle('expanded');
+                        }
+                    });
+                    daySection.appendChild(card);
+                });
+                container.appendChild(daySection);
+            });
+        }
+
+        function buildGifts() {
+            const container = document.getElementById('gifts-container');
+            container.innerHTML = '';
+            const grid = document.createElement('div');
+            grid.className = 'gifts-grid';
+            giftsData.forEach(gift => {
+                const card = document.createElement('div');
+                card.className = 'gift-card';
+                if (appState.journeyResponses[gift]) card.classList.add('selected');
+                const name = document.createElement('div');
+                name.className = 'gift-name';
+                name.textContent = gift;
+                card.appendChild(name);
+                const optionsDiv = document.createElement('div');
+                optionsDiv.className = 'gift-options';
+                giftOptions.forEach(option => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    if (appState.journeyResponses[gift] === option) btn.classList.add('active');
+                    btn.textContent = option.split(' ')[0];
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        appState.journeyResponses[gift] = option;
+                        saveState();
+                        buildGifts();
+                        updateJourneyResult();
+                    });
+                    optionsDiv.appendChild(btn);
+                });
+                card.appendChild(optionsDiv);
+                grid.appendChild(card);
+            });
+            container.appendChild(grid);
+        }
+
+        function updateJourneyResult() {
+            const resultContainer = document.getElementById('journey-result');
+            const responses = appState.journeyResponses;
+            const responseCount = Object.keys(responses).length;
+            if (responseCount === 0) {
+                resultContainer.style.display = 'none';
+                return;
+            }
+            resultContainer.style.display = 'block';
+            const counts = { experienced: 0, walking: 0, want: 0, struggling: 0 };
+            Object.values(responses).forEach(response => {
+                if (response.includes('experienced')) counts.experienced++;
+                if (response.includes('walking')) counts.walking++;
+                if (response.includes('want')) counts.want++;
+                if (response.includes('struggling')) counts.struggling++;
+            });
+            let title = '', message = '';
+            if (counts.want > counts.walking && counts.want > counts.struggling) {
+                title = 'Becoming';
+                message = 'God is inviting you into a deeper walk with Him. These gifts are calling you forward.';
+            } else if (counts.struggling > counts.walking && counts.struggling > counts.want) {
+                title = 'Restoring';
+                message = 'God sees where you\'re struggling. His grace is sufficient. He\'s already working to restore what feels broken.';
+            } else if (counts.walking > counts.want && counts.walking > counts.struggling) {
+                title = 'Strengthening';
+                message = 'You\'re stepping into your gifts. God is strengthening you to live them out more fully.';
+            } else {
+                title = 'Awakening';
+                message = 'God is waking you up to the full measure of His gifts. Keep listening—transformation is happening.';
+            }
+            document.getElementById('result-title').textContent = title;
+            document.getElementById('result-message').textContent = message;
+        }
+
+        function buildJournal() {
+            const entriesDiv = document.getElementById('journal-entries');
+            entriesDiv.innerHTML = '';
+            appState.journalEntries.forEach(entry => {
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'journal-entry';
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'entry-date';
+                dateDiv.textContent = new Date(entry.date).toLocaleDateString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+                const textDiv = document.createElement('div');
+                textDiv.className = 'entry-text';
+                textDiv.textContent = entry.text;
+                entryDiv.appendChild(dateDiv);
+                entryDiv.appendChild(textDiv);
+                entriesDiv.appendChild(entryDiv);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const saveBtn = document.getElementById('save-journal-btn');
+            const textarea = document.getElementById('journal-textarea');
+            saveBtn.addEventListener('click', () => {
+                const text = textarea.value.trim();
+                if (text) {
+                    appState.journalEntries.unshift({
+                        date: new Date().toISOString(),
+                        text: text
+                    });
+                    saveState();
+                    textarea.value = '';
+                    buildJournal();
+                }
+            });
+        });
+
+        function buildContinue() {
+            const container = document.getElementById('continue-container');
+            container.innerHTML = '';
+            const now = new Date();
+            const retreatEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
+            const isRetreatActive = now < retreatEnd;
+            if (isRetreatActive) {
+                const locked = document.createElement('div');
+                locked.className = 'continue-locked';
+                locked.innerHTML = `<div class="locked-icon">🔒</div><p class="locked-message">This unlocks when the retreat ends.</p><p style="font-size: 0.85rem; color: var(--light-text);">Keep listening to what God is doing this weekend.</p>`;
+                container.appendChild(locked);
+                return;
+            }
+            weeks12.forEach(week => {
+                const card = document.createElement('div');
+                card.className = 'week-card';
+                const weekNum = document.createElement('div');
+                weekNum.className = 'week-number';
+                weekNum.textContent = 'W' + week.week;
+                const title = document.createElement('div');
+                title.className = 'week-title';
+                title.textContent = week.title;
+                const content = document.createElement('div');
+                content.className = 'week-content';
+                content.innerHTML = `<strong>Reflect:</strong>${week.question}<br><br><strong>Action:</strong>${week.action}`;
+                card.appendChild(weekNum);
+                card.appendChild(title);
+                card.appendChild(content);
+                container.appendChild(card);
+            });
+        }
+
+        function updateStatus() {
+            const now = new Date();
+            const nowHours = now.getHours();
+            const nowMinutes = now.getMinutes();
+            const nowTime = nowHours * 60 + nowMinutes;
+            let happening = null;
+            scheduleData.forEach(day => {
+                day.sessions.forEach(session => {
+                    const timeParts = session.time.split('–')[0].trim().split(':');
+                    const sessionHours = parseInt(timeParts[0]);
+                    const isPM = session.time.includes('PM');
+                    let adjHours = sessionHours;
+                    if (isPM && sessionHours !== 12) adjHours += 12;
+                    if (!isPM && sessionHours === 12) adjHours = 0;
+                    const sessionMinutes = parseInt(timeParts[1]) || 0;
+                    const sessionTime = adjHours * 60 + sessionMinutes;
+                    if (Math.abs(nowTime - sessionTime) < 120) happening = session.title;
+                });
+            });
+            const indicator = document.getElementById('status-indicator');
+            if (happening) {
+                indicator.style.display = 'inline-flex';
+                document.getElementById('status-text').textContent = happening;
+            }
+        }
+
+        loadState();
+        initTabs();
+        buildSchedule();
+        buildGifts();
+        buildJournal();
+        buildContinue();
+        updateStatus();
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { event.waitUntil(caches.open('v1').then(cache => cache.addAll(['/']))) }); self.addEventListener('fetch', event => { event.respondWith(caches.match(event.request).then(response => response || fetch(event.request))) });`)).catch(() => {});
+        }
+    </script>
+</body>
+</html>

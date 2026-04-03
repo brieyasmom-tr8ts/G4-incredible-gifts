@@ -76,6 +76,134 @@ export default {
         }, corsHeaders);
       }
 
+      // GET /api/users - list all users (admin)
+      if (path === '/api/users' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT id, first_name, last_initial, email, phone, birthday, created_at FROM users ORDER BY created_at DESC'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
+      // GET /api/users/:id - get user profile (public view — respects visibility)
+      const userGetMatch = path.match(/^\/api\/users\/(\d+)$/);
+      if (userGetMatch && request.method === 'GET') {
+        const userId = parseInt(userGetMatch[1]);
+        const user = await env.DB.prepare(
+          'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, created_at FROM users WHERE id = ?'
+        ).bind(userId).first();
+        if (!user) return json({ error: 'User not found' }, corsHeaders, 404);
+
+        // Return public profile — only show fields user opted in
+        const isOwner = url.searchParams.get('owner') === '1';
+        return json({
+          id: user.id,
+          first_name: user.first_name,
+          last_initial: user.last_initial,
+          photo_data: user.photo_data || '',
+          email: (isOwner || user.show_email) ? user.email : '',
+          phone: (isOwner || user.show_phone) ? user.phone : '',
+          birthday: (isOwner || user.show_birthday) ? user.birthday : '',
+          show_email: user.show_email || 0,
+          show_phone: user.show_phone || 0,
+          show_birthday: user.show_birthday || 0,
+          created_at: user.created_at
+        }, corsHeaders);
+      }
+
+      // POST /api/users/:id/profile - update profile
+      const profileMatch = path.match(/^\/api\/users\/(\d+)\/profile$/);
+      if (profileMatch && request.method === 'POST') {
+        const userId = parseInt(profileMatch[1]);
+        const body = await request.json();
+
+        const allowed = ['email', 'phone', 'birthday', 'photo_data', 'show_email', 'show_phone', 'show_birthday'];
+        const fields = [];
+        const values = [];
+        for (const key of allowed) {
+          if (body[key] !== undefined) {
+            fields.push(`${key} = ?`);
+            values.push(body[key]);
+          }
+        }
+
+        if (fields.length === 0) return json({ error: 'No fields to update' }, corsHeaders, 400);
+
+        values.push(userId);
+        await env.DB.prepare(
+          `UPDATE users SET ${fields.join(', ')} WHERE id = ?`
+        ).bind(...values).run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/users/:id/photo - get user photo (lightweight)
+      const photoMatch = path.match(/^\/api\/users\/(\d+)\/photo$/);
+      if (photoMatch && request.method === 'GET') {
+        const userId = parseInt(photoMatch[1]);
+        const user = await env.DB.prepare(
+          'SELECT photo_data FROM users WHERE id = ?'
+        ).bind(userId).first();
+        if (!user || !user.photo_data) return json({ photo_data: '' }, corsHeaders);
+        return json({ photo_data: user.photo_data }, corsHeaders);
+      }
+
+      // DELETE /api/users/:id - delete user (admin)
+      const userDeleteMatch = path.match(/^\/api\/users\/(\d+)$/);
+      if (userDeleteMatch && request.method === 'DELETE') {
+        const userId = parseInt(userDeleteMatch[1]);
+        await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // ===== ADMIN =====
+
+      // DELETE /api/admin/reset - clear all test data
+      if (path === '/api/admin/reset' && request.method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM messages').run();
+        await env.DB.prepare('DELETE FROM moments').run();
+        await env.DB.prepare('DELETE FROM video_moments').run();
+        await env.DB.prepare('DELETE FROM feedback').run();
+        await env.DB.prepare('DELETE FROM users').run();
+        // Clear R2 videos
+        const listed = await env.VIDEOS.list();
+        for (const obj of listed.objects) {
+          await env.VIDEOS.delete(obj.key);
+        }
+        return json({ success: true, message: 'All data cleared' }, corsHeaders);
+      }
+
+      // DELETE /api/moments/:id (admin override with user_id = -1)
+      const momentDeleteMatch = path.match(/^\/api\/moments\/(\d+)$/);
+      if (momentDeleteMatch && request.method === 'DELETE') {
+        const momentId = parseInt(momentDeleteMatch[1]);
+        const { user_id } = await request.json();
+
+        if (user_id !== -1) {
+          const moment = await env.DB.prepare('SELECT user_id FROM moments WHERE id = ?').bind(momentId).first();
+          if (!moment) return json({ error: 'Not found' }, corsHeaders, 404);
+          if (moment.user_id !== user_id) return json({ error: 'Not yours' }, corsHeaders, 403);
+        }
+
+        await env.DB.prepare('DELETE FROM moments WHERE id = ?').bind(momentId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/messages/:id
+      const msgDeleteMatch = path.match(/^\/api\/messages\/(\d+)$/);
+      if (msgDeleteMatch && request.method === 'DELETE') {
+        const msgId = parseInt(msgDeleteMatch[1]);
+        await env.DB.prepare('DELETE FROM messages WHERE id = ?').bind(msgId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/feedback/:id
+      const fbDeleteMatch = path.match(/^\/api\/feedback\/(\d+)$/);
+      if (fbDeleteMatch && request.method === 'DELETE') {
+        const fbId = parseInt(fbDeleteMatch[1]);
+        await env.DB.prepare('DELETE FROM feedback WHERE id = ?').bind(fbId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
       // ===== MESSAGES =====
 
       // GET /api/messages - get prayer wall messages
@@ -352,7 +480,7 @@ export default {
         if (!video) {
           return json({ error: 'Video not found' }, corsHeaders, 404);
         }
-        if (video.user_id !== user_id) {
+        if (user_id !== -1 && video.user_id !== user_id) {
           return json({ error: 'You can only delete your own videos' }, corsHeaders, 403);
         }
 

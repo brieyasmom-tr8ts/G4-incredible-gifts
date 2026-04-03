@@ -14,9 +14,22 @@ CREATE TABLE users (
   first_name TEXT NOT NULL,
   last_initial TEXT DEFAULT '',
   attendee_id INTEGER,
+  email TEXT DEFAULT '',
+  phone TEXT DEFAULT '',
+  birthday TEXT DEFAULT '',
+  photo_data TEXT DEFAULT '',
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (attendee_id) REFERENCES attendees(id)
 );
+
+-- Run these on existing DB to add profile fields:
+-- ALTER TABLE users ADD COLUMN email TEXT DEFAULT '';
+-- ALTER TABLE users ADD COLUMN phone TEXT DEFAULT '';
+-- ALTER TABLE users ADD COLUMN birthday TEXT DEFAULT '';
+-- ALTER TABLE users ADD COLUMN photo_data TEXT DEFAULT '';
+-- ALTER TABLE users ADD COLUMN show_email INTEGER DEFAULT 0;
+-- ALTER TABLE users ADD COLUMN show_phone INTEGER DEFAULT 0;
+-- ALTER TABLE users ADD COLUMN show_birthday INTEGER DEFAULT 0;
 
 CREATE TABLE journey_responses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

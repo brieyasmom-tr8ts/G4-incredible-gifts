@@ -342,11 +342,196 @@
             opacity: 0;
             transform: translateY(-8px);
             transition: all 0.6s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .welcome-banner.animate-in {
             opacity: 1;
             transform: translateY(0);
+        }
+
+        .welcome-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1.5px solid var(--blush);
+        }
+
+        .welcome-avatar-placeholder {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blush), var(--rose));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Profile overlay */
+        .profile-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1500;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .profile-sheet {
+            width: 100%;
+            max-width: 500px;
+            max-height: 85vh;
+            background: var(--cream);
+            border-radius: 20px 20px 0 0;
+            padding: 24px 20px calc(24px + env(safe-area-inset-bottom, 0px));
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .profile-photo-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 12px;
+            overflow: hidden;
+            border: 3px solid var(--blush);
+            cursor: pointer;
+            position: relative;
+            background: linear-gradient(135deg, var(--blush), var(--rose));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profile-photo-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-photo-circle .photo-edit-hint {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            font-size: 0.55rem;
+            text-align: center;
+            padding: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .profile-field {
+            margin-bottom: 14px;
+        }
+
+        .profile-field label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+
+        .profile-field input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--warm-grey);
+            border-radius: 10px;
+            font-family: Georgia, serif;
+            font-size: 16px;
+            color: var(--dark-text);
+            background: white;
+        }
+
+        .profile-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 0;
+        }
+
+        .profile-toggle-label {
+            font-size: 0.78rem;
+            color: var(--light-text);
+        }
+
+        .profile-toggle {
+            width: 40px;
+            height: 22px;
+            border-radius: 11px;
+            border: none;
+            background: var(--warm-grey);
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .profile-toggle.on {
+            background: var(--sage);
+        }
+
+        .profile-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: white;
+            transition: transform 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .profile-toggle.on::after {
+            transform: translateX(18px);
+        }
+
+        /* Message avatar */
+        .msg-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .msg-avatar-placeholder {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blush), var(--rose));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+            flex-shrink: 0;
         }
 
         /* Smooth nav tab indicator */
@@ -2637,6 +2822,35 @@
             return 'Good evening';
         }
 
+        // Avatar photo cache
+        const avatarCache = {};
+        async function loadAvatar(userId, element, initial) {
+            if (!userId) return;
+            if (avatarCache[userId] !== undefined) {
+                if (avatarCache[userId]) {
+                    const img = document.createElement('img');
+                    img.className = element.className.replace('placeholder', '').trim() || 'msg-avatar';
+                    img.src = avatarCache[userId];
+                    img.alt = '';
+                    element.replaceWith(img);
+                }
+                return;
+            }
+            try {
+                const data = await apiGet('/api/users/' + userId + '/photo');
+                avatarCache[userId] = data?.photo_data || '';
+                if (avatarCache[userId]) {
+                    const img = document.createElement('img');
+                    img.className = element.className.replace('placeholder', '').trim() || 'msg-avatar';
+                    img.src = avatarCache[userId];
+                    img.alt = '';
+                    element.replaceWith(img);
+                }
+            } catch(e) {
+                avatarCache[userId] = '';
+            }
+        }
+
         async function apiGet(path) {
             const res = await fetch(API_URL + path);
             return res.json();
@@ -2720,9 +2934,161 @@
 
         function showWelcome() {
             const banner = document.getElementById('welcome-banner');
-            banner.textContent = getTimeGreeting() + ', ' + currentUser.first_name + ' \u2728';
-            banner.style.display = 'block';
+            const avatarHTML = currentUser.photo_data
+                ? `<img class="welcome-avatar" src="${currentUser.photo_data}" alt="">`
+                : `<div class="welcome-avatar-placeholder">${currentUser.first_name.charAt(0)}</div>`;
+            banner.innerHTML = avatarHTML + `<span>${getTimeGreeting()}, ${currentUser.first_name} \u2728</span>`;
+            banner.style.display = 'flex';
+            banner.addEventListener('click', openProfile);
             setTimeout(() => banner.classList.add('animate-in'), 100);
+        }
+
+        // Load user photo from server if we don't have it cached
+        async function loadUserPhoto() {
+            if (!currentUser) return;
+            try {
+                const data = await apiGet('/api/users/' + currentUser.id + '/photo');
+                if (data && data.photo_data) {
+                    currentUser.photo_data = data.photo_data;
+                    localStorage.setItem('g4user', JSON.stringify(currentUser));
+                    showWelcome();
+                }
+            } catch(e) {}
+        }
+
+        function openProfile() {
+            if (!currentUser) return;
+
+            const overlay = document.createElement('div');
+            overlay.className = 'profile-overlay';
+
+            const sheet = document.createElement('div');
+            sheet.className = 'profile-sheet';
+
+            const hasPhoto = currentUser.photo_data;
+            sheet.innerHTML = `
+                <div style="text-align:center;margin-bottom:16px;">
+                    <div class="profile-photo-circle" id="profile-photo-btn">
+                        ${hasPhoto ? `<img src="${currentUser.photo_data}" alt="">` : `<span style="color:white;font-size:1.8rem;">📷</span>`}
+                        <div class="photo-edit-hint">${hasPhoto ? 'Change' : 'Add photo'}</div>
+                    </div>
+                    <input type="file" id="profile-photo-input" accept="image/*" style="display:none;">
+                    <div style="font-family:Playfair Display,serif;font-size:1.2rem;font-weight:700;color:var(--dark-text);">${currentUser.display_name || currentUser.first_name}</div>
+                    <div style="font-size:0.8rem;color:var(--light-text);margin-top:2px;">Tap your photo to change it</div>
+                </div>
+
+                <div style="margin-bottom:16px;padding:12px 16px;background:rgba(138,158,122,0.08);border-radius:10px;border:1px solid rgba(138,158,122,0.12);">
+                    <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--taupe);line-height:1.5;text-align:center;">Your info is only shared with retreat leadership unless you choose to make it visible to the group. Your photo will appear next to your messages.</div>
+                </div>
+
+                <div class="profile-field">
+                    <label>Email</label>
+                    <input type="email" id="profile-email" placeholder="your@email.com" value="${currentUser.email || ''}">
+                    <div class="profile-toggle-row" style="margin-top:6px;">
+                        <span class="profile-toggle-label">Visible to others</span>
+                        <button class="profile-toggle ${currentUser.show_email ? 'on' : ''}" id="toggle-email"></button>
+                    </div>
+                </div>
+
+                <div class="profile-field">
+                    <label>Phone</label>
+                    <input type="tel" id="profile-phone" placeholder="(555) 123-4567" value="${currentUser.phone || ''}">
+                    <div class="profile-toggle-row" style="margin-top:6px;">
+                        <span class="profile-toggle-label">Visible to others</span>
+                        <button class="profile-toggle ${currentUser.show_phone ? 'on' : ''}" id="toggle-phone"></button>
+                    </div>
+                </div>
+
+                <div class="profile-field">
+                    <label>Birthday</label>
+                    <input type="date" id="profile-birthday" value="${currentUser.birthday || ''}">
+                    <div class="profile-toggle-row" style="margin-top:6px;">
+                        <span class="profile-toggle-label">Visible to others</span>
+                        <button class="profile-toggle ${currentUser.show_birthday ? 'on' : ''}" id="toggle-birthday"></button>
+                    </div>
+                </div>
+
+                <button class="save-btn" id="profile-save-btn" style="width:100%;margin-top:8px;">Save Profile</button>
+                <button style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-size:0.85rem;cursor:pointer;margin-top:8px;" id="profile-close-btn">Close</button>
+            `;
+
+            overlay.appendChild(sheet);
+            document.body.appendChild(overlay);
+
+            // Toggle buttons
+            sheet.querySelectorAll('.profile-toggle').forEach(btn => {
+                btn.addEventListener('click', () => btn.classList.toggle('on'));
+            });
+
+            // Photo upload
+            const photoBtn = sheet.querySelector('#profile-photo-btn');
+            const photoInput = sheet.querySelector('#profile-photo-input');
+            photoBtn.addEventListener('click', () => photoInput.click());
+            photoInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    // Compress photo
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const size = 256;
+                        canvas.width = size;
+                        canvas.height = size;
+                        const ctx = canvas.getContext('2d');
+                        const min = Math.min(img.width, img.height);
+                        const sx = (img.width - min) / 2;
+                        const sy = (img.height - min) / 2;
+                        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+                        const compressed = canvas.toDataURL('image/jpeg', 0.7);
+                        photoBtn.innerHTML = `<img src="${compressed}" alt=""><div class="photo-edit-hint">Change</div>`;
+                        photoInput.dataset.compressed = compressed;
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Save
+            sheet.querySelector('#profile-save-btn').addEventListener('click', async () => {
+                const btn = sheet.querySelector('#profile-save-btn');
+                btn.disabled = true;
+                btn.textContent = 'Saving...';
+
+                const profileData = {
+                    email: sheet.querySelector('#profile-email').value.trim(),
+                    phone: sheet.querySelector('#profile-phone').value.trim(),
+                    birthday: sheet.querySelector('#profile-birthday').value,
+                    show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,
+                    show_phone: sheet.querySelector('#toggle-phone').classList.contains('on') ? 1 : 0,
+                    show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,
+                };
+
+                if (photoInput.dataset.compressed) {
+                    profileData.photo_data = photoInput.dataset.compressed;
+                }
+
+                try {
+                    await apiPost('/api/users/' + currentUser.id + '/profile', profileData);
+                    // Update local cache
+                    Object.assign(currentUser, profileData);
+                    localStorage.setItem('g4user', JSON.stringify(currentUser));
+                    showWelcome();
+                    showToast('Profile saved!');
+                    overlay.remove();
+                } catch(e) {
+                    showToast('Could not save. Check your connection.');
+                    btn.disabled = false;
+                    btn.textContent = 'Save Profile';
+                }
+            });
+
+            // Close
+            sheet.querySelector('#profile-close-btn').addEventListener('click', () => overlay.remove());
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
         }
 
         // ===== Prayer Wall =====
@@ -2739,9 +3105,23 @@
                     const post = document.createElement('div');
                     post.className = 'prayer-post type-' + msg.type;
 
-                    // Top row: author + type badge
+                    // Top row: avatar + author + type badge
                     const top = document.createElement('div');
                     top.className = 'prayer-post-top';
+                    top.style.display = 'flex';
+                    top.style.alignItems = 'center';
+                    top.style.gap = '8px';
+
+                    // Avatar
+                    const avatarEl = document.createElement('div');
+                    avatarEl.className = 'msg-avatar-placeholder';
+                    avatarEl.textContent = msg.author_name.charAt(0);
+                    top.appendChild(avatarEl);
+                    // Try to load photo
+                    loadAvatar(msg.user_id, avatarEl, msg.author_name.charAt(0));
+
+                    const authorWrap = document.createElement('div');
+                    authorWrap.style.flex = '1';
 
                     const author = document.createElement('div');
                     author.className = 'prayer-post-author';
@@ -2751,8 +3131,9 @@
                     typeBadge.className = 'prayer-post-type type-' + msg.type;
                     typeBadge.textContent = msg.type === 'prayer' ? 'Prayer' : 'Encouragement';
 
-                    top.appendChild(author);
-                    top.appendChild(typeBadge);
+                    authorWrap.appendChild(author);
+                    authorWrap.appendChild(typeBadge);
+                    top.appendChild(authorWrap);
                     post.appendChild(top);
 
                     // Tagged name
@@ -4543,6 +4924,7 @@
         initMomentsUpload();
         loadMoments();
         initVideoMoments();
+        loadUserPhoto();
         loadNotAloneInsights();
         createSparkles();
         // Scripture rotation removed — daily prayer verse is sufficient

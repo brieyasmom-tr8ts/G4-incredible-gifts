@@ -85,14 +85,22 @@ export default {
 
       // GET /api/users/directory - public directory (only shared fields)
       if (path === '/api/users/directory' && request.method === 'GET') {
-        const { results } = await env.DB.prepare(
-          `SELECT u.id, u.first_name, u.last_initial, u.photo_data, u.email, u.phone, u.birthday,
-                  u.show_email, u.show_phone, u.show_birthday, u.show_about,
-                  u.instagram, u.facebook, u.location, u.job, u.church, u.retreat_years, u.about,
-                  p.score as packing_score
-           FROM users u LEFT JOIN packing_scores p ON u.id = p.user_id
-           ORDER BY u.first_name ASC`
-        ).all();
+        let results;
+        try {
+          ({ results } = await env.DB.prepare(
+            `SELECT u.id, u.first_name, u.last_initial, u.photo_data, u.email, u.phone, u.birthday,
+                    u.show_email, u.show_phone, u.show_birthday, u.show_about,
+                    u.instagram, u.facebook, u.location, u.job, u.church, u.retreat_years, u.about,
+                    p.score as packing_score
+             FROM users u LEFT JOIN packing_scores p ON u.id = p.user_id
+             ORDER BY u.first_name ASC`
+          ).all());
+        } catch (e) {
+          // Fallback if packing_scores table doesn't exist yet
+          ({ results } = await env.DB.prepare(
+            'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about FROM users ORDER BY first_name ASC'
+          ).all());
+        }
         const directory = results.map(u => ({
           id: u.id,
           first_name: u.first_name,
@@ -196,17 +204,10 @@ export default {
 
       // DELETE /api/admin/reset - clear all test data
       if (path === '/api/admin/reset' && request.method === 'DELETE') {
-        await env.DB.prepare('DELETE FROM messages').run();
-        await env.DB.prepare('DELETE FROM moments').run();
-        await env.DB.prepare('DELETE FROM video_moments').run();
-        await env.DB.prepare('DELETE FROM feedback').run();
-        await env.DB.prepare('DELETE FROM fun_facts').run();
-        await env.DB.prepare('DELETE FROM packing_scores').run();
-        await env.DB.prepare('DELETE FROM secret_sister').run();
-        await env.DB.prepare('DELETE FROM wyr_votes').run();
-        await env.DB.prepare('DELETE FROM wyr_questions').run();
-        await env.DB.prepare('DELETE FROM announcements').run();
-        await env.DB.prepare('DELETE FROM users').run();
+        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'users'];
+        for (const t of tables) {
+          try { await env.DB.prepare(`DELETE FROM ${t}`).run(); } catch(e) { /* table may not exist */ }
+        }
         // Clear R2 videos
         const listed = await env.VIDEOS.list();
         for (const obj of listed.objects) {

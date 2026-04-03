@@ -1618,10 +1618,13 @@
                             lunchLabel.textContent = 'Nearby Lunch Spots:';
                             lunchGroup.appendChild(lunchLabel);
                             const spots = [
-                                { name: 'Liquid Assets', url: 'https://www.liquidassetsoc.com/' },
-                                { name: 'Blu Crabhouse', url: 'https://blucrabhouse.com/' },
-                                { name: 'Fractured Prune (donuts!)', url: 'https://fracturedprune.com/' },
-                                { name: 'Longboard Cafe', url: 'https://www.longboardcafe.com/' }
+                                { name: 'Coastal Salt', url: 'https://maps.google.com/?q=Coastal+Salt+Ocean+City+MD' },
+                                { name: 'Franco\'s Pizza', url: 'https://maps.google.com/?q=Francos+Pizza+Ocean+City+MD' },
+                                { name: 'Bad Monkey (West OC)', url: 'https://maps.google.com/?q=Bad+Monkey+West+Ocean+City+MD' },
+                                { name: 'Liquid Assets', url: 'https://maps.google.com/?q=Liquid+Assets+Ocean+City+MD' },
+                                { name: 'Blu Crabhouse', url: 'https://maps.google.com/?q=Blu+Crabhouse+Ocean+City+MD' },
+                                { name: 'Fractured Prune (donuts!)', url: 'https://maps.google.com/?q=Fractured+Prune+Ocean+City+MD' },
+                                { name: 'Longboard Cafe', url: 'https://maps.google.com/?q=Longboard+Cafe+Ocean+City+MD' }
                             ];
                             spots.forEach(spot => {
                                 const link = document.createElement('a');
@@ -1632,6 +1635,25 @@
                                 lunchGroup.appendChild(link);
                             });
                             content.appendChild(lunchGroup);
+                            const thingsGroup = document.createElement('div');
+                            thingsGroup.className = 'reflection-group';
+                            const thingsLabel = document.createElement('span');
+                            thingsLabel.className = 'reflection-label';
+                            thingsLabel.textContent = 'Things to Do:';
+                            thingsGroup.appendChild(thingsLabel);
+                            const things = [
+                                { name: 'Tanger Outlets (nearby!)', url: 'https://maps.google.com/?q=Tanger+Outlets+Ocean+City+MD' },
+                                { name: 'Ocean City Boardwalk', url: 'https://maps.google.com/?q=Ocean+City+MD+Boardwalk' }
+                            ];
+                            things.forEach(thing => {
+                                const link = document.createElement('a');
+                                link.href = thing.url;
+                                link.target = '_blank';
+                                link.textContent = thing.name;
+                                link.style.cssText = 'display:block;padding:6px 0;color:var(--accent);text-decoration:none;font-size:0.85rem;';
+                                thingsGroup.appendChild(link);
+                            });
+                            content.appendChild(thingsGroup);
                         }
                         if (!session.hotelLink) {
                         const notesLabel = document.createElement('span');

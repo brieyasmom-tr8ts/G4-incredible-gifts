@@ -342,11 +342,6 @@
             opacity: 0;
             transform: translateY(-8px);
             transition: all 0.6s ease;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
         }
 
         .welcome-banner.animate-in {
@@ -2300,7 +2295,10 @@
     <div id="toast" class="toast"></div>
 
     <div class="app-container">
-        <div class="header">
+        <div class="header" style="position:relative;">
+            <button id="header-profile-btn" style="display:none;position:absolute;top:calc(12px + max(env(safe-area-inset-top,0px),24px));right:16px;background:none;border:none;cursor:pointer;padding:0;z-index:10;" aria-label="My Profile">
+                <div id="header-avatar" class="welcome-avatar-placeholder" style="width:32px;height:32px;font-size:0.75rem;">?</div>
+            </button>
             <p class="retreat-label">G4 2026 Women's Retreat</p>
             <h1 class="title-serif">Incredible Gifts</h1>
             <p class="tagline">Receive it. Open it. Share it.</p>
@@ -2934,13 +2932,20 @@
 
         function showWelcome() {
             const banner = document.getElementById('welcome-banner');
-            const avatarHTML = currentUser.photo_data
-                ? `<img class="welcome-avatar" src="${currentUser.photo_data}" alt="">`
-                : `<div class="welcome-avatar-placeholder">${currentUser.first_name.charAt(0)}</div>`;
-            banner.innerHTML = avatarHTML + `<span>${getTimeGreeting()}, ${currentUser.first_name} \u2728</span><span style="font-size:0.7rem;color:var(--warm-grey);border:1px solid var(--warm-grey);border-radius:12px;padding:2px 8px;white-space:nowrap;">My Profile</span>`;
-            banner.style.display = 'flex';
-            banner.addEventListener('click', openProfile);
+            banner.textContent = getTimeGreeting() + ', ' + currentUser.first_name + ' \u2728';
+            banner.style.display = 'block';
             setTimeout(() => banner.classList.add('animate-in'), 100);
+
+            // Header profile button
+            const profileBtn = document.getElementById('header-profile-btn');
+            const avatarEl = document.getElementById('header-avatar');
+            if (currentUser.photo_data) {
+                avatarEl.outerHTML = `<img id="header-avatar" class="welcome-avatar" style="width:32px;height:32px;" src="${currentUser.photo_data}" alt="">`;
+            } else {
+                avatarEl.textContent = currentUser.first_name.charAt(0);
+            }
+            profileBtn.style.display = 'block';
+            profileBtn.onclick = openProfile;
         }
 
         // Load user photo from server if we don't have it cached
@@ -3008,6 +3013,24 @@
                     </div>
                 </div>
 
+                <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;margin-top:4px;">Connect</div>
+
+                <div class="profile-field" style="margin-bottom:10px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:1.1rem;">📸</span>
+                        <input type="text" id="profile-instagram" placeholder="Instagram username" value="${currentUser.instagram || ''}" style="flex:1;padding:10px 14px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:white;">
+                    </div>
+                </div>
+
+                <div class="profile-field" style="margin-bottom:10px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:1.1rem;">👤</span>
+                        <input type="text" id="profile-facebook" placeholder="Facebook name" value="${currentUser.facebook || ''}" style="flex:1;padding:10px 14px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:white;">
+                    </div>
+                </div>
+
+                <div style="font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;margin-bottom:14px;">Social links are always visible to other retreat-goers</div>
+
                 <button class="save-btn" id="profile-save-btn" style="width:100%;margin-top:8px;">Save Profile</button>
                 <button style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-size:0.85rem;cursor:pointer;margin-top:8px;" id="profile-close-btn">Close</button>
             `;
@@ -3060,6 +3083,8 @@
                     email: sheet.querySelector('#profile-email').value.trim(),
                     phone: sheet.querySelector('#profile-phone').value.trim(),
                     birthday: sheet.querySelector('#profile-birthday').value,
+                    instagram: sheet.querySelector('#profile-instagram').value.trim(),
+                    facebook: sheet.querySelector('#profile-facebook').value.trim(),
                     show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,
                     show_phone: sheet.querySelector('#toggle-phone').classList.contains('on') ? 1 : 0,
                     show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,
@@ -4962,7 +4987,7 @@
                     scheduleContainer.style.display = 'none';
                     collapseBtn.style.display = 'none';
                     scheduleToggle.style.display = 'block';
-                    scheduleToggle.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    document.querySelector('.content-area').scrollTo({ top: 0, behavior: 'smooth' });
                 });
             }
         })();

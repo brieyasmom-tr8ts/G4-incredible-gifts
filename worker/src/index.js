@@ -89,7 +89,7 @@ export default {
       if (userGetMatch && request.method === 'GET') {
         const userId = parseInt(userGetMatch[1]);
         const user = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, created_at FROM users WHERE id = ?'
+          'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, instagram, facebook, created_at FROM users WHERE id = ?'
         ).bind(userId).first();
         if (!user) return json({ error: 'User not found' }, corsHeaders, 404);
 
@@ -116,7 +116,7 @@ export default {
         const userId = parseInt(profileMatch[1]);
         const body = await request.json();
 
-        const allowed = ['email', 'phone', 'birthday', 'photo_data', 'show_email', 'show_phone', 'show_birthday'];
+        const allowed = ['email', 'phone', 'birthday', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'instagram', 'facebook'];
         const fields = [];
         const values = [];
         for (const key of allowed) {

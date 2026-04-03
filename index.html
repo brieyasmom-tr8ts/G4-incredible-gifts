@@ -8,6 +8,9 @@
     <meta name="apple-mobile-web-app-title" content="Incredible Gifts">
     <meta name="theme-color" content="#f7f0eb">
     <title>G4 2026 - Incredible Gifts</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Cormorant+Garamond:wght@400;500&display=swap">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23f7f0eb' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23c9908a' opacity='0.6'/><path d='M96 50 L110 85 L145 85 L118 110 L130 145 L96 120 L62 145 L74 110 L47 85 L82 85 Z' fill='%23c9908a'/></svg>">
     <link rel="manifest" href="data:application/json,{%22name%22:%22Incredible%20Gifts%22,%22short_name%22:%22Gifts%22,%22start_url%22:%22./%22,%22display%22:%22standalone%22,%22scope%22:%22./%22,%22background_color%22:%22%23f5f1ed%22,%22theme_color%22:%22%23f5f1ed%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23f7f0eb' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%23c9908a' opacity='0.6'/><path d='M96 50 L110 85 L145 85 L118 110 L130 145 L96 120 L62 145 L74 110 L47 85 L82 85 Z' fill='%23c9908a'/></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]}">
     <style>
@@ -34,35 +37,25 @@
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        html {
+        html, body {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            overflow-x: hidden;
             overscroll-behavior: none;
+        }
+
+        html {
             position: fixed;
             touch-action: pan-y;
         }
 
         body {
-            width: 100%;
-            height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Georgia, serif;
             background: var(--cream);
             color: var(--dark-text);
-            overflow: hidden;
-            overflow-x: hidden;
-            overscroll-behavior: none;
             display: flex;
             flex-direction: column;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
         }
-
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Cormorant+Garamond:wght@400;500&display=swap');
 
         .title-serif {
             font-family: 'Playfair Display', serif;
@@ -70,14 +63,6 @@
             font-weight: 700;
             line-height: 1.2;
             color: var(--dark-text);
-        }
-
-        .subtitle {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1rem;
-            font-weight: 400;
-            color: var(--light-text);
-            letter-spacing: 0.02em;
         }
 
         .app-container {
@@ -432,9 +417,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(247, 240, 235, 0.75);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(247, 240, 235, 0.55);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
         }
 
         .journey-locked-overlay.unlocked {
@@ -480,14 +465,9 @@
         }
 
         #journey-inner.blurred {
-            filter: blur(6px);
+            filter: blur(3px);
             pointer-events: none;
             user-select: none;
-        }
-
-        /* Smooth tab slide */
-        .tab-content {
-            transition: opacity 0.3s ease;
         }
 
         /* Audio Note */
@@ -775,7 +755,8 @@
         }
 
         .moments-header p {
-            font-size: 0.85rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
             color: var(--light-text);
             margin-top: 4px;
             font-style: italic;
@@ -990,7 +971,7 @@
             border: 1px solid var(--warm-grey);
             border-radius: 8px;
             font-family: Georgia, serif;
-            font-size: 0.9rem;
+            font-size: 16px;
             color: var(--dark-text);
             background: white;
             margin-bottom: 10px;
@@ -1064,6 +1045,25 @@
             text-align: center;
             border-bottom: 1px solid rgba(139, 134, 128, 0.1);
             background: linear-gradient(180deg, rgba(240,224,216,0.9) 0%, rgba(247,240,235,0.85) 100%);
+            position: relative;
+        }
+
+        .info-link-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: var(--transition);
+            padding: 4px;
+        }
+
+        .info-link-btn:active {
+            opacity: 1;
+            transform: scale(1.1);
         }
 
         /* Floral overlay - uses floral-overlay.png */
@@ -1093,10 +1093,11 @@
         }
 
         .tagline {
-            font-size: 0.85rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
             color: var(--light-text);
             font-style: italic;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.04em;
             margin-top: 4px;
         }
 
@@ -1204,11 +1205,11 @@
         .notes-input {
             width: 100%;
             margin-top: 12px;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid var(--warm-grey);
             border-radius: 8px;
             font-family: Georgia, serif;
-            font-size: 0.9rem;
+            font-size: 16px;
             color: var(--dark-text);
             background: #fafaf8;
             resize: vertical;
@@ -1358,10 +1359,12 @@
         }
 
         .journal-prompt {
-            font-size: 1.2rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
             color: var(--dark-text);
             margin-bottom: 16px;
             font-style: italic;
+            text-align: center;
         }
 
         .journal-textarea {
@@ -1370,7 +1373,7 @@
             border: 1px solid var(--warm-grey);
             border-radius: 8px;
             font-family: Georgia, serif;
-            font-size: 0.95rem;
+            font-size: 16px;
             color: var(--dark-text);
             background: white;
             resize: vertical;
@@ -1385,22 +1388,29 @@
         }
 
         .save-btn {
-            background: var(--blush);
+            background: linear-gradient(135deg, var(--blush) 0%, var(--accent) 100%);
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+            padding: 14px 24px;
+            border-radius: 12px;
             font-size: 0.9rem;
             font-weight: 600;
             margin-top: 12px;
             cursor: pointer;
             width: 100%;
             transition: var(--transition);
+            box-shadow: 0 2px 8px rgba(201,144,138,0.25);
+            letter-spacing: 0.02em;
         }
 
         .save-btn:active {
-            transform: scale(0.98);
-            opacity: 0.9;
+            transform: scale(0.97);
+            box-shadow: 0 1px 4px rgba(201,144,138,0.2);
+        }
+
+        .save-btn:disabled {
+            opacity: 0.6;
+            cursor: default;
         }
 
         .journal-entries {
@@ -1494,13 +1504,15 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-top: 1px solid rgba(139, 134, 128, 0.1);
             display: flex;
             justify-content: space-around;
             height: calc(68px + env(safe-area-inset-bottom, 0px));
             padding-bottom: env(safe-area-inset-bottom, 0px);
-            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
             z-index: 100;
         }
 
@@ -1510,11 +1522,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 3px;
             cursor: pointer;
             border: none;
             background: none;
-            padding: 8px;
+            padding: 10px 8px;
+            min-height: 56px;
             color: var(--light-text);
             font-size: 0.7rem;
             transition: var(--transition);
@@ -1576,7 +1589,7 @@
             padding: 12px 14px;
             border: 1px solid var(--warm-grey);
             border-radius: 8px;
-            font-size: 0.95rem;
+            font-size: 16px;
             color: var(--dark-text);
             background: white;
             margin-bottom: 10px;
@@ -1611,7 +1624,8 @@
         }
 
         .prayer-wall-header p {
-            font-size: 0.85rem;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
             color: var(--light-text);
             margin-top: 4px;
             font-style: italic;
@@ -1669,11 +1683,11 @@
 
         .prayer-compose textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid var(--warm-grey);
-            border-radius: 6px;
+            border-radius: 8px;
             font-family: Georgia, serif;
-            font-size: 0.9rem;
+            font-size: 16px;
             color: var(--dark-text);
             background: #fafaf8;
             resize: vertical;
@@ -1696,11 +1710,12 @@
 
         .prayer-post {
             background: white;
-            border-radius: 10px;
-            padding: 14px;
-            margin-bottom: 10px;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
             box-shadow: var(--shadow-sm);
             position: relative;
+            transition: var(--transition);
         }
 
         .prayer-post.type-prayer {
@@ -1950,6 +1965,7 @@
             <p class="retreat-label">G4 2026 Women's Retreat</p>
             <h1 class="title-serif">Incredible Gifts</h1>
             <p class="tagline">Receive it. Open it. Share it.</p>
+            <button class="info-link-btn" id="info-link-btn" title="Retreat Info">ℹ️</button>
         </div>
 
         <div id="welcome-banner" class="welcome-banner" style="display:none;"></div>
@@ -1968,6 +1984,7 @@
                 </div>
                 <div id="schedule-container"></div>
                 <div id="not-alone-home-preview"></div>
+                <div id="continue-home-link" style="display:none;"></div>
             </div>
 
             <!-- MY JOURNEY TAB -->
@@ -2209,7 +2226,7 @@
         function createSparkles() {
             const container = document.getElementById('sparkle-container');
             const colors = ['var(--rose)', 'var(--blush)', 'var(--sage)', 'rgba(212,165,154,0.4)', 'rgba(201,144,138,0.3)'];
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 8; i++) {
                 const sparkle = document.createElement('div');
                 sparkle.className = 'sparkle';
                 sparkle.style.left = Math.random() * 100 + '%';
@@ -2236,7 +2253,7 @@
             container.className = 'confetti-container';
             document.body.appendChild(container);
             const colors = ['#c9908a', '#d4a59a', '#8a9e7a', '#b87a6e', '#f7f0eb', '#e8c4bc', '#a8bba8'];
-            for (let i = 0; i < 60; i++) {
+            for (let i = 0; i < 30; i++) {
                 const piece = document.createElement('div');
                 piece.className = 'confetti-piece';
                 piece.style.left = Math.random() * 100 + '%';
@@ -2432,7 +2449,7 @@
             try {
                 const messages = await apiGet('/api/messages');
                 if (!messages || messages.length === 0) {
-                    container.innerHTML = '<div class="prayer-empty">Be the first to share a prayer or encouragement.</div>';
+                    container.innerHTML = '<div class="prayer-empty">No prayers yet — be the first to lift someone up.</div>';
                     return;
                 }
                 container.innerHTML = '';
@@ -2609,7 +2626,11 @@
                     { time: '6:30 AM – 8:45 AM', title: 'Breakfast', movement: '', listenFor: '', reflection: 'Complimentary breakfast buffet at the hotel — eggs, bacon, sausage, fresh fruit, yogurt, pastries, coffee, and juice.', infoOnly: true },
                     { time: '9:00 AM – 12:00 PM', title: 'Session 2: Open the Gift', movement: 'Open the Gift', listenFor: 'What am I holding that I haven\'t opened?', reflection: 'What would it look like to walk in this?' },
                     { time: '12:00 PM – 5:00 PM', title: 'Lunch Break / Free Time', movement: '', listenFor: '', reflection: 'This is YOUR time! Take a nap, hang with friends, swim in the pool, walk the boardwalk, or grab lunch. The conference room will be open from 1–4 PM for optional hangout time with board games and beading.', freeTimeLinks: true, infoOnly: true },
-                    { time: '5:30 PM – 9:00 PM', title: 'Dinner & Party', movement: '', listenFor: '', reflection: '' }
+                    { time: '5:30 PM – 9:00 PM', title: 'Dinner & Party Night', movement: '', listenFor: '', reflection: '', infoOnly: true, partyNight: true, partySections: [
+                        { title: '🍽️ Dinner', content: 'Details coming soon!' },
+                        { title: '🎉 Party Games', content: 'Get ready for a night you won\'t forget! We\'re turning up the fun with multiple rounds of Bingo — each one showcasing an era of music and fun times, with surprises and chances to win prizes. 🎁 Whether you\'re a Bingo pro or just in it for the fun, there\'s something for everyone!\n\nWe\'re also mixing things up with some fast-paced Minute-to-Win-It games that will have you cheering, laughing, and maybe even showing off some hidden talents.\n\nExpect great vibes, friendly competition, and unforgettable memories. Grab your cards, bring your best dauber moves, and let\'s make Friday night a highlight of the retreat!' },
+                        { title: '🍦 Dessert', content: 'Midway through the evening, we\'ll take a sweet intermission for an Ice Cream Social — complete with all your favorite toppings. Build your dream sundae, mingle, and recharge for even more fun ahead!' }
+                    ] }
                 ]
             },
             {
@@ -2671,6 +2692,10 @@
         function buildSchedule() {
             const container = document.getElementById('schedule-container');
             container.innerHTML = '';
+            const tzNote = document.createElement('div');
+            tzNote.style.cssText = 'text-align:center;padding:8px 16px 0;font-size:0.72rem;color:var(--light-text);letter-spacing:0.05em;text-transform:uppercase;';
+            tzNote.textContent = 'All times Eastern (ET)';
+            container.appendChild(tzNote);
             scheduleData.forEach((day, dayIndex) => {
                 const daySection = document.createElement('div');
                 daySection.className = 'day-section';
@@ -2705,6 +2730,30 @@
                         cardHeader.appendChild(badge);
                     }
                     card.appendChild(cardHeader);
+                    if (session.partyNight && session.partySections) {
+                        const content = document.createElement('div');
+                        content.className = 'card-content';
+                        session.partySections.forEach(section => {
+                            const sectionDiv = document.createElement('div');
+                            sectionDiv.style.cssText = 'margin-bottom:16px;padding:14px;background:rgba(201,144,138,0.06);border-radius:10px;border:1px solid rgba(201,144,138,0.12);';
+                            const sectionTitle = document.createElement('div');
+                            sectionTitle.style.cssText = 'font-family:Playfair Display,serif;font-size:1rem;font-weight:600;color:var(--dark-text);margin-bottom:8px;';
+                            sectionTitle.textContent = section.title;
+                            sectionDiv.appendChild(sectionTitle);
+                            const sectionText = document.createElement('div');
+                            sectionText.style.cssText = 'font-size:0.88rem;color:var(--taupe);line-height:1.65;';
+                            section.content.split('\n\n').forEach((para, pi) => {
+                                if (pi > 0) sectionText.appendChild(document.createElement('br'));
+                                const p = document.createElement('p');
+                                p.style.marginBottom = '8px';
+                                p.textContent = para;
+                                sectionText.appendChild(p);
+                            });
+                            sectionDiv.appendChild(sectionText);
+                            content.appendChild(sectionDiv);
+                        });
+                        card.appendChild(content);
+                    }
                     if (session.listenFor || session.reflection || session.hotelLink || session.freeTimeLinks) {
                         const content = document.createElement('div');
                         content.className = 'card-content';
@@ -2931,6 +2980,10 @@
         function buildJournal() {
             const entriesDiv = document.getElementById('journal-entries');
             entriesDiv.innerHTML = '';
+            if (appState.journalEntries.length === 0) {
+                entriesDiv.innerHTML = '<div style="text-align:center;padding:24px 16px;color:var(--light-text);font-family:Cormorant Garamond,serif;font-size:1rem;font-style:italic;">Your reflections will appear here as you write.</div>';
+                return;
+            }
             appState.journalEntries.forEach((entry, index) => {
                 const entryDiv = document.createElement('div');
                 entryDiv.className = 'journal-entry';
@@ -3010,15 +3063,24 @@
             const container = document.getElementById('continue-container');
             container.innerHTML = '';
             const now = new Date();
-            const retreatEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
-            const isRetreatActive = now < retreatEnd;
-            if (isRetreatActive) {
+            const retreatEnd = new Date('2026-04-11T12:00:00-04:00');
+            const homeLink = document.getElementById('continue-home-link');
+            if (now < retreatEnd) {
                 const locked = document.createElement('div');
                 locked.className = 'continue-locked';
                 locked.innerHTML = `<div class="locked-icon">🔒</div><p class="locked-message">This unlocks when the retreat ends.</p><p style="font-size: 0.85rem; color: var(--light-text);">Keep listening to what God is doing this weekend.</p>`;
                 container.appendChild(locked);
+                homeLink.style.display = 'none';
                 return;
             }
+            homeLink.style.display = 'block';
+            homeLink.innerHTML = '<div style="margin:12px 16px;padding:16px 20px;background:linear-gradient(135deg,rgba(138,158,122,0.12) 0%,rgba(201,144,138,0.10) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.2);text-align:center;cursor:pointer;"><div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--dark-text);margin-bottom:4px;">Continue the Journey</div><div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;">12 weeks to keep growing in your gifts</div></div>';
+            homeLink.addEventListener('click', () => {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.getElementById('continue-tab').classList.add('active');
+                document.querySelector('.content-area').scrollTop = 0;
+            });
             weeks12.forEach(week => {
                 const card = document.createElement('div');
                 card.className = 'week-card';
@@ -3462,11 +3524,22 @@
 
                     const summaryCard = document.createElement('div');
                     summaryCard.className = 'ai-summary';
-                    summaryCard.innerHTML = `
-                        <div class="ai-summary-label">\u2728 Reflection Summary</div>
-                        <div class="ai-summary-text">${summary.replace(/\n/g, '<br>')}</div>
-                        <button class="ai-summary-use-btn" id="use-summary-btn">Save summary as journal entry</button>
-                    `;
+                    const summaryLabel = document.createElement('div');
+                    summaryLabel.className = 'ai-summary-label';
+                    summaryLabel.textContent = '\u2728 Reflection Summary';
+                    const summaryTextEl = document.createElement('div');
+                    summaryTextEl.className = 'ai-summary-text';
+                    summary.split('\n').forEach((line, i) => {
+                        if (i > 0) summaryTextEl.appendChild(document.createElement('br'));
+                        summaryTextEl.appendChild(document.createTextNode(line));
+                    });
+                    const useBtn = document.createElement('button');
+                    useBtn.className = 'ai-summary-use-btn';
+                    useBtn.id = 'use-summary-btn';
+                    useBtn.textContent = 'Save summary as journal entry';
+                    summaryCard.appendChild(summaryLabel);
+                    summaryCard.appendChild(summaryTextEl);
+                    summaryCard.appendChild(useBtn);
 
                     const journalActions = document.querySelector('.journal-actions');
                     journalActions.parentNode.insertBefore(summaryCard, journalActions.nextSibling);
@@ -3498,11 +3571,11 @@
             try {
                 const moments = await apiGet('/api/moments');
                 if (!moments || !Array.isArray(moments)) {
-                    grid.innerHTML = '<div class="moments-empty">Moments will be available soon. Stay tuned!</div>';
+                    grid.innerHTML = '<div class="moments-empty">The moments gallery is getting set up — check back soon!</div>';
                     return;
                 }
                 if (moments.length === 0) {
-                    grid.innerHTML = '<div class="moments-empty">No moments shared yet. Be the first to capture something meaningful.</div>';
+                    grid.innerHTML = '<div class="moments-empty">No moments shared yet — be the first to capture something beautiful from this weekend.</div>';
                     return;
                 }
                 grid.innerHTML = '';
@@ -3769,6 +3842,14 @@
 
         loadState();
         initTabs();
+
+        document.getElementById('info-link-btn').addEventListener('click', () => {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById('info-tab').classList.add('active');
+            document.querySelector('.content-area').scrollTop = 0;
+        });
+
         buildSchedule();
         buildPrayerCountdown();
         buildGifts();

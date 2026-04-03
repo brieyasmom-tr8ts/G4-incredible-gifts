@@ -205,6 +205,7 @@ export default {
         await env.DB.prepare('DELETE FROM secret_sister').run();
         await env.DB.prepare('DELETE FROM wyr_votes').run();
         await env.DB.prepare('DELETE FROM wyr_questions').run();
+        await env.DB.prepare('DELETE FROM announcements').run();
         await env.DB.prepare('DELETE FROM users').run();
         // Clear R2 videos
         const listed = await env.VIDEOS.list();
@@ -601,6 +602,42 @@ export default {
       if (path === '/api/games/packing' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
           'SELECT id, user_id, author_name, score, created_at FROM packing_scores ORDER BY score DESC'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
+      // ===== ANNOUNCEMENTS =====
+
+      // GET /api/announcements/active - get current active announcement
+      if (path === '/api/announcements/active' && request.method === 'GET') {
+        const ann = await env.DB.prepare(
+          'SELECT id, message, created_at FROM announcements WHERE active = 1 ORDER BY id DESC LIMIT 1'
+        ).first();
+        return json(ann || { id: null }, corsHeaders);
+      }
+
+      // POST /api/announcements - create an announcement (admin)
+      if (path === '/api/announcements' && request.method === 'POST') {
+        const { message } = await request.json();
+        if (!message || !message.trim()) return json({ error: 'Message required' }, corsHeaders, 400);
+        // Deactivate all previous
+        await env.DB.prepare('UPDATE announcements SET active = 0').run();
+        const result = await env.DB.prepare(
+          'INSERT INTO announcements (message, active) VALUES (?, 1)'
+        ).bind(message.trim()).run();
+        return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
+      }
+
+      // DELETE /api/announcements/active - dismiss/deactivate current announcement
+      if (path === '/api/announcements/active' && request.method === 'DELETE') {
+        await env.DB.prepare('UPDATE announcements SET active = 0').run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/announcements - all announcements (admin)
+      if (path === '/api/announcements' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT id, message, active, created_at FROM announcements ORDER BY id DESC LIMIT 50'
         ).all();
         return json(results, corsHeaders);
       }

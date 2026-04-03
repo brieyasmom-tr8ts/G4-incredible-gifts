@@ -487,6 +487,17 @@
         </div>
     </div>
 
+    <!-- Quick Announce -->
+    <div style="padding:0.75rem 2rem;background:rgba(201,144,138,0.06);border-bottom:1px solid rgba(201,144,138,0.1);">
+        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+            <span style="font-size:1.1rem;">📢</span>
+            <input type="text" id="announce-input" placeholder="Type an announcement for everyone..." style="flex:1;min-width:200px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
+            <button class="btn btn-refresh" onclick="sendAnnouncement()">Send to All</button>
+            <button class="btn btn-danger-outline" onclick="clearAnnouncement()">Clear Active</button>
+        </div>
+        <div id="active-announcement" style="margin-top:0.5rem;display:none;padding:0.4rem 0.75rem;background:rgba(201,144,138,0.1);border-radius:8px;font-size:0.85rem;color:var(--taupe);"></div>
+    </div>
+
     <!-- Nav Tabs -->
     <div class="nav-tabs">
         <button class="nav-tab active" data-section="users">Users <span class="badge" id="count-users">0</span></button>
@@ -774,7 +785,8 @@ async function refreshAll() {
         loadFunFacts(),
         loadPackingScores(),
         loadSecretSisters(),
-        loadWYRQuestions()
+        loadWYRQuestions(),
+        loadActiveAnnouncement()
     ]);
 }
 
@@ -1147,6 +1159,40 @@ async function loadPackingScores() {
             </div>
         `).join('');
     } catch (e) { console.error('Packing scores:', e); }
+}
+
+// --- Announcements ---
+async function sendAnnouncement() {
+    const input = document.getElementById('announce-input');
+    const msg = input.value.trim();
+    if (!msg) { showToast('Type a message first'); return; }
+    try {
+        await apiFetch('/api/announcements', { method: 'POST', body: { message: msg } });
+        input.value = '';
+        showToast('Announcement sent!');
+        loadActiveAnnouncement();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function clearAnnouncement() {
+    try {
+        await apiFetch('/api/announcements/active', { method: 'DELETE' });
+        showToast('Announcement cleared');
+        loadActiveAnnouncement();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function loadActiveAnnouncement() {
+    try {
+        const ann = await apiFetch('/api/announcements/active');
+        const el = document.getElementById('active-announcement');
+        if (ann && ann.id) {
+            el.style.display = 'block';
+            el.innerHTML = '<strong>Active:</strong> ' + esc(ann.message);
+        } else {
+            el.style.display = 'none';
+        }
+    } catch (e) {}
 }
 
 // --- Test Links ---

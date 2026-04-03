@@ -2751,6 +2751,16 @@
         </div>
     </div>
 
+    <!-- Announcement Modal -->
+    <div class="modal-overlay" id="announcement-modal" style="display:none;">
+        <div class="modal" style="text-align:center;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">📢</div>
+            <h2 style="font-family:Playfair Display,serif;font-size:1.2rem;margin-bottom:12px;">Announcement</h2>
+            <div id="announcement-text" style="font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--dark-text);line-height:1.6;padding:14px 18px;background:rgba(201,144,138,0.08);border-radius:14px;border:1px solid rgba(201,144,138,0.12);margin-bottom:16px;white-space:pre-line;"></div>
+            <button class="save-btn" id="announcement-close" style="width:100%;">Got It!</button>
+        </div>
+    </div>
+
     <!-- Would You Rather Modal -->
     <div class="modal-overlay" id="wyr-modal" style="display:none;">
         <div class="modal" style="text-align:center;">
@@ -5741,6 +5751,26 @@
             }
         })();
 
+        // ===== ANNOUNCEMENTS =====
+        async function checkAnnouncements() {
+            if (!currentUser) return;
+            try {
+                const ann = await apiGet('/api/announcements/active');
+                if (!ann || !ann.id) return;
+                const seen = localStorage.getItem('g4ann_' + ann.id);
+                if (seen) return;
+                // Show announcement popup
+                const modal = document.getElementById('announcement-modal');
+                document.getElementById('announcement-text').textContent = ann.message;
+                modal.style.display = 'flex';
+                modal.classList.add('animate-in');
+                document.getElementById('announcement-close').onclick = () => {
+                    localStorage.setItem('g4ann_' + ann.id, '1');
+                    modal.style.display = 'none';
+                };
+            } catch (e) { /* silently fail */ }
+        }
+
         // ===== GAMES =====
         const PACKING_ITEMS = [
             { text: 'Brought more than 3 pairs of shoes', points: 5 },
@@ -6166,11 +6196,12 @@
             } catch (e) { /* silently fail */ }
         }
 
-        // Check for active games after user is loaded
+        // Check for announcements and games after user is loaded
         setTimeout(() => {
-            checkGames();
-            setTimeout(() => checkWouldYouRather(), 1500);
-            setTimeout(() => checkSecretSister(), 3000);
+            checkAnnouncements();
+            setTimeout(() => checkGames(), 1000);
+            setTimeout(() => checkWouldYouRather(), 2500);
+            setTimeout(() => checkSecretSister(), 4000);
         }, 1500);
 
         if ('serviceWorker' in navigator) {

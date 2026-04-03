@@ -5381,17 +5381,83 @@
         setInterval(updateCountdown, 1000);
         animateCards(document.getElementById('home-tab'));
 
-        // Collapsible schedule before retreat
+        // Highlight current session during retreat
+        function highlightCurrentSession() {
+            const now = new Date();
+            const cards = document.querySelectorAll('#schedule-container .card');
+            // Session time ranges for matching (EDT = UTC-4)
+            const sessionTimes = [
+                // Day 1 - April 9
+                { date: '2026-04-09', start: '15:00', end: '19:00' },  // Check-in 3-7 PM
+                { date: '2026-04-09', start: '19:00', end: '19:15' },  // Doors Open
+                { date: '2026-04-09', start: '19:15', end: '22:00' },  // Session 1
+                // Day 2 - April 10
+                { date: '2026-04-10', start: '06:30', end: '08:45' },  // Breakfast
+                { date: '2026-04-10', start: '09:00', end: '12:00' },  // Session 2
+                { date: '2026-04-10', start: '12:00', end: '17:00' },  // Free Time
+                { date: '2026-04-10', start: '17:30', end: '21:00' },  // Party Night
+                // Day 3 - April 11
+                { date: '2026-04-11', start: '06:30', end: '09:00' },  // Breakfast & Checkout
+                { date: '2026-04-11', start: '09:00', end: '12:00' },  // Session 3
+            ];
+
+            // Clear all highlights
+            cards.forEach(c => {
+                c.style.border = '';
+                c.style.boxShadow = '';
+                const badge = c.querySelector('.now-badge');
+                if (badge) badge.remove();
+            });
+
+            // Find which session index is happening now
+            let activeIdx = -1;
+            const todayStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+            const nowMins = now.getHours() * 60 + now.getMinutes();
+
+            for (let i = 0; i < sessionTimes.length; i++) {
+                const st = sessionTimes[i];
+                if (todayStr !== st.date) continue;
+                const [sh, sm] = st.start.split(':').map(Number);
+                const [eh, em] = st.end.split(':').map(Number);
+                if (nowMins >= sh * 60 + sm && nowMins < eh * 60 + em) {
+                    activeIdx = i;
+                    break;
+                }
+            }
+
+            if (activeIdx >= 0 && activeIdx < cards.length) {
+                const card = cards[activeIdx];
+                card.style.border = '2px solid var(--accent)';
+                card.style.boxShadow = '0 4px 16px rgba(201,144,138,0.25)';
+                const badge = document.createElement('div');
+                badge.className = 'now-badge';
+                badge.style.cssText = 'display:inline-block;padding:3px 10px;background:var(--accent);color:white;border-radius:12px;font-size:0.72rem;font-weight:700;letter-spacing:0.04em;margin-bottom:6px;text-transform:uppercase;';
+                badge.textContent = 'Happening Now';
+                card.insertBefore(badge, card.firstChild);
+                // Scroll to it
+                setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'center' }), 500);
+            }
+        }
+
+        // Collapsible schedule before retreat, always open during retreat
         (function() {
             const now = new Date();
             const retreatStart = new Date('2026-04-09T19:00:00-04:00');
             const scheduleContainer = document.getElementById('schedule-container');
             const scheduleToggle = document.getElementById('schedule-toggle');
-            if (now < retreatStart) {
+
+            if (now >= retreatStart) {
+                // Retreat is live — show schedule open, highlight current session
+                scheduleContainer.style.display = 'block';
+                scheduleToggle.style.display = 'none';
+                highlightCurrentSession();
+                // Re-highlight every minute
+                setInterval(highlightCurrentSession, 60000);
+            } else {
+                // Before retreat — collapsible
                 scheduleContainer.style.display = 'none';
                 scheduleToggle.style.display = 'block';
 
-                // Add a "Hide Schedule" button at the bottom of the schedule
                 const collapseBtn = document.createElement('div');
                 collapseBtn.style.cssText = 'text-align:center;padding:12px;margin:4px 16px 12px;cursor:pointer;font-size:0.82rem;color:var(--accent);font-weight:600;';
                 collapseBtn.textContent = 'Hide Schedule \u25B4';
@@ -5403,7 +5469,6 @@
                     scheduleToggle.style.display = 'none';
                     collapseBtn.style.display = 'block';
                     animateCards(scheduleContainer);
-                    // Scroll to the schedule
                     scheduleContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 });
 
@@ -5565,7 +5630,7 @@
             });
         }
 
-        // Show prep section before retreat
+        // Show prep section before retreat, hide once retreat starts
         (function() {
             const now = new Date();
             const retreatStart = new Date('2026-04-09T19:00:00-04:00');
@@ -5583,6 +5648,9 @@
                         toggle.textContent = 'Location, packing list & more \u25be';
                     }
                 });
+            } else {
+                // Retreat has started — hide prep, prep-toggle is not needed
+                document.getElementById('prep-section').style.display = 'none';
             }
         })();
 

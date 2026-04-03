@@ -7,6 +7,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Incredible Gifts">
     <meta name="theme-color" content="#f7f0eb">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>G4 2026 - Incredible Gifts</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2394,7 +2397,7 @@
 
                         <!-- Spotify playlist inline -->
                         <div id="playlist-section" style="margin-bottom:12px;">
-                            <iframe style="border-radius:10px;" src="https://open.spotify.com/embed/playlist/5fALXWcfFkJphiINaVB3jh?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+                            <iframe style="border-radius:8px;" src="https://open.spotify.com/embed/playlist/5fALXWcfFkJphiINaVB3jh?utm_source=generator&theme=1" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
                         </div>
 
                         <div id="prep-details">
@@ -2818,6 +2821,42 @@
     </div>
 
     <script>
+        // ===== Auto-refresh for homescreen app =====
+        // When app resumes from background, reload to get fresh data
+        (function() {
+            const APP_VERSION = '2026.04.03.1';
+            let lastActive = Date.now();
+
+            // Reload when app comes back from background (iOS standalone mode)
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'visible') {
+                    const elapsed = Date.now() - lastActive;
+                    // If app was in background for more than 5 minutes, reload
+                    if (elapsed > 5 * 60 * 1000) {
+                        window.location.reload();
+                    }
+                } else {
+                    lastActive = Date.now();
+                }
+            });
+
+            // Also check on pageshow (iOS fires this when returning to cached page)
+            window.addEventListener('pageshow', function(e) {
+                if (e.persisted) {
+                    window.location.reload();
+                }
+            });
+
+            // Version check — force reload if version changed
+            const storedVersion = localStorage.getItem('g4_app_version');
+            if (storedVersion && storedVersion !== APP_VERSION) {
+                localStorage.setItem('g4_app_version', APP_VERSION);
+                window.location.reload();
+            } else {
+                localStorage.setItem('g4_app_version', APP_VERSION);
+            }
+        })();
+
         // ===== API Configuration =====
         // IMPORTANT: Update this URL after deploying your Worker
         const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';

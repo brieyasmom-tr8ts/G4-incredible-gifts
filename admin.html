@@ -621,6 +621,8 @@
                     <input type="text" id="wyr-option-b" placeholder="Option B..." style="flex:1;min-width:120px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
                     <button class="btn btn-refresh" onclick="createWYR()">Add Question</button>
                 </div>
+                <button class="btn" style="background:linear-gradient(135deg,#c9908a,#d4a59a);color:white;font-size:0.85rem;padding:0.5rem 1rem;margin-bottom:1rem;border-radius:10px;" onclick="fillWithAI()">✨ Fill with AI Suggestions</button>
+                <div id="ai-wyr-suggestions" style="display:none;margin-bottom:1rem;"></div>
                 <div id="wyr-questions-list"></div>
             </div>
             <!-- Secret Sister -->
@@ -1198,6 +1200,76 @@ async function loadActiveAnnouncement() {
 // --- Test Links ---
 function openTestLink(game) {
     window.open('https://g4retreatapp.org/?test=' + game, '_blank');
+}
+
+// --- AI Would You Rather Suggestions ---
+const AI_WYR_SUGGESTIONS = [
+    // Fun & silly
+    { a: "Only speak in song lyrics for 24 hours", b: "Only communicate through interpretive dance for 24 hours" },
+    { a: "Have a personal chef for a year", b: "Have a personal stylist for a year" },
+    { a: "Be able to eat unlimited desserts with no calories", b: "Be able to sleep 4 hours and feel fully rested" },
+    { a: "Always have the perfect outfit", b: "Always have the perfect comeback" },
+    { a: "Live at the beach year-round", b: "Live in the mountains year-round" },
+    { a: "Coffee all day every day", b: "Naps whenever you want" },
+    { a: "Have a theme song that plays when you enter a room", b: "Have a personal hype woman who introduces you everywhere" },
+    { a: "Be early to everything for the rest of your life", b: "Never have to wait in line again" },
+    { a: "Only wear heels for a month", b: "Only wear flip-flops for a month" },
+    { a: "Have a closet that never runs out of new clothes", b: "Have a kitchen that never runs out of home-cooked meals" },
+    // Faith-centered
+    { a: "Speak on stage in front of 1,000 women", b: "Lead worship for 1,000 women" },
+    { a: "Have the gift of prophecy", b: "Have the gift of healing" },
+    { a: "Read the entire Bible in one month", b: "Memorize one book of the Bible word for word" },
+    { a: "Spend a year on the mission field overseas", b: "Plant a church in your hometown" },
+    { a: "Pray with a stranger every day for a year", b: "Write a handwritten letter of encouragement every day for a year" },
+    { a: "Have dinner with Mary (mother of Jesus)", b: "Have dinner with Esther" },
+    { a: "Lead a women's Bible study", b: "Mentor one woman one-on-one for a year" },
+    { a: "Always know the perfect Scripture for every situation", b: "Always know exactly what someone needs to hear" },
+    // Retreat-themed
+    { a: "Room with ocean view but tiny", b: "Huge room but no window" },
+    { a: "Share a room with someone who snores", b: "Share a room with someone who talks in their sleep" },
+    { a: "Be the first one up every morning at retreat", b: "Be the last one still up every night" },
+    { a: "Only eat boardwalk fries the whole retreat", b: "Only eat funnel cake the whole retreat" },
+    { a: "Karaoke night in front of everyone", b: "Talent show solo dance in front of everyone" },
+    { a: "Get lost in Ocean City with no phone", b: "Get stuck in an elevator with 5 strangers" },
+];
+
+function fillWithAI() {
+    const container = document.getElementById('ai-wyr-suggestions');
+    // Shuffle and pick 8 random suggestions
+    const shuffled = [...AI_WYR_SUGGESTIONS].sort(() => Math.random() - 0.5);
+    const picks = shuffled.slice(0, 8);
+
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div style="font-size:0.85rem;font-weight:600;color:var(--taupe);margin-bottom:0.5rem;">✨ AI Suggestions — tap to add:</div>
+        ${picks.map((q, i) => `
+            <div id="ai-sug-${i}" style="padding:0.6rem 0.75rem;background:rgba(201,144,138,0.06);border:1.5px solid rgba(201,144,138,0.15);border-radius:10px;margin-bottom:0.4rem;cursor:pointer;transition:all 0.2s;" onclick="addAISuggestion(${i}, '${esc(q.a).replace(/'/g, "\\'")}', '${esc(q.b).replace(/'/g, "\\'")}')">
+                <span style="color:var(--accent);font-weight:600;font-size:0.88rem;">${esc(q.a)}</span>
+                <span style="color:var(--light-text);font-size:0.85rem;"> vs </span>
+                <span style="color:var(--sage);font-weight:600;font-size:0.88rem;">${esc(q.b)}</span>
+            </div>
+        `).join('')}
+        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+            <button class="btn btn-refresh" onclick="fillWithAI()" style="font-size:0.8rem;">🔄 More Suggestions</button>
+            <button class="btn" style="font-size:0.8rem;background:transparent;color:var(--light-text);border:1px solid var(--warm-grey);" onclick="document.getElementById('ai-wyr-suggestions').style.display='none'">Close</button>
+        </div>
+    `;
+}
+
+async function addAISuggestion(idx, a, b) {
+    const el = document.getElementById('ai-sug-' + idx);
+    if (!el) return;
+    el.style.opacity = '0.5';
+    el.style.pointerEvents = 'none';
+    try {
+        await apiFetch('/api/games/wyr/questions', { method: 'POST', body: { option_a: a, option_b: b } });
+        el.innerHTML = '<span style="color:var(--sage);font-size:0.85rem;">✅ Added!</span>';
+        loadWYRQuestions();
+    } catch (e) {
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
+        showToast('Error: ' + e.message);
+    }
 }
 
 // --- Would You Rather ---

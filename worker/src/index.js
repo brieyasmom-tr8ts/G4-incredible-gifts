@@ -59,6 +59,28 @@ export default {
         return json(user || { error: 'not found' }, corsHeaders);
       }
 
+      // GET /api/admin/debug-schema — show table columns
+      if (path === '/api/admin/debug-schema' && request.method === 'GET') {
+        const { results } = await env.DB.prepare("PRAGMA table_info(users)").all();
+        return json(results, corsHeaders);
+      }
+
+      // POST /api/admin/debug-update/:id — test direct update of show_about
+      const debugUpdateMatch = path.match(/^\/api\/admin\/debug-update\/(\d+)$/);
+      if (debugUpdateMatch && request.method === 'POST') {
+        const userId = parseInt(debugUpdateMatch[1]);
+        const body = await request.json();
+        try {
+          await env.DB.prepare(
+            'UPDATE users SET show_about = ?, location = ?, job = ?, church = ? WHERE id = ?'
+          ).bind(body.show_about || 1, body.location || 'test', body.job || 'test', body.church || 'test', userId).run();
+          const after = await env.DB.prepare('SELECT show_about, location, job, church FROM users WHERE id = ?').bind(userId).first();
+          return json({ success: true, after }, corsHeaders);
+        } catch(e) {
+          return json({ error: e.message }, corsHeaders, 500);
+        }
+      }
+
       // ===== ATTENDEES =====
 
       // GET /api/attendees - list all attendee names (for tagging)

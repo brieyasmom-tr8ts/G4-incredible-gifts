@@ -572,7 +572,7 @@
                     <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.5rem;">Submitted facts: <strong id="funfact-count">0</strong></div>
                     <button class="btn btn-refresh" onclick="loadFunFacts()" style="margin-right:0.5rem;">Refresh</button>
                     <button class="btn btn-danger-outline" onclick="clearFunFacts()" style="margin-right:0.5rem;">Clear All Facts</button>
-                    <button class="btn" style="background:var(--blush);color:white;" onclick="copyTestLink('whoami')">📋 Test Link</button>
+                    <button class="btn" style="background:var(--blush);color:white;" onclick="openTestLink('whoami')">📋 Test Link</button>
                     <div id="funfacts-list" style="margin-top:1rem;"></div>
                 </div>
                 <!-- Packing Points Toggle -->
@@ -588,7 +588,7 @@
                         </label>
                     </div>
                     <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.75rem;">Scores submitted: <strong id="packing-count">0</strong>
-                        <button class="btn" style="background:var(--blush);color:white;margin-left:0.5rem;font-size:0.8rem;padding:0.25rem 0.6rem;" onclick="copyTestLink('packing')">📋 Test Link</button>
+                        <button class="btn" style="background:var(--blush);color:white;margin-left:0.5rem;font-size:0.8rem;padding:0.25rem 0.6rem;" onclick="openTestLink('packing')">📋 Test Link</button>
                     </div>
                     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(138,158,122,0.08);border-radius:10px;margin-bottom:0.75rem;">
                         <span style="font-size:0.9rem;color:var(--taupe);">Show tier names on profiles</span>
@@ -604,7 +604,7 @@
             <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
                 <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;">🎤 Would You Rather – Live Poll</div>
                 <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:0.5rem;">Create questions, activate one at a time. Everyone gets a popup to vote and sees live results.</div>
-                <div style="margin-bottom:1rem;"><button class="btn" style="background:var(--blush);color:white;font-size:0.8rem;padding:0.25rem 0.6rem;" onclick="copyTestLink('wyr')">📋 Test Link</button></div>
+                <div style="margin-bottom:1rem;"><button class="btn" style="background:var(--blush);color:white;font-size:0.8rem;padding:0.25rem 0.6rem;" onclick="openTestLink('wyr')">📋 Test Link</button></div>
                 <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
                     <input type="text" id="wyr-option-a" placeholder="Option A..." style="flex:1;min-width:120px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
                     <input type="text" id="wyr-option-b" placeholder="Option B..." style="flex:1;min-width:120px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
@@ -628,7 +628,7 @@
                     <button class="btn btn-refresh" onclick="assignSecretSisters()">Assign Sisters</button>
                     <button class="btn btn-refresh" onclick="loadSecretSisters()">Refresh</button>
                     <button class="btn btn-danger-outline" onclick="clearSecretSisters()">Clear All</button>
-                    <button class="btn" style="background:var(--blush);color:white;" onclick="copyTestLink('secretsister')">📋 Test Link</button>
+                    <button class="btn" style="background:var(--blush);color:white;" onclick="openTestLink('secretsister')">📋 Test Link</button>
                 </div>
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(201,144,138,0.08);border-radius:10px;margin-bottom:0.75rem;">
                     <span style="font-size:0.9rem;color:var(--taupe);">Reveal notes to recipients</span>
@@ -1150,13 +1150,8 @@ async function loadPackingScores() {
 }
 
 // --- Test Links ---
-function copyTestLink(game) {
-    const url = 'https://brieyasmom-tr8ts.github.io/G4-incredible-gifts/?test=' + game;
-    navigator.clipboard.writeText(url).then(() => {
-        showToast('Test link copied!');
-    }).catch(() => {
-        prompt('Copy this test link:', url);
-    });
+function openTestLink(game) {
+    window.open('https://brieyasmom-tr8ts.github.io/G4-incredible-gifts/?test=' + game, '_blank');
 }
 
 // --- Would You Rather ---

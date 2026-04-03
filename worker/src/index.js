@@ -194,6 +194,8 @@ export default {
         await env.DB.prepare('DELETE FROM moments').run();
         await env.DB.prepare('DELETE FROM video_moments').run();
         await env.DB.prepare('DELETE FROM feedback').run();
+        await env.DB.prepare('DELETE FROM fun_facts').run();
+        await env.DB.prepare('DELETE FROM packing_scores').run();
         await env.DB.prepare('DELETE FROM users').run();
         // Clear R2 videos
         const listed = await env.VIDEOS.list();
@@ -519,6 +521,79 @@ export default {
         await env.DB.prepare('DELETE FROM video_moments WHERE id = ?').bind(videoId).run();
         await env.VIDEOS.delete(`video-${videoId}`);
         return json({ success: true }, corsHeaders);
+      }
+
+      // ===== GAMES =====
+
+      // GET /api/games/settings - check which games are active
+      if (path === '/api/games/settings' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT key, value FROM game_settings'
+        ).all();
+        const settings = {};
+        for (const r of results) settings[r.key] = r.value;
+        return json(settings, corsHeaders);
+      }
+
+      // POST /api/games/settings - admin toggle a game on/off
+      if (path === '/api/games/settings' && request.method === 'POST') {
+        const { key, value } = await request.json();
+        if (!key) return json({ error: 'key is required' }, corsHeaders, 400);
+        await env.DB.prepare(
+          'INSERT INTO game_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+        ).bind(key, value || '').run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/games/funfact - submit a fun fact
+      if (path === '/api/games/funfact' && request.method === 'POST') {
+        const { user_id, author_name, fact } = await request.json();
+        if (!user_id || !fact || !fact.trim()) {
+          return json({ error: 'user_id and fact are required' }, corsHeaders, 400);
+        }
+        if (containsBlockedWords(fact)) {
+          return json({ error: 'Please keep it fun and kind!' }, corsHeaders, 400);
+        }
+        // Upsert — one fact per user
+        await env.DB.prepare(
+          'INSERT INTO fun_facts (user_id, author_name, fact) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET fact = excluded.fact, author_name = excluded.author_name'
+        ).bind(user_id, author_name || '', fact.trim()).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/games/funfacts - admin: get all fun facts
+      if (path === '/api/games/funfacts' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT id, user_id, author_name, fact, created_at FROM fun_facts ORDER BY created_at DESC'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
+      // DELETE /api/games/funfacts - admin: delete all fun facts
+      if (path === '/api/games/funfacts' && request.method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM fun_facts').run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/games/packing - submit packing score
+      if (path === '/api/games/packing' && request.method === 'POST') {
+        const { user_id, author_name, score, answers } = await request.json();
+        if (!user_id || score === undefined) {
+          return json({ error: 'user_id and score are required' }, corsHeaders, 400);
+        }
+        // Upsert — one score per user
+        await env.DB.prepare(
+          'INSERT INTO packing_scores (user_id, author_name, score, answers) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET score = excluded.score, answers = excluded.answers, author_name = excluded.author_name'
+        ).bind(user_id, author_name || '', score, answers || '').run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/games/packing - get packing leaderboard
+      if (path === '/api/games/packing' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT id, user_id, author_name, score, created_at FROM packing_scores ORDER BY score DESC'
+        ).all();
+        return json(results, corsHeaders);
       }
 
       // ===== FEEDBACK =====

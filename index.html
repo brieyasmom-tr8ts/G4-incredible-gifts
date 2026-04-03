@@ -2721,6 +2721,36 @@
         </div>
     </div>
 
+    <!-- Who Am I? Game Modal -->
+    <div class="modal-overlay" id="funfact-modal" style="display:none;">
+        <div class="modal" style="text-align:center;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">🤫</div>
+            <h2 style="font-family:Playfair Display,serif;font-size:1.3rem;margin-bottom:6px;">Who Am I?</h2>
+            <p style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--light-text);margin-bottom:16px;line-height:1.5;">Share one crazy, surprising, or little-known fact about yourself. We'll read them out loud and everyone guesses who it is!</p>
+            <textarea id="funfact-input" placeholder="One fact nobody would guess about you..." maxlength="200" style="width:100%;min-height:80px;padding:12px 14px;border:1.5px solid rgba(139,134,128,0.2);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);resize:none;outline:none;background:rgba(255,255,255,0.8);"></textarea>
+            <div style="text-align:right;font-size:0.75rem;color:var(--light-text);margin:4px 4px 12px 0;"><span id="funfact-char">0</span>/200</div>
+            <button class="save-btn" id="funfact-submit" style="width:100%;margin-bottom:8px;">Submit My Fact</button>
+            <button id="funfact-skip" style="background:none;border:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);cursor:pointer;padding:6px;">Maybe later</button>
+        </div>
+    </div>
+
+    <!-- Packing Points Game Modal -->
+    <div class="modal-overlay" id="packing-modal" style="display:none;">
+        <div class="modal" style="text-align:center;max-height:85vh;overflow-y:auto;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">🧳</div>
+            <h2 style="font-family:Playfair Display,serif;font-size:1.3rem;margin-bottom:6px;">Packing Points!</h2>
+            <p style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--light-text);margin-bottom:16px;line-height:1.5;">How did you pack for this retreat? Check everything that applies and see your score!</p>
+            <div id="packing-checklist" style="text-align:left;margin-bottom:16px;"></div>
+            <button class="save-btn" id="packing-submit" style="width:100%;margin-bottom:8px;">See My Score!</button>
+            <button id="packing-skip" style="background:none;border:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);cursor:pointer;padding:6px;">Maybe later</button>
+            <div id="packing-result" style="display:none;margin-top:16px;padding:16px;background:rgba(138,158,122,0.1);border-radius:14px;">
+                <div id="packing-score-display" style="font-family:Playfair Display,serif;font-size:2rem;font-weight:700;color:var(--accent);"></div>
+                <div id="packing-score-label" style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--taupe);margin-top:4px;"></div>
+                <button id="packing-done" class="save-btn" style="width:100%;margin-top:12px;">Done!</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ===== API Configuration =====
         // IMPORTANT: Update this URL after deploying your Worker
@@ -5546,6 +5576,166 @@
                 // Silently fail - weather is a nice-to-have
             }
         })();
+
+        // ===== GAMES =====
+        const PACKING_ITEMS = [
+            { text: 'Brought more than 3 pairs of shoes', points: 5 },
+            { text: 'Packed an outfit for every possible weather scenario', points: 3 },
+            { text: 'Brought a hair straightener AND a curling iron', points: 4 },
+            { text: 'Packed snacks "just in case"', points: 3 },
+            { text: 'Brought your own pillow', points: 4 },
+            { text: 'Have a "going out" outfit you may never wear', points: 3 },
+            { text: 'Packed a full skincare routine (5+ products)', points: 4 },
+            { text: 'Brought a Bible and a journal', points: 2 },
+            { text: 'Your suitcase weighs more than your kid', points: 5 },
+            { text: 'Packed at least one thing you forgot to unpack from last trip', points: 3 },
+            { text: 'Brought matching pajamas or a cute sleep set', points: 3 },
+            { text: 'Have an emergency medicine bag that could supply a pharmacy', points: 4 },
+            { text: 'Packed more than one swimsuit', points: 3 },
+            { text: 'Brought a blanket or throw', points: 3 },
+            { text: 'Your toiletry bag is bigger than your clothes bag', points: 5 },
+        ];
+
+        function getPackingLabels(score) {
+            if (score >= 45) return { emoji: '👑', label: 'The Over-Packer Queen!' };
+            if (score >= 35) return { emoji: '💅', label: 'Extra and Proud of It!' };
+            if (score >= 25) return { emoji: '🧳', label: 'Prepared for Anything!' };
+            if (score >= 15) return { emoji: '😎', label: 'Practical Packer!' };
+            return { emoji: '🎒', label: 'Light Traveler!' };
+        }
+
+        async function checkGames() {
+            if (!currentUser) return;
+            try {
+                const settings = await apiGet('/api/games/settings');
+                if (!settings || typeof settings !== 'object') return;
+
+                // Who Am I?
+                if (settings.who_am_i === '1') {
+                    const submitted = localStorage.getItem('g4funfact_' + currentUser.id);
+                    const skipped = sessionStorage.getItem('g4funfact_skip');
+                    if (!submitted && !skipped) {
+                        showFunFactModal();
+                    }
+                }
+
+                // Packing Points
+                if (settings.packing_points === '1') {
+                    const submitted = localStorage.getItem('g4packing_' + currentUser.id);
+                    const skipped = sessionStorage.getItem('g4packing_skip');
+                    if (!submitted && !skipped) {
+                        // Small delay so it doesn't compete with fun fact modal
+                        const funfactShowing = document.getElementById('funfact-modal').style.display !== 'none';
+                        if (!funfactShowing) {
+                            showPackingModal();
+                        }
+                    }
+                }
+            } catch (e) {
+                // Silently fail — games are a nice-to-have
+            }
+        }
+
+        function showFunFactModal() {
+            const modal = document.getElementById('funfact-modal');
+            modal.style.display = 'flex';
+            modal.classList.add('animate-in');
+            const input = document.getElementById('funfact-input');
+            input.value = '';
+            document.getElementById('funfact-char').textContent = '0';
+
+            input.addEventListener('input', () => {
+                document.getElementById('funfact-char').textContent = input.value.length;
+            });
+
+            document.getElementById('funfact-submit').onclick = async () => {
+                const fact = input.value.trim();
+                if (!fact) { showToast('Please enter a fun fact!'); return; }
+                const btn = document.getElementById('funfact-submit');
+                btn.disabled = true;
+                btn.textContent = 'Submitting...';
+                try {
+                    const res = await apiPost('/api/games/funfact', {
+                        user_id: currentUser.id,
+                        author_name: currentUser.display_name || currentUser.first_name,
+                        fact: fact
+                    });
+                    if (res.error) { showToast(res.error); }
+                    else {
+                        localStorage.setItem('g4funfact_' + currentUser.id, '1');
+                        modal.style.display = 'none';
+                        showToast('Fact submitted! Shhh... it\'s a secret!');
+                        // Check if packing game should show next
+                        setTimeout(() => checkGames(), 500);
+                    }
+                } catch (e) { showToast('Could not submit. Try again.'); }
+                btn.disabled = false;
+                btn.textContent = 'Submit My Fact';
+            };
+
+            document.getElementById('funfact-skip').onclick = () => {
+                sessionStorage.setItem('g4funfact_skip', '1');
+                modal.style.display = 'none';
+                // Check if packing game should show
+                setTimeout(() => checkGames(), 500);
+            };
+        }
+
+        function showPackingModal() {
+            const modal = document.getElementById('packing-modal');
+            modal.style.display = 'flex';
+            modal.classList.add('animate-in');
+
+            const checklist = document.getElementById('packing-checklist');
+            checklist.innerHTML = PACKING_ITEMS.map((item, i) => `
+                <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.7);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:var(--transition);">
+                    <input type="checkbox" data-points="${item.points}" data-index="${i}" style="width:20px;height:20px;margin-top:1px;accent-color:var(--accent);flex-shrink:0;">
+                    <span style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--dark-text);line-height:1.4;">${item.text} <span style="color:var(--accent);font-weight:600;">(+${item.points})</span></span>
+                </label>
+            `).join('');
+
+            document.getElementById('packing-result').style.display = 'none';
+            document.getElementById('packing-submit').style.display = '';
+
+            document.getElementById('packing-submit').onclick = async () => {
+                const checks = checklist.querySelectorAll('input[type=checkbox]:checked');
+                let score = 0;
+                const answers = [];
+                checks.forEach(cb => {
+                    score += parseInt(cb.dataset.points);
+                    answers.push(parseInt(cb.dataset.index));
+                });
+
+                const { emoji, label } = getPackingLabels(score);
+                document.getElementById('packing-score-display').textContent = `${emoji} ${score} Points!`;
+                document.getElementById('packing-score-label').textContent = label;
+                document.getElementById('packing-result').style.display = '';
+                document.getElementById('packing-submit').style.display = 'none';
+
+                // Save to server
+                try {
+                    await apiPost('/api/games/packing', {
+                        user_id: currentUser.id,
+                        author_name: currentUser.display_name || currentUser.first_name,
+                        score: score,
+                        answers: JSON.stringify(answers)
+                    });
+                    localStorage.setItem('g4packing_' + currentUser.id, '1');
+                } catch (e) { /* ok */ }
+            };
+
+            document.getElementById('packing-done').onclick = () => {
+                modal.style.display = 'none';
+            };
+
+            document.getElementById('packing-skip').onclick = () => {
+                sessionStorage.setItem('g4packing_skip', '1');
+                modal.style.display = 'none';
+            };
+        }
+
+        // Check for active games after user is loaded
+        setTimeout(() => checkGames(), 1500);
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { event.waitUntil(caches.open('v1').then(cache => cache.addAll(['/']))) }); self.addEventListener('fetch', event => { event.respondWith(caches.match(event.request).then(response => response || fetch(event.request))) });`)).catch(() => {});

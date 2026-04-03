@@ -607,6 +607,12 @@ export default {
         return json(results, corsHeaders);
       }
 
+      // DELETE /api/games/packing - clear all packing scores
+      if (path === '/api/games/packing' && request.method === 'DELETE') {
+        await env.DB.prepare('DELETE FROM packing_scores').run();
+        return json({ success: true }, corsHeaders);
+      }
+
       // ===== ANNOUNCEMENTS =====
 
       // GET /api/announcements/active - get current active announcement

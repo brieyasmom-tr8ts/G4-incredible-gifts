@@ -1955,6 +1955,38 @@
         </div>
         <div id="scripture-banner" class="scripture-banner"></div>
 
+        <!-- Preparing for the Retreat (shows before retreat only) -->
+        <div id="prep-section" style="display:none;margin:0 16px 8px;padding:18px 20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);">
+            <div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);text-align:center;margin-bottom:4px;">Preparing for the Retreat</div>
+            <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);text-align:center;font-style:italic;margin-bottom:14px;">April 9–11 · Hyatt Place Ocean City Oceanfront</div>
+
+            <div id="prep-details" style="display:none;">
+                <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Location</div>
+                <div style="font-size:0.88rem;color:var(--taupe);line-height:1.6;margin-bottom:14px;">
+                    Check-in is in front of the conference room in the <strong>ocean-side building</strong>. You'll receive your room key there. We're staying in the <strong>new building across the road</strong>, but all gatherings are in the ocean-side building.
+                </div>
+
+                <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">What to Bring</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-bottom:14px;">
+                    <div style="font-size:0.88rem;color:var(--taupe);padding:3px 0;">📖 Bible or Bible app</div>
+                    <div style="font-size:0.88rem;color:var(--taupe);padding:3px 0;">👗 Comfy clothes</div>
+                    <div style="font-size:0.88rem;color:var(--taupe);padding:3px 0;">🏊 Swimsuit</div>
+                    <div style="font-size:0.88rem;color:var(--taupe);padding:3px 0;">🧥 Light jacket</div>
+                    <div style="font-size:0.88rem;color:var(--taupe);padding:3px 0;">📝 Notebook & pen</div>
+                    <div style="font-size:0.88rem;color:var(--taupe);padding:3px 0;">💛 An open heart</div>
+                </div>
+
+                <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">What to Expect</div>
+                <div style="font-size:0.88rem;color:var(--taupe);line-height:1.7;margin-bottom:6px;">
+                    Incredible speakers ready to pour into you. Worship that will draw you in. Pool, relaxation, and intentional free time to connect, laugh, and breathe. Space for both fun and deep moments with God.
+                </div>
+
+                <div style="text-align:center;padding:12px 0 4px;font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--accent);font-style:italic;">"Every good and perfect gift is from above." — James 1:17</div>
+            </div>
+
+            <button id="prep-toggle" style="width:100%;padding:10px;border:none;background:none;font-size:0.85rem;color:var(--accent);cursor:pointer;font-weight:600;transition:var(--transition);">See details ▾</button>
+        </div>
+
         <div class="content-area">
             <!-- HOME TAB -->
             <div id="home-tab" class="tab-content active">
@@ -4073,6 +4105,26 @@
                 launchConfetti();
             });
         }
+
+        // Show prep section before retreat
+        (function() {
+            const now = new Date();
+            const retreatStart = new Date('2026-04-09T19:00:00-04:00');
+            if (now < retreatStart) {
+                document.getElementById('prep-section').style.display = 'block';
+                const toggle = document.getElementById('prep-toggle');
+                const details = document.getElementById('prep-details');
+                toggle.addEventListener('click', () => {
+                    if (details.style.display === 'none') {
+                        details.style.display = 'block';
+                        toggle.textContent = 'Hide details ▴';
+                    } else {
+                        details.style.display = 'none';
+                        toggle.textContent = 'See details ▾';
+                    }
+                });
+            }
+        })();
 
         checkPostRetreat();
 

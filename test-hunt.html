@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>G4 Hunt — Team Test Page</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📸</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cream: #faf8f5; --taupe: #d4cec8; --sage: #8a9e7a; --blush: #c9908a;
+            --warm-grey: #8b8680; --dark-text: #3a3632; --light-text: #6b6560;
+            --accent: #b87a6e; --rose: #c9908a; --transition: all 0.3s ease;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: var(--cream); font-family: Cormorant Garamond, serif; min-height: 100vh; }
+
+        .test-banner {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white; text-align: center; padding: 10px 16px;
+            font-family: Playfair Display, serif; font-size: 0.85rem; font-weight: 700;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .test-banner small { font-family: Cormorant Garamond, serif; font-weight: 400; opacity: 0.85; }
+
+        .test-user-bar {
+            display: flex; align-items: center; gap: 8px; padding: 12px 16px;
+            background: rgba(255,255,255,0.8); border-bottom: 1px solid rgba(139,134,128,0.12);
+        }
+        .test-user-bar label { font-size: 0.85rem; color: var(--light-text); }
+        .test-user-bar input {
+            flex: 1; padding: 8px 12px; border: 1.5px solid var(--warm-grey);
+            border-radius: 10px; font-family: Cormorant Garamond, serif; font-size: 0.95rem;
+        }
+        .test-user-bar button {
+            padding: 8px 16px; border: none; border-radius: 10px;
+            background: var(--sage); color: white; font-family: Cormorant Garamond, serif;
+            font-size: 0.9rem; font-weight: 700; cursor: pointer;
+        }
+
+        .container { max-width: 500px; margin: 0 auto; padding: 0 0 40px; }
+
+        .hunt-header { text-align: center; padding: 20px 20px 8px; }
+        .hunt-header .emoji { font-size: 2rem; margin-bottom: 4px; }
+        .hunt-header .title { font-family: Playfair Display, serif; font-size: 1.3rem; font-weight: 700; color: var(--dark-text); }
+        .hunt-header .desc { font-size: 0.9rem; color: var(--light-text); font-style: italic; margin-top: 4px; line-height: 1.5; padding: 0 16px; }
+        .hunt-header .how-btn {
+            margin-top: 8px; padding: 6px 16px; border: 1px solid rgba(184,122,110,0.25);
+            border-radius: 16px; background: rgba(255,255,255,0.7); font-size: 0.82rem;
+            font-weight: 600; color: var(--accent); cursor: pointer; font-family: Cormorant Garamond, serif;
+        }
+
+        .view-toggle {
+            display: flex; gap: 0; margin: 12px 16px; border-radius: 12px; overflow: hidden;
+            border: 1px solid rgba(139,134,128,0.15); background: rgba(255,255,255,0.5);
+        }
+        .view-btn {
+            flex: 1; padding: 10px 6px; border: none; background: none;
+            font-family: Cormorant Garamond, serif; font-size: 0.9rem; font-weight: 600;
+            color: var(--light-text); cursor: pointer; transition: var(--transition);
+        }
+        .view-btn.active { background: var(--blush) !important; color: white !important; }
+        .view-btn + .view-btn { border-left: 1px solid rgba(139,134,128,0.12); }
+
+        .progress { text-align: center; margin-bottom: 12px; font-size: 0.85rem; color: var(--light-text); }
+        .progress strong { color: var(--accent); }
+
+        .category { margin-bottom: 18px; padding: 0 16px; }
+        .category-title { font-family: Playfair Display, serif; font-size: 0.95rem; font-weight: 700; color: var(--dark-text); margin-bottom: 8px; padding-left: 2px; }
+
+        .prompt-card {
+            display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+            background: rgba(255,255,255,0.7); border: 1px solid rgba(139,134,128,0.12);
+            border-radius: 14px; margin-bottom: 8px; cursor: pointer; transition: var(--transition);
+        }
+        .prompt-card:active { transform: scale(0.98); }
+        .prompt-card.completed { border-color: rgba(138,158,122,0.3); background: rgba(138,158,122,0.06); }
+        .prompt-check {
+            width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--warm-grey);
+            display: flex; align-items: center; justify-content: center; font-size: 0.85rem; flex-shrink: 0;
+        }
+        .prompt-card.completed .prompt-check { border-color: var(--sage); background: var(--sage); color: white; }
+        .prompt-text { font-size: 0.92rem; color: var(--dark-text); line-height: 1.4; flex: 1; }
+        .prompt-card.completed .prompt-text { color: var(--light-text); }
+
+        .gallery-section { padding: 0 16px; }
+        .gallery-prompt { margin-bottom: 20px; }
+        .gallery-prompt-title { font-family: Playfair Display, serif; font-size: 0.95rem; font-weight: 700; color: var(--dark-text); margin-bottom: 10px; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .gallery-card { border-radius: 12px; overflow: hidden; background: white; border: 1px solid rgba(139,134,128,0.12); }
+        .gallery-card.voted { border-color: var(--blush); box-shadow: 0 0 0 2px rgba(201,144,138,0.25); }
+        .gallery-card img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+        .gallery-info { padding: 8px 10px; }
+        .gallery-name { font-size: 0.8rem; font-weight: 700; color: var(--dark-text); }
+        .gallery-caption { font-size: 0.78rem; color: var(--light-text); font-style: italic; margin-top: 2px; line-height: 1.3; }
+        .vote-btn {
+            display: flex; align-items: center; gap: 4px; margin-top: 6px; padding: 4px 10px;
+            border: 1px solid rgba(139,134,128,0.2); border-radius: 16px; background: none;
+            font-family: Cormorant Garamond, serif; font-size: 0.78rem; color: var(--light-text); cursor: pointer;
+        }
+        .vote-btn.voted { border-color: var(--blush); background: rgba(201,144,138,0.1); color: var(--accent); }
+        .own-label { font-size: 0.75rem; color: var(--sage); margin-top: 4px; }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex;
+            align-items: center; justify-content: center; z-index: 200; padding: 20px;
+        }
+        .modal {
+            background: var(--cream); border-radius: 20px; padding: 28px 24px;
+            max-width: 380px; width: 100%; max-height: 85vh; overflow-y: auto;
+        }
+        .save-btn {
+            padding: 14px; border: none; border-radius: 14px; background: var(--blush);
+            color: white; font-family: Cormorant Garamond, serif; font-size: 1rem;
+            font-weight: 700; cursor: pointer; width: 100%;
+        }
+
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: var(--dark-text); color: white; padding: 12px 24px; border-radius: 20px;
+            font-size: 0.9rem; z-index: 300; animation: fadeInUp 0.3s ease;
+        }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+        .empty-state { text-align: center; padding: 40px 20px; }
+        .empty-state .emoji { font-size: 2rem; margin-bottom: 8px; }
+        .empty-state p { font-size: 0.95rem; color: var(--light-text); }
+    </style>
+</head>
+<body>
+    <div class="test-banner">
+        TEAM TEST PAGE — Not visible to attendees<br>
+        <small>Test all features: upload photos, vote, check gallery. Data is LIVE (will be in real app).</small>
+    </div>
+
+    <div class="test-user-bar">
+        <label>Test as:</label>
+        <input type="text" id="test-name" placeholder="Your first name" value="">
+        <input type="number" id="test-id" placeholder="User ID" style="width:70px;">
+        <button onclick="setTestUser()">Go</button>
+    </div>
+
+    <div class="container">
+        <div class="hunt-header">
+            <div class="emoji">📸</div>
+            <div class="title">Scavenger Hunt</div>
+            <div class="desc">Snap as many as you want! Your sisters will vote for the best photo in each category. Winners announced at 7 PM!</div>
+            <button class="how-btn" onclick="showInstructions()">How It Works</button>
+        </div>
+
+        <div class="view-toggle">
+            <button class="view-btn active" data-view="prompts" onclick="switchView('prompts')">My Hunt</button>
+            <button class="view-btn" data-view="gallery" onclick="switchView('gallery')">Gallery &amp; Vote</button>
+        </div>
+
+        <div id="prompts-view">
+            <div class="progress" id="progress"></div>
+            <div id="prompts-list"></div>
+        </div>
+
+        <div id="gallery-view" style="display:none;">
+            <div class="gallery-section" id="gallery-list"></div>
+        </div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div class="modal-overlay" id="instructions-modal" style="display:none;">
+        <div class="modal" style="text-align:center;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">📸</div>
+            <h2 style="font-family:Playfair Display,serif;font-size:1.2rem;margin-bottom:12px;">Scavenger Hunt!</h2>
+            <div style="font-size:0.95rem;color:var(--dark-text);line-height:1.7;text-align:left;padding:0 8px;">
+                <div style="margin-bottom:10px;"><strong>1.</strong> Browse the prompts and pick the ones that look fun — no need to do them all!</div>
+                <div style="margin-bottom:10px;"><strong>2.</strong> Tap a prompt, snap a photo (or choose from camera roll), and add a caption if you want.</div>
+                <div style="margin-bottom:10px;"><strong>3.</strong> Switch to <strong>Gallery &amp; Vote</strong> to see what your sisters captured. Vote for your favorite in each category!</div>
+                <div style="margin-bottom:10px;"><strong>4.</strong> You get <strong>one vote per category</strong> — choose wisely! You can change your vote until <strong>7 PM</strong>.</div>
+                <div><strong>5.</strong> Be creative! Winners announced tonight. Your photos will be in the slideshow! 🎉</div>
+            </div>
+            <button class="save-btn" style="margin-top:16px;" onclick="document.getElementById('instructions-modal').style.display='none'">Let's Go!</button>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal-overlay" id="upload-modal" style="display:none;">
+        <div class="modal">
+            <div style="text-align:center;margin-bottom:12px;">
+                <div id="upload-prompt" style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;color:var(--dark-text);line-height:1.4;"></div>
+            </div>
+            <div id="upload-preview" style="display:none;margin-bottom:12px;border-radius:12px;overflow:hidden;max-height:250px;">
+                <img id="preview-img" style="width:100%;object-fit:cover;">
+            </div>
+            <input type="file" id="photo-input" accept="image/*" style="display:none;">
+            <button class="save-btn" style="margin-bottom:8px;" onclick="document.getElementById('photo-input').click()">📷 Take or Choose Photo</button>
+            <input type="text" id="caption-input" placeholder="Add a caption (optional)" style="width:100%;padding:12px;border:1.5px solid var(--warm-grey);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);margin-bottom:8px;">
+            <button class="save-btn" id="submit-btn" style="display:none;background:var(--sage);" onclick="submitPhoto()">Submit Photo</button>
+            <button onclick="document.getElementById('upload-modal').style.display='none'" style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-family:Cormorant Garamond,serif;font-size:0.9rem;cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
+
+        const HUNT_PROMPTS = [
+            { category: 'Meet Your Sisters', prompts: [
+                { id: 'meet1', text: 'Take a photo with someone you\'ve never met before' },
+                { id: 'meet2', text: 'Group selfie with your whole table' },
+                { id: 'meet3', text: 'Someone who lives in a different state than you' },
+                { id: 'meet4', text: 'Find someone who has been to G4 before' },
+                { id: 'meet5', text: 'Take a photo with someone who made you laugh today — laughing!' },
+                { id: 'meet6', text: 'Take a photo with someone who works at the hotel' },
+                { id: 'meet7', text: 'High-five a staff member' }
+            ]},
+            { category: 'Get Creative', prompts: [
+                { id: 'create1', text: 'Recreate a dramatic movie scene' },
+                { id: 'create2', text: 'Your best "retreat exhausted" face' },
+                { id: 'create3', text: 'Match outfits with someone (or swap something!)' },
+                { id: 'create4', text: 'Spell "G4" using people or objects' },
+                { id: 'create5', text: 'Do a synchronized pose with 3+ people by the ocean' },
+                { id: 'create6', text: 'Build the tiniest sandcastle possible and act super proud' },
+                { id: 'create7', text: 'Just the funniest photo you can think of' }
+            ]},
+            { category: 'Explore', prompts: [
+                { id: 'explore1', text: 'Capture something beautiful that reminds you of God' },
+                { id: 'explore2', text: 'Your favorite spot at the retreat' },
+                { id: 'explore3', text: 'Something you didn\'t notice at first' },
+                { id: 'explore4', text: 'A cozy corner or quiet space' },
+                { id: 'explore5', text: 'A detail from the table setup or decor' },
+                { id: 'explore6', text: 'Something that represents "rest"' }
+            ]},
+            { category: 'Beach Vibes', prompts: [
+                { id: 'beach1', text: 'Find the coolest seashell you can' },
+                { id: 'beach2', text: 'Write G4 2026 in the sand' }
+            ]},
+            { category: 'Wild Card', prompts: [
+                { id: 'wild1', text: 'Capture JOY in one photo' }
+            ]}
+        ];
+
+        const ALL_PROMPTS = HUNT_PROMPTS.flatMap(c => c.prompts.map(p => ({ ...p, category: c.category })));
+        let testUser = { id: null, name: '' };
+        let completedIds = new Set();
+        let currentPrompt = null;
+        let compressedPhoto = null;
+
+        function escHtml(str) { const d = document.createElement('div'); d.textContent = str || ''; return d.innerHTML; }
+
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'toast'; t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+
+        function setTestUser() {
+            const name = document.getElementById('test-name').value.trim();
+            const id = parseInt(document.getElementById('test-id').value);
+            if (!name || !id) { showToast('Enter your name and user ID'); return; }
+            testUser = { id, name };
+            localStorage.setItem('g4_test_hunt_user', JSON.stringify(testUser));
+            showToast('Testing as ' + name + ' (ID: ' + id + ')');
+            loadPrompts();
+        }
+
+        // Restore saved test user
+        try {
+            const saved = localStorage.getItem('g4_test_hunt_user');
+            if (saved) {
+                testUser = JSON.parse(saved);
+                document.getElementById('test-name').value = testUser.name;
+                document.getElementById('test-id').value = testUser.id;
+            }
+        } catch(e) {}
+
+        async function loadPrompts() {
+            if (!testUser.id) return;
+            try {
+                const res = await fetch(API_URL + '/api/hunt/my?user_id=' + testUser.id);
+                const data = await res.json();
+                completedIds = new Set(data);
+            } catch(e) { completedIds = new Set(); }
+            renderPrompts();
+        }
+
+        function renderPrompts() {
+            const total = ALL_PROMPTS.length;
+            const done = completedIds.size;
+            document.getElementById('progress').innerHTML = '<strong>' + done + '</strong> of ' + total + ' captured';
+
+            let html = '';
+            HUNT_PROMPTS.forEach(cat => {
+                html += '<div class="category"><div class="category-title">' + escHtml(cat.category) + '</div>';
+                cat.prompts.forEach(p => {
+                    const done = completedIds.has(p.id);
+                    html += '<div class="prompt-card' + (done ? ' completed' : '') + '" onclick="openUpload(\'' + p.id + '\')">' +
+                        '<div class="prompt-check">' + (done ? '✓' : '') + '</div>' +
+                        '<div class="prompt-text">' + escHtml(p.text) + '</div></div>';
+                });
+                html += '</div>';
+            });
+            document.getElementById('prompts-list').innerHTML = html;
+        }
+
+        function openUpload(promptId) {
+            if (!testUser.id) { showToast('Set your test user first!'); return; }
+            currentPrompt = ALL_PROMPTS.find(p => p.id === promptId);
+            if (!currentPrompt) return;
+            compressedPhoto = null;
+            document.getElementById('upload-prompt').textContent = currentPrompt.text;
+            document.getElementById('upload-preview').style.display = 'none';
+            document.getElementById('preview-img').src = '';
+            document.getElementById('photo-input').value = '';
+            document.getElementById('caption-input').value = '';
+            document.getElementById('submit-btn').style.display = 'none';
+            document.getElementById('upload-modal').style.display = 'flex';
+        }
+
+        document.getElementById('photo-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const maxSize = 800;
+                    let w = img.width, h = img.height;
+                    if (w > maxSize || h > maxSize) {
+                        if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                        else { w = Math.round(w * maxSize / h); h = maxSize; }
+                    }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    compressedPhoto = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('preview-img').src = compressedPhoto;
+                    document.getElementById('upload-preview').style.display = 'block';
+                    document.getElementById('submit-btn').style.display = 'block';
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        async function submitPhoto() {
+            if (!compressedPhoto || !currentPrompt || !testUser.id) return;
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true; btn.textContent = 'Uploading...';
+            try {
+                const res = await fetch(API_URL + '/api/hunt/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: testUser.id,
+                        user_name: testUser.name,
+                        prompt_id: currentPrompt.id,
+                        photo_data: compressedPhoto,
+                        caption: document.getElementById('caption-input').value.trim()
+                    })
+                });
+                const data = await res.json();
+                if (data.error) { showToast(data.error); }
+                else {
+                    completedIds.add(currentPrompt.id);
+                    renderPrompts();
+                    document.getElementById('upload-modal').style.display = 'none';
+                    showToast('Photo submitted! 📸');
+                }
+            } catch(e) { showToast('Upload failed — try again'); }
+            btn.disabled = false; btn.textContent = 'Submit Photo';
+        }
+
+        function switchView(view) {
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('.view-btn[data-view="' + view + '"]').classList.add('active');
+            document.getElementById('prompts-view').style.display = view === 'prompts' ? '' : 'none';
+            document.getElementById('gallery-view').style.display = view === 'gallery' ? '' : 'none';
+            if (view === 'gallery') loadGallery();
+        }
+
+        async function loadGallery() {
+            if (!testUser.id) { showToast('Set your test user first!'); return; }
+            const list = document.getElementById('gallery-list');
+            list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--light-text);">Loading gallery...</div>';
+
+            let html = '';
+            for (const cat of HUNT_PROMPTS) {
+                let catHtml = '';
+                for (const p of cat.prompts) {
+                    try {
+                        const res = await fetch(API_URL + '/api/hunt/gallery/' + encodeURIComponent(p.id) + '?user_id=' + testUser.id);
+                        const data = await res.json();
+                        if (data.submissions && data.submissions.length > 0) {
+                            catHtml += '<div class="gallery-prompt"><div class="gallery-prompt-title">' + escHtml(p.text) + '</div><div class="gallery-grid">';
+                            data.submissions.forEach(s => {
+                                const isVoted = data.my_vote === s.id;
+                                const isOwn = s.user_id === testUser.id;
+                                catHtml += '<div class="gallery-card' + (isVoted ? ' voted' : '') + '">' +
+                                    '<img src="' + s.photo_data + '" alt="" loading="lazy">' +
+                                    '<div class="gallery-info">' +
+                                    '<div class="gallery-name">' + escHtml(s.user_name) + '</div>' +
+                                    (s.caption ? '<div class="gallery-caption">' + escHtml(s.caption) + '</div>' : '');
+                                if (!isOwn) {
+                                    catHtml += '<button class="vote-btn' + (isVoted ? ' voted' : '') + '" onclick="huntVote(\'' + p.id + '\',' + s.id + ')">' +
+                                        (isVoted ? '💛 Voted' : '🤍 Vote') + ' <span style="margin-left:2px;">' + s.votes + '</span></button>';
+                                } else {
+                                    catHtml += '<div class="own-label">Your photo · ' + s.votes + ' vote' + (s.votes !== 1 ? 's' : '') + '</div>';
+                                }
+                                catHtml += '</div></div>';
+                            });
+                            catHtml += '</div></div>';
+                        }
+                    } catch(e) {}
+                }
+                if (catHtml) {
+                    html += '<div style="margin-bottom:24px;"><div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);margin-bottom:12px;">' + escHtml(cat.category) + '</div>' + catHtml + '</div>';
+                }
+            }
+
+            if (!html) {
+                html = '<div class="empty-state"><div class="emoji">📷</div><p>No photos yet! Upload one from My Hunt to get started.</p></div>';
+            }
+            list.innerHTML = html;
+        }
+
+        async function huntVote(promptId, submissionId) {
+            if (!testUser.id) return;
+            try {
+                const res = await fetch(API_URL + '/api/hunt/vote', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: testUser.id, prompt_id: promptId, submission_id: submissionId })
+                });
+                const data = await res.json();
+                if (data.error) { showToast(data.error); return; }
+                loadGallery();
+                showToast('Vote recorded! 💛');
+            } catch(e) { showToast('Could not vote — try again'); }
+        }
+
+        function showInstructions() { document.getElementById('instructions-modal').style.display = 'flex'; }
+
+        // Auto-load if user is set
+        if (testUser.id) loadPrompts();
+    </script>
+</body>
+</html>

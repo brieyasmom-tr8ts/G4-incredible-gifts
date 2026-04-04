@@ -706,6 +706,18 @@
                 <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.5rem;">Pairs: <strong id="ss-count">0</strong> | Notes written: <strong id="ss-notes-count">0</strong></div>
                 <div id="ss-pairs-list" style="margin-top:0.5rem;"></div>
             </div>
+            <!-- Scavenger Hunt -->
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">📸 Scavenger Hunt</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:0.75rem;">Photo scavenger hunt with voting. Hunt tab replaces Journey at 12:00 PM Friday.</div>
+                <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.75rem;">Submissions: <strong id="hunt-sub-count">0</strong> | Votes: <strong id="hunt-vote-count">0</strong></div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn btn-refresh" onclick="loadHuntStats()">Refresh</button>
+                    <button class="btn btn-danger-outline" onclick="clearHuntData()">Clear All Hunt Data</button>
+                    <a href="slideshow.html" target="_blank" class="btn" style="background:var(--blush);color:white;text-decoration:none;display:inline-flex;align-items:center;">📺 Open Slideshow</a>
+                    <a href="test-hunt.html" target="_blank" class="btn" style="background:var(--sage);color:white;text-decoration:none;display:inline-flex;align-items:center;">🧪 Test Page</a>
+                </div>
+            </div>
         </div>
 
         <!-- Feedback -->
@@ -848,7 +860,8 @@ async function refreshAll() {
         loadSecretSisters(),
         loadWYRQuestions(),
         loadActiveAnnouncement(),
-        loadPolls()
+        loadPolls(),
+        loadHuntStats()
     ]);
 }
 
@@ -1690,6 +1703,31 @@ function clearSecretSisters() {
             await apiFetch('/api/games/secretsister/all', { method: 'DELETE' });
             showToast('All assignments cleared');
             loadSecretSisters();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+// --- Scavenger Hunt ---
+async function loadHuntStats() {
+    try {
+        const res = await apiFetch('/api/hunt/feed');
+        const subs = await res.json();
+        document.getElementById('hunt-sub-count').textContent = subs.length || 0;
+        // Count total votes from all submissions
+        const totalVotes = subs.reduce((sum, s) => sum + (s.votes || 0), 0);
+        document.getElementById('hunt-vote-count').textContent = totalVotes;
+    } catch(e) {
+        document.getElementById('hunt-sub-count').textContent = '?';
+        document.getElementById('hunt-vote-count').textContent = '?';
+    }
+}
+
+function clearHuntData() {
+    showModal('Clear Hunt Data', 'Delete ALL scavenger hunt photos and votes? This cannot be undone.', async () => {
+        try {
+            await apiFetch('/api/hunt/clear', { method: 'POST' });
+            showToast('All hunt data cleared');
+            loadHuntStats();
         } catch (e) { showToast('Error: ' + e.message); }
     });
 }

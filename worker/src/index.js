@@ -1332,6 +1332,13 @@ export default {
         return json(results, corsHeaders);
       }
 
+      // POST /api/hunt/clear - delete all hunt data (admin)
+      if (path === '/api/hunt/clear' && request.method === 'POST') {
+        await env.DB.prepare('DELETE FROM hunt_votes').run();
+        await env.DB.prepare('DELETE FROM hunt_submissions').run();
+        return json({ success: true }, corsHeaders);
+      }
+
       // GET /api/hunt/winners - top voted per prompt
       if (path === '/api/hunt/winners' && request.method === 'GET') {
         const { results } = await env.DB.prepare(

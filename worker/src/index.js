@@ -233,8 +233,7 @@ export default {
         const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
         await env.DB.prepare(sql).bind(...values).run();
 
-        // Return what was saved for debugging
-        return json({ success: true, fields_updated: fields, sql_debug: sql }, corsHeaders);
+        return json({ success: true }, corsHeaders);
       }
 
       // GET /api/users/:id/photo - get user photo (lightweight)

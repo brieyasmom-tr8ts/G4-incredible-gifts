@@ -4555,14 +4555,16 @@
                 const daysUntil = Math.ceil((retreatStart - now) / msPerDay);
                 indicator.style.display = 'inline-flex';
                 statusDot.style.display = 'none';
-                if (daysUntil === 1) {
-                    statusText.textContent = 'Tomorrow! Get ready \u2728';
+                if (daysUntil <= 0) {
+                    statusText.textContent = 'Today is the day! See you for our first session at 7 PM';
+                } else if (daysUntil === 1) {
+                    statusText.textContent = 'Can you believe it is tomorrow!!';
                 } else if (daysUntil <= 14) {
                     const msgs = {
-                        2: "2 days! Pack snacks \ud83c\udf6a",
-                        3: "3 days \u2013 outfit planning time \ud83d\udc57",
-                        4: "4 days \u2013 your sisters can\u2019t wait!",
-                        5: "5 days \u2013 start that packing list \u270f\ufe0f",
+                        2: "2 days \u2013 make your packing list and check it twice!",
+                        3: "3 days \u2013 have you listened to the Spotify songs yet?",
+                        4: "4 days \u2013 share a prayer request or encouragement on the Uplift page!",
+                        5: "5 days \u2013 check out the schedule below and fill out your profile!",
                         6: "6 days \u2013 it\u2019s almost here!",
                         7: "1 week away! \ud83c\udf89",
                         8: "8 days \u2013 did someone say beach? \ud83c\udfd6\ufe0f",

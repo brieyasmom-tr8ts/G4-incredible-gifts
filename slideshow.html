@@ -75,14 +75,56 @@
             font-size: 1.8rem;
             color: rgba(255,255,255,0.7);
         }
+        .start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            gap: 20px;
+        }
+        .start-screen h1 {
+            font-family: Playfair Display, serif;
+            font-size: 3rem;
+            font-weight: 700;
+        }
+        .start-screen p {
+            font-size: 1.3rem;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 10px;
+        }
+        .mode-buttons {
+            display: flex;
+            gap: 20px;
+        }
+        .mode-btn {
+            padding: 20px 40px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 16px;
+            background: rgba(255,255,255,0.08);
+            color: white;
+            font-family: Playfair Display, serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .mode-btn:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+        .mode-btn .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+        .mode-btn .sub { font-family: Cormorant Garamond, serif; font-size: 0.9rem; font-weight: 400; color: rgba(255,255,255,0.5); margin-top: 4px; }
         .controls {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             gap: 8px;
             z-index: 10;
-            opacity: 0.3;
+            opacity: 0.5;
             transition: opacity 0.3s;
         }
         .controls:hover { opacity: 1; }
@@ -97,6 +139,7 @@
             cursor: pointer;
         }
         .controls button:hover { background: rgba(255,255,255,0.15); }
+        .controls button.active-mode { background: rgba(201,144,138,0.5); border-color: rgba(201,144,138,0.7); }
         .loading {
             display: flex;
             align-items: center;
@@ -105,26 +148,35 @@
             font-size: 1.5rem;
             color: rgba(255,255,255,0.5);
         }
-        #mode-label {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.3);
-            z-index: 10;
-        }
     </style>
 </head>
 <body>
-    <div class="loading" id="loading">Loading photos...</div>
+    <div class="start-screen" id="start-screen">
+        <h1>📸 Scavenger Hunt</h1>
+        <p>G4 2026 — Incredible Gifts</p>
+        <div class="mode-buttons">
+            <button class="mode-btn" onclick="startSlideshow('all')">
+                <span class="icon">🖼️</span>
+                All Photos
+                <div class="sub">Every submission</div>
+            </button>
+            <button class="mode-btn" onclick="startSlideshow('winners')">
+                <span class="icon">🏆</span>
+                Winners Only
+                <div class="sub">Top voted per category</div>
+            </button>
+        </div>
+    </div>
+    <div class="loading" id="loading" style="display:none;">Loading photos...</div>
     <div id="slideshow"></div>
-    <div class="controls">
+    <div class="controls" id="controls" style="display:none;">
         <button onclick="prevSlide()">← Prev</button>
         <button onclick="togglePause()" id="pause-btn">⏸ Pause</button>
         <button onclick="nextSlide()">Next →</button>
-        <button onclick="toggleMode()">Switch Mode</button>
+        <button id="btn-all" onclick="switchMode('all')">All Photos</button>
+        <button id="btn-winners" onclick="switchMode('winners')">🏆 Winners</button>
+        <button onclick="backToStart()">Exit</button>
     </div>
-    <div id="mode-label">All Photos</div>
 
     <script>
         const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
@@ -173,14 +225,21 @@
             return res.json();
         }
 
-        async function init() {
-            const data = await loadAll();
-            if (!data || data.length === 0) {
+        async function startSlideshow(selectedMode) {
+            mode = selectedMode;
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+
+            const data = mode === 'winners' ? await loadWinners() : await loadAll();
+            slides = data || [];
+
+            if (slides.length === 0) {
                 document.getElementById('loading').textContent = 'No photos yet!';
                 return;
             }
-            slides = data;
             document.getElementById('loading').style.display = 'none';
+            document.getElementById('controls').style.display = 'flex';
+            updateModeButtons();
             renderSlides();
             showSlide(0);
             startAuto();
@@ -230,24 +289,31 @@
             document.getElementById('pause-btn').textContent = paused ? '▶ Play' : '⏸ Pause';
         }
 
-        async function toggleMode() {
-            if (mode === 'all') {
-                mode = 'winners';
-                document.getElementById('mode-label').textContent = '🏆 Winners Only';
-                const data = await loadWinners();
-                slides = data || [];
-            } else {
-                mode = 'all';
-                document.getElementById('mode-label').textContent = 'All Photos';
-                const data = await loadAll();
-                slides = data || [];
-            }
+        async function switchMode(newMode) {
+            if (newMode === mode) return;
+            mode = newMode;
+            updateModeButtons();
+            const data = mode === 'winners' ? await loadWinners() : await loadAll();
+            slides = data || [];
             if (slides.length === 0) {
-                document.getElementById('slideshow').innerHTML = '<div class="slide active title-slide"><h1>No photos yet!</h1></div>';
+                document.getElementById('slideshow').innerHTML = '<div class="slide active title-slide"><h1>No photos in this mode!</h1></div>';
                 return;
             }
             renderSlides();
             showSlide(0);
+        }
+
+        function updateModeButtons() {
+            document.getElementById('btn-all').className = mode === 'all' ? 'active-mode' : '';
+            document.getElementById('btn-winners').className = mode === 'winners' ? 'active-mode' : '';
+        }
+
+        function backToStart() {
+            if (interval) clearInterval(interval);
+            paused = false;
+            document.getElementById('slideshow').innerHTML = '';
+            document.getElementById('controls').style.display = 'none';
+            document.getElementById('start-screen').style.display = 'flex';
         }
 
         // Keyboard controls
@@ -255,9 +321,8 @@
             if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
             if (e.key === 'ArrowLeft') prevSlide();
             if (e.key === 'p') togglePause();
+            if (e.key === 'Escape') backToStart();
         });
-
-        init();
     </script>
 </body>
 </html>

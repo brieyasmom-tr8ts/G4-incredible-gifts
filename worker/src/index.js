@@ -807,6 +807,23 @@ export default {
         }, corsHeaders);
       }
 
+      // GET /api/games/wyr/voters/:id - get who voted for what (admin)
+      const wyrVotersMatch = path.match(/^\/api\/games\/wyr\/voters\/(\d+)$/);
+      if (wyrVotersMatch && request.method === 'GET') {
+        const qId = parseInt(wyrVotersMatch[1]);
+        const { results } = await env.DB.prepare(
+          `SELECT v.choice, u.first_name, u.last_initial
+           FROM wyr_votes v JOIN users u ON v.user_id = u.id
+           WHERE v.question_id = ?
+           ORDER BY v.choice, u.first_name`
+        ).bind(qId).all();
+        const voters = results.map(r => ({
+          name: r.last_initial ? `${r.first_name} ${r.last_initial}.` : r.first_name,
+          choice: r.choice
+        }));
+        return json(voters, corsHeaders);
+      }
+
       // DELETE /api/games/wyr/questions/:id - delete a question and its votes
       const wyrDeleteMatch = path.match(/^\/api\/games\/wyr\/questions\/(\d+)$/);
       if (wyrDeleteMatch && request.method === 'DELETE') {

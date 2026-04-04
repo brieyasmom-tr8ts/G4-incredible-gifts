@@ -1572,10 +1572,43 @@ async function loadWYRQuestions() {
                         <div style="width:${activeData.pct_b}%;background:var(--sage);"></div>
                     </div>
                     <div style="font-size:0.78rem;color:var(--light-text);margin-top:4px;">${activeData.total} votes</div>
+                    <div id="wyr-voters-${q.id}" style="margin-top:8px;"></div>
+                    <button class="btn" style="background:var(--blush);color:white;font-size:0.72rem;padding:0.2rem 0.5rem;margin-top:6px;" onclick="loadWYRVoters(${q.id})">Show Voters</button>
                 ` : ''}
+                ${!isActive && q.id ? `<button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);font-size:0.72rem;padding:0.2rem 0.5rem;margin-top:6px;" onclick="loadWYRVoters(${q.id})">Show Voters</button><div id="wyr-voters-${q.id}" style="margin-top:8px;"></div>` : ''}
             </div>`;
         }).join('');
     } catch (e) { console.error('WYR:', e); }
+}
+
+async function loadWYRVoters(questionId) {
+    const container = document.getElementById('wyr-voters-' + questionId);
+    if (!container) return;
+    if (container.innerHTML && container.style.display !== 'none') {
+        container.style.display = 'none';
+        return;
+    }
+    try {
+        const voters = await apiFetch('/api/games/wyr/voters/' + questionId);
+        if (!voters.length) {
+            container.innerHTML = '<div style="font-size:0.8rem;color:var(--light-text);font-style:italic;">No votes yet</div>';
+        } else {
+            const votersA = voters.filter(v => v.choice === 'A');
+            const votersB = voters.filter(v => v.choice === 'B');
+            container.innerHTML = `
+                <div style="display:flex;gap:1rem;font-size:0.8rem;">
+                    <div style="flex:1;">
+                        <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Option A (${votersA.length})</div>
+                        ${votersA.map(v => `<div style="padding:2px 0;color:var(--taupe);">${esc(v.name)}</div>`).join('') || '<div style="color:var(--light-text);font-style:italic;">None</div>'}
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-weight:600;color:var(--sage);margin-bottom:4px;">Option B (${votersB.length})</div>
+                        ${votersB.map(v => `<div style="padding:2px 0;color:var(--taupe);">${esc(v.name)}</div>`).join('') || '<div style="color:var(--light-text);font-style:italic;">None</div>'}
+                    </div>
+                </div>`;
+        }
+        container.style.display = 'block';
+    } catch (e) { showToast('Error: ' + e.message); }
 }
 
 async function activateWYR(questionId) {

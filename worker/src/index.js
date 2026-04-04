@@ -1176,6 +1176,112 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // ===== SCAVENGER HUNT =====
+
+      // Create tables on first use
+      if (path.startsWith('/api/hunt')) {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS hunt_submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            user_name TEXT NOT NULL,
+            prompt_id TEXT NOT NULL,
+            photo_data TEXT NOT NULL,
+            caption TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(user_id, prompt_id)
+          )`).run();
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS hunt_votes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            prompt_id TEXT NOT NULL,
+            submission_id INTEGER NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(user_id, prompt_id)
+          )`).run();
+        } catch(e) { /* tables exist */ }
+      }
+
+      // POST /api/hunt/submit - submit a photo for a prompt
+      if (path === '/api/hunt/submit' && request.method === 'POST') {
+        const { user_id, user_name, prompt_id, photo_data, caption } = await request.json();
+        if (!user_id || !prompt_id || !photo_data) return json({ error: 'user_id, prompt_id, photo_data required' }, corsHeaders, 400);
+        await env.DB.prepare(
+          'INSERT INTO hunt_submissions (user_id, user_name, prompt_id, photo_data, caption) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id, prompt_id) DO UPDATE SET photo_data = excluded.photo_data, caption = excluded.caption'
+        ).bind(user_id, user_name || '', prompt_id, photo_data, caption || '').run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/hunt/my - get which prompts the current user has submitted
+      if (path === '/api/hunt/my' && request.method === 'GET') {
+        const userId = url.searchParams.get('user_id');
+        if (!userId) return json({ error: 'user_id required' }, corsHeaders, 400);
+        const { results } = await env.DB.prepare(
+          'SELECT prompt_id FROM hunt_submissions WHERE user_id = ?'
+        ).bind(parseInt(userId)).all();
+        return json(results.map(r => r.prompt_id), corsHeaders);
+      }
+
+      // GET /api/hunt/gallery/:promptId - get all submissions for a prompt
+      const huntGalleryMatch = path.match(/^\/api\/hunt\/gallery\/(.+)$/);
+      if (huntGalleryMatch && request.method === 'GET') {
+        const promptId = decodeURIComponent(huntGalleryMatch[1]);
+        const { results } = await env.DB.prepare(
+          'SELECT s.id, s.user_id, s.user_name, s.photo_data, s.caption, s.created_at, (SELECT COUNT(*) FROM hunt_votes v WHERE v.submission_id = s.id) as votes FROM hunt_submissions s WHERE s.prompt_id = ? ORDER BY votes DESC, s.created_at ASC'
+        ).bind(promptId).all();
+        // Also get current user's vote for this prompt
+        const userId = url.searchParams.get('user_id');
+        let myVote = null;
+        if (userId) {
+          const vote = await env.DB.prepare('SELECT submission_id FROM hunt_votes WHERE user_id = ? AND prompt_id = ?').bind(parseInt(userId), promptId).first();
+          if (vote) myVote = vote.submission_id;
+        }
+        return json({ submissions: results, my_vote: myVote }, corsHeaders);
+      }
+
+      // POST /api/hunt/vote - vote for a submission (one vote per prompt per user, can change)
+      if (path === '/api/hunt/vote' && request.method === 'POST') {
+        const { user_id, prompt_id, submission_id } = await request.json();
+        if (!user_id || !prompt_id || !submission_id) return json({ error: 'user_id, prompt_id, submission_id required' }, corsHeaders, 400);
+        // Check voting cutoff (7 PM Friday April 10 2026 ET)
+        const now = new Date();
+        const cutoff = new Date('2026-04-10T23:00:00Z'); // 7 PM ET = 11 PM UTC
+        if (now > cutoff) return json({ error: 'Voting has closed!' }, corsHeaders, 400);
+        // Can't vote for your own photo
+        const sub = await env.DB.prepare('SELECT user_id FROM hunt_submissions WHERE id = ?').bind(submission_id).first();
+        if (sub && sub.user_id === user_id) return json({ error: "You can't vote for your own photo!" }, corsHeaders, 400);
+        await env.DB.prepare(
+          'INSERT INTO hunt_votes (user_id, prompt_id, submission_id) VALUES (?, ?, ?) ON CONFLICT(user_id, prompt_id) DO UPDATE SET submission_id = excluded.submission_id'
+        ).bind(user_id, prompt_id, submission_id).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/hunt/feed - all submissions for slideshow/feed
+      if (path === '/api/hunt/feed' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT s.id, s.user_name, s.prompt_id, s.photo_data, s.caption, s.created_at, (SELECT COUNT(*) FROM hunt_votes v WHERE v.submission_id = s.id) as votes FROM hunt_submissions s ORDER BY s.created_at DESC'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
+      // GET /api/hunt/winners - top voted per prompt
+      if (path === '/api/hunt/winners' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          `SELECT s.id, s.user_name, s.prompt_id, s.photo_data, s.caption,
+                  (SELECT COUNT(*) FROM hunt_votes v WHERE v.submission_id = s.id) as votes
+           FROM hunt_submissions s
+           ORDER BY s.prompt_id, votes DESC`
+        ).all();
+        // Group by prompt, take top per prompt
+        const winners = {};
+        for (const r of results) {
+          if (!winners[r.prompt_id] || r.votes > winners[r.prompt_id].votes) {
+            winners[r.prompt_id] = r;
+          }
+        }
+        return json(Object.values(winners).filter(w => w.votes > 0), corsHeaders);
+      }
+
       return json({ error: 'Not found' }, corsHeaders, 404);
 
     } catch (err) {

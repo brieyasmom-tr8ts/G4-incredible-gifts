@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G4 2026 - Scavenger Hunt Slideshow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: Cormorant Garamond, serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+        .slide.active { opacity: 1; }
+        .slide img {
+            max-width: 85vw;
+            max-height: 75vh;
+            object-fit: contain;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .slide-info {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            max-width: 80vw;
+        }
+        .slide-prompt {
+            font-family: Playfair Display, serif;
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+        }
+        .slide-caption {
+            font-size: 1.3rem;
+            font-style: italic;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 6px;
+        }
+        .slide-author {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.65);
+        }
+        .slide-votes {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.5);
+            margin-top: 4px;
+        }
+        .title-slide {
+            flex-direction: column;
+            gap: 16px;
+        }
+        .title-slide h1 {
+            font-family: Playfair Display, serif;
+            font-size: 4rem;
+            font-weight: 700;
+        }
+        .title-slide p {
+            font-size: 1.8rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+            opacity: 0.3;
+            transition: opacity 0.3s;
+        }
+        .controls:hover { opacity: 1; }
+        .controls button {
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .controls button:hover { background: rgba(255,255,255,0.15); }
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.5);
+        }
+        #mode-label {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.3);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">Loading photos...</div>
+    <div id="slideshow"></div>
+    <div class="controls">
+        <button onclick="prevSlide()">← Prev</button>
+        <button onclick="togglePause()" id="pause-btn">⏸ Pause</button>
+        <button onclick="nextSlide()">Next →</button>
+        <button onclick="toggleMode()">Switch Mode</button>
+    </div>
+    <div id="mode-label">All Photos</div>
+
+    <script>
+        const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
+
+        const PROMPTS = {
+            meet1: 'Someone you\'ve never met before',
+            meet2: 'Group selfie with your whole table',
+            meet3: 'Someone from a different state',
+            meet4: 'Someone who has been to G4 before',
+            meet5: 'Someone who made you laugh today',
+            meet6: 'Someone who works at the hotel',
+            meet7: 'High-five a staff member',
+            create1: 'Recreate a dramatic movie scene',
+            create2: 'Best "retreat exhausted" face',
+            create3: 'Matching outfits or swap',
+            create4: 'Spell "G4" using people or objects',
+            create5: 'Synchronized pose by the ocean',
+            create6: 'Tiniest sandcastle ever',
+            create7: 'Funniest photo you can think of',
+            explore1: 'Something that reminds you of God',
+            explore2: 'Favorite spot at the retreat',
+            explore3: 'Something you didn\'t notice at first',
+            explore4: 'A cozy corner or quiet space',
+            explore5: 'Detail from the table setup or decor',
+            explore6: 'Something that represents "rest"',
+            beach1: 'Coolest seashell',
+            beach2: 'G4 2026 in the sand',
+            wild1: 'JOY in one photo'
+        };
+
+        let slides = [];
+        let currentIndex = 0;
+        let paused = false;
+        let interval = null;
+        let mode = 'all'; // 'all' or 'winners'
+
+        async function loadAll() {
+            const res = await fetch(API_URL + '/api/hunt/feed');
+            return res.json();
+        }
+
+        async function loadWinners() {
+            const res = await fetch(API_URL + '/api/hunt/winners');
+            return res.json();
+        }
+
+        async function init() {
+            const data = await loadAll();
+            if (!data || data.length === 0) {
+                document.getElementById('loading').textContent = 'No photos yet!';
+                return;
+            }
+            slides = data;
+            document.getElementById('loading').style.display = 'none';
+            renderSlides();
+            showSlide(0);
+            startAuto();
+        }
+
+        function renderSlides() {
+            const container = document.getElementById('slideshow');
+            // Title slide
+            let html = `<div class="slide title-slide" id="slide-0">
+                <h1>📸 Scavenger Hunt</h1>
+                <p>G4 2026 — Incredible Gifts</p>
+            </div>`;
+
+            slides.forEach((s, i) => {
+                const promptText = PROMPTS[s.prompt_id] || s.prompt_id;
+                html += `<div class="slide" id="slide-${i + 1}">
+                    <img src="${s.photo_data}" alt="">
+                    <div class="slide-info">
+                        <div class="slide-prompt">${promptText}</div>
+                        ${s.caption ? `<div class="slide-caption">"${s.caption}"</div>` : ''}
+                        <div class="slide-author">— ${s.user_name}</div>
+                        ${s.votes > 0 ? `<div class="slide-votes">💛 ${s.votes} vote${s.votes !== 1 ? 's' : ''}</div>` : ''}
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function showSlide(idx) {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            const total = slides.length + 1; // +1 for title slide
+            currentIndex = ((idx % total) + total) % total;
+            const el = document.getElementById('slide-' + currentIndex);
+            if (el) el.classList.add('active');
+        }
+
+        function nextSlide() { showSlide(currentIndex + 1); }
+        function prevSlide() { showSlide(currentIndex - 1); }
+
+        function startAuto() {
+            if (interval) clearInterval(interval);
+            interval = setInterval(() => { if (!paused) nextSlide(); }, 6000);
+        }
+
+        function togglePause() {
+            paused = !paused;
+            document.getElementById('pause-btn').textContent = paused ? '▶ Play' : '⏸ Pause';
+        }
+
+        async function toggleMode() {
+            if (mode === 'all') {
+                mode = 'winners';
+                document.getElementById('mode-label').textContent = '🏆 Winners Only';
+                const data = await loadWinners();
+                slides = data || [];
+            } else {
+                mode = 'all';
+                document.getElementById('mode-label').textContent = 'All Photos';
+                const data = await loadAll();
+                slides = data || [];
+            }
+            if (slides.length === 0) {
+                document.getElementById('slideshow').innerHTML = '<div class="slide active title-slide"><h1>No photos yet!</h1></div>';
+                return;
+            }
+            renderSlides();
+            showSlide(0);
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'p') togglePause();
+        });
+
+        init();
+    </script>
+</body>
+</html>

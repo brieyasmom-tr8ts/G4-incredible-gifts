@@ -2019,6 +2019,12 @@
             color: white !important;
         }
 
+        .uplift-type-btn.active {
+            background: rgba(201,144,138,0.15) !important;
+            color: var(--accent) !important;
+            font-weight: 700 !important;
+        }
+
         .prayer-type-btn {
             flex: 1;
             padding: 8px 10px;
@@ -2541,9 +2547,8 @@
                     <!-- Connect Sub-tabs -->
                     <div id="connect-sub-tabs" style="display:flex;gap:0;margin:0 16px 12px;border-radius:12px;overflow:hidden;border:1px solid rgba(139,134,128,0.15);background:rgba(255,255,255,0.5);">
                         <button class="connect-tab-btn active" data-connect="sisters" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);position:relative;">Sisters</button>
-                        <button class="connect-tab-btn" data-connect="prayers" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);border-right:1px solid rgba(139,134,128,0.12);">Prayers</button>
-                        <button class="connect-tab-btn" data-connect="encouragement" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">Encouragement</button>
-                        <button class="connect-tab-btn" data-connect="sharing" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);">Sharing</button>
+                        <button class="connect-tab-btn" data-connect="uplift" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);border-right:1px solid rgba(139,134,128,0.12);">Uplift</button>
+                        <button class="connect-tab-btn" data-connect="sharing" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">Polls</button>
                     </div>
                     <!-- Sisters Sub-tab -->
                     <div id="connect-sisters" class="connect-panel" style="margin:0 16px;">
@@ -2566,31 +2571,39 @@
                         </div>
                         <div id="connect-people-list" style="display:flex;flex-direction:column;gap:10px;"></div>
                     </div>
-                    <!-- Prayers Sub-tab -->
-                    <div id="connect-prayers" class="connect-panel" style="display:none;">
-                        <div class="prayer-compose" id="prayer-compose" style="display:none;">
-                            <input type="text" id="prayer-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;font-size:16px;">
-                            <textarea id="prayer-message" placeholder="Share your prayer request..." maxlength="500" style="font-size:16px;"></textarea>
-                            <div class="prayer-char-count"><span id="prayer-char">0</span>/500</div>
-                            <button class="save-btn" id="prayer-send-btn">Share Prayer</button>
+                    <!-- Uplift Sub-tab (Prayers + Encouragement combined) -->
+                    <div id="connect-uplift" class="connect-panel" style="display:none;">
+                        <!-- Type picker -->
+                        <div style="display:flex;gap:0;margin:0 16px 12px;border-radius:10px;overflow:hidden;border:1px solid rgba(139,134,128,0.12);background:rgba(255,255,255,0.4);">
+                            <button class="uplift-type-btn active" data-uplift="prayer" style="flex:1;padding:8px 4px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">Prayers</button>
+                            <button class="uplift-type-btn" data-uplift="encouragement" style="flex:1;padding:8px 4px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);">Encouragement</button>
                         </div>
-                        <div id="prayer-posts"></div>
-                    </div>
-                    <!-- Encouragement Sub-tab -->
-                    <div id="connect-encouragement" class="connect-panel" style="display:none;">
-                        <div class="prayer-compose" id="encourage-compose" style="display:none;">
-                            <input type="text" id="encourage-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;font-size:16px;">
-                            <textarea id="encourage-message" placeholder="Write an encouragement..." maxlength="500" style="font-size:16px;"></textarea>
-                            <div class="prayer-char-count"><span id="encourage-char">0</span>/500</div>
-                            <button class="save-btn" id="encourage-send-btn">Share Encouragement</button>
+                        <!-- Prayer compose -->
+                        <div id="uplift-prayer-section">
+                            <div class="prayer-compose" id="prayer-compose" style="display:none;">
+                                <input type="text" id="prayer-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;font-size:16px;">
+                                <textarea id="prayer-message" placeholder="Share your prayer request..." maxlength="500" style="font-size:16px;"></textarea>
+                                <div class="prayer-char-count"><span id="prayer-char">0</span>/500</div>
+                                <button class="save-btn" id="prayer-send-btn">Share Prayer</button>
+                            </div>
+                            <div id="prayer-posts"></div>
                         </div>
-                        <div id="encourage-posts"></div>
+                        <!-- Encouragement compose -->
+                        <div id="uplift-encouragement-section" style="display:none;">
+                            <div class="prayer-compose" id="encourage-compose" style="display:none;">
+                                <input type="text" id="encourage-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;font-size:16px;">
+                                <textarea id="encourage-message" placeholder="Write an encouragement..." maxlength="500" style="font-size:16px;"></textarea>
+                                <div class="prayer-char-count"><span id="encourage-char">0</span>/500</div>
+                                <button class="save-btn" id="encourage-send-btn">Share Encouragement</button>
+                            </div>
+                            <div id="encourage-posts"></div>
+                        </div>
                     </div>
                     <!-- Sharing Sub-tab (Poll Responses) -->
                     <div id="connect-sharing" class="connect-panel" style="display:none;">
                         <div style="margin:0 16px;">
                             <div id="sharing-feed"></div>
-                            <div id="sharing-empty" style="display:none;text-align:center;padding:2rem 1rem;">
+                            <div id="sharing-empty" style="text-align:center;padding:2rem 1rem;">
                                 <div style="font-size:2rem;margin-bottom:8px;">💬</div>
                                 <div style="font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--light-text);font-style:italic;">No responses yet — check back after a poll goes live!</div>
                             </div>
@@ -3851,6 +3864,17 @@
                     if (panel) panel.style.display = 'block';
                     if (btn.dataset.connect === 'sisters') loadPeople();
                     if (btn.dataset.connect === 'sharing') loadSharingFeed();
+                });
+            });
+
+            // Uplift type toggle (Prayers / Encouragement within the Uplift tab)
+            document.querySelectorAll('.uplift-type-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.uplift-type-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const type = btn.dataset.uplift;
+                    document.getElementById('uplift-prayer-section').style.display = type === 'prayer' ? 'block' : 'none';
+                    document.getElementById('uplift-encouragement-section').style.display = type === 'encouragement' ? 'block' : 'none';
                 });
             });
 

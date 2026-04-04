@@ -2457,6 +2457,7 @@
                     <div id="continue-home-link" style="display:none;"></div>
                     <!-- Weather forecast for Ocean City -->
                     <div id="weather-forecast" style="display:none;margin:8px 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(138,158,122,0.08) 0%,rgba(201,144,138,0.06) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.12);"></div>
+
                 </div>
             </div>
 
@@ -3290,7 +3291,8 @@
                     <div style="width:72px;height:72px;border-radius:50%;margin:0 auto 10px;overflow:hidden;border:2.5px solid var(--blush);background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;">
                         ${user.photo_data ? `<img src="${user.photo_data}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="color:white;font-size:1.6rem;font-family:Playfair Display,serif;font-weight:700;">${user.first_name.charAt(0)}</span>`}
                     </div>
-                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;color:var(--dark-text);margin-bottom:8px;">${displayName}</div>
+                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;color:var(--dark-text);margin-bottom:4px;">${displayName}</div>
+                    ${user.is_team ? '<div style="display:inline-block;background:linear-gradient(135deg,var(--sage),#7a9e6a);color:white;font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:8px;margin-bottom:8px;letter-spacing:0.03em;">G4 TEAM</div>' : '<div style="margin-bottom:4px;"></div>'}
                     ${packingHTML}
                     ${aboutHTML ? `<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:10px;">${aboutHTML}</div>` : ''}
                     ${birthdayHTML}
@@ -3330,10 +3332,12 @@
             row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);cursor:pointer;transition:var(--transition);';
             row.addEventListener('click', () => showUserCard(u.id, u.first_name));
 
+            const teamBadge = u.is_team ? '<span style="display:inline-block;background:linear-gradient(135deg,var(--sage),#7a9e6a);color:white;font-size:0.6rem;font-weight:700;padding:2px 6px;border-radius:6px;margin-left:6px;vertical-align:middle;letter-spacing:0.03em;">G4 TEAM</span>' : '';
+
             row.innerHTML = `
                 <div style="flex-shrink:0;">${avatarHTML}</div>
                 <div style="flex:1;min-width:0;">
-                    <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--dark-text);line-height:1.2;">${displayName}</div>
+                    <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--dark-text);line-height:1.2;">${displayName}${teamBadge}</div>
                     ${detailLine ? `<div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detailLine}</div>` : ''}
                     ${aboutPreview ? `<div style="font-size:0.78rem;color:var(--taupe);font-style:italic;margin-top:3px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">"${aboutPreview}"</div>` : ''}
                 </div>
@@ -3540,7 +3544,6 @@
 
                 <button class="save-btn" id="profile-save-btn" style="width:100%;margin-top:8px;">Save Profile</button>
                 <button style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-size:0.85rem;cursor:pointer;margin-top:8px;" id="profile-close-btn">Close</button>
-                <a href="mailto:Heather@GiveSendGo.com" style="display:block;text-align:center;padding:10px;margin-top:4px;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--accent);text-decoration:none;">Contact</a>
             `;
 
             overlay.appendChild(sheet);

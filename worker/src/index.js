@@ -109,6 +109,9 @@ export default {
         // Add show_responses column to polls if missing
         try { await env.DB.prepare('ALTER TABLE polls ADD COLUMN show_responses INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
 
+        // Add is_team column to users if missing
+        try { await env.DB.prepare('ALTER TABLE users ADD COLUMN is_team INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
+
         return json({ success: true, columns_added: added, tables_ensured: tablesCreated, message: added.length ? 'Added missing columns' : 'All columns already exist' }, corsHeaders);
       }
 
@@ -203,7 +206,7 @@ export default {
       // GET /api/users - list all users (admin)
       if (path === '/api/users' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, created_at FROM users ORDER BY created_at DESC'
+          'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, created_at FROM users ORDER BY created_at DESC'
         ).all();
         return json(results, corsHeaders);
       }
@@ -223,7 +226,7 @@ export default {
         } catch (e) {
           // Fallback if packing_scores table doesn't exist yet
           ({ results } = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about FROM users ORDER BY first_name ASC'
+            'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team FROM users ORDER BY first_name ASC'
           ).all());
         }
         const directory = results.map(u => ({
@@ -251,7 +254,7 @@ export default {
       if (userGetMatch && request.method === 'GET') {
         const userId = parseInt(userGetMatch[1]);
         const user = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, created_at FROM users WHERE id = ?'
+          'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, created_at FROM users WHERE id = ?'
         ).bind(userId).first();
         if (!user) return json({ error: 'User not found' }, corsHeaders, 404);
 
@@ -321,6 +324,16 @@ export default {
       if (userDeleteMatch && request.method === 'DELETE') {
         const userId = parseInt(userDeleteMatch[1]);
         await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/users/:id/team - toggle team badge (admin)
+      const teamToggleMatch = path.match(/^\/api\/users\/(\d+)\/team$/);
+      if (teamToggleMatch && request.method === 'POST') {
+        const userId = parseInt(teamToggleMatch[1]);
+        const { is_team } = await request.json();
+        try { await env.DB.prepare('ALTER TABLE users ADD COLUMN is_team INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
+        await env.DB.prepare('UPDATE users SET is_team = ? WHERE id = ?').bind(is_team ? 1 : 0, userId).run();
         return json({ success: true }, corsHeaders);
       }
 

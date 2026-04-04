@@ -278,7 +278,11 @@
                         'border-radius:12px;background:rgba(255,255,255,0.7);font-family:Cormorant Garamond,serif;font-size:0.95rem;' +
                         'color:var(--dark-text);cursor:pointer;text-align:left;font-weight:600;">' + escHtml(displayName) + '</button>';
                 });
-                html += '</div>';
+                html += '</div>' +
+                    '<div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid rgba(139,134,128,0.15);">' +
+                    '<div style="font-size:0.85rem;color:var(--light-text);margin-bottom:8px;">Not on the list?</div>' +
+                    '<button onclick="showSignUp()" style="padding:10px 24px;border:none;border-radius:12px;background:var(--sage);' +
+                    'color:white;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:700;cursor:pointer;">Sign Up</button></div>';
 
                 const modal = document.getElementById('user-pick-modal');
                 document.getElementById('user-pick-content').innerHTML = html;
@@ -293,6 +297,40 @@
             updateUserBar();
             loadPrompts();
             showToast('Testing as ' + name);
+        }
+
+        function showSignUp() {
+            document.getElementById('user-pick-content').innerHTML =
+                '<div style="text-align:center;margin-bottom:16px;">' +
+                '<div style="font-size:1.8rem;margin-bottom:4px;">✨</div>' +
+                '<div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;">Sign Up</div>' +
+                '<div style="font-size:0.85rem;color:var(--light-text);margin-top:4px;">Enter your name to create an account</div></div>' +
+                '<input type="text" id="signup-first" placeholder="First name" style="width:100%;padding:12px;border:1.5px solid var(--warm-grey);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--dark-text);margin-bottom:8px;">' +
+                '<input type="text" id="signup-last" placeholder="Last name" style="width:100%;padding:12px;border:1.5px solid var(--warm-grey);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--dark-text);margin-bottom:12px;">' +
+                '<button onclick="submitSignUp()" class="save-btn">Create Account</button>' +
+                '<button onclick="pickUser()" style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-family:Cormorant Garamond,serif;font-size:0.9rem;cursor:pointer;margin-top:4px;">Back to list</button>';
+        }
+
+        async function submitSignUp() {
+            const first = document.getElementById('signup-first').value.trim();
+            const last = document.getElementById('signup-last').value.trim();
+            if (!first || !last) {
+                if (!first) document.getElementById('signup-first').style.borderColor = 'var(--accent)';
+                if (!last) document.getElementById('signup-last').style.borderColor = 'var(--accent)';
+                return;
+            }
+            try {
+                const res = await fetch(API_URL + '/api/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ first_name: first, last_initial: last.charAt(0).toUpperCase(), last_name: last })
+                });
+                const result = await res.json();
+                if (result.error) { showToast(result.error); return; }
+                const displayName = result.first_name + (result.last_initial ? ' ' + result.last_initial + '.' : '');
+                selectUser(result.id, displayName);
+                showToast('Welcome, ' + result.first_name + '!');
+            } catch(e) { showToast('Could not create account — check connection'); }
         }
 
         // Auto-detect user from main app's localStorage

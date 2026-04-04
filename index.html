@@ -7043,8 +7043,22 @@
                     showToast(result.error);
                     return;
                 }
-                // Refresh gallery to update vote states
-                loadHuntGallery();
+                // Update just the vote buttons for this prompt inline
+                const allBtns = document.querySelectorAll('.hunt-vote-btn[data-prompt="' + promptId + '"]');
+                allBtns.forEach(b => {
+                    const subId = parseInt(b.dataset.sub);
+                    const card = b.closest('.hunt-gallery-card');
+                    if (subId === submissionId) {
+                        b.className = 'hunt-vote-btn voted';
+                        b.innerHTML = '💛 Voted <span style="margin-left:2px;">' + (parseInt(b.querySelector('span').textContent) + 1) + '</span>';
+                        if (card) card.classList.add('voted');
+                    } else {
+                        const wasVoted = b.classList.contains('voted');
+                        b.className = 'hunt-vote-btn';
+                        if (wasVoted) b.innerHTML = '🤍 Vote <span style="margin-left:2px;">' + Math.max(0, parseInt(b.querySelector('span').textContent) - 1) + '</span>';
+                        if (card) card.classList.remove('voted');
+                    }
+                });
                 showToast('Vote recorded! 💛');
             } catch(e) {
                 showToast('Could not vote, try again');

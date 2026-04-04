@@ -478,7 +478,7 @@
                                     '<div class="gallery-name">' + escHtml(s.user_name) + '</div>' +
                                     (s.caption ? '<div class="gallery-caption">' + escHtml(s.caption) + '</div>' : '');
                                 if (!isOwn) {
-                                    catHtml += '<button class="vote-btn' + (isVoted ? ' voted' : '') + '" onclick="huntVote(\'' + p.id + '\',' + s.id + ')">' +
+                                    catHtml += '<button class="vote-btn' + (isVoted ? ' voted' : '') + '" data-prompt="' + p.id + '" data-sub="' + s.id + '" onclick="huntVote(\'' + p.id + '\',' + s.id + ')">' +
                                         (isVoted ? '💛 Voted' : '🤍 Vote') + ' <span style="margin-left:2px;">' + s.votes + '</span></button>';
                                 } else {
                                     catHtml += '<div class="own-label">Your photo · ' + s.votes + ' vote' + (s.votes !== 1 ? 's' : '') + '</div>';
@@ -510,7 +510,23 @@
                 });
                 const data = await res.json();
                 if (data.error) { showToast(data.error); return; }
-                loadGallery();
+                // Update just the vote buttons for this prompt instead of reloading everything
+                const allCards = document.querySelectorAll('.gallery-card');
+                const allBtns = document.querySelectorAll('.vote-btn[data-prompt="' + promptId + '"]');
+                allBtns.forEach(btn => {
+                    const subId = parseInt(btn.dataset.sub);
+                    const card = btn.closest('.gallery-card');
+                    if (subId === submissionId) {
+                        btn.className = 'vote-btn voted';
+                        btn.innerHTML = '💛 Voted <span style="margin-left:2px;">' + (parseInt(btn.querySelector('span').textContent) + 1) + '</span>';
+                        if (card) card.classList.add('voted');
+                    } else {
+                        const wasVoted = btn.classList.contains('voted');
+                        btn.className = 'vote-btn';
+                        if (wasVoted) btn.innerHTML = '🤍 Vote <span style="margin-left:2px;">' + Math.max(0, parseInt(btn.querySelector('span').textContent) - 1) + '</span>';
+                        if (card) card.classList.remove('voted');
+                    }
+                });
                 showToast('Vote recorded! 💛');
             } catch(e) { showToast('Could not vote — try again'); }
         }

@@ -219,7 +219,7 @@ export default {
             `SELECT u.id, u.first_name, u.last_initial, u.photo_data, u.email, u.phone, u.birthday,
                     u.show_email, u.show_phone, u.show_birthday, u.show_about,
                     u.instagram, u.facebook, u.location, u.job, u.church, u.retreat_years, u.about,
-                    p.score as packing_score
+                    u.is_team, p.score as packing_score
              FROM users u LEFT JOIN packing_scores p ON u.id = p.user_id
              ORDER BY u.first_name ASC`
           ).all());
@@ -244,7 +244,8 @@ export default {
           church: u.show_about ? (u.church || '') : '',
           retreat_years: u.show_about ? (u.retreat_years || '') : '',
           about: u.show_about ? (u.about || '') : '',
-          packing_score: u.packing_score != null ? u.packing_score : null
+          packing_score: u.packing_score != null ? u.packing_score : null,
+          is_team: u.is_team || 0
         }));
         return json(directory, corsHeaders);
       }
@@ -279,6 +280,7 @@ export default {
           church: (isOwner || user.show_about) ? (user.church || '') : '',
           retreat_years: (isOwner || user.show_about) ? (user.retreat_years || '') : '',
           about: (isOwner || user.show_about) ? (user.about || '') : '',
+          is_team: user.is_team || 0,
           created_at: user.created_at
         }, corsHeaders);
       }

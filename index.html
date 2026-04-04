@@ -2809,6 +2809,7 @@
                 <div style="font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--taupe);">Thank you for sharing!</div>
             </div>
             <button class="save-btn" id="poll-close" style="width:100%;display:none;">Close</button>
+            <button id="poll-skip" style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-family:Cormorant Garamond,serif;font-size:0.9rem;cursor:pointer;margin-top:4px;">Skip</button>
         </div>
     </div>
 
@@ -6049,8 +6050,10 @@
             const body = document.getElementById('poll-modal-body');
             const thanks = document.getElementById('poll-modal-thanks');
             const closeBtn = document.getElementById('poll-close');
+            const skipBtn = document.getElementById('poll-skip');
             thanks.style.display = 'none';
             closeBtn.style.display = 'none';
+            skipBtn.style.display = 'block';
 
             if (poll.type === 'multiple_choice' && poll.options.length > 0) {
                 body.innerHTML = poll.options.map(opt => `
@@ -6077,6 +6080,7 @@
                             btn.style.borderColor = 'var(--sage)';
                             thanks.style.display = 'block';
                             closeBtn.style.display = 'block';
+                            skipBtn.style.display = 'none';
                         } catch (e) { /* silently fail */ }
                     });
                 });
@@ -6100,11 +6104,17 @@
                         body.style.display = 'none';
                         thanks.style.display = 'block';
                         closeBtn.style.display = 'block';
+                        skipBtn.style.display = 'none';
                     } catch (e) { /* silently fail */ }
                 });
             }
 
             closeBtn.onclick = () => { modal.style.display = 'none'; onPopupClosed(); };
+            skipBtn.onclick = () => {
+                sessionStorage.setItem('g4poll_skip_' + poll.id, '1');
+                modal.style.display = 'none';
+                onPopupClosed();
+            };
             modal.style.display = 'flex';
             modal.classList.add('animate-in');
         }

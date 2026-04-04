@@ -48,7 +48,65 @@ export default {
             added.push(col);
           } catch(e) { /* already exists */ }
         }
-        return json({ success: true, columns_added: added, message: added.length ? 'Added missing columns' : 'All columns already exist' }, corsHeaders);
+        // Create game tables if they don't exist
+        const gameTables = [
+          `CREATE TABLE IF NOT EXISTS game_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT DEFAULT ''
+          )`,
+          `CREATE TABLE IF NOT EXISTS fun_facts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            author_name TEXT NOT NULL,
+            fact TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`,
+          `CREATE TABLE IF NOT EXISTS packing_scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL UNIQUE,
+            user_name TEXT NOT NULL,
+            score INTEGER NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`,
+          `CREATE TABLE IF NOT EXISTS wyr_questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            option_a TEXT NOT NULL,
+            option_b TEXT NOT NULL,
+            active INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`,
+          `CREATE TABLE IF NOT EXISTS wyr_votes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            question_id INTEGER NOT NULL,
+            choice TEXT NOT NULL CHECK(choice IN ('A', 'B')),
+            created_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(user_id, question_id)
+          )`,
+          `CREATE TABLE IF NOT EXISTS secret_sister (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            giver_id INTEGER NOT NULL UNIQUE,
+            receiver_id INTEGER NOT NULL,
+            note TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now'))
+          )`,
+          `CREATE TABLE IF NOT EXISTS announcements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            body TEXT DEFAULT '',
+            active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`
+        ];
+        const tablesCreated = [];
+        for (const sql of gameTables) {
+          try {
+            await env.DB.prepare(sql).run();
+            tablesCreated.push(sql.match(/CREATE TABLE IF NOT EXISTS (\w+)/)[1]);
+          } catch(e) { /* already exists */ }
+        }
+
+        return json({ success: true, columns_added: added, tables_ensured: tablesCreated, message: added.length ? 'Added missing columns' : 'All columns already exist' }, corsHeaders);
       }
 
       // GET /api/admin/debug-user/:id — see raw DB values for a user

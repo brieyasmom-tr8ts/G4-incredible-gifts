@@ -117,3 +117,57 @@ CREATE TABLE messages (
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE TABLE game_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT DEFAULT ''
+);
+
+CREATE TABLE fun_facts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  author_name TEXT NOT NULL,
+  fact TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE packing_scores (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL UNIQUE,
+  user_name TEXT NOT NULL,
+  score INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE wyr_questions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  option_a TEXT NOT NULL,
+  option_b TEXT NOT NULL,
+  active INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE wyr_votes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  question_id INTEGER NOT NULL,
+  choice TEXT NOT NULL CHECK(choice IN ('A', 'B')),
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(user_id, question_id)
+);
+
+CREATE TABLE secret_sister (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  giver_id INTEGER NOT NULL UNIQUE,
+  receiver_id INTEGER NOT NULL,
+  note TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE announcements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  body TEXT DEFAULT '',
+  active INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now'))
+);

@@ -3501,20 +3501,27 @@
             document.body.appendChild(overlay);
 
             // Toggle buttons
+            function saveToggles() {
+                const toggleData = {
+                    show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,
+                    show_phone: sheet.querySelector('#toggle-phone').classList.contains('on') ? 1 : 0,
+                    show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,
+                    show_about: sheet.querySelector('#toggle-about').classList.contains('on') ? 1 : 0,
+                };
+                Object.assign(currentUser, toggleData);
+                localStorage.setItem('g4user', JSON.stringify(currentUser));
+                fetch(API_URL + '/api/users/' + currentUser.id + '/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(toggleData)
+                });
+            }
             sheet.querySelectorAll('.profile-toggle').forEach(btn => {
-                btn.addEventListener('click', async () => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     btn.classList.toggle('on');
-                    const toggleData = {
-                        show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,
-                        show_phone: sheet.querySelector('#toggle-phone').classList.contains('on') ? 1 : 0,
-                        show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,
-                        show_about: sheet.querySelector('#toggle-about').classList.contains('on') ? 1 : 0,
-                    };
-                    try {
-                        await apiPost('/api/users/' + currentUser.id + '/profile', toggleData);
-                        Object.assign(currentUser, toggleData);
-                        localStorage.setItem('g4user', JSON.stringify(currentUser));
-                    } catch(e) { /* silent — full save will catch errors */ }
+                    saveToggles();
                 });
             });
 

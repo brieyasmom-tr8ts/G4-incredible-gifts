@@ -3806,15 +3806,28 @@
 
                 let html = '';
 
-                // WYR results
+                // WYR results (with inline voting for unvoted questions)
+                const wyrCards = [];
                 if (wyrFeed && wyrFeed.length > 0) {
-                    html += wyrFeed.map(q => `
-                        <div style="margin-bottom:16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);overflow:hidden;">
-                            <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(139,134,128,0.08);">
-                                <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);line-height:1.4;">🤔 Would You Rather</div>
-                                <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);margin-top:2px;">${q.total} vote${q.total !== 1 ? 's' : ''}</div>
-                            </div>
-                            <div style="padding:12px 16px;">
+                    for (const q of wyrFeed) {
+                        const voted = currentUser ? localStorage.getItem('g4wyr_' + q.id + '_' + currentUser.id) : null;
+                        const card = document.createElement('div');
+                        card.style.cssText = 'margin-bottom:16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);overflow:hidden;';
+
+                        const header = `<div style="padding:14px 16px 10px;border-bottom:1px solid rgba(139,134,128,0.08);">
+                            <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);line-height:1.4;">🤔 Would You Rather</div>
+                            <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);margin-top:2px;">${q.total} vote${q.total !== 1 ? 's' : ''}</div>
+                        </div>`;
+
+                        if (!voted && currentUser) {
+                            // Show vote buttons
+                            card.innerHTML = header + `<div style="padding:12px 16px;" id="wyr-vote-area-${q.id}">
+                                <button class="wyr-feed-btn" data-qid="${q.id}" data-choice="A" style="display:block;width:100%;padding:14px 16px;margin-bottom:8px;border:2px solid rgba(201,144,138,0.25);border-radius:14px;background:rgba(255,255,255,0.8);font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;color:var(--dark-text);cursor:pointer;transition:all 0.2s;text-align:center;">${escHtml(q.option_a)}</button>
+                                <button class="wyr-feed-btn" data-qid="${q.id}" data-choice="B" style="display:block;width:100%;padding:14px 16px;border:2px solid rgba(138,158,122,0.25);border-radius:14px;background:rgba(255,255,255,0.8);font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;color:var(--dark-text);cursor:pointer;transition:all 0.2s;text-align:center;">${escHtml(q.option_b)}</button>
+                            </div>`;
+                        } else {
+                            // Show results
+                            card.innerHTML = header + `<div style="padding:12px 16px;">
                                 <div style="margin-bottom:12px;">
                                     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
                                         <span style="font-family:Cormorant Garamond,serif;font-size:0.95rem;font-weight:600;color:var(--accent);">${escHtml(q.option_a)}</span>
@@ -3835,9 +3848,10 @@
                                     </div>
                                     <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--taupe);">${q.voters_b.map(n => escHtml(n)).join(', ') || '<em>None yet</em>'}</div>
                                 </div>
-                            </div>
-                        </div>
-                    `).join('');
+                            </div>`;
+                        }
+                        wyrCards.push(card);
+                    }
                 }
 
                 // Poll responses
@@ -3865,12 +3879,38 @@
                     `).join('');
                 }
 
-                if (!html) {
+                if (!html && wyrCards.length === 0) {
                     feed.innerHTML = '';
                     empty.style.display = 'block';
                 } else {
                     empty.style.display = 'none';
-                    feed.innerHTML = html;
+                    feed.innerHTML = '';
+                    // Add WYR cards as DOM elements (so vote buttons work)
+                    for (const card of wyrCards) feed.appendChild(card);
+                    // Add poll HTML
+                    if (html) feed.insertAdjacentHTML('beforeend', html);
+
+                    // Wire up WYR vote buttons
+                    feed.querySelectorAll('.wyr-feed-btn').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            const qId = parseInt(btn.dataset.qid);
+                            const choice = btn.dataset.choice;
+                            btn.disabled = true;
+                            try {
+                                const res = await apiPost('/api/games/wyr/vote', {
+                                    user_id: currentUser.id,
+                                    question_id: qId,
+                                    choice: choice
+                                });
+                                localStorage.setItem('g4wyr_' + qId + '_' + currentUser.id, choice);
+                                // Reload to show results
+                                loadSharingFeed();
+                            } catch (e) {
+                                showToast('Could not vote. Try again.');
+                                btn.disabled = false;
+                            }
+                        });
+                    });
                 }
             } catch (e) {
                 feed.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light-text);">Could not load responses.</div>';

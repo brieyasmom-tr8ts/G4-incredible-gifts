@@ -2543,6 +2543,7 @@
                         <button class="connect-tab-btn active" data-connect="sisters" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);position:relative;">Sisters</button>
                         <button class="connect-tab-btn" data-connect="prayers" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);border-right:1px solid rgba(139,134,128,0.12);">Prayers</button>
                         <button class="connect-tab-btn" data-connect="encouragement" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">Encouragement</button>
+                        <button class="connect-tab-btn" data-connect="sharing" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);">Sharing</button>
                     </div>
                     <!-- Sisters Sub-tab -->
                     <div id="connect-sisters" class="connect-panel" style="margin:0 16px;">
@@ -2584,6 +2585,16 @@
                             <button class="save-btn" id="encourage-send-btn">Share Encouragement</button>
                         </div>
                         <div id="encourage-posts"></div>
+                    </div>
+                    <!-- Sharing Sub-tab (Poll Responses) -->
+                    <div id="connect-sharing" class="connect-panel" style="display:none;">
+                        <div style="margin:0 16px;">
+                            <div id="sharing-feed"></div>
+                            <div id="sharing-empty" style="display:none;text-align:center;padding:2rem 1rem;">
+                                <div style="font-size:2rem;margin-bottom:8px;">💬</div>
+                                <div style="font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--light-text);font-style:italic;">No responses yet — check back after a poll goes live!</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3076,6 +3087,12 @@
             } catch(e) {
                 avatarCache[userId] = '';
             }
+        }
+
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str || '';
+            return d.innerHTML;
         }
 
         async function apiGet(path) {
@@ -3784,6 +3801,45 @@
             }
         }
 
+        async function loadSharingFeed() {
+            const feed = document.getElementById('sharing-feed');
+            const empty = document.getElementById('sharing-empty');
+            feed.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light-text);font-style:italic;">Loading...</div>';
+            try {
+                const responses = await apiGet('/api/polls/feed');
+                if (!responses || responses.length === 0) {
+                    feed.innerHTML = '';
+                    empty.style.display = 'block';
+                    return;
+                }
+                empty.style.display = 'none';
+                // Group responses by poll question
+                const grouped = {};
+                for (const r of responses) {
+                    if (!grouped[r.poll_id]) grouped[r.poll_id] = { question: r.question, type: r.type, responses: [] };
+                    grouped[r.poll_id].responses.push(r);
+                }
+                feed.innerHTML = Object.values(grouped).map(group => `
+                    <div style="margin-bottom:16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);overflow:hidden;">
+                        <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(139,134,128,0.08);">
+                            <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);line-height:1.4;">📊 ${escHtml(group.question)}</div>
+                            <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);margin-top:2px;">${group.responses.length} response${group.responses.length !== 1 ? 's' : ''}</div>
+                        </div>
+                        <div style="padding:8px 12px;">
+                            ${group.responses.map(r => `
+                                <div style="padding:10px 12px;margin:4px 0;background:rgba(247,240,235,0.5);border-radius:10px;">
+                                    <div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--dark-text);line-height:1.4;">${escHtml(r.response)}</div>
+                                    <div style="font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--accent);font-weight:600;margin-top:4px;">— ${escHtml(r.user_name)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                feed.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light-text);">Could not load responses.</div>';
+            }
+        }
+
         function initPrayerWall() {
             // Connect sub-tab switching
             document.querySelectorAll('.connect-tab-btn').forEach(btn => {
@@ -3794,6 +3850,7 @@
                     const panel = document.getElementById('connect-' + btn.dataset.connect);
                     if (panel) panel.style.display = 'block';
                     if (btn.dataset.connect === 'sisters') loadPeople();
+                    if (btn.dataset.connect === 'sharing') loadSharingFeed();
                 });
             });
 

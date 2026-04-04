@@ -1288,6 +1288,14 @@ async function deactivatePoll() {
     } catch (e) { showToast('Error: ' + e.message); }
 }
 
+async function toggleShowResponses(pollId, show) {
+    try {
+        await apiFetch('/api/polls/show-responses', { method: 'POST', body: { poll_id: pollId, show: !!show } });
+        showToast(show ? 'Answers now visible on Connect > Sharing!' : 'Answers hidden from public');
+        loadPolls();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
 async function deletePoll(id) {
     showModal('Delete Poll', 'Delete this poll and all its responses?', async () => {
         try {
@@ -1386,8 +1394,9 @@ async function loadPolls() {
                             ${p.active ? ' · <span style="color:var(--sage);font-weight:600;">ACTIVE</span>' : ''}
                         </div>
                     </div>
-                    <div style="display:flex;gap:0.4rem;flex-shrink:0;">
+                    <div style="display:flex;gap:0.4rem;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
                         <button class="btn" style="background:var(--blush);color:white;font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="viewResponses(${p.id})">View</button>
+                        <button class="btn" style="background:${p.show_responses ? 'var(--sage)' : 'rgba(200,185,176,0.3)'};color:${p.show_responses ? 'white' : 'var(--taupe)'};font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="toggleShowResponses(${p.id}, ${p.show_responses ? 0 : 1})" title="${p.show_responses ? 'Answers are visible on the Connect > Sharing tab' : 'Click to share answers publicly'}">${p.show_responses ? '👁 Public' : '🔒 Private'}</button>
                         ${p.active ?
                             `<button class="btn btn-danger-outline" style="font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="deactivatePoll()">Stop</button>` :
                             `<button class="btn btn-refresh" style="font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="activatePoll(${p.id})">Activate</button>`

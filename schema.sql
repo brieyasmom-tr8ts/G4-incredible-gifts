@@ -91,6 +91,7 @@ CREATE TABLE polls (
   type TEXT NOT NULL CHECK(type IN ('open', 'multiple_choice')),
   options TEXT DEFAULT '',
   active INTEGER DEFAULT 0,
+  show_responses INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
 

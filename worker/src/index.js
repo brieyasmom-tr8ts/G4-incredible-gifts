@@ -106,6 +106,9 @@ export default {
           } catch(e) { /* already exists */ }
         }
 
+        // Add show_responses column to polls if missing
+        try { await env.DB.prepare('ALTER TABLE polls ADD COLUMN show_responses INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
+
         return json({ success: true, columns_added: added, tables_ensured: tablesCreated, message: added.length ? 'Added missing columns' : 'All columns already exist' }, corsHeaders);
       }
 
@@ -1022,8 +1025,11 @@ export default {
           type TEXT NOT NULL,
           options TEXT DEFAULT '',
           active INTEGER DEFAULT 0,
+          show_responses INTEGER DEFAULT 0,
           created_at TEXT DEFAULT (datetime('now'))
         )`).run();
+        // Add show_responses column if missing (existing tables)
+        try { await env.DB.prepare('ALTER TABLE polls ADD COLUMN show_responses INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
         await env.DB.prepare(`CREATE TABLE IF NOT EXISTS poll_responses (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           poll_id INTEGER NOT NULL,
@@ -1045,7 +1051,7 @@ export default {
       if (path === '/api/polls' && request.method === 'GET') {
         try {
           const { results } = await env.DB.prepare(
-            'SELECT id, question, type, options, active, created_at FROM polls ORDER BY id DESC'
+            'SELECT id, question, type, options, active, show_responses, created_at FROM polls ORDER BY id DESC'
           ).all();
           // Get response counts
           for (const poll of results) {
@@ -1132,6 +1138,33 @@ export default {
           'SELECT id, user_id, user_name, response, created_at FROM poll_responses WHERE poll_id = ? ORDER BY created_at DESC'
         ).bind(pollId).all();
         return json(results, corsHeaders);
+      }
+
+      // POST /api/polls/show-responses - toggle public visibility of poll responses (admin)
+      if (path === '/api/polls/show-responses' && request.method === 'POST') {
+        const { poll_id, show } = await request.json();
+        if (!poll_id) return json({ error: 'poll_id required' }, corsHeaders, 400);
+        // Add column if missing
+        try { await env.DB.prepare('ALTER TABLE polls ADD COLUMN show_responses INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
+        await env.DB.prepare('UPDATE polls SET show_responses = ? WHERE id = ?').bind(show ? 1 : 0, poll_id).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/polls/feed - get recent poll responses for public display (only polls with show_responses = 1)
+      if (path === '/api/polls/feed' && request.method === 'GET') {
+        try {
+          const { results } = await env.DB.prepare(
+            `SELECT pr.user_name, pr.response, pr.created_at, p.question, p.id as poll_id, p.type
+             FROM poll_responses pr
+             JOIN polls p ON pr.poll_id = p.id
+             WHERE p.show_responses = 1
+             ORDER BY pr.created_at DESC
+             LIMIT 100`
+          ).all();
+          return json(results, corsHeaders);
+        } catch (e) {
+          return json([], corsHeaders);
+        }
       }
 
       // DELETE /api/polls/:id - delete a poll and its responses

@@ -26,16 +26,11 @@
         .test-user-bar {
             display: flex; align-items: center; gap: 8px; padding: 12px 16px;
             background: rgba(255,255,255,0.8); border-bottom: 1px solid rgba(139,134,128,0.12);
+            font-size: 0.9rem; color: var(--dark-text);
         }
-        .test-user-bar label { font-size: 0.85rem; color: var(--light-text); }
-        .test-user-bar input {
-            flex: 1; padding: 8px 12px; border: 1.5px solid var(--warm-grey);
-            border-radius: 10px; font-family: Cormorant Garamond, serif; font-size: 0.95rem;
-        }
-        .test-user-bar button {
-            padding: 8px 16px; border: none; border-radius: 10px;
-            background: var(--sage); color: white; font-family: Cormorant Garamond, serif;
-            font-size: 0.9rem; font-weight: 700; cursor: pointer;
+        .test-user-bar .user-name { font-weight: 700; }
+        .test-user-bar .change-link {
+            color: var(--accent); text-decoration: underline; cursor: pointer; font-size: 0.82rem; margin-left: auto;
         }
 
         .container { max-width: 500px; margin: 0 auto; padding: 0 0 40px; }
@@ -133,11 +128,8 @@
         <small>Test all features: upload photos, vote, check gallery. Data is LIVE (will be in real app).</small>
     </div>
 
-    <div class="test-user-bar">
-        <label>Test as:</label>
-        <input type="text" id="test-name" placeholder="Your first name" value="">
-        <input type="number" id="test-id" placeholder="User ID" style="width:70px;">
-        <button onclick="setTestUser()">Go</button>
+    <div class="test-user-bar" id="user-bar">
+        <span>Loading...</span>
     </div>
 
     <div class="container">
@@ -161,6 +153,11 @@
         <div id="gallery-view" style="display:none;">
             <div class="gallery-section" id="gallery-list"></div>
         </div>
+    </div>
+
+    <!-- User Picker Modal -->
+    <div class="modal-overlay" id="user-pick-modal" style="display:none;">
+        <div class="modal" id="user-pick-content"></div>
     </div>
 
     <!-- Instructions Modal -->
@@ -250,25 +247,68 @@
             setTimeout(() => t.remove(), 2500);
         }
 
-        function setTestUser() {
-            const name = document.getElementById('test-name').value.trim();
-            const id = parseInt(document.getElementById('test-id').value);
-            if (!name || !id) { showToast('Enter your name and user ID'); return; }
-            testUser = { id, name };
-            localStorage.setItem('g4_test_hunt_user', JSON.stringify(testUser));
-            showToast('Testing as ' + name + ' (ID: ' + id + ')');
-            loadPrompts();
+        function updateUserBar() {
+            const bar = document.getElementById('user-bar');
+            if (testUser.id) {
+                bar.innerHTML = 'Testing as: <span class="user-name">' + escHtml(testUser.name) + '</span> (ID ' + testUser.id + ')' +
+                    '<span class="change-link" onclick="pickUser()">Switch</span>';
+            } else {
+                bar.innerHTML = '<span>No user detected.</span><span class="change-link" onclick="pickUser()">Sign in</span>';
+            }
         }
 
-        // Restore saved test user
-        try {
-            const saved = localStorage.getItem('g4_test_hunt_user');
-            if (saved) {
-                testUser = JSON.parse(saved);
-                document.getElementById('test-name').value = testUser.name;
-                document.getElementById('test-id').value = testUser.id;
-            }
-        } catch(e) {}
+        async function pickUser() {
+            // Fetch all users and show a picker
+            try {
+                const res = await fetch(API_URL + '/api/users');
+                const users = await res.json();
+                if (!users || users.length === 0) { showToast('No users found — sign up in the main app first'); return; }
+
+                let html = '<div style="text-align:center;margin-bottom:16px;">' +
+                    '<div style="font-size:1.8rem;margin-bottom:4px;">👋</div>' +
+                    '<div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;">Who are you?</div>' +
+                    '<div style="font-size:0.85rem;color:var(--light-text);margin-top:4px;">Pick your name to test the hunt</div></div>' +
+                    '<div style="max-height:50vh;overflow-y:auto;">';
+
+                users.sort((a, b) => (a.first_name || '').localeCompare(b.first_name || ''));
+                users.forEach(u => {
+                    const displayName = u.first_name + (u.last_initial ? ' ' + u.last_initial + '.' : '');
+                    html += '<button onclick="selectUser(' + u.id + ',\'' + escHtml(displayName).replace(/'/g, "\\'") + '\')" ' +
+                        'style="display:block;width:100%;padding:12px 16px;margin-bottom:6px;border:1px solid rgba(139,134,128,0.15);' +
+                        'border-radius:12px;background:rgba(255,255,255,0.7);font-family:Cormorant Garamond,serif;font-size:0.95rem;' +
+                        'color:var(--dark-text);cursor:pointer;text-align:left;font-weight:600;">' + escHtml(displayName) + '</button>';
+                });
+                html += '</div>';
+
+                const modal = document.getElementById('user-pick-modal');
+                document.getElementById('user-pick-content').innerHTML = html;
+                modal.style.display = 'flex';
+            } catch(e) { showToast('Could not load users — check connection'); }
+        }
+
+        function selectUser(id, name) {
+            testUser = { id, name };
+            localStorage.setItem('g4user', JSON.stringify({ id, first_name: name }));
+            document.getElementById('user-pick-modal').style.display = 'none';
+            updateUserBar();
+            loadPrompts();
+            showToast('Testing as ' + name);
+        }
+
+        // Auto-detect user from main app's localStorage
+        (function() {
+            try {
+                const saved = localStorage.getItem('g4user');
+                if (saved) {
+                    const u = JSON.parse(saved);
+                    if (u && u.id) {
+                        const displayName = u.first_name + (u.last_initial ? ' ' + u.last_initial + '.' : '');
+                        testUser = { id: u.id, name: displayName };
+                    }
+                }
+            } catch(e) {}
+            updateUserBar();
+        })();
 
         async function loadPrompts() {
             if (!testUser.id) return;
@@ -300,7 +340,7 @@
         }
 
         function openUpload(promptId) {
-            if (!testUser.id) { showToast('Set your test user first!'); return; }
+            if (!testUser.id) { pickUser(); return; }
             currentPrompt = ALL_PROMPTS.find(p => p.id === promptId);
             if (!currentPrompt) return;
             compressedPhoto = null;
@@ -376,7 +416,7 @@
         }
 
         async function loadGallery() {
-            if (!testUser.id) { showToast('Set your test user first!'); return; }
+            if (!testUser.id) { pickUser(); return; }
             const list = document.getElementById('gallery-list');
             list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--light-text);">Loading gallery...</div>';
 

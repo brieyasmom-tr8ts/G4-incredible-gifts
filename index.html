@@ -4557,8 +4557,23 @@
                 statusDot.style.display = 'none';
                 if (daysUntil === 1) {
                     statusText.textContent = 'Tomorrow! Get ready \u2728';
-                } else if (daysUntil <= 7) {
-                    statusText.textContent = daysUntil + ' days away \u2013 start packing!';
+                } else if (daysUntil <= 14) {
+                    const msgs = {
+                        2: "2 days! Pack snacks \ud83c\udf6a",
+                        3: "3 days \u2013 outfit planning time \ud83d\udc57",
+                        4: "4 days \u2013 your sisters can\u2019t wait!",
+                        5: "5 days \u2013 start that packing list \u270f\ufe0f",
+                        6: "6 days \u2013 it\u2019s almost here!",
+                        7: "1 week away! \ud83c\udf89",
+                        8: "8 days \u2013 did someone say beach? \ud83c\udfd6\ufe0f",
+                        9: "9 days \u2013 good things are coming \u2728",
+                        10: "10 days \u2013 start counting down!",
+                        11: "11 days \u2013 clear that calendar \ud83d\udcc5",
+                        12: "12 days \u2013 you deserve this getaway \ud83d\udc9b",
+                        13: "13 days \u2013 something special is brewing \u2615",
+                        14: "2 weeks out! Get excited \ud83d\ude4c"
+                    };
+                    statusText.textContent = msgs[daysUntil] || daysUntil + ' days to go!';
                 } else {
                     statusText.textContent = 'April 9\u201311 \u2013 Ocean City, MD';
                 }

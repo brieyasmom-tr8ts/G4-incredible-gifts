@@ -3502,7 +3502,20 @@
 
             // Toggle buttons
             sheet.querySelectorAll('.profile-toggle').forEach(btn => {
-                btn.addEventListener('click', () => btn.classList.toggle('on'));
+                btn.addEventListener('click', async () => {
+                    btn.classList.toggle('on');
+                    const toggleData = {
+                        show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,
+                        show_phone: sheet.querySelector('#toggle-phone').classList.contains('on') ? 1 : 0,
+                        show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,
+                        show_about: sheet.querySelector('#toggle-about').classList.contains('on') ? 1 : 0,
+                    };
+                    try {
+                        await apiPost('/api/users/' + currentUser.id + '/profile', toggleData);
+                        Object.assign(currentUser, toggleData);
+                        localStorage.setItem('g4user', JSON.stringify(currentUser));
+                    } catch(e) { /* silent — full save will catch errors */ }
+                });
             });
 
             // Photo upload

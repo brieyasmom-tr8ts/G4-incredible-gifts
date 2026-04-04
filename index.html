@@ -3390,8 +3390,18 @@
             }
         }
 
-        function openProfile() {
+        async function openProfile() {
             if (!currentUser) return;
+
+            // Sync from server before showing profile
+            try {
+                const serverData = await apiGet('/api/users/' + currentUser.id + '?owner=1');
+                if (serverData && !serverData.error) {
+                    const fields = ['show_email', 'show_phone', 'show_birthday', 'show_about', 'email', 'phone', 'birthday', 'photo_data', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
+                    fields.forEach(f => { if (serverData[f] !== undefined) currentUser[f] = serverData[f]; });
+                    localStorage.setItem('g4user', JSON.stringify(currentUser));
+                }
+            } catch(e) { /* use cached data if offline */ }
 
             const overlay = document.createElement('div');
             overlay.className = 'profile-overlay';
@@ -3515,13 +3525,13 @@
                 };
                 Object.assign(currentUser, toggleData);
                 localStorage.setItem('g4user', JSON.stringify(currentUser));
-                showToast('Saving: phone=' + toggleData.show_phone + ' about=' + toggleData.show_about);
                 fetch(API_URL + '/api/users/' + currentUser.id + '/profile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(toggleData)
                 }).then(r => r.json()).then(d => {
                     if (d.error) showToast('Error: ' + d.error);
+                    else showToast('Updated');
                 }).catch(e => showToast('Network error'));
             }
             sheet.querySelectorAll('.profile-toggle').forEach(btn => {

@@ -226,22 +226,21 @@ export default {
             `SELECT u.id, u.first_name, u.last_initial, u.photo_data, u.email, u.phone, u.birthday,
                     u.show_email, u.show_phone, u.show_birthday, u.show_about,
                     u.instagram, u.facebook, u.location, u.job, u.church, u.retreat_years, u.about,
-                    COALESCE(u.is_team, 0) as is_team, p.score as packing_score
+                    p.score as packing_score
              FROM users u LEFT JOIN packing_scores p ON u.id = p.user_id
              ORDER BY u.first_name ASC`
           ).all());
         } catch (e) {
-          // Fallback if packing_scores or is_team column doesn't exist yet
-          try {
-            ({ results } = await env.DB.prepare(
-              'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team FROM users ORDER BY first_name ASC'
-            ).all());
-          } catch (e2) {
-            ({ results } = await env.DB.prepare(
-              'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about FROM users ORDER BY first_name ASC'
-            ).all());
-          }
+          ({ results } = await env.DB.prepare(
+            'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about FROM users ORDER BY first_name ASC'
+          ).all());
         }
+        // Add is_team safely
+        try {
+          const { results: teamRows } = await env.DB.prepare('SELECT id, is_team FROM users WHERE is_team = 1').all();
+          const teamIds = new Set(teamRows.map(r => r.id));
+          for (const u of results) u.is_team = teamIds.has(u.id) ? 1 : 0;
+        } catch (e) { /* column doesn't exist yet */ }
         const directory = results.map(u => ({
           id: u.id,
           first_name: u.first_name,

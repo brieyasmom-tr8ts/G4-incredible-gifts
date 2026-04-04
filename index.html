@@ -3315,8 +3315,7 @@
             const list = document.getElementById('connect-people-list');
             list.innerHTML = '';
             const query = (filter || '').toLowerCase();
-            // Filter out current user — they have their own card at top
-            const others = allDirectoryUsers.filter(u => !currentUser || u.id !== currentUser.id);
+            const others = allDirectoryUsers;
             const filtered = query
                 ? others.filter(u => u.first_name.toLowerCase().includes(query) || (u.last_initial && (u.first_name + ' ' + u.last_initial).toLowerCase().includes(query)))
                 : others;

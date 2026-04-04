@@ -1411,6 +1411,30 @@
             background: linear-gradient(180deg, rgba(240,224,216,0.85) 0%, rgba(247,240,235,0.8) 100%);
         }
 
+        .contact-btn {
+            position: absolute;
+            top: calc(12px + max(env(safe-area-inset-top, 0px), 24px));
+            left: 16px;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(184,122,110,0.25);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            text-decoration: none;
+            transition: var(--transition);
+            backdrop-filter: blur(4px);
+        }
+
+        .contact-btn:hover {
+            background: rgba(201,144,138,0.15);
+            transform: scale(1.05);
+        }
+
         /* Floral overlay - background behind content cards */
         .floral-overlay {
             position: fixed;
@@ -2312,6 +2336,9 @@
 
     <div class="app-container">
         <div class="header" style="position:relative;">
+            <a href="mailto:Heather@GiveSendGo.com" class="contact-btn" aria-label="Contact Us" title="Contact Heather">
+                <span style="font-size:1.1rem;">✉️</span>
+            </a>
             <button id="header-profile-btn" style="display:none;position:absolute;top:calc(12px + max(env(safe-area-inset-top,0px),24px));right:16px;background:none;border:none;cursor:pointer;padding:0;z-index:10;" aria-label="My Profile">
                 <div id="header-avatar" class="welcome-avatar-placeholder" style="width:32px;height:32px;font-size:0.75rem;">?</div>
             </button>

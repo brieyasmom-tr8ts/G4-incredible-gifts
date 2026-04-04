@@ -8,7 +8,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background: #1a1a1a;
+            background: linear-gradient(135deg, #2a2320 0%, #1a1a1a 40%, #1e2a1e 100%);
             color: white;
             font-family: Cormorant Garamond, serif;
             overflow: hidden;
@@ -64,16 +64,32 @@
         }
         .title-slide {
             flex-direction: column;
-            gap: 16px;
+            gap: 8px;
+            text-align: center;
+        }
+        .title-slide .title-icon {
+            font-size: 4rem;
+            margin-bottom: 8px;
         }
         .title-slide h1 {
             font-family: Playfair Display, serif;
-            font-size: 4rem;
+            font-size: 3.5rem;
             font-weight: 700;
+            letter-spacing: 1px;
         }
         .title-slide p {
-            font-size: 1.8rem;
-            color: rgba(255,255,255,0.7);
+            font-family: Cormorant Garamond, serif;
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.5);
+            font-style: italic;
+        }
+        .title-slide .title-theme {
+            font-family: Playfair Display, serif;
+            font-size: 1.1rem;
+            color: rgba(201,144,138,0.7);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-top: 4px;
         }
         .start-screen {
             display: flex;
@@ -81,41 +97,83 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            gap: 20px;
+            gap: 0;
+            text-align: center;
+            padding: 20px;
+        }
+        .start-logo {
+            font-size: 3.5rem;
+            margin-bottom: 16px;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
         }
         .start-screen h1 {
             font-family: Playfair Display, serif;
-            font-size: 3rem;
+            font-size: 2.8rem;
             font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
         }
-        .start-screen p {
+        .start-screen .subtitle {
+            font-family: Cormorant Garamond, serif;
             font-size: 1.3rem;
-            color: rgba(255,255,255,0.6);
-            margin-bottom: 10px;
+            color: rgba(255,255,255,0.5);
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+        .start-screen .theme {
+            font-family: Playfair Display, serif;
+            font-size: 1.1rem;
+            color: rgba(201,144,138,0.8);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+        }
+        .start-divider {
+            width: 60px;
+            height: 1px;
+            background: rgba(255,255,255,0.15);
+            margin: 0 auto 28px;
+        }
+        .start-screen .pick-label {
+            font-family: Cormorant Garamond, serif;
+            font-size: 1rem;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 16px;
         }
         .mode-buttons {
             display: flex;
             gap: 20px;
         }
         .mode-btn {
-            padding: 20px 40px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 16px;
-            background: rgba(255,255,255,0.08);
+            padding: 24px 44px;
+            border: 1.5px solid rgba(255,255,255,0.15);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.05);
             color: white;
             font-family: Playfair Display, serif;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            text-align: center;
         }
         .mode-btn:hover {
-            background: rgba(255,255,255,0.15);
-            border-color: rgba(255,255,255,0.5);
-            transform: scale(1.05);
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(201,144,138,0.5);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
         }
-        .mode-btn .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
-        .mode-btn .sub { font-family: Cormorant Garamond, serif; font-size: 0.9rem; font-weight: 400; color: rgba(255,255,255,0.5); margin-top: 4px; }
+        .mode-btn .icon { font-size: 2.2rem; display: block; margin-bottom: 10px; }
+        .mode-btn .sub { font-family: Cormorant Garamond, serif; font-size: 0.85rem; font-weight: 400; color: rgba(255,255,255,0.4); margin-top: 6px; }
+        @media (max-width: 600px) {
+            .start-screen h1 { font-size: 2rem; }
+            .mode-buttons { flex-direction: column; gap: 12px; }
+            .mode-btn { padding: 18px 32px; }
+        }
         .controls {
             position: fixed;
             bottom: 20px;
@@ -152,8 +210,12 @@
 </head>
 <body>
     <div class="start-screen" id="start-screen">
-        <h1>📸 Scavenger Hunt</h1>
-        <p>G4 2026 — Incredible Gifts</p>
+        <div class="start-logo">📸</div>
+        <h1>Scavenger Hunt</h1>
+        <div class="subtitle">G4 2026</div>
+        <div class="theme">Incredible Gifts</div>
+        <div class="start-divider"></div>
+        <div class="pick-label">Choose a slideshow</div>
         <div class="mode-buttons">
             <button class="mode-btn" onclick="startSlideshow('all')">
                 <span class="icon">🖼️</span>
@@ -249,8 +311,10 @@
             const container = document.getElementById('slideshow');
             // Title slide
             let html = `<div class="slide title-slide" id="slide-0">
-                <h1>📸 Scavenger Hunt</h1>
-                <p>G4 2026 — Incredible Gifts</p>
+                <div class="title-icon">📸</div>
+                <h1>Scavenger Hunt</h1>
+                <p>G4 2026</p>
+                <div class="title-theme">Incredible Gifts</div>
             </div>`;
 
             slides.forEach((s, i) => {

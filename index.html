@@ -6403,7 +6403,7 @@
         }, 1500);
 
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { event.waitUntil(caches.open('v1').then(cache => cache.addAll(['/']))) }); self.addEventListener('fetch', event => { event.respondWith(caches.match(event.request).then(response => response || fetch(event.request))) });`)).catch(() => {});
+            navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { self.skipWaiting(); }); self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => self.clients.claim())); }); self.addEventListener('fetch', event => { event.respondWith(fetch(event.request).catch(() => caches.match(event.request))); });`)).catch(() => {});
         }
     </script>
 </body>

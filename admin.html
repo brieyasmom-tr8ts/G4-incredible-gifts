@@ -758,6 +758,12 @@ function getKey() { return sessionStorage.getItem('admin_key') || ''; }
 function authenticate() {
     const pw = document.getElementById('gate-password').value.trim();
     if (!pw) return;
+    if (pw !== 'g4p@ssw0rd') {
+        document.getElementById('gate-password').value = '';
+        document.getElementById('gate-password').placeholder = 'Incorrect password';
+        document.getElementById('gate-password').style.borderColor = '#c9908a';
+        return;
+    }
     sessionStorage.setItem('admin_key', pw);
     document.getElementById('password-gate').classList.add('hidden');
     document.getElementById('app').style.display = '';
@@ -775,7 +781,7 @@ function logout() {
 }
 
 // Check for existing session
-if (getKey()) {
+if (getKey() === 'g4p@ssw0rd') {
     document.getElementById('password-gate').classList.add('hidden');
     document.getElementById('app').style.display = '';
     refreshAll();

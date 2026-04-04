@@ -230,11 +230,11 @@ export default {
         if (fields.length === 0) return json({ error: 'No fields to update' }, corsHeaders, 400);
 
         values.push(userId);
-        await env.DB.prepare(
-          `UPDATE users SET ${fields.join(', ')} WHERE id = ?`
-        ).bind(...values).run();
+        const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
+        await env.DB.prepare(sql).bind(...values).run();
 
-        return json({ success: true }, corsHeaders);
+        // Return what was saved for debugging
+        return json({ success: true, fields_updated: fields, sql_debug: sql }, corsHeaders);
       }
 
       // GET /api/users/:id/photo - get user photo (lightweight)

@@ -3563,7 +3563,9 @@
                 }
 
                 try {
-                    await apiPost('/api/users/' + currentUser.id + '/profile', profileData);
+                    const saveResult = await apiPost('/api/users/' + currentUser.id + '/profile', profileData);
+                    console.log('Profile save result:', saveResult);
+                    console.log('Profile data sent:', JSON.stringify({show_about: profileData.show_about, show_phone: profileData.show_phone, location: profileData.location, job: profileData.job, church: profileData.church}));
                     // Update local cache
                     Object.assign(currentUser, profileData);
                     localStorage.setItem('g4user', JSON.stringify(currentUser));

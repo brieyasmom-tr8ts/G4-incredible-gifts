@@ -885,6 +885,40 @@ export default {
         return json(voters, corsHeaders);
       }
 
+      // GET /api/games/wyr/feed - public feed of WYR results with voters
+      if (path === '/api/games/wyr/feed' && request.method === 'GET') {
+        try {
+          const { results: questions } = await env.DB.prepare(
+            'SELECT id, option_a, option_b, created_at FROM wyr_questions ORDER BY id DESC'
+          ).all();
+          const feed = [];
+          for (const q of questions) {
+            const { results: votes } = await env.DB.prepare(
+              'SELECT v.choice, u.first_name, u.last_initial FROM wyr_votes v JOIN users u ON v.user_id = u.id WHERE v.question_id = ? ORDER BY v.choice, u.first_name'
+            ).bind(q.id).all();
+            if (votes.length === 0) continue;
+            const votersA = votes.filter(v => v.choice === 'A').map(v => v.last_initial ? `${v.first_name} ${v.last_initial}.` : v.first_name);
+            const votersB = votes.filter(v => v.choice === 'B').map(v => v.last_initial ? `${v.first_name} ${v.last_initial}.` : v.first_name);
+            const total = votes.length;
+            feed.push({
+              id: q.id,
+              option_a: q.option_a,
+              option_b: q.option_b,
+              count_a: votersA.length,
+              count_b: votersB.length,
+              pct_a: Math.round((votersA.length / total) * 100),
+              pct_b: Math.round((votersB.length / total) * 100),
+              total,
+              voters_a: votersA,
+              voters_b: votersB
+            });
+          }
+          return json(feed, corsHeaders);
+        } catch (e) {
+          return json([], corsHeaders);
+        }
+      }
+
       // DELETE /api/games/wyr/questions/:id - delete a question and its votes
       const wyrDeleteMatch = path.match(/^\/api\/games\/wyr\/questions\/(\d+)$/);
       if (wyrDeleteMatch && request.method === 'DELETE') {

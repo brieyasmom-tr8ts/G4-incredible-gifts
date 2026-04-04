@@ -106,15 +106,23 @@ export default {
         const cleanInitial = cleanLastName ? cleanLastName.charAt(0).toUpperCase() : (last_initial || '').trim().charAt(0).toUpperCase();
         const displayName = cleanInitial ? `${cleanName} ${cleanInitial}.` : cleanName;
 
-        // Check for duplicate
+        // Check for existing user — return them (re-login)
         const existing = await env.DB.prepare(
-          'SELECT id FROM users WHERE first_name = ? AND last_initial = ?'
+          'SELECT id, first_name, last_initial FROM users WHERE first_name = ? AND last_initial = ?'
         ).bind(cleanName, cleanInitial).first();
 
         if (existing) {
+          // Update last_name if provided and missing
+          if (cleanLastName && !existing.last_name) {
+            await env.DB.prepare('UPDATE users SET last_name = ? WHERE id = ?').bind(cleanLastName, existing.id).run();
+          }
           return json({
-            error: `"${displayName}" is already taken. If that's you, try clearing your app data. Otherwise, try a nickname.`
-          }, corsHeaders, 409);
+            id: existing.id,
+            first_name: existing.first_name,
+            last_initial: existing.last_initial,
+            display_name: existing.last_initial ? `${existing.first_name} ${existing.last_initial}.` : existing.first_name,
+            returning: true
+          }, corsHeaders);
         }
 
         const result = await env.DB.prepare(

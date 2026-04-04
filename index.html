@@ -3510,11 +3510,14 @@
                 };
                 Object.assign(currentUser, toggleData);
                 localStorage.setItem('g4user', JSON.stringify(currentUser));
+                showToast('Saving: phone=' + toggleData.show_phone + ' about=' + toggleData.show_about);
                 fetch(API_URL + '/api/users/' + currentUser.id + '/profile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(toggleData)
-                });
+                }).then(r => r.json()).then(d => {
+                    if (d.error) showToast('Error: ' + d.error);
+                }).catch(e => showToast('Network error'));
             }
             sheet.querySelectorAll('.profile-toggle').forEach(btn => {
                 btn.addEventListener('click', (e) => {

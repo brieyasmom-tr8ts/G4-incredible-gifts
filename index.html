@@ -2002,6 +2002,138 @@
             font-weight: 700 !important;
         }
 
+        .hunt-view-btn.active {
+            background: var(--blush) !important;
+            color: white !important;
+        }
+        .hunt-category {
+            margin-bottom: 18px;
+        }
+        .hunt-category-title {
+            font-family: Playfair Display, serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin-bottom: 8px;
+            padding-left: 2px;
+        }
+        .hunt-prompt-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(139,134,128,0.12);
+            border-radius: 14px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .hunt-prompt-card:active {
+            transform: scale(0.98);
+        }
+        .hunt-prompt-card.completed {
+            border-color: rgba(138,158,122,0.3);
+            background: rgba(138,158,122,0.06);
+        }
+        .hunt-prompt-check {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--warm-grey);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+        .hunt-prompt-card.completed .hunt-prompt-check {
+            border-color: var(--sage);
+            background: var(--sage);
+            color: white;
+        }
+        .hunt-prompt-text {
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.92rem;
+            color: var(--dark-text);
+            line-height: 1.4;
+            flex: 1;
+        }
+        .hunt-prompt-card.completed .hunt-prompt-text {
+            color: var(--light-text);
+        }
+        .hunt-gallery-prompt {
+            margin-bottom: 20px;
+        }
+        .hunt-gallery-prompt-title {
+            font-family: Playfair Display, serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin-bottom: 10px;
+            padding-left: 2px;
+        }
+        .hunt-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .hunt-gallery-card {
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            border: 1px solid rgba(139,134,128,0.12);
+            transition: var(--transition);
+        }
+        .hunt-gallery-card.voted {
+            border-color: var(--blush);
+            box-shadow: 0 0 0 2px rgba(201,144,138,0.25);
+        }
+        .hunt-gallery-card img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            display: block;
+        }
+        .hunt-gallery-info {
+            padding: 8px 10px;
+        }
+        .hunt-gallery-name {
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--dark-text);
+        }
+        .hunt-gallery-caption {
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.78rem;
+            color: var(--light-text);
+            font-style: italic;
+            margin-top: 2px;
+            line-height: 1.3;
+        }
+        .hunt-vote-btn {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            padding: 4px 10px;
+            border: 1px solid rgba(139,134,128,0.2);
+            border-radius: 16px;
+            background: none;
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.78rem;
+            color: var(--light-text);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .hunt-vote-btn.voted {
+            border-color: var(--blush);
+            background: rgba(201,144,138,0.1);
+            color: var(--accent);
+        }
+
         .prayer-type-btn {
             flex: 1;
             padding: 8px 10px;
@@ -2486,6 +2618,36 @@
                 </div>
             </div>
 
+            <!-- SCAVENGER HUNT TAB -->
+            <div id="hunt-tab" class="tab-content" style="display:none;">
+                <div style="padding:0 0 100px;">
+                    <!-- Hunt Header -->
+                    <div style="text-align:center;padding:20px 20px 8px;">
+                        <div style="font-size:2rem;margin-bottom:4px;">📸</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--dark-text);">Scavenger Hunt</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;margin-top:4px;line-height:1.5;padding:0 16px;">Snap as many as you want! Your sisters will vote for the best photo in each category. Winners announced at 7 PM!</div>
+                        <button id="hunt-how-btn" style="margin-top:8px;padding:6px 16px;border:1px solid rgba(184,122,110,0.25);border-radius:16px;background:rgba(255,255,255,0.7);font-family:Cormorant Garamond,serif;font-size:0.82rem;font-weight:600;color:var(--accent);cursor:pointer;">How It Works</button>
+                    </div>
+
+                    <!-- View toggle -->
+                    <div style="display:flex;gap:0;margin:12px 16px;border-radius:12px;overflow:hidden;border:1px solid rgba(139,134,128,0.15);background:rgba(255,255,255,0.5);">
+                        <button class="hunt-view-btn active" data-view="prompts" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">My Hunt</button>
+                        <button class="hunt-view-btn" data-view="gallery" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);">Gallery & Vote</button>
+                    </div>
+
+                    <!-- My Hunt view (prompts + upload) -->
+                    <div id="hunt-prompts-view" style="margin:0 16px;">
+                        <div id="hunt-progress" style="text-align:center;margin-bottom:12px;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);"></div>
+                        <div id="hunt-prompts-list"></div>
+                    </div>
+
+                    <!-- Gallery view -->
+                    <div id="hunt-gallery-view" style="display:none;margin:0 16px;">
+                        <div id="hunt-gallery-list"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- JOURNAL TAB -->
             <div id="journal-tab" class="tab-content">
                 <div class="journal-container">
@@ -2866,6 +3028,39 @@
             <div id="ss-received-note" style="font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--dark-text);line-height:1.6;padding:16px 20px;background:rgba(201,144,138,0.08);border-radius:14px;border:1px solid rgba(201,144,138,0.15);font-style:italic;margin-bottom:16px;"></div>
             <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);margin-bottom:16px;">— Your Secret Sister 💛</div>
             <button class="save-btn" id="ss-received-close" style="width:100%;">That Made My Day!</button>
+        </div>
+    </div>
+
+    <!-- Hunt Instructions Modal -->
+    <div class="modal-overlay" id="hunt-instructions-modal" style="display:none;">
+        <div class="modal" style="text-align:center;">
+            <div style="font-size:2.2rem;margin-bottom:8px;">📸</div>
+            <h2 style="font-family:Playfair Display,serif;font-size:1.2rem;margin-bottom:12px;">Scavenger Hunt!</h2>
+            <div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--dark-text);line-height:1.7;text-align:left;padding:0 8px;">
+                <div style="margin-bottom:10px;"><strong>1.</strong> Browse the prompts and pick the ones that look fun to you — no need to do them all!</div>
+                <div style="margin-bottom:10px;"><strong>2.</strong> Tap a prompt, snap a photo (or choose from your camera roll), and add a caption if you want.</div>
+                <div style="margin-bottom:10px;"><strong>3.</strong> Switch to <strong>Gallery & Vote</strong> to see what your sisters are capturing. Vote for your favorite photo in each category!</div>
+                <div style="margin-bottom:10px;"><strong>4.</strong> You get <strong>one vote per category</strong> — choose wisely! You can change your vote until <strong>7 PM</strong>.</div>
+                <div><strong>5.</strong> Be creative! Winners will be announced tonight. Your photos will be in the slideshow! 🎉</div>
+            </div>
+            <button class="save-btn" id="hunt-instructions-close" style="width:100%;margin-top:16px;">Let's Go!</button>
+        </div>
+    </div>
+
+    <!-- Hunt Photo Upload Modal -->
+    <div class="modal-overlay" id="hunt-upload-modal" style="display:none;">
+        <div class="modal">
+            <div style="text-align:center;margin-bottom:12px;">
+                <div id="hunt-upload-prompt" style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;color:var(--dark-text);line-height:1.4;"></div>
+            </div>
+            <div id="hunt-upload-preview" style="display:none;margin-bottom:12px;border-radius:12px;overflow:hidden;max-height:250px;">
+                <img id="hunt-preview-img" style="width:100%;object-fit:cover;">
+            </div>
+            <input type="file" id="hunt-photo-input" accept="image/*" style="display:none;">
+            <button id="hunt-choose-photo" class="save-btn" style="width:100%;margin-bottom:8px;">📷 Take or Choose Photo</button>
+            <input type="text" id="hunt-caption-input" placeholder="Add a caption (optional)" style="width:100%;padding:12px;border:1.5px solid var(--warm-grey);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);margin-bottom:8px;">
+            <button id="hunt-submit-photo" class="save-btn" style="width:100%;display:none;background:var(--sage);">Submit Photo</button>
+            <button id="hunt-upload-cancel" style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-family:Cormorant Garamond,serif;font-size:0.9rem;cursor:pointer;">Cancel</button>
         </div>
     </div>
 
@@ -6611,7 +6806,288 @@
 
             // 5. Secret Sister
             checkSecretSister();
+
+            // 6. Scavenger Hunt popup (if it's hunt time)
+            checkHuntPopup();
         }, 1500);
+
+        // ===== SCAVENGER HUNT =====
+        const HUNT_PROMPTS = [
+            { category: 'Meet Your Sisters', prompts: [
+                { id: 'meet1', text: 'Take a photo with someone you\'ve never met before' },
+                { id: 'meet2', text: 'Group selfie with your whole table' },
+                { id: 'meet3', text: 'Someone who lives in a different state than you' },
+                { id: 'meet4', text: 'Find someone who has been to G4 before' },
+                { id: 'meet5', text: 'Take a photo with someone who made you laugh today — laughing!' },
+                { id: 'meet6', text: 'Take a photo with someone who works at the hotel' },
+                { id: 'meet7', text: 'High-five a staff member' }
+            ]},
+            { category: 'Get Creative', prompts: [
+                { id: 'create1', text: 'Recreate a dramatic movie scene' },
+                { id: 'create2', text: 'Your best "retreat exhausted" face' },
+                { id: 'create3', text: 'Match outfits with someone (or swap something!)' },
+                { id: 'create4', text: 'Spell "G4" using people or objects' },
+                { id: 'create5', text: 'Do a synchronized pose with 3+ people by the ocean' },
+                { id: 'create6', text: 'Build the tiniest sandcastle possible and act super proud' },
+                { id: 'create7', text: 'Just the funniest photo you can think of' }
+            ]},
+            { category: 'Explore', prompts: [
+                { id: 'explore1', text: 'Capture something beautiful that reminds you of God' },
+                { id: 'explore2', text: 'Your favorite spot at the retreat' },
+                { id: 'explore3', text: 'Something you didn\'t notice at first' },
+                { id: 'explore4', text: 'A cozy corner or quiet space' },
+                { id: 'explore5', text: 'A detail from the table setup or decor' },
+                { id: 'explore6', text: 'Something that represents "rest"' }
+            ]},
+            { category: 'Beach Vibes', prompts: [
+                { id: 'beach1', text: 'Find the coolest seashell you can' },
+                { id: 'beach2', text: 'Write G4 2026 in the sand' }
+            ]},
+            { category: 'Wild Card', prompts: [
+                { id: 'wild1', text: 'Capture JOY in one photo' }
+            ]}
+        ];
+
+        const ALL_PROMPTS = HUNT_PROMPTS.flatMap(c => c.prompts.map(p => ({ ...p, category: c.category })));
+        let huntCompletedIds = new Set();
+        let huntCurrentPrompt = null;
+        let huntCompressedPhoto = null;
+
+        function isHuntTime() {
+            const now = new Date();
+            const huntStart = new Date('2026-04-10T16:00:00Z'); // 12:00 PM ET = 4 PM UTC
+            return now >= huntStart;
+        }
+
+        function checkHuntTabSwap() {
+            if (!isHuntTime()) return;
+            const journeyBtn = document.querySelector('.nav-btn[data-tab="journey"]');
+            if (journeyBtn && journeyBtn.dataset.tab !== 'hunt') {
+                journeyBtn.dataset.tab = 'hunt';
+                journeyBtn.querySelector('.nav-icon').textContent = '📸';
+                journeyBtn.querySelector('span:last-child').textContent = 'Hunt';
+            }
+        }
+
+        async function loadHuntTab() {
+            if (!currentUser) return;
+            try {
+                const myPrompts = await apiGet('/api/hunt/my?user_id=' + currentUser.id);
+                huntCompletedIds = new Set(myPrompts);
+            } catch(e) { huntCompletedIds = new Set(); }
+            renderHuntPrompts();
+        }
+
+        function renderHuntPrompts() {
+            const list = document.getElementById('hunt-prompts-list');
+            const total = ALL_PROMPTS.length;
+            const done = huntCompletedIds.size;
+            document.getElementById('hunt-progress').innerHTML = `<span style="font-weight:700;color:var(--accent);">${done}</span> of ${total} captured`;
+
+            let html = '';
+            HUNT_PROMPTS.forEach(cat => {
+                html += `<div class="hunt-category"><div class="hunt-category-title">${escHtml(cat.category)}</div>`;
+                cat.prompts.forEach(p => {
+                    const completed = huntCompletedIds.has(p.id);
+                    html += `<div class="hunt-prompt-card${completed ? ' completed' : ''}" onclick="openHuntUpload('${p.id}')">
+                        <div class="hunt-prompt-check">${completed ? '✓' : ''}</div>
+                        <div class="hunt-prompt-text">${escHtml(p.text)}</div>
+                    </div>`;
+                });
+                html += '</div>';
+            });
+            list.innerHTML = html;
+        }
+
+        function openHuntUpload(promptId) {
+            const prompt = ALL_PROMPTS.find(p => p.id === promptId);
+            if (!prompt) return;
+            huntCurrentPrompt = prompt;
+            huntCompressedPhoto = null;
+            document.getElementById('hunt-upload-prompt').textContent = prompt.text;
+            document.getElementById('hunt-upload-preview').style.display = 'none';
+            document.getElementById('hunt-preview-img').src = '';
+            document.getElementById('hunt-photo-input').value = '';
+            document.getElementById('hunt-caption-input').value = '';
+            document.getElementById('hunt-submit-photo').style.display = 'none';
+            document.getElementById('hunt-upload-modal').style.display = 'flex';
+        }
+
+        // Hunt photo input handler
+        document.getElementById('hunt-choose-photo').addEventListener('click', () => {
+            document.getElementById('hunt-photo-input').click();
+        });
+
+        document.getElementById('hunt-photo-input').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const maxSize = 800;
+                    let w = img.width, h = img.height;
+                    if (w > maxSize || h > maxSize) {
+                        if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                        else { w = Math.round(w * maxSize / h); h = maxSize; }
+                    }
+                    canvas.width = w;
+                    canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    huntCompressedPhoto = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('hunt-preview-img').src = huntCompressedPhoto;
+                    document.getElementById('hunt-upload-preview').style.display = 'block';
+                    document.getElementById('hunt-submit-photo').style.display = 'block';
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('hunt-submit-photo').addEventListener('click', async () => {
+            if (!huntCompressedPhoto || !huntCurrentPrompt || !currentUser) return;
+            const btn = document.getElementById('hunt-submit-photo');
+            btn.disabled = true;
+            btn.textContent = 'Uploading...';
+            try {
+                await apiPost('/api/hunt/submit', {
+                    user_id: currentUser.id,
+                    user_name: currentUser.first_name + (currentUser.last_initial ? ' ' + currentUser.last_initial : ''),
+                    prompt_id: huntCurrentPrompt.id,
+                    photo_data: huntCompressedPhoto,
+                    caption: document.getElementById('hunt-caption-input').value.trim()
+                });
+                huntCompletedIds.add(huntCurrentPrompt.id);
+                renderHuntPrompts();
+                document.getElementById('hunt-upload-modal').style.display = 'none';
+                showToast('Photo submitted! 📸');
+            } catch(e) {
+                showToast('Upload failed, try again');
+            }
+            btn.disabled = false;
+            btn.textContent = 'Submit Photo';
+        });
+
+        document.getElementById('hunt-upload-cancel').addEventListener('click', () => {
+            document.getElementById('hunt-upload-modal').style.display = 'none';
+        });
+
+        // Hunt view toggle
+        document.querySelectorAll('.hunt-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.hunt-view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const view = btn.dataset.view;
+                document.getElementById('hunt-prompts-view').style.display = view === 'prompts' ? '' : 'none';
+                document.getElementById('hunt-gallery-view').style.display = view === 'gallery' ? '' : 'none';
+                if (view === 'gallery') loadHuntGallery();
+            });
+        });
+
+        async function loadHuntGallery() {
+            const list = document.getElementById('hunt-gallery-list');
+            list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--light-text);font-family:Cormorant Garamond,serif;">Loading gallery...</div>';
+
+            // Load all prompts that have submissions
+            let html = '';
+            for (const cat of HUNT_PROMPTS) {
+                let catHtml = '';
+                for (const p of cat.prompts) {
+                    try {
+                        const data = await apiGet('/api/hunt/gallery/' + encodeURIComponent(p.id) + '?user_id=' + currentUser.id);
+                        if (data.submissions && data.submissions.length > 0) {
+                            catHtml += `<div class="hunt-gallery-prompt">
+                                <div class="hunt-gallery-prompt-title">${escHtml(p.text)}</div>
+                                <div class="hunt-gallery-grid">`;
+                            data.submissions.forEach(s => {
+                                const isVoted = data.my_vote === s.id;
+                                const isOwn = s.user_id === currentUser.id;
+                                catHtml += `<div class="hunt-gallery-card${isVoted ? ' voted' : ''}">
+                                    <img src="${s.photo_data}" alt="" loading="lazy">
+                                    <div class="hunt-gallery-info">
+                                        <div class="hunt-gallery-name">${escHtml(s.user_name)}</div>
+                                        ${s.caption ? `<div class="hunt-gallery-caption">${escHtml(s.caption)}</div>` : ''}
+                                        ${!isOwn ? `<button class="hunt-vote-btn${isVoted ? ' voted' : ''}" onclick="huntVote('${p.id}', ${s.id}, this)" data-prompt="${p.id}" data-sub="${s.id}">
+                                            ${isVoted ? '💛 Voted' : '🤍 Vote'} <span style="margin-left:2px;">${s.votes}</span>
+                                        </button>` : `<div style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--sage);margin-top:4px;">Your photo · ${s.votes} vote${s.votes !== 1 ? 's' : ''}</div>`}
+                                    </div>
+                                </div>`;
+                            });
+                            catHtml += '</div></div>';
+                        }
+                    } catch(e) { /* skip */ }
+                }
+                if (catHtml) {
+                    html += `<div style="margin-bottom:24px;"><div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);margin-bottom:12px;">${escHtml(cat.category)}</div>${catHtml}</div>`;
+                }
+            }
+
+            if (!html) {
+                html = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:2rem;margin-bottom:8px;">📷</div><div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--light-text);">No photos yet! Be the first to submit one.</div></div>';
+            }
+            list.innerHTML = html;
+        }
+
+        async function huntVote(promptId, submissionId, btn) {
+            if (!currentUser) return;
+            try {
+                const result = await apiPost('/api/hunt/vote', {
+                    user_id: currentUser.id,
+                    prompt_id: promptId,
+                    submission_id: submissionId
+                });
+                if (result.error) {
+                    showToast(result.error);
+                    return;
+                }
+                // Refresh gallery to update vote states
+                loadHuntGallery();
+                showToast('Vote recorded! 💛');
+            } catch(e) {
+                showToast('Could not vote, try again');
+            }
+        }
+
+        // Hunt instructions modal
+        document.getElementById('hunt-how-btn').addEventListener('click', () => {
+            document.getElementById('hunt-instructions-modal').style.display = 'flex';
+        });
+        document.getElementById('hunt-instructions-close').addEventListener('click', () => {
+            document.getElementById('hunt-instructions-modal').style.display = 'none';
+        });
+
+        // Hunt popup at launch if it's hunt time and user hasn't seen it
+        function checkHuntPopup() {
+            if (!isHuntTime()) return;
+            if (localStorage.getItem('g4hunt_seen_2026')) return;
+            queuePopup(() => {
+                localStorage.setItem('g4hunt_seen_2026', '1');
+                document.getElementById('hunt-instructions-modal').style.display = 'flex';
+                document.getElementById('hunt-instructions-close').onclick = () => {
+                    document.getElementById('hunt-instructions-modal').style.display = 'none';
+                    // Switch to hunt tab
+                    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                    const huntBtn = document.querySelector('.nav-btn[data-tab="hunt"]');
+                    if (huntBtn) huntBtn.classList.add('active');
+                    document.getElementById('hunt-tab').classList.add('active');
+                    loadHuntTab();
+                    onPopupClosed();
+                };
+            });
+        }
+
+        // Tab swap check on load and periodically
+        checkHuntTabSwap();
+        setInterval(checkHuntTabSwap, 60000);
+
+        // Hook into tab switching to load hunt data
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.tab === 'hunt') loadHuntTab();
+            });
+        });
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { self.skipWaiting(); }); self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => self.clients.claim())); }); self.addEventListener('fetch', event => { event.respondWith(fetch(event.request).catch(() => caches.match(event.request))); });`)).catch(() => {});

@@ -4556,24 +4556,24 @@
                 indicator.style.display = 'inline-flex';
                 statusDot.style.display = 'none';
                 if (daysUntil <= 0) {
-                    statusText.textContent = 'Today is the day! See you for our first session at 7 PM';
+                    statusText.textContent = 'Today is the day! See you for our first session at 7 PM! \ud83c\udf89';
                 } else if (daysUntil === 1) {
-                    statusText.textContent = 'Can you believe it is tomorrow!!';
+                    statusText.textContent = 'Can you believe it is TOMORROW?! \ud83d\ude31\u2728';
                 } else if (daysUntil <= 14) {
                     const msgs = {
-                        2: "2 days \u2013 make your packing list and check it twice!",
-                        3: "3 days \u2013 have you listened to the Spotify songs yet?",
-                        4: "4 days \u2013 share a prayer request or encouragement on the Uplift page!",
-                        5: "5 days \u2013 check out the schedule below and fill out your profile!",
-                        6: "6 days \u2013 it\u2019s almost here!",
-                        7: "1 week away! \ud83c\udf89",
-                        8: "8 days \u2013 did someone say beach? \ud83c\udfd6\ufe0f",
-                        9: "9 days \u2013 good things are coming \u2728",
-                        10: "10 days \u2013 start counting down!",
-                        11: "11 days \u2013 clear that calendar \ud83d\udcc5",
-                        12: "12 days \u2013 you deserve this getaway \ud83d\udc9b",
-                        13: "13 days \u2013 something special is brewing \u2615",
-                        14: "2 weeks out! Get excited \ud83d\ude4c"
+                        2: "2 Days \u2013 Make your packing list and check it twice! \u2705\u2705",
+                        3: "3 Days \u2013 Have you listened to the Spotify songs yet? \ud83c\udfa7",
+                        4: "4 Days \u2013 Share a prayer request or encouragement on the Uplift page! \ud83d\ude4f",
+                        5: "5 Days \u2013 Check out the schedule below and fill out your profile! \ud83d\udc47",
+                        6: "6 Days \u2013 We can almost smell the ocean air! \ud83c\udf0a",
+                        7: "1 Week Away \u2013 Not that we\u2019re counting or anything! \ud83c\udf89",
+                        8: "8 Days \u2013 Did someone say beach?! \ud83c\udfd6\ufe0f",
+                        9: "9 Days \u2013 Good things are coming, sis! \u2728",
+                        10: "10 Days \u2013 Double digits! The countdown is REAL! \ud83d\udd25",
+                        11: "11 Days \u2013 Clear that calendar, you\u2019ve got plans! \ud83d\udcc5",
+                        12: "12 Days \u2013 You deserve this getaway more than you know! \ud83d\udc9b",
+                        13: "13 Days \u2013 Something special is brewing! \u2615",
+                        14: "2 Weeks Out \u2013 Get excited, it\u2019s coming FAST! \ud83d\ude4c"
                     };
                     statusText.textContent = msgs[daysUntil] || daysUntil + ' days to go!';
                 } else {

@@ -7021,8 +7021,8 @@
                                         <div class="hunt-gallery-name">${escHtml(s.user_name)}</div>
                                         ${s.caption ? `<div class="hunt-gallery-caption">${escHtml(s.caption)}</div>` : ''}
                                         ${!isOwn ? `<button class="hunt-vote-btn${isVoted ? ' voted' : ''}" onclick="huntVote('${p.id}', ${s.id}, this)" data-prompt="${p.id}" data-sub="${s.id}">
-                                            ${isVoted ? '💛 Voted' : '🤍 Vote'} <span style="margin-left:2px;">${s.votes}</span>
-                                        </button>` : `<div style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--sage);margin-top:4px;">Your photo · ${s.votes} vote${s.votes !== 1 ? 's' : ''}</div>`}
+                                            ${isVoted ? '💛 Voted' : '🤍 Vote'}
+                                        </button>` : `<div style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--sage);margin-top:4px;">Your photo</div>`}
                                     </div>
                                 </div>`;
                             });
@@ -7060,12 +7060,12 @@
                     const card = b.closest('.hunt-gallery-card');
                     if (subId === submissionId) {
                         b.className = 'hunt-vote-btn voted';
-                        b.innerHTML = '💛 Voted <span style="margin-left:2px;">' + (parseInt(b.querySelector('span').textContent) + 1) + '</span>';
+                        b.innerHTML = '💛 Voted';
                         if (card) card.classList.add('voted');
                     } else {
                         const wasVoted = b.classList.contains('voted');
                         b.className = 'hunt-vote-btn';
-                        if (wasVoted) b.innerHTML = '🤍 Vote <span style="margin-left:2px;">' + Math.max(0, parseInt(b.querySelector('span').textContent) - 1) + '</span>';
+                        if (wasVoted) b.innerHTML = '🤍 Vote';
                         if (card) card.classList.remove('voted');
                     }
                 });

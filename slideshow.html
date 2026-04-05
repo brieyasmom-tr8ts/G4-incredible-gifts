@@ -237,6 +237,7 @@
         <button onclick="nextSlide()">Next →</button>
         <button id="btn-all" onclick="switchMode('all')">All Photos</button>
         <button id="btn-winners" onclick="switchMode('winners')">🏆 Winners</button>
+        <button id="btn-votes" onclick="toggleVotes()">Show Votes</button>
         <button onclick="backToStart()">Exit</button>
     </div>
 
@@ -276,6 +277,7 @@
         let paused = false;
         let interval = null;
         let mode = 'all'; // 'all' or 'winners'
+        let showVotes = false;
 
         async function loadAll() {
             const res = await fetch(API_URL + '/api/hunt/feed');
@@ -325,7 +327,7 @@
                         <div class="slide-prompt">${promptText}</div>
                         ${s.caption ? `<div class="slide-caption">"${s.caption}"</div>` : ''}
                         <div class="slide-author">— ${s.user_name}</div>
-                        ${s.votes > 0 ? `<div class="slide-votes">💛 ${s.votes} vote${s.votes !== 1 ? 's' : ''}</div>` : ''}
+                        ${showVotes && s.votes > 0 ? `<div class="slide-votes">💛 ${s.votes} vote${s.votes !== 1 ? 's' : ''}</div>` : ''}
                     </div>
                 </div>`;
             });
@@ -370,6 +372,16 @@
         function updateModeButtons() {
             document.getElementById('btn-all').className = mode === 'all' ? 'active-mode' : '';
             document.getElementById('btn-winners').className = mode === 'winners' ? 'active-mode' : '';
+            document.getElementById('btn-votes').className = showVotes ? 'active-mode' : '';
+            document.getElementById('btn-votes').textContent = showVotes ? '🙈 Hide Votes' : 'Show Votes';
+        }
+
+        function toggleVotes() {
+            showVotes = !showVotes;
+            updateModeButtons();
+            const saved = currentIndex;
+            renderSlides();
+            showSlide(saved);
         }
 
         function backToStart() {

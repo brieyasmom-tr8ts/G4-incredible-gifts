@@ -486,9 +486,9 @@
                                     (s.caption ? '<div class="gallery-caption">' + escHtml(s.caption) + '</div>' : '');
                                 if (!isOwn) {
                                     catHtml += '<button class="vote-btn' + (isVoted ? ' voted' : '') + '" data-prompt="' + p.id + '" data-sub="' + s.id + '" onclick="huntVote(\'' + p.id + '\',' + s.id + ')">' +
-                                        (isVoted ? '💛 Voted' : '🤍 Vote') + ' <span style="margin-left:2px;">' + s.votes + '</span></button>';
+                                        (isVoted ? '💛 Voted' : '🤍 Vote') + '</button>';
                                 } else {
-                                    catHtml += '<div class="own-label">Your photo · ' + s.votes + ' vote' + (s.votes !== 1 ? 's' : '') + '</div>';
+                                    catHtml += '<div class="own-label">Your photo</div>';
                                 }
                                 catHtml += '</div></div>';
                             });
@@ -525,12 +525,12 @@
                     const card = btn.closest('.gallery-card');
                     if (subId === submissionId) {
                         btn.className = 'vote-btn voted';
-                        btn.innerHTML = '💛 Voted <span style="margin-left:2px;">' + (parseInt(btn.querySelector('span').textContent) + 1) + '</span>';
+                        btn.innerHTML = '💛 Voted';
                         if (card) card.classList.add('voted');
                     } else {
                         const wasVoted = btn.classList.contains('voted');
                         btn.className = 'vote-btn';
-                        if (wasVoted) btn.innerHTML = '🤍 Vote <span style="margin-left:2px;">' + Math.max(0, parseInt(btn.querySelector('span').textContent) - 1) + '</span>';
+                        if (wasVoted) btn.innerHTML = '🤍 Vote';
                         if (card) card.classList.remove('voted');
                     }
                 });

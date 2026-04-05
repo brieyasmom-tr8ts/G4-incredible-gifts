@@ -187,6 +187,21 @@
             color: rgba(255,255,255,0.5);
         }
 
+        .batch-btn {
+            padding: 10px 20px;
+            border: 1.5px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-family: Playfair Display, serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 56px;
+        }
+        .batch-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); }
+        .batch-btn.active { background: rgba(201,144,138,0.4); border-color: rgba(201,144,138,0.7); }
         @media (max-width: 600px) {
             .start-screen h1 { font-size: 2rem; }
             .slide-fact { font-size: 1.8rem; max-width: 85vw; }
@@ -203,7 +218,12 @@
         <div class="theme">Incredible Gifts</div>
         <div class="start-divider"></div>
         <div class="start-count" id="start-count">Loading...</div>
+        <div style="margin-bottom:20px;">
+            <label style="font-size:1rem;color:rgba(255,255,255,0.4);display:block;margin-bottom:8px;">How many to play?</label>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;" id="batch-buttons"></div>
+        </div>
         <button class="start-btn" onclick="startGame()">Start the Game</button>
+        <button onclick="resetPlayed()" style="margin-top:12px;padding:8px 20px;border:none;background:none;color:rgba(255,255,255,0.3);font-family:Cormorant Garamond,serif;font-size:0.85rem;cursor:pointer;">Reset played list</button>
     </div>
     <div class="loading" id="loading" style="display:none;">Loading facts...</div>
     <div id="slideshow"></div>
@@ -218,16 +238,18 @@
     <script>
         const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
 
+        let allFacts = [];
         let facts = [];
         let currentIndex = 0;
-        let revealed = false; // is current fact's author revealed?
+        let revealed = false;
+        let batchSize = 0; // 0 = all
+        let usedIds = JSON.parse(localStorage.getItem('g4_whoami_used') || '[]');
 
         async function loadFacts() {
             const res = await fetch(API_URL + '/api/games/funfacts');
             return res.json();
         }
 
-        // Shuffle array
         function shuffle(arr) {
             for (let i = arr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -236,11 +258,37 @@
             return arr;
         }
 
+        function buildBatchButtons(total) {
+            const container = document.getElementById('batch-buttons');
+            const unused = total - usedIds.length;
+            const options = [5, 10, 15, 20];
+            let html = '';
+            options.forEach(n => {
+                if (n <= total) {
+                    html += '<button class="batch-btn' + (batchSize === n ? ' active' : '') + '" onclick="pickBatch(' + n + ')">' + n + '</button>';
+                }
+            });
+            html += '<button class="batch-btn' + (batchSize === 0 ? ' active' : '') + '" onclick="pickBatch(0)">All</button>';
+            container.innerHTML = html;
+
+            if (usedIds.length > 0 && unused > 0) {
+                document.getElementById('start-count').innerHTML = total + ' fun facts submitted<br><span style="font-size:0.85rem;color:rgba(138,158,122,0.7);">' + unused + ' not yet played</span>';
+            }
+        }
+
+        function pickBatch(n) {
+            batchSize = n;
+            document.querySelectorAll('.batch-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
         // Load count on start screen
         (async function() {
             try {
-                const data = await loadFacts();
-                document.getElementById('start-count').textContent = data.length + ' fun facts submitted';
+                allFacts = await loadFacts();
+                document.getElementById('start-count').textContent = allFacts.length + ' fun facts submitted';
+                batchSize = Math.min(10, allFacts.length) || 0;
+                buildBatchButtons(allFacts.length);
             } catch(e) {
                 document.getElementById('start-count').textContent = '';
             }
@@ -250,8 +298,25 @@
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('loading').style.display = 'flex';
 
-            const data = await loadFacts();
-            facts = shuffle(data || []);
+            if (allFacts.length === 0) allFacts = await loadFacts();
+            let pool = allFacts || [];
+
+            // Prefer facts not yet used
+            let unused = pool.filter(f => !usedIds.includes(f.id));
+            if (unused.length === 0) {
+                // All played — reset and use all
+                usedIds = [];
+                localStorage.setItem('g4_whoami_used', '[]');
+                unused = pool;
+            }
+
+            shuffle(unused);
+            const count = batchSize > 0 ? Math.min(batchSize, unused.length) : unused.length;
+            facts = unused.slice(0, count);
+
+            // Track which ones we're using
+            facts.forEach(f => { if (!usedIds.includes(f.id)) usedIds.push(f.id); });
+            localStorage.setItem('g4_whoami_used', JSON.stringify(usedIds));
 
             if (facts.length === 0) {
                 document.getElementById('loading').textContent = 'No fun facts yet!';
@@ -378,6 +443,13 @@
             document.getElementById('slideshow').innerHTML = '';
             document.getElementById('controls').style.display = 'none';
             document.getElementById('start-screen').style.display = 'flex';
+            buildBatchButtons(allFacts.length);
+        }
+
+        function resetPlayed() {
+            usedIds = [];
+            localStorage.setItem('g4_whoami_used', '[]');
+            buildBatchButtons(allFacts.length);
         }
 
         // Keyboard controls

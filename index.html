@@ -2718,20 +2718,13 @@
                 </div>
             </div>
 
-            <!-- PRAYER WALL TAB -->
-            <div id="prayer-tab" class="tab-content">
+            <!-- CONNECT TAB (Directory) -->
+            <div id="connect-tab" class="tab-content">
                 <div class="prayer-wall">
                     <div class="prayer-wall-header">
                         <h2>Connect</h2>
-                        <p>Know each other. Lift each other up.</p>
+                        <p>Get to know your retreat sisters.</p>
                     </div>
-                    <!-- Connect Sub-tabs -->
-                    <div id="connect-sub-tabs" style="display:flex;gap:0;margin:0 16px 12px;border-radius:12px;overflow:hidden;border:1px solid rgba(139,134,128,0.15);background:rgba(255,255,255,0.5);">
-                        <button class="connect-tab-btn active" data-connect="sisters" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);position:relative;">Directory</button>
-                        <button class="connect-tab-btn" data-connect="uplift" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);border-right:1px solid rgba(139,134,128,0.12);position:relative;">Uplift<span id="badge-uplift" class="tab-badge" style="display:none;"></span></button>
-                        <button class="connect-tab-btn" data-connect="sharing" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);position:relative;">Polls<span id="badge-sharing" class="tab-badge" style="display:none;"></span></button>
-                    </div>
-                    <!-- Sisters Sub-tab -->
                     <div id="connect-sisters" class="connect-panel" style="margin:0 16px;">
                         <div id="profile-prompt" style="display:none;margin-bottom:14px;padding:14px 16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(201,144,138,0.18);cursor:pointer;">
                             <div style="display:flex;align-items:center;gap:12px;">
@@ -2757,8 +2750,17 @@
                         </div>
                         <div id="connect-people-list" style="display:flex;flex-direction:column;gap:10px;"></div>
                     </div>
-                    <!-- Uplift Sub-tab (Unified Prayer + Encouragement wall) -->
-                    <div id="connect-uplift" class="connect-panel" style="display:none;margin:0 16px;">
+                </div>
+            </div>
+
+            <!-- UPLIFT TAB (Prayer Wall + Encouragement) -->
+            <div id="uplift-tab" class="tab-content">
+                <div class="prayer-wall">
+                    <div class="prayer-wall-header">
+                        <h2>Uplift</h2>
+                        <p>Lift each other up in prayer and encouragement.</p>
+                    </div>
+                    <div id="connect-uplift" class="connect-panel" style="margin:0 16px;">
                         <!-- Compose -->
                         <div class="prayer-compose" id="prayer-compose" style="display:none;">
                             <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -2773,8 +2775,17 @@
                         <!-- Unified feed -->
                         <div id="prayer-posts"></div>
                     </div>
-                    <!-- Sharing Sub-tab (Poll Responses) -->
-                    <div id="connect-sharing" class="connect-panel" style="display:none;">
+                </div>
+            </div>
+
+            <!-- POLLS TAB -->
+            <div id="polls-tab" class="tab-content">
+                <div class="prayer-wall">
+                    <div class="prayer-wall-header">
+                        <h2>Polls</h2>
+                        <p>Vote and see what everyone thinks.</p>
+                    </div>
+                    <div id="connect-sharing" class="connect-panel">
                         <div style="margin:0 16px;">
                             <div id="sharing-feed"></div>
                             <div id="sharing-empty" style="text-align:center;padding:2rem 1rem;">
@@ -4381,7 +4392,9 @@
         const ALL_NAV_ITEMS = [
             { key: 'nav_schedule', tab: 'schedule', icon: '\ud83d\udcc6', label: 'Schedule' },
             { key: 'nav_moments', tab: 'moments', icon: '\ud83d\udcf8', label: 'Moments' },
-            { key: 'nav_connect', tab: 'prayer', icon: '\ud83d\udc9b', label: 'Connect' },
+            { key: 'nav_connect', tab: 'connect', icon: '\ud83d\udc9b', label: 'Connect' },
+            { key: 'nav_uplift', tab: 'uplift', icon: '\ud83d\ude4f', label: 'Uplift' },
+            { key: 'nav_polls', tab: 'polls', icon: '\ud83d\udcac', label: 'Polls' },
             { key: 'nav_journey', tab: 'journey', icon: '\ud83c\udf81', label: 'Journey' },
             { key: 'nav_journal', tab: 'journal', icon: '\u2728', label: 'Journal' },
             { key: 'nav_hunt', tab: 'hunt', icon: '\ud83d\udcf7', label: 'Hunt' },
@@ -6186,7 +6199,9 @@
             const btn = e.target.closest('.nav-btn');
             if (!btn) return;
             const tab = btn.dataset.tab;
-            if (tab === 'prayer') loadPrayerWall();
+            if (tab === 'connect') loadPeople();
+            if (tab === 'uplift') loadPrayerWall();
+            if (tab === 'polls') loadSharingFeed();
             if (tab === 'journey') loadNotAloneInsights();
             if (tab === 'moments') loadMoments();
             if (tab === 'hunt') loadHuntTab();

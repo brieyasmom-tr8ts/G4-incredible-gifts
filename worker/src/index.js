@@ -1123,15 +1123,45 @@ export default {
 
       // POST /api/feedback - submit retreat feedback
       if (path === '/api/feedback' && request.method === 'POST') {
-        const { user_id, name, rating, favorite, improve, come_again, other } = await request.json();
+        const body = await request.json();
+        const rating = body.rating;
 
         if (!rating) {
           return json({ error: 'Rating is required' }, corsHeaders, 400);
         }
 
+        // Migrate feedback table to add new columns
+        const newCols = [
+          ['liked_most', 'TEXT DEFAULT ""'],
+          ['liked_least', 'TEXT DEFAULT ""'],
+          ['ratings', 'TEXT DEFAULT ""'],
+          ['rating_comments', 'TEXT DEFAULT ""'],
+          ['more_of', 'TEXT DEFAULT ""'],
+          ['invite_friend', 'TEXT DEFAULT ""'],
+          ['final_thoughts', 'TEXT DEFAULT ""'],
+        ];
+        for (const [col, type] of newCols) {
+          try { await env.DB.prepare(`ALTER TABLE feedback ADD COLUMN ${col} ${type}`).run(); } catch(e) { /* exists */ }
+        }
+
         await env.DB.prepare(
-          'INSERT INTO feedback (user_id, name, rating, favorite, improve, come_again, other) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        ).bind(user_id || null, name || 'Anonymous', rating, favorite || '', improve || '', come_again || '', other || '').run();
+          'INSERT INTO feedback (user_id, name, rating, favorite, improve, come_again, other, liked_most, liked_least, ratings, rating_comments, more_of, invite_friend, final_thoughts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(
+          body.user_id || null,
+          body.name || 'Anonymous',
+          rating,
+          body.favorite || '',
+          body.improve || '',
+          body.come_again || '',
+          body.other || '',
+          body.liked_most || '',
+          body.liked_least || '',
+          body.ratings || '',
+          body.rating_comments || '',
+          body.more_of || '',
+          body.invite_friend || '',
+          body.final_thoughts || ''
+        ).run();
 
         return json({ success: true }, corsHeaders);
       }

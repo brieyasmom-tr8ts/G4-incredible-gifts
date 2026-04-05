@@ -2527,27 +2527,49 @@
                     </div>
 
                     <!-- Feedback Form -->
-                    <div style="margin:12px 16px 24px;padding:20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);">
-                        <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:600;color:var(--dark-text);text-align:center;margin-bottom:4px;">We\u2019d Love Your Feedback</div>
-                        <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);text-align:center;font-style:italic;margin-bottom:16px;">Help us make the next retreat even better</div>
+                    <div id="feedback-form-wrap" style="margin:12px 16px 24px;padding:20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);">
+                        <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:600;color:var(--dark-text);text-align:center;margin-bottom:4px;">We'd Love Your Feedback</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);text-align:center;font-style:italic;margin-bottom:20px;">Help us make the next retreat even better</div>
 
-                        <div style="margin-bottom:14px;">
-                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">How would you rate the retreat overall?</label>
-                            <div id="feedback-stars" style="display:flex;gap:8px;justify-content:center;font-size:1.8rem;cursor:pointer;">
-                                <span data-star="1">☆</span><span data-star="2">☆</span><span data-star="3">☆</span><span data-star="4">☆</span><span data-star="5">☆</span>
+                        <!-- Open text: Best part -->
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">What did you like most about the retreat?</label>
+                            <textarea id="feedback-liked-most" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="The moments that meant the most to you..."></textarea>
+                        </div>
+
+                        <!-- Open text: Least -->
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">What did you like least?</label>
+                            <textarea id="feedback-liked-least" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="Be honest \u2014 it helps us grow"></textarea>
+                        </div>
+
+                        <!-- Star ratings -->
+                        <div style="margin-bottom:20px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:12px;">Rate each area (tap the stars):</label>
+                            <div id="feedback-ratings" style="display:flex;flex-direction:column;gap:12px;">
+                                <div class="fb-rating-row" data-key="overall"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Overall experience</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                <div class="fb-rating-row" data-key="hotel"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Hotel & food</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                <div class="fb-rating-row" data-key="sessions"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Sessions & teaching</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                <div class="fb-rating-row" data-key="worship"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Worship</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                <div class="fb-rating-row" data-key="games"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Games & activities</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                <div class="fb-rating-row" data-key="party"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Party night</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                <div class="fb-rating-row" data-key="value"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Value for the cost</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
                             </div>
                         </div>
 
-                        <div style="margin-bottom:14px;">
-                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">What was your favorite part?</label>
-                            <textarea id="feedback-favorite" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="The worship, a session, the sisterhood..."></textarea>
+                        <!-- Comments about ratings -->
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Comments about any of the above? <span style="font-weight:400;font-style:italic;">(especially if you rated something low)</span></label>
+                            <textarea id="feedback-rating-comments" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="Help us understand what we can do better..."></textarea>
                         </div>
 
-                        <div style="margin-bottom:14px;">
-                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">What could we improve?</label>
-                            <textarea id="feedback-improve" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="Anything at all \u2014 we want to hear it"></textarea>
+                        <!-- More of -->
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">What should we do MORE of next year?</label>
+                            <textarea id="feedback-more-of" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="More worship, more free time, more games..."></textarea>
                         </div>
 
+                        <!-- Would you come again -->
                         <div style="margin-bottom:16px;">
                             <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Would you come again next year?</label>
                             <div id="feedback-again" style="display:flex;gap:8px;">
@@ -2557,9 +2579,20 @@
                             </div>
                         </div>
 
+                        <!-- Would you invite a friend -->
                         <div style="margin-bottom:16px;">
-                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Anything else on your heart?</label>
-                            <textarea id="feedback-other" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="Share anything..."></textarea>
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Would you invite a friend?</label>
+                            <div id="feedback-invite" style="display:flex;gap:8px;">
+                                <button class="feedback-option" data-value="Yes!" style="flex:1;padding:10px;border:1.5px solid var(--warm-grey);border-radius:8px;background:white;font-size:0.85rem;color:var(--taupe);cursor:pointer;transition:var(--transition);">Yes!</button>
+                                <button class="feedback-option" data-value="Maybe" style="flex:1;padding:10px;border:1.5px solid var(--warm-grey);border-radius:8px;background:white;font-size:0.85rem;color:var(--taupe);cursor:pointer;transition:var(--transition);">Maybe</button>
+                                <button class="feedback-option" data-value="Probably not" style="flex:1;padding:10px;border:1.5px solid var(--warm-grey);border-radius:8px;background:white;font-size:0.85rem;color:var(--taupe);cursor:pointer;transition:var(--transition);">Probably not</button>
+                            </div>
+                        </div>
+
+                        <!-- Final thoughts -->
+                        <div style="margin-bottom:16px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Any final thoughts or suggestions?</label>
+                            <textarea id="feedback-final" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:60px;" placeholder="Anything else on your heart..."></textarea>
                         </div>
 
                         <button class="save-btn" id="feedback-submit-btn" style="margin-top:0;">Send Feedback</button>
@@ -6225,8 +6258,8 @@
             }, 300);
         }
 
-        let feedbackRating = 0;
-        let feedbackAgain = '';
+        const feedbackRatings = {};
+        const feedbackChoices = {};
 
         function initFeedbackForm() {
             // Check if already submitted
@@ -6236,23 +6269,28 @@
                 return;
             }
 
-            // Star rating
-            const stars = document.querySelectorAll('#feedback-stars span');
-            stars.forEach(star => {
-                star.addEventListener('click', () => {
-                    feedbackRating = parseInt(star.dataset.star);
-                    stars.forEach(s => {
-                        s.textContent = parseInt(s.dataset.star) <= feedbackRating ? '★' : '☆';
-                        s.style.color = parseInt(s.dataset.star) <= feedbackRating ? 'var(--blush)' : 'var(--warm-grey)';
+            // Star ratings for each category
+            document.querySelectorAll('.fb-rating-row').forEach(row => {
+                const key = row.dataset.key;
+                row.querySelectorAll('.fb-stars span').forEach(star => {
+                    star.addEventListener('click', () => {
+                        const val = parseInt(star.dataset.v);
+                        feedbackRatings[key] = val;
+                        row.querySelectorAll('.fb-stars span').forEach(s => {
+                            s.textContent = parseInt(s.dataset.v) <= val ? '\u2605' : '\u2606';
+                            s.style.color = parseInt(s.dataset.v) <= val ? 'var(--blush)' : 'var(--warm-grey)';
+                        });
                     });
                 });
             });
 
-            // Come again buttons
-            document.querySelectorAll('.feedback-option').forEach(btn => {
+            // Option buttons (come again, invite friend)
+            document.querySelectorAll('#feedback-again .feedback-option, #feedback-invite .feedback-option').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    feedbackAgain = btn.dataset.value;
-                    document.querySelectorAll('.feedback-option').forEach(b => {
+                    const group = btn.parentElement;
+                    const groupId = group.id; // feedback-again or feedback-invite
+                    feedbackChoices[groupId] = btn.dataset.value;
+                    group.querySelectorAll('.feedback-option').forEach(b => {
                         b.style.borderColor = 'var(--warm-grey)';
                         b.style.background = 'white';
                         b.style.color = 'var(--taupe)';
@@ -6266,41 +6304,36 @@
             // Submit
             document.getElementById('feedback-submit-btn').addEventListener('click', async () => {
                 const btn = document.getElementById('feedback-submit-btn');
-                const favorite = document.getElementById('feedback-favorite').value.trim();
-                const improve = document.getElementById('feedback-improve').value.trim();
-                const other = document.getElementById('feedback-other').value.trim();
 
-                if (!feedbackRating) {
-                    showToast('Please tap a star rating');
+                if (!feedbackRatings.overall) {
+                    showToast('Please rate your overall experience');
                     return;
                 }
 
                 btn.disabled = true;
                 btn.textContent = 'Sending...';
 
+                const feedbackData = {
+                    user_id: currentUser ? currentUser.id : null,
+                    name: currentUser ? (currentUser.display_name || currentUser.first_name) : 'Anonymous',
+                    liked_most: document.getElementById('feedback-liked-most').value.trim(),
+                    liked_least: document.getElementById('feedback-liked-least').value.trim(),
+                    ratings: JSON.stringify(feedbackRatings),
+                    rating_comments: document.getElementById('feedback-rating-comments').value.trim(),
+                    more_of: document.getElementById('feedback-more-of').value.trim(),
+                    come_again: feedbackChoices['feedback-again'] || '',
+                    invite_friend: feedbackChoices['feedback-invite'] || '',
+                    final_thoughts: document.getElementById('feedback-final').value.trim(),
+                    rating: feedbackRatings.overall || 0
+                };
+
                 try {
-                    const feedbackData = {
-                        user_id: currentUser ? currentUser.id : null,
-                        name: currentUser ? (currentUser.display_name || currentUser.first_name) : 'Anonymous',
-                        rating: feedbackRating,
-                        favorite: favorite,
-                        improve: improve,
-                        come_again: feedbackAgain,
-                        other: other
-                    };
                     await apiPost('/api/feedback', feedbackData);
                 } catch (e) {
                     // Save locally even if API fails
                 }
 
-                localStorage.setItem('g4feedback_sent', JSON.stringify({
-                    rating: feedbackRating,
-                    favorite: favorite,
-                    improve: improve,
-                    come_again: feedbackAgain,
-                    other: other
-                }));
-
+                localStorage.setItem('g4feedback_sent', '1');
                 btn.style.display = 'none';
                 document.getElementById('feedback-thanks').style.display = 'block';
                 showToast('Thank you for your feedback!');

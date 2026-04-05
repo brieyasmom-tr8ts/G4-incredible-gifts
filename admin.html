@@ -782,21 +782,7 @@
 
         <!-- Feedback -->
         <div class="section" id="section-feedback">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>User</th>
-                            <th>Type</th>
-                            <th>Message</th>
-                            <th>Created</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="feedback-body"></tbody>
-                </table>
-            </div>
+            <div id="feedback-list" style="display:flex;flex-direction:column;gap:16px;"></div>
             <div class="empty-state" id="empty-feedback" style="display:none;">
                 <div class="icon">&#128172;</div>
                 <p>No feedback found</p>
@@ -1289,32 +1275,76 @@ async function deletePrayer(id) {
 }
 
 // --- Feedback ---
+function renderStars(n) {
+    let s = '';
+    for (let i = 1; i <= 5; i++) s += i <= n ? '★' : '☆';
+    return `<span style="color:#C9908A;letter-spacing:2px;">${s}</span>`;
+}
+
+function renderRatingsBreakdown(ratingsJson) {
+    if (!ratingsJson) return '';
+    try {
+        const r = JSON.parse(ratingsJson);
+        const labels = { overall: 'Overall', hotel: 'Hotel & Food', sessions: 'Sessions', worship: 'Worship', games: 'Games', party: 'Party Night', value: 'Value' };
+        let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin:8px 0;">';
+        for (const [key, label] of Object.entries(labels)) {
+            if (r[key]) html += `<div style="font-size:0.85rem;"><strong>${label}:</strong> ${renderStars(r[key])}</div>`;
+        }
+        html += '</div>';
+        return html;
+    } catch(e) { return ''; }
+}
+
 async function loadFeedback() {
     try {
         const data = await apiFetch('/api/feedback');
         const items = Array.isArray(data) ? data : (data.feedback || data.data || []);
         document.getElementById('count-feedback').textContent = items.length;
-        const tbody = document.getElementById('feedback-body');
+        const list = document.getElementById('feedback-list');
         const empty = document.getElementById('empty-feedback');
         if (!items.length) {
-            tbody.innerHTML = '';
+            list.innerHTML = '';
             empty.style.display = '';
             return;
         }
         empty.style.display = 'none';
-        tbody.innerHTML = items.map(f => `
-            <tr>
-                <td>${esc(f.id)}</td>
-                <td>${esc(f.author_name || f.first_name || f.user_id || '')}</td>
-                <td>${esc(f.type || f.category || '')}</td>
-                <td style="max-width:400px;word-break:break-word;">${esc(f.message || f.content || f.text || '')}</td>
-                <td>${fmtDateTime(f.created_at)}</td>
-                <td><button class="btn btn-danger-outline" onclick="deleteFeedback(${f.id})">Delete</button></td>
-            </tr>
-        `).join('');
+        list.innerHTML = items.map(f => {
+            const name = esc(f.name || f.author_name || f.first_name || 'Anonymous');
+            const date = fmtDateTime(f.created_at);
+            let html = `<div style="background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">`;
+            html += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">`;
+            html += `<strong style="font-size:1rem;">${name}</strong>`;
+            html += `<div style="display:flex;align-items:center;gap:12px;"><span style="font-size:0.8rem;color:#888;">${date}</span>`;
+            html += `<button class="btn btn-danger-outline" style="padding:2px 10px;font-size:0.75rem;" onclick="deleteFeedback(${f.id})">Delete</button></div></div>`;
+
+            // Overall rating
+            if (f.rating) html += `<div style="margin-bottom:6px;">Overall: ${renderStars(f.rating)}</div>`;
+
+            // Ratings breakdown
+            if (f.ratings) html += renderRatingsBreakdown(f.ratings);
+
+            // Text fields
+            if (f.liked_most) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>Liked most:</strong> ${esc(f.liked_most)}</div>`;
+            if (f.liked_least) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>Liked least:</strong> ${esc(f.liked_least)}</div>`;
+            if (f.rating_comments) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>Rating comments:</strong> ${esc(f.rating_comments)}</div>`;
+            if (f.more_of) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>More of:</strong> ${esc(f.more_of)}</div>`;
+
+            // Legacy fields
+            if (f.favorite) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>Favorite:</strong> ${esc(f.favorite)}</div>`;
+            if (f.improve) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>Improve:</strong> ${esc(f.improve)}</div>`;
+
+            // Choice fields
+            if (f.come_again) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>Come again:</strong> ${esc(f.come_again)}</div>`;
+            if (f.invite_friend) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>Invite a friend:</strong> ${esc(f.invite_friend)}</div>`;
+            if (f.final_thoughts) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>Final thoughts:</strong> ${esc(f.final_thoughts)}</div>`;
+            if (f.other) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>Other:</strong> ${esc(f.other)}</div>`;
+
+            html += '</div>';
+            return html;
+        }).join('');
     } catch (e) {
         console.error('Feedback:', e);
-        document.getElementById('feedback-body').innerHTML = '';
+        document.getElementById('feedback-list').innerHTML = '';
         document.getElementById('empty-feedback').style.display = '';
     }
 }

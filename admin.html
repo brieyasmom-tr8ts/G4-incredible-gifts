@@ -880,23 +880,25 @@ function esc(str) {
     return d.innerHTML;
 }
 
-function parseUTC(d) {
-    if (!d) return null;
-    const s = String(d);
-    // SQLite datetime('now') stores UTC without Z — append it
-    if (!s.endsWith('Z') && !s.includes('+') && !s.includes('-', 10)) return new Date(s + 'Z');
-    return new Date(s);
-}
-
 function fmtDate(d) {
     if (!d) return '';
-    try { return parseUTC(d).toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric' }); }
+    try {
+        // Birthdays are plain dates like "1990-05-15" — parse without timezone shift
+        const parts = String(d).split('-');
+        if (parts.length === 3) return new Date(parts[0], parts[1] - 1, parts[2]).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
     catch { return d; }
 }
 
 function fmtDateTime(d) {
     if (!d) return '';
-    try { return parseUTC(d).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+    try {
+        // SQLite datetime('now') stores UTC without Z — append it for correct ET conversion
+        let s = String(d);
+        if (!s.endsWith('Z') && !s.includes('+') && !s.includes('-', 10)) s += 'Z';
+        return new Date(s).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
     catch { return d; }
 }
 

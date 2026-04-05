@@ -4839,15 +4839,19 @@
             const now = new Date();
             const indicator = document.getElementById('status-indicator');
             const statusText = document.getElementById('status-text');
-            const retreatStart = new Date('2026-04-09T00:00:00');
-            const retreatEnd = new Date('2026-04-12T00:00:00');
+            const retreatStart = new Date('2026-04-09T00:00:00-04:00');
+            const retreatEnd = new Date('2026-04-12T00:00:00-04:00');
 
             const statusDot = indicator.querySelector('.status-dot');
 
             // Before the retreat: show countdown info (no pulsing dot)
             if (now < retreatStart) {
+                // Calculate days until in Eastern time
+                const etNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+                const etStart = new Date('2026-04-09T00:00:00');
                 const msPerDay = 1000 * 60 * 60 * 24;
-                const daysUntil = Math.ceil((retreatStart - now) / msPerDay);
+                const etNowMidnight = new Date(etNow.getFullYear(), etNow.getMonth(), etNow.getDate());
+                const daysUntil = Math.round((etStart - etNowMidnight) / msPerDay);
                 indicator.style.display = 'inline-flex';
                 statusDot.style.display = 'none';
                 if (daysUntil <= 0) {
@@ -5025,9 +5029,11 @@
 
         function buildPrayerCountdown() {
             const now = new Date();
-            const retreatDate = new Date('2026-04-09T00:00:00');
+            const etNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+            const etStart = new Date('2026-04-09T00:00:00');
             const msPerDay = 1000 * 60 * 60 * 24;
-            const daysUntil = Math.ceil((retreatDate - now) / msPerDay);
+            const etNowMidnight = new Date(etNow.getFullYear(), etNow.getMonth(), etNow.getDate());
+            const daysUntil = Math.round((etStart - etNowMidnight) / msPerDay);
 
             if (daysUntil <= 0 || daysUntil > 6) return;
 

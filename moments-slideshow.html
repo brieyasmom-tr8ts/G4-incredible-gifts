@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G4 2026 - Moments Slideshow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #2a2320 0%, #1a1a1a 40%, #1e2a1e 100%);
+            color: white;
+            font-family: Cormorant Garamond, serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Start screen */
+        .start-screen {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            z-index: 10;
+        }
+        .start-icon { font-size: 4rem; margin-bottom: 20px; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .start-title { font-family: Playfair Display, serif; font-size: 2.2rem; font-weight: 700; margin-bottom: 8px; }
+        .start-subtitle { font-size: 1.1rem; color: rgba(255,255,255,0.6); margin-bottom: 30px; font-style: italic; }
+        .start-count { font-size: 1rem; color: rgba(255,255,255,0.5); margin-bottom: 30px; }
+        .start-options { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 300px; }
+        .start-btn {
+            padding: 16px 32px;
+            border: 2px solid rgba(201,144,138,0.4);
+            border-radius: 14px;
+            background: rgba(201,144,138,0.12);
+            color: white;
+            font-family: Playfair Display, serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .start-btn:hover { background: rgba(201,144,138,0.25); border-color: rgba(201,144,138,0.6); }
+
+        .filter-row {
+            display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;
+        }
+        .filter-btn {
+            padding: 6px 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.7);
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .filter-btn.active { background: rgba(201,144,138,0.3); border-color: rgba(201,144,138,0.5); color: white; }
+
+        /* Speed control */
+        .speed-row { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .speed-label { font-size: 0.9rem; color: rgba(255,255,255,0.6); }
+        .speed-input {
+            width: 60px; padding: 6px 10px; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px; background: rgba(255,255,255,0.1); color: white;
+            font-family: Cormorant Garamond, serif; font-size: 1rem; text-align: center;
+        }
+
+        /* Slides */
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 1s ease;
+            padding: 20px 20px 100px;
+        }
+        .slide.active { opacity: 1; }
+        .slide img {
+            max-width: 90vw;
+            max-height: 65vh;
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+            object-fit: contain;
+        }
+        .slide-info {
+            text-align: center;
+            padding: 16px 20px;
+            max-width: 600px;
+        }
+        .slide-caption {
+            font-family: Cormorant Garamond, serif;
+            font-size: 1.3rem;
+            font-style: italic;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        .slide-author {
+            font-family: Playfair Display, serif;
+            font-size: 0.95rem;
+            color: rgba(201,144,138,0.8);
+            font-weight: 600;
+        }
+        .slide-tag {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: rgba(138,158,122,0.2);
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .slide-counter {
+            position: fixed;
+            top: 16px;
+            right: 20px;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.4);
+            z-index: 50;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.6));
+            z-index: 50;
+        }
+        .ctrl-btn {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ctrl-btn:hover { background: rgba(255,255,255,0.2); }
+        .ctrl-btn.active { background: rgba(201,144,138,0.3); border-color: rgba(201,144,138,0.5); }
+    </style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div class="start-screen" id="start-screen">
+    <div class="start-icon">📸</div>
+    <div class="start-title">Moments Slideshow</div>
+    <div class="start-subtitle">Beautiful moments from G4 2026</div>
+    <div class="start-count" id="start-count">Loading...</div>
+
+    <div class="filter-row" id="filter-row"></div>
+
+    <div class="speed-row">
+        <span class="speed-label">Seconds per photo:</span>
+        <input type="number" class="speed-input" id="speed-input" value="5" min="2" max="30">
+    </div>
+
+    <div class="start-options">
+        <button class="start-btn" onclick="startSlideshow()">Start Slideshow</button>
+    </div>
+</div>
+
+<!-- Slideshow -->
+<div id="slideshow" style="display:none;">
+    <div class="slide-counter" id="slide-counter"></div>
+    <div id="slides-container"></div>
+    <div class="controls">
+        <button class="ctrl-btn" onclick="prevSlide()">&#9664; Back</button>
+        <button class="ctrl-btn" id="pause-btn" onclick="togglePause()">Pause</button>
+        <button class="ctrl-btn" onclick="nextSlide()">Next &#9654;</button>
+        <button class="ctrl-btn" onclick="exitSlideshow()">Exit</button>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
+    let allMoments = [];
+    let filtered = [];
+    let currentSlide = 0;
+    let timer = null;
+    let paused = false;
+    let activeFilters = new Set();
+
+    async function loadMoments() {
+        try {
+            const res = await fetch(API_URL + '/api/moments');
+            const data = await res.json();
+            allMoments = (data || []).filter(m => m.photo_data);
+            // Collect unique tags
+            const tags = new Set();
+            allMoments.forEach(m => { if (m.gift_tag) tags.add(m.gift_tag); });
+
+            document.getElementById('start-count').textContent = allMoments.length + ' photo' + (allMoments.length !== 1 ? 's' : '');
+
+            // Build filter buttons
+            const row = document.getElementById('filter-row');
+            row.innerHTML = '';
+            if (tags.size > 0) {
+                const allBtn = document.createElement('button');
+                allBtn.className = 'filter-btn active';
+                allBtn.textContent = 'All';
+                allBtn.onclick = () => {
+                    activeFilters.clear();
+                    row.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    allBtn.classList.add('active');
+                };
+                row.appendChild(allBtn);
+
+                [...tags].sort().forEach(tag => {
+                    const btn = document.createElement('button');
+                    btn.className = 'filter-btn';
+                    btn.textContent = tag;
+                    btn.onclick = () => {
+                        const allB = row.querySelector('.filter-btn');
+                        if (activeFilters.has(tag)) {
+                            activeFilters.delete(tag);
+                            btn.classList.remove('active');
+                        } else {
+                            activeFilters.add(tag);
+                            btn.classList.add('active');
+                            allB.classList.remove('active');
+                        }
+                        if (activeFilters.size === 0) allB.classList.add('active');
+                    };
+                    row.appendChild(btn);
+                });
+            }
+        } catch (e) {
+            document.getElementById('start-count').textContent = 'Could not load moments';
+        }
+    }
+
+    function startSlideshow() {
+        if (activeFilters.size > 0) {
+            filtered = allMoments.filter(m => activeFilters.has(m.gift_tag));
+        } else {
+            filtered = [...allMoments];
+        }
+        if (!filtered.length) { alert('No photos to show.'); return; }
+
+        // Shuffle
+        for (let i = filtered.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+        }
+
+        currentSlide = 0;
+        paused = false;
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('slideshow').style.display = 'block';
+        buildSlides();
+        showSlide(0);
+        startTimer();
+    }
+
+    function buildSlides() {
+        const container = document.getElementById('slides-container');
+        container.innerHTML = '';
+        filtered.forEach((m, i) => {
+            const slide = document.createElement('div');
+            slide.className = 'slide';
+            slide.innerHTML = `
+                <img src="${m.photo_data}" alt="${m.caption || ''}">
+                <div class="slide-info">
+                    ${m.caption ? `<div class="slide-caption">"${escHtml(m.caption)}"</div>` : ''}
+                    <div class="slide-author">${escHtml(m.author_name)}</div>
+                    ${m.gift_tag ? `<div class="slide-tag">${escHtml(m.gift_tag)}</div>` : ''}
+                </div>
+            `;
+            container.appendChild(slide);
+        });
+    }
+
+    function showSlide(idx) {
+        const slides = document.querySelectorAll('.slide');
+        slides.forEach(s => s.classList.remove('active'));
+        currentSlide = idx;
+        if (slides[idx]) slides[idx].classList.add('active');
+        document.getElementById('slide-counter').textContent = (idx + 1) + ' / ' + filtered.length;
+    }
+
+    function nextSlide() {
+        const next = (currentSlide + 1) % filtered.length;
+        showSlide(next);
+        if (!paused) restartTimer();
+    }
+
+    function prevSlide() {
+        const prev = (currentSlide - 1 + filtered.length) % filtered.length;
+        showSlide(prev);
+        if (!paused) restartTimer();
+    }
+
+    function getSpeed() {
+        return (parseInt(document.getElementById('speed-input').value) || 5) * 1000;
+    }
+
+    function startTimer() { timer = setInterval(nextSlide, getSpeed()); }
+    function stopTimer() { clearInterval(timer); timer = null; }
+    function restartTimer() { stopTimer(); startTimer(); }
+
+    function togglePause() {
+        paused = !paused;
+        document.getElementById('pause-btn').textContent = paused ? 'Play' : 'Pause';
+        if (paused) stopTimer(); else startTimer();
+    }
+
+    function exitSlideshow() {
+        stopTimer();
+        document.getElementById('slideshow').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'flex';
+    }
+
+    function escHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', e => {
+        if (document.getElementById('slideshow').style.display === 'none') return;
+        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+        else if (e.key === 'ArrowLeft') prevSlide();
+        else if (e.key === 'p' || e.key === 'P') togglePause();
+        else if (e.key === 'Escape') exitSlideshow();
+    });
+
+    loadMoments();
+</script>
+</body>
+</html>

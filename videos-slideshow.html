@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G4 2026 - Video Slideshow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #2a2320 0%, #1a1a1a 40%, #1e2a1e 100%);
+            color: white;
+            font-family: Cormorant Garamond, serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Start screen */
+        .start-screen {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            z-index: 10;
+        }
+        .start-icon { font-size: 4rem; margin-bottom: 20px; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .start-title { font-family: Playfair Display, serif; font-size: 2.2rem; font-weight: 700; margin-bottom: 8px; }
+        .start-subtitle { font-size: 1.1rem; color: rgba(255,255,255,0.6); margin-bottom: 30px; font-style: italic; }
+        .start-count { font-size: 1rem; color: rgba(255,255,255,0.5); margin-bottom: 30px; }
+        .start-btn {
+            padding: 16px 32px;
+            border: 2px solid rgba(201,144,138,0.4);
+            border-radius: 14px;
+            background: rgba(201,144,138,0.12);
+            color: white;
+            font-family: Playfair Display, serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .start-btn:hover { background: rgba(201,144,138,0.25); border-color: rgba(201,144,138,0.6); }
+
+        .auto-toggle {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+        }
+        .auto-label { font-size: 0.9rem; color: rgba(255,255,255,0.6); }
+        .auto-check { width: 18px; height: 18px; accent-color: #c9908a; }
+
+        /* Video slide */
+        .video-slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            padding: 20px 20px 100px;
+            pointer-events: none;
+        }
+        .video-slide.active { opacity: 1; pointer-events: auto; }
+        .video-slide video {
+            max-width: 90vw;
+            max-height: 65vh;
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+        }
+        .video-info {
+            text-align: center;
+            padding: 14px 20px;
+            max-width: 600px;
+        }
+        .video-author {
+            font-family: Playfair Display, serif;
+            font-size: 1.05rem;
+            color: rgba(201,144,138,0.8);
+            font-weight: 600;
+        }
+        .video-session-tag {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            background: rgba(138,158,122,0.2);
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+        }
+        .slide-counter {
+            position: fixed;
+            top: 16px;
+            right: 20px;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.4);
+            z-index: 50;
+        }
+
+        /* Controls */
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 16px 20px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.6));
+            z-index: 50;
+        }
+        .ctrl-btn {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ctrl-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .loading-msg {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.5);
+            font-style: italic;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div class="start-screen" id="start-screen">
+    <div class="start-icon">🎬</div>
+    <div class="start-title">Video Slideshow</div>
+    <div class="start-subtitle">Stories from G4 2026</div>
+    <div class="start-count" id="start-count">Loading...</div>
+
+    <div class="auto-toggle">
+        <input type="checkbox" class="auto-check" id="auto-advance" checked>
+        <span class="auto-label">Auto-play next video when finished</span>
+    </div>
+
+    <button class="start-btn" onclick="startSlideshow()">Start Watching</button>
+</div>
+
+<!-- Slideshow -->
+<div id="slideshow" style="display:none;">
+    <div class="slide-counter" id="slide-counter"></div>
+    <div id="slides-container"></div>
+    <div class="controls">
+        <button class="ctrl-btn" onclick="prevVideo()">&#9664; Back</button>
+        <button class="ctrl-btn" onclick="nextVideo()">Next &#9654;</button>
+        <button class="ctrl-btn" onclick="exitSlideshow()">Exit</button>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
+    let allVideos = [];
+    let currentIdx = 0;
+    let autoAdvance = true;
+
+    async function loadVideos() {
+        try {
+            const res = await fetch(API_URL + '/api/videos');
+            const data = await res.json();
+            allVideos = data || [];
+            document.getElementById('start-count').textContent = allVideos.length + ' video' + (allVideos.length !== 1 ? 's' : '');
+        } catch (e) {
+            document.getElementById('start-count').textContent = 'Could not load videos';
+        }
+    }
+
+    function startSlideshow() {
+        if (!allVideos.length) { alert('No videos to show.'); return; }
+        autoAdvance = document.getElementById('auto-advance').checked;
+        currentIdx = 0;
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('slideshow').style.display = 'block';
+        buildSlides();
+        showVideo(0);
+    }
+
+    function buildSlides() {
+        const container = document.getElementById('slides-container');
+        container.innerHTML = '';
+        allVideos.forEach((v, i) => {
+            const slide = document.createElement('div');
+            slide.className = 'video-slide';
+
+            const video = document.createElement('video');
+            video.playsInline = true;
+            video.controls = true;
+            video.preload = 'none';
+            video.src = API_URL + '/api/videos/' + v.id + '/stream';
+
+            video.addEventListener('ended', () => {
+                if (autoAdvance && currentIdx < allVideos.length - 1) {
+                    nextVideo();
+                }
+            });
+
+            slide.appendChild(video);
+
+            const info = document.createElement('div');
+            info.className = 'video-info';
+            info.innerHTML = `
+                <div class="video-author">${escHtml(v.author_name)}</div>
+                ${v.session_tag ? `<div class="video-session-tag">${escHtml(v.session_tag)}</div>` : ''}
+            `;
+            slide.appendChild(info);
+            container.appendChild(slide);
+        });
+    }
+
+    function showVideo(idx) {
+        // Pause current
+        const slides = document.querySelectorAll('.video-slide');
+        slides.forEach(s => {
+            s.classList.remove('active');
+            const vid = s.querySelector('video');
+            if (vid) { vid.pause(); vid.currentTime = 0; }
+        });
+
+        currentIdx = idx;
+        if (slides[idx]) {
+            slides[idx].classList.add('active');
+            const vid = slides[idx].querySelector('video');
+            if (vid) {
+                vid.preload = 'auto';
+                vid.play().catch(() => {});
+            }
+        }
+        document.getElementById('slide-counter').textContent = (idx + 1) + ' / ' + allVideos.length;
+    }
+
+    function nextVideo() {
+        if (currentIdx < allVideos.length - 1) showVideo(currentIdx + 1);
+    }
+
+    function prevVideo() {
+        if (currentIdx > 0) showVideo(currentIdx - 1);
+    }
+
+    function exitSlideshow() {
+        // Stop all videos
+        document.querySelectorAll('.video-slide video').forEach(v => { v.pause(); v.src = ''; });
+        document.getElementById('slideshow').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'flex';
+    }
+
+    function escHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', e => {
+        if (document.getElementById('slideshow').style.display === 'none') return;
+        if (e.key === 'ArrowRight') nextVideo();
+        else if (e.key === 'ArrowLeft') prevVideo();
+        else if (e.key === 'Escape') exitSlideshow();
+    });
+
+    loadVideos();
+</script>
+</body>
+</html>

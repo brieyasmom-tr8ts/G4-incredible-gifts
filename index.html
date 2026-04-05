@@ -3886,12 +3886,20 @@
 
                     const content = document.createElement('div');
 
+                    // Name row with inline tiny avatar
+                    const avatarEl = document.createElement('span');
+                    avatarEl.className = 'msg-avatar-placeholder';
+                    avatarEl.style.cssText = 'width:16px;height:16px;font-size:0.45rem;border-radius:4px;display:inline-flex;vertical-align:middle;margin-right:4px;';
+                    avatarEl.textContent = msg.author_name.charAt(0);
+                    loadAvatar(msg.user_id, avatarEl, msg.author_name.charAt(0));
+
                     // Name + type badge inline
                     const nameRow = document.createElement('div');
                     nameRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:2px;';
                     const nameEl = document.createElement('span');
                     nameEl.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.82rem;font-weight:700;color:var(--dark-text);';
                     nameEl.textContent = msg.author_name;
+                    nameRow.appendChild(avatarEl);
                     nameRow.appendChild(nameEl);
                     const typeBadge = document.createElement('span');
                     typeBadge.style.cssText = 'font-size:0.65rem;padding:1px 6px;border-radius:6px;font-weight:600;';

@@ -4073,6 +4073,7 @@
             const lastSeen = parseInt(localStorage.getItem('g4_uplift_seen') || '0');
             const newCount = allMessages.filter(m => m.id > lastSeen).length;
             const badge = document.getElementById('badge-uplift');
+            if (!badge) return;
             if (newCount > 0) {
                 badge.textContent = newCount;
                 badge.style.display = '';
@@ -4085,6 +4086,7 @@
             const lastSeen = parseInt(localStorage.getItem('g4_polls_seen') || '0');
             const newCount = Math.max(0, totalItems - lastSeen);
             const badge = document.getElementById('badge-sharing');
+            if (!badge) return;
             if (newCount > 0) {
                 badge.textContent = newCount;
                 badge.style.display = '';
@@ -4378,10 +4380,10 @@
             const tabContents = document.querySelectorAll('.tab-content');
             const btn = document.querySelector('.nav-btn[data-tab="' + tabName + '"]');
             const activeTab = document.getElementById(tabName + '-tab');
-            if (!btn || !activeTab) return;
+            if (!activeTab) return;
             navBtns.forEach(b => b.classList.remove('active'));
             tabContents.forEach(tab => tab.classList.remove('active'));
-            btn.classList.add('active');
+            if (btn) btn.classList.add('active');
             activeTab.classList.add('active');
             document.querySelector('.content-area').scrollTop = 0;
             animateCards(activeTab);
@@ -4413,7 +4415,7 @@
             const activeTab = activeBtn ? activeBtn.dataset.tab : 'home';
 
             // Home always first
-            let html = '<button class="nav-btn" data-tab="home"><span class="nav-icon">\ud83d\udcc5</span><span>Home</span></button>';
+            let html = '<button class="nav-btn" data-tab="home"><span class="nav-icon">\ud83c\udfe0</span><span>Home</span></button>';
 
             ALL_NAV_ITEMS.forEach(item => {
                 if (navSettings[item.key] !== '1') return;

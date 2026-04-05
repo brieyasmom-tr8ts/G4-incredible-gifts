@@ -159,19 +159,15 @@ export default {
             env.DB.prepare('SELECT COUNT(*) as c FROM videos').first('c').catch(() => 0),
           ]);
 
-          // Top contributors: users with most activity
+          // Top contributors: users with most activity (only reference guaranteed tables)
           const topUsers = await env.DB.prepare(`
             SELECT u.id, u.first_name, u.last_initial,
               (SELECT COUNT(*) FROM moments WHERE user_id = u.id) as moments,
-              (SELECT COUNT(*) FROM messages WHERE user_id = u.id) as messages,
-              (SELECT COUNT(*) FROM hunt_submissions WHERE user_id = u.id) as hunts,
-              (SELECT COUNT(*) FROM meme_captions WHERE user_id = u.id) as memes
+              (SELECT COUNT(*) FROM messages WHERE user_id = u.id) as messages
             FROM users u
             ORDER BY (
               (SELECT COUNT(*) FROM moments WHERE user_id = u.id) +
-              (SELECT COUNT(*) FROM messages WHERE user_id = u.id) +
-              (SELECT COUNT(*) FROM hunt_submissions WHERE user_id = u.id) +
-              (SELECT COUNT(*) FROM meme_captions WHERE user_id = u.id)
+              (SELECT COUNT(*) FROM messages WHERE user_id = u.id)
             ) DESC
             LIMIT 15
           `).all().then(r => r.results).catch(() => []);

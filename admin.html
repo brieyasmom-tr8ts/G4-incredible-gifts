@@ -1026,14 +1026,12 @@ async function loadStats() {
         if (!s.topUsers || s.topUsers.length === 0) {
             board.innerHTML = '<div style="color:var(--light-text);font-style:italic;font-size:0.9rem;">No activity yet</div>';
         } else {
-            const active = s.topUsers.filter(u => (u.moments + u.messages + u.hunts + u.memes) > 0);
+            const active = s.topUsers.filter(u => ((u.moments||0) + (u.messages||0)) > 0);
             board.innerHTML = active.slice(0, 10).map((u, i) => {
-                const total = u.moments + u.messages + u.hunts + u.memes;
+                const total = (u.moments||0) + (u.messages||0);
                 const parts = [];
                 if (u.moments) parts.push(`${u.moments} photos`);
                 if (u.messages) parts.push(`${u.messages} posts`);
-                if (u.hunts) parts.push(`${u.hunts} hunts`);
-                if (u.memes) parts.push(`${u.memes} captions`);
                 return `
                 <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;background:${i < 3 ? 'rgba(201,144,138,0.06)' : 'transparent'};border-radius:10px;">
                     <div style="width:28px;height:28px;border-radius:50%;background:${i < 3 ? 'linear-gradient(135deg,var(--blush),var(--rose))' : 'var(--warm-grey)'};color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">${i + 1}</div>
@@ -1047,7 +1045,7 @@ async function loadStats() {
         }
     } catch(e) {
         console.error('Stats:', e);
-        document.getElementById('stats-cards').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--light-text);padding:2rem;font-style:italic;">Could not load stats. Deploy the latest worker first.</div>';
+        document.getElementById('stats-cards').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--light-text);padding:2rem;font-style:italic;">Could not load stats: ' + esc(e.message) + '</div>';
     }
 }
 

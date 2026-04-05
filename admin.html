@@ -500,7 +500,8 @@
 
     <!-- Nav Tabs -->
     <div class="nav-tabs">
-        <button class="nav-tab active" data-section="users">Users <span class="badge" id="count-users">0</span></button>
+        <button class="nav-tab active" data-section="stats">Stats</button>
+        <button class="nav-tab" data-section="users">Users <span class="badge" id="count-users">0</span></button>
         <button class="nav-tab" data-section="navmenu">Nav Menu</button>
         <button class="nav-tab" data-section="videos">Videos <span class="badge" id="count-videos">0</span></button>
         <button class="nav-tab" data-section="moments">Moments <span class="badge" id="count-moments">0</span></button>
@@ -514,8 +515,21 @@
     <!-- Content -->
     <div class="main">
 
+        <!-- Stats -->
+        <div class="section active" id="section-stats">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;" id="stats-cards"></div>
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:1rem;">Most Active Women</div>
+                <div id="stats-leaderboard" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+            </div>
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:1rem;">Engagement Snapshot</div>
+                <div id="stats-engagement" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+            </div>
+        </div>
+
         <!-- Users -->
-        <div class="section active" id="section-users">
+        <div class="section" id="section-users">
             <div class="table-wrap">
                 <table id="users-table">
                     <thead>
@@ -908,7 +922,8 @@ async function refreshAll() {
         loadActiveAnnouncement(),
         loadPolls(),
         loadHuntStats(),
-        loadMemeRounds()
+        loadMemeRounds(),
+        loadStats()
     ]);
 }
 
@@ -951,6 +966,89 @@ function fmtDuration(sec) {
     const m = Math.floor(sec / 60);
     const s = Math.round(sec % 60);
     return m + ':' + String(s).padStart(2, '0');
+}
+
+// --- Stats ---
+async function loadStats() {
+    try {
+        const s = await apiFetch('/api/admin/stats');
+        if (s.error) throw new Error(s.error);
+
+        const cards = document.getElementById('stats-cards');
+        const pct = (n, total) => total > 0 ? Math.round(n / total * 100) : 0;
+
+        cards.innerHTML = [
+            { icon: '👥', label: 'Women Joined', value: s.users.total, sub: `${s.users.withPhoto} with photos · ${s.users.withProfile} filled profile` },
+            { icon: '📸', label: 'Moments Shared', value: s.moments.total, sub: `${s.moments.uniqueUsers} women participating` },
+            { icon: '🙏', label: 'Uplift Posts', value: s.messages.total, sub: `${s.messages.prayer} prayers · ${s.messages.encouragement} encouragements` },
+            { icon: '💬', label: 'Poll Responses', value: s.polls.responses, sub: `${s.wyr.votes} Would You Rather votes` },
+            { icon: '📷', label: 'Hunt Submissions', value: s.hunt.submissions, sub: `${s.hunt.votes} votes · ${s.hunt.uniqueUsers} hunters` },
+            { icon: '😂', label: 'Meme Captions', value: s.meme.captions, sub: `${s.meme.votes} votes` },
+            { icon: '✨', label: 'Journal Entries', value: s.journal.total, sub: `${s.journal.uniqueUsers} women journaling` },
+            { icon: '📝', label: 'Feedback', value: s.feedback.total, sub: 'survey responses' },
+        ].map(c => `
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-sm);padding:1.25rem;border:1px solid rgba(200,185,176,0.12);">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+                    <span style="font-size:1.4rem;">${c.icon}</span>
+                    <span style="font-size:0.82rem;color:var(--light-text);font-weight:600;">${c.label}</span>
+                </div>
+                <div style="font-family:Playfair Display,serif;font-size:2rem;font-weight:700;color:var(--dark-text);line-height:1;">${c.value}</div>
+                <div style="font-size:0.78rem;color:var(--light-text);margin-top:4px;">${c.sub}</div>
+            </div>
+        `).join('');
+
+        // Engagement bars
+        const engagement = document.getElementById('stats-engagement');
+        const features = [
+            { label: 'Moments', users: s.moments.uniqueUsers, total: s.users.total, color: 'var(--blush)' },
+            { label: 'Uplift', users: Math.min(s.messages.total, s.users.total), total: s.users.total, color: 'var(--rose)' },
+            { label: 'Hunt', users: s.hunt.uniqueUsers, total: s.users.total, color: 'var(--sage)' },
+            { label: 'Journal', users: s.journal.uniqueUsers, total: s.users.total, color: 'var(--accent)' },
+            { label: 'Polls', users: Math.min(s.polls.responses, s.users.total), total: s.users.total, color: 'var(--taupe)' },
+            { label: 'Meme', users: Math.min(s.meme.captions, s.users.total), total: s.users.total, color: '#c9908a' },
+        ];
+        engagement.innerHTML = features.map(f => {
+            const p = pct(f.users, f.total);
+            return `
+            <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                    <span style="font-size:0.88rem;font-weight:600;color:var(--dark-text);">${f.label}</span>
+                    <span style="font-size:0.82rem;color:var(--light-text);">${f.users} of ${f.total} (${p}%)</span>
+                </div>
+                <div style="height:8px;background:rgba(200,185,176,0.15);border-radius:4px;overflow:hidden;">
+                    <div style="height:100%;width:${p}%;background:${f.color};border-radius:4px;transition:width 0.6s ease;"></div>
+                </div>
+            </div>`;
+        }).join('');
+
+        // Top users leaderboard
+        const board = document.getElementById('stats-leaderboard');
+        if (!s.topUsers || s.topUsers.length === 0) {
+            board.innerHTML = '<div style="color:var(--light-text);font-style:italic;font-size:0.9rem;">No activity yet</div>';
+        } else {
+            const active = s.topUsers.filter(u => (u.moments + u.messages + u.hunts + u.memes) > 0);
+            board.innerHTML = active.slice(0, 10).map((u, i) => {
+                const total = u.moments + u.messages + u.hunts + u.memes;
+                const parts = [];
+                if (u.moments) parts.push(`${u.moments} photos`);
+                if (u.messages) parts.push(`${u.messages} posts`);
+                if (u.hunts) parts.push(`${u.hunts} hunts`);
+                if (u.memes) parts.push(`${u.memes} captions`);
+                return `
+                <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;background:${i < 3 ? 'rgba(201,144,138,0.06)' : 'transparent'};border-radius:10px;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:${i < 3 ? 'linear-gradient(135deg,var(--blush),var(--rose))' : 'var(--warm-grey)'};color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">${i + 1}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;font-size:0.92rem;color:var(--dark-text);">${esc(u.first_name)} ${esc(u.last_initial || '')}</div>
+                        <div style="font-size:0.78rem;color:var(--light-text);">${parts.join(' · ')}</div>
+                    </div>
+                    <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;color:var(--accent);">${total}</div>
+                </div>`;
+            }).join('');
+        }
+    } catch(e) {
+        console.error('Stats:', e);
+        document.getElementById('stats-cards').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--light-text);padding:2rem;font-style:italic;">Could not load stats. Deploy the latest worker first.</div>';
+    }
 }
 
 // --- Users ---

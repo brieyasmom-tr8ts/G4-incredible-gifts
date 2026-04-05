@@ -123,6 +123,77 @@ export default {
         return json(user || { error: 'not found' }, corsHeaders);
       }
 
+      // GET /api/admin/stats — usage stats for admin dashboard
+      if (path === '/api/admin/stats' && request.method === 'GET') {
+        try {
+          const [
+            usersTotal, usersWithPhoto, usersWithProfile,
+            messagesTotal, messagesPrayer, messagesEncouragement,
+            momentsTotal, momentsUnique,
+            journalTotal, journalUnique,
+            huntSubs, huntVotes, huntUnique,
+            pollResponses,
+            wyrVotes,
+            memeCaptions, memeVotes,
+            feedbackTotal,
+            videosTotal
+          ] = await Promise.all([
+            env.DB.prepare('SELECT COUNT(*) as c FROM users').first('c'),
+            env.DB.prepare("SELECT COUNT(*) as c FROM users WHERE photo_data IS NOT NULL AND photo_data != ''").first('c'),
+            env.DB.prepare("SELECT COUNT(*) as c FROM users WHERE (email IS NOT NULL AND email != '') OR (phone IS NOT NULL AND phone != '') OR (about IS NOT NULL AND about != '')").first('c'),
+            env.DB.prepare('SELECT COUNT(*) as c FROM messages').first('c'),
+            env.DB.prepare("SELECT COUNT(*) as c FROM messages WHERE type='prayer'").first('c'),
+            env.DB.prepare("SELECT COUNT(*) as c FROM messages WHERE type='encouragement'").first('c'),
+            env.DB.prepare('SELECT COUNT(*) as c FROM moments').first('c'),
+            env.DB.prepare('SELECT COUNT(DISTINCT user_id) as c FROM moments').first('c'),
+            env.DB.prepare('SELECT COUNT(*) as c FROM journal_entries').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(DISTINCT user_id) as c FROM journal_entries').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(*) as c FROM hunt_submissions').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(*) as c FROM hunt_votes').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(DISTINCT user_id) as c FROM hunt_submissions').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(*) as c FROM poll_responses').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(*) as c FROM wyr_votes').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(*) as c FROM meme_captions').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(*) as c FROM meme_votes').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(*) as c FROM feedback').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(*) as c FROM videos').first('c').catch(() => 0),
+          ]);
+
+          // Top contributors: users with most activity
+          const topUsers = await env.DB.prepare(`
+            SELECT u.id, u.first_name, u.last_initial,
+              (SELECT COUNT(*) FROM moments WHERE user_id = u.id) as moments,
+              (SELECT COUNT(*) FROM messages WHERE user_id = u.id) as messages,
+              (SELECT COUNT(*) FROM hunt_submissions WHERE user_id = u.id) as hunts,
+              (SELECT COUNT(*) FROM meme_captions WHERE user_id = u.id) as memes
+            FROM users u
+            ORDER BY (
+              (SELECT COUNT(*) FROM moments WHERE user_id = u.id) +
+              (SELECT COUNT(*) FROM messages WHERE user_id = u.id) +
+              (SELECT COUNT(*) FROM hunt_submissions WHERE user_id = u.id) +
+              (SELECT COUNT(*) FROM meme_captions WHERE user_id = u.id)
+            ) DESC
+            LIMIT 15
+          `).all().then(r => r.results).catch(() => []);
+
+          return json({
+            users: { total: usersTotal, withPhoto: usersWithPhoto, withProfile: usersWithProfile },
+            messages: { total: messagesTotal, prayer: messagesPrayer, encouragement: messagesEncouragement },
+            moments: { total: momentsTotal, uniqueUsers: momentsUnique },
+            journal: { total: journalTotal || 0, uniqueUsers: journalUnique || 0 },
+            hunt: { submissions: huntSubs || 0, votes: huntVotes || 0, uniqueUsers: huntUnique || 0 },
+            polls: { responses: pollResponses || 0 },
+            wyr: { votes: wyrVotes || 0 },
+            meme: { captions: memeCaptions || 0, votes: memeVotes || 0 },
+            feedback: { total: feedbackTotal || 0 },
+            videos: { total: videosTotal || 0 },
+            topUsers
+          }, corsHeaders);
+        } catch(e) {
+          return json({ error: e.message }, corsHeaders, 500);
+        }
+      }
+
       // GET /api/admin/debug-schema — show table columns
       if (path === '/api/admin/debug-schema' && request.method === 'GET') {
         const { results } = await env.DB.prepare("PRAGMA table_info(users)").all();

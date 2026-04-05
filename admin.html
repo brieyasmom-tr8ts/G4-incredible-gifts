@@ -1903,7 +1903,7 @@ async function uploadAllMemeRounds() {
         try {
             await apiFetch('/api/meme/rounds', {
                 method: 'POST',
-                body: { photo_data: memeQueue[i].data, title: memeQueue[i].name }
+                body: { photo_data: memeQueue[i].data, title: '' }
             });
             success++;
         } catch(e) {

@@ -6154,45 +6154,13 @@
             }
         }
 
-        // Collapsible schedule before retreat, always open during retreat
+        // Highlight current session during retreat
         (function() {
             const now = new Date();
             const retreatStart = new Date('2026-04-09T19:00:00-04:00');
-            const scheduleContainer = document.getElementById('schedule-container');
-            const scheduleToggle = document.getElementById('schedule-toggle');
-
             if (now >= retreatStart) {
-                // Retreat is live — show schedule open, highlight current session
-                scheduleContainer.style.display = 'block';
-                scheduleToggle.style.display = 'none';
                 highlightCurrentSession();
-                // Re-highlight every minute
                 setInterval(highlightCurrentSession, 60000);
-            } else {
-                // Before retreat — collapsible
-                scheduleContainer.style.display = 'none';
-                scheduleToggle.style.display = 'block';
-
-                const collapseBtn = document.createElement('div');
-                collapseBtn.style.cssText = 'text-align:center;padding:12px;margin:4px 16px 12px;cursor:pointer;font-size:0.82rem;color:var(--accent);font-weight:600;';
-                collapseBtn.textContent = 'Hide Schedule \u25B4';
-                scheduleContainer.parentNode.insertBefore(collapseBtn, scheduleContainer.nextSibling);
-                collapseBtn.style.display = 'none';
-
-                scheduleToggle.addEventListener('click', () => {
-                    scheduleContainer.style.display = 'block';
-                    scheduleToggle.style.display = 'none';
-                    collapseBtn.style.display = 'block';
-                    animateCards(scheduleContainer);
-                    scheduleContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                });
-
-                collapseBtn.addEventListener('click', () => {
-                    scheduleContainer.style.display = 'none';
-                    collapseBtn.style.display = 'none';
-                    scheduleToggle.style.display = 'block';
-                    document.querySelector('.content-area').scrollTo({ top: 0, behavior: 'smooth' });
-                });
             }
         })();
 

@@ -2654,7 +2654,7 @@
             </div>
 
             <!-- SCAVENGER HUNT TAB -->
-            <div id="hunt-tab" class="tab-content" style="display:none;">
+            <div id="hunt-tab" class="tab-content">
                 <div style="padding:0 0 100px;">
                     <!-- Hunt Header -->
                     <div style="text-align:center;padding:20px 20px 8px;">
@@ -2911,28 +2911,7 @@
             </div>
         </div>
 
-        <div class="bottom-nav">
-            <button class="nav-btn active" data-tab="home">
-                <span class="nav-icon">📅</span>
-                <span>Home</span>
-            </button>
-            <button class="nav-btn" data-tab="moments">
-                <span class="nav-icon">📸</span>
-                <span>Moments</span>
-            </button>
-            <button class="nav-btn" data-tab="prayer">
-                <span class="nav-icon">💛</span>
-                <span>Connect</span>
-            </button>
-            <button class="nav-btn" data-tab="journey">
-                <span class="nav-icon">🎁</span>
-                <span>Journey</span>
-            </button>
-            <button class="nav-btn" data-tab="journal">
-                <span class="nav-icon">✨</span>
-                <span>Journal</span>
-            </button>
-        </div>
+        <div class="bottom-nav" id="bottom-nav"></div>
     </div>
 
     <!-- Welcome Setup Modal -->
@@ -4389,13 +4368,100 @@
             localStorage.setItem('g4_active_tab', tabName);
         }
 
-        function initTabs() {
-            const navBtns = document.querySelectorAll('.nav-btn');
-            navBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
+        // All possible nav items (Home is always shown)
+        const ALL_NAV_ITEMS = [
+            { key: 'nav_moments', tab: 'moments', icon: '\ud83d\udcf8', label: 'Moments' },
+            { key: 'nav_connect', tab: 'prayer', icon: '\ud83d\udc9b', label: 'Connect' },
+            { key: 'nav_journey', tab: 'journey', icon: '\ud83c\udf81', label: 'Journey' },
+            { key: 'nav_journal', tab: 'journal', icon: '\u2728', label: 'Journal' },
+            { key: 'nav_hunt', tab: 'hunt', icon: '\ud83d\udcf7', label: 'Hunt' },
+            { key: 'nav_meme', tab: 'meme', icon: '\ud83d\ude02', label: 'Meme', action: 'meme' },
+            { key: 'nav_survey', tab: 'home', icon: '\ud83d\udcdd', label: 'Survey', action: 'survey' },
+            { key: 'nav_secretsister', tab: 'home', icon: '\ud83d\udc8c', label: 'Secret Sister', action: 'secretsister' }
+        ];
+
+        let navSettings = {};
+
+        let navBuilt = false;
+        function buildNav() {
+            const nav = document.getElementById('bottom-nav');
+            // Preserve which tab is currently active
+            const activeBtn = nav.querySelector('.nav-btn.active');
+            const activeTab = activeBtn ? activeBtn.dataset.tab : 'home';
+
+            // Home always first
+            let html = '<button class="nav-btn" data-tab="home"><span class="nav-icon">\ud83d\udcc5</span><span>Home</span></button>';
+
+            ALL_NAV_ITEMS.forEach(item => {
+                if (navSettings[item.key] !== '1') return;
+                const actionAttr = item.action ? `data-action="${item.action}"` : '';
+                html += `<button class="nav-btn" data-tab="${item.tab}" ${actionAttr}><span class="nav-icon">${item.icon}</span><span>${item.label}</span></button>`;
+            });
+
+            nav.innerHTML = html;
+
+            // Restore active state
+            const restoreBtn = nav.querySelector('.nav-btn[data-tab="' + activeTab + '"]');
+            if (restoreBtn && !restoreBtn.dataset.action) {
+                restoreBtn.classList.add('active');
+            } else {
+                nav.querySelector('.nav-btn[data-tab="home"]').classList.add('active');
+            }
+
+            // Set up click delegation once
+            if (!navBuilt) {
+                navBuilt = true;
+                nav.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.nav-btn');
+                    if (!btn) return;
+                    const action = btn.dataset.action;
+                    if (action === 'meme') {
+                        window.open('meme.html', '_blank');
+                        return;
+                    }
+                    if (action === 'survey') {
+                        switchToTab('home');
+                        setTimeout(() => {
+                            const feedbackEl = document.getElementById('feedback-stars');
+                            if (feedbackEl) feedbackEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 200);
+                        return;
+                    }
+                    if (action === 'secretsister') {
+                        switchToTab('home');
+                        if (typeof checkSecretSister === 'function') checkSecretSister();
+                        return;
+                    }
                     switchToTab(btn.dataset.tab);
                 });
-            });
+            }
+        }
+
+        async function loadNavSettings() {
+            try {
+                const settings = await apiGet('/api/games/settings');
+                if (settings && typeof settings === 'object') {
+                    navSettings = settings;
+                    buildNav();
+                    // Restore last active tab if it's still visible
+                    const savedTab = localStorage.getItem('g4_active_tab');
+                    if (savedTab) {
+                        const btn = document.querySelector('.nav-btn[data-tab="' + savedTab + '"]');
+                        if (btn && !btn.dataset.action) switchToTab(savedTab);
+                    }
+                }
+            } catch(e) {
+                console.error('Failed to load nav settings:', e);
+                // Fallback: show default nav
+                navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1' };
+                buildNav();
+            }
+        }
+
+        function initTabs() {
+            // Build default nav first (will be updated when settings load)
+            navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1' };
+            buildNav();
         }
 
         function buildSchedule() {
@@ -5978,9 +6044,10 @@
 
         loadState();
         initTabs();
-        // Restore last active tab on refresh
-        const savedTab = localStorage.getItem('g4_active_tab');
-        if (savedTab) switchToTab(savedTab);
+        // Load nav settings from server (updates nav dynamically)
+        loadNavSettings();
+        // Re-check nav settings periodically so admin changes show up live
+        setInterval(loadNavSettings, 15000);
 
         buildSchedule();
         buildPrayerCountdown();
@@ -6104,19 +6171,15 @@
             }
         })();
 
-        // Refresh prayer wall when switching to tab
-        document.querySelector('[data-tab="prayer"]').addEventListener('click', () => {
-            loadPrayerWall();
-        });
-
-        // Refresh insights when switching to journey tab
-        document.querySelector('[data-tab="journey"]').addEventListener('click', () => {
-            loadNotAloneInsights();
-        });
-
-        // Load moments when switching to tab
-        document.querySelector('[data-tab="moments"]').addEventListener('click', () => {
-            loadMoments();
+        // Tab-specific data loading (handled via delegation since nav is dynamic)
+        document.getElementById('bottom-nav').addEventListener('click', (e) => {
+            const btn = e.target.closest('.nav-btn');
+            if (!btn) return;
+            const tab = btn.dataset.tab;
+            if (tab === 'prayer') loadPrayerWall();
+            if (tab === 'journey') loadNotAloneInsights();
+            if (tab === 'moments') loadMoments();
+            if (tab === 'hunt') loadHuntTab();
         });
 
         // ===== Post-Retreat Home =====
@@ -6972,13 +7035,7 @@
         }
 
         function checkHuntTabSwap() {
-            if (!isHuntTime()) return;
-            const journeyBtn = document.querySelector('.nav-btn[data-tab="journey"]');
-            if (journeyBtn && journeyBtn.dataset.tab !== 'hunt') {
-                journeyBtn.dataset.tab = 'hunt';
-                journeyBtn.querySelector('.nav-icon').textContent = '📸';
-                journeyBtn.querySelector('span:last-child').textContent = 'Hunt';
-            }
+            // Hunt tab is now controlled by admin nav toggles - no auto-swap needed
         }
 
         async function loadHuntTab() {

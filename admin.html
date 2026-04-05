@@ -501,6 +501,7 @@
     <!-- Nav Tabs -->
     <div class="nav-tabs">
         <button class="nav-tab active" data-section="users">Users <span class="badge" id="count-users">0</span></button>
+        <button class="nav-tab" data-section="navmenu">Nav Menu</button>
         <button class="nav-tab" data-section="videos">Videos <span class="badge" id="count-videos">0</span></button>
         <button class="nav-tab" data-section="moments">Moments <span class="badge" id="count-moments">0</span></button>
         <button class="nav-tab" data-section="prayers">Prayer Wall <span class="badge" id="count-prayers">0</span></button>
@@ -537,6 +538,16 @@
             <div class="empty-state" id="empty-users" style="display:none;">
                 <div class="icon">&#128100;</div>
                 <p>No users found</p>
+            </div>
+        </div>
+
+        <!-- Nav Menu -->
+        <div class="section" id="section-navmenu">
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.2rem;font-weight:700;margin-bottom:0.25rem;">Bottom Nav Menu</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;">Toggle which buttons appear on everyone's phones. Home is always visible. Max 6 items recommended.</div>
+                <div id="nav-toggles-list" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+                <div style="margin-top:1rem;font-size:0.85rem;color:var(--light-text);">Active: <strong id="nav-active-count">0</strong> items (Home + toggled)</div>
             </div>
         </div>
 
@@ -1223,14 +1234,17 @@ async function deleteFeedback(id) {
 }
 
 // --- Games ---
+let gameSettings = {};
 async function loadGameSettings() {
     try {
         const settings = await apiFetch('/api/games/settings');
+        gameSettings = settings || {};
         document.getElementById('toggle-who-am-i').checked = settings.who_am_i === '1';
         document.getElementById('toggle-packing-points').checked = settings.packing_points === '1';
         document.getElementById('toggle-show-packing-names').checked = settings.show_packing_names === '1';
         document.getElementById('toggle-secret-sister').checked = settings.secret_sister === '1';
         document.getElementById('toggle-ss-reveal').checked = settings.secret_sister_reveal === '1';
+        renderNavToggles();
     } catch (e) { console.error('Game settings:', e); }
 }
 
@@ -1775,6 +1789,50 @@ function clearHuntData() {
             loadHuntStats();
         } catch (e) { showToast('Error: ' + e.message); }
     });
+}
+
+// --- Nav Menu Toggles ---
+const NAV_ITEMS = [
+    { key: 'nav_moments', label: 'Moments', icon: '&#x1f4f8;', desc: 'Photo sharing wall' },
+    { key: 'nav_connect', label: 'Connect', icon: '&#x1f49b;', desc: 'Prayer wall & encouragement' },
+    { key: 'nav_journey', label: 'Journey', icon: '&#x1f381;', desc: 'Gift reflections' },
+    { key: 'nav_journal', label: 'Journal', icon: '&#x2728;', desc: 'Personal journal' },
+    { key: 'nav_hunt', label: 'Scavenger Hunt', icon: '&#x1f4f7;', desc: 'Photo scavenger hunt with voting' },
+    { key: 'nav_meme', label: 'Meme', icon: '&#x1f602;', desc: 'What Do You Meme? game' },
+    { key: 'nav_survey', label: 'Survey', icon: '&#x1f4dd;', desc: 'Retreat feedback form' },
+    { key: 'nav_secretsister', label: 'Secret Sister', icon: '&#x1f48c;', desc: 'Anonymous encouragement notes' }
+];
+
+function renderNavToggles() {
+    const list = document.getElementById('nav-toggles-list');
+    list.innerHTML = NAV_ITEMS.map(item => {
+        const isOn = gameSettings[item.key] === '1';
+        return `
+        <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;background:${isOn ? 'rgba(138,158,122,0.08)' : 'rgba(200,185,176,0.04)'};border-radius:10px;border:1px solid ${isOn ? 'var(--sage)' : 'rgba(200,185,176,0.2)'}; transition:all 0.2s;">
+            <span style="font-size:1.5rem;width:32px;text-align:center;">${item.icon}</span>
+            <div style="flex:1;">
+                <div style="font-weight:600;font-size:0.95rem;">${item.label}</div>
+                <div style="font-size:0.8rem;color:var(--light-text);">${item.desc}</div>
+            </div>
+            <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
+                <input type="checkbox" ${isOn ? 'checked' : ''} style="opacity:0;width:0;height:0;" onchange="toggleNavItem('${item.key}', this.checked)">
+                <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+            </label>
+        </div>`;
+    }).join('');
+    const activeCount = 1 + NAV_ITEMS.filter(i => gameSettings[i.key] === '1').length;
+    document.getElementById('nav-active-count').textContent = activeCount;
+}
+
+async function toggleNavItem(key, on) {
+    try {
+        await apiFetch('/api/games/settings', {
+            method: 'POST',
+            body: { key, value: on ? '1' : '0' }
+        });
+        gameSettings[key] = on ? '1' : '0';
+        renderNavToggles();
+    } catch(e) { showToast('Error: ' + e.message); }
 }
 
 // --- Meme ---

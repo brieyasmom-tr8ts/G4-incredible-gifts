@@ -507,6 +507,7 @@
         <button class="nav-tab" data-section="feedback">Feedback <span class="badge" id="count-feedback">0</span></button>
         <button class="nav-tab" data-section="polls">Polls/Q&A <span class="badge" id="count-polls">0</span></button>
         <button class="nav-tab" data-section="games">Games</button>
+        <button class="nav-tab" data-section="meme">Meme</button>
     </div>
 
     <!-- Content -->
@@ -720,6 +721,37 @@
                     <a href="slideshow.html" target="_blank" class="btn" style="background:var(--blush);color:white;text-decoration:none;display:inline-flex;align-items:center;">📺 Open Slideshow</a>
                     <a href="test-hunt.html" target="_blank" class="btn" style="background:var(--sage);color:white;text-decoration:none;display:inline-flex;align-items:center;">🧪 Test Page</a>
                 </div>
+            </div>
+        </div>
+
+        <!-- Meme -->
+        <div class="section" id="section-meme">
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.25rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">What Do You Meme?</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">Upload a meme image, show it on the slideshow, then people caption it on their phones. Click through captions on the slideshow.</div>
+
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <a href="meme.html" target="_blank" class="btn" style="background:var(--sage);color:white;text-decoration:none;display:inline-flex;align-items:center;">Player Page</a>
+                    <a href="meme-slideshow.html" target="_blank" class="btn" style="background:var(--blush);color:white;text-decoration:none;display:inline-flex;align-items:center;">Slideshow</a>
+                </div>
+
+                <!-- Upload new round -->
+                <div style="border:2px dashed var(--warm-grey);border-radius:12px;padding:1.5rem;text-align:center;margin-bottom:1rem;cursor:pointer;" onclick="document.getElementById('meme-upload-input').click()">
+                    <div style="font-size:1.5rem;margin-bottom:0.5rem;">&#x1f5bc;</div>
+                    <div style="font-size:0.9rem;color:var(--taupe);">Click to upload a meme image</div>
+                    <input type="file" id="meme-upload-input" accept="image/*" style="display:none;" onchange="previewMemeUpload(this)">
+                </div>
+                <div id="meme-upload-preview" style="display:none;margin-bottom:1rem;text-align:center;">
+                    <img id="meme-preview-img" style="max-width:300px;max-height:250px;border-radius:10px;margin-bottom:0.5rem;">
+                    <div style="display:flex;gap:0.5rem;justify-content:center;align-items:center;">
+                        <input type="text" id="meme-round-title" placeholder="Round title (optional)" style="padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;width:200px;">
+                        <button class="btn btn-refresh" onclick="createMemeRound()">Create Round</button>
+                    </div>
+                </div>
+
+                <!-- Existing rounds -->
+                <div style="font-weight:600;margin-bottom:0.5rem;color:var(--taupe);">Rounds</div>
+                <div id="meme-rounds-list"></div>
             </div>
         </div>
 

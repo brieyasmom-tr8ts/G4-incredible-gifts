@@ -172,3 +172,34 @@ CREATE TABLE announcements (
   active INTEGER DEFAULT 1,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
+CREATE TABLE meme_rounds (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  photo_data TEXT NOT NULL,
+  title TEXT DEFAULT '',
+  active INTEGER DEFAULT 0,
+  voting_open INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE meme_captions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  round_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  user_name TEXT NOT NULL,
+  caption TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(round_id, user_id),
+  FOREIGN KEY (round_id) REFERENCES meme_rounds(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE meme_votes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  caption_id INTEGER NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(user_id, caption_id),
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (caption_id) REFERENCES meme_captions(id)
+);

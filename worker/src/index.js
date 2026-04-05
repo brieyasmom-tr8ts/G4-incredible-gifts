@@ -1357,6 +1357,199 @@ export default {
         return json(Object.values(winners).filter(w => w.votes > 0), corsHeaders);
       }
 
+      // ===== WHAT DO YOU MEME =====
+
+      // Create tables on first use
+      if (path.startsWith('/api/meme')) {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS meme_rounds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            photo_data TEXT NOT NULL,
+            title TEXT DEFAULT '',
+            active INTEGER DEFAULT 0,
+            voting_open INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS meme_captions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            round_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            user_name TEXT NOT NULL,
+            caption TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(round_id, user_id)
+          )`).run();
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS meme_votes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            caption_id INTEGER NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(user_id, caption_id)
+          )`).run();
+        } catch(e) { /* tables exist */ }
+      }
+
+      // POST /api/meme/rounds - admin: create a new meme round (upload image)
+      if (path === '/api/meme/rounds' && request.method === 'POST') {
+        const { photo_data, title } = await request.json();
+        if (!photo_data) return json({ error: 'photo_data is required' }, corsHeaders, 400);
+        if (photo_data.length > 2800000) return json({ error: 'Image too large. Please use a smaller image.' }, corsHeaders, 400);
+        const result = await env.DB.prepare(
+          'INSERT INTO meme_rounds (photo_data, title, active, voting_open) VALUES (?, ?, 0, 0)'
+        ).bind(photo_data, title || '').run();
+        return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
+      }
+
+      // GET /api/meme/rounds - admin: list all rounds
+      if (path === '/api/meme/rounds' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          'SELECT id, title, active, voting_open, created_at FROM meme_rounds ORDER BY id DESC'
+        ).all();
+        for (const r of results) {
+          const cnt = await env.DB.prepare('SELECT COUNT(*) as count FROM meme_captions WHERE round_id = ?').bind(r.id).first();
+          r.caption_count = cnt?.count || 0;
+        }
+        return json(results, corsHeaders);
+      }
+
+      // POST /api/meme/activate - admin: activate a round (deactivates others)
+      if (path === '/api/meme/activate' && request.method === 'POST') {
+        const { round_id } = await request.json();
+        await env.DB.prepare('UPDATE meme_rounds SET active = 0').run();
+        if (round_id) {
+          await env.DB.prepare('UPDATE meme_rounds SET active = 1 WHERE id = ?').bind(round_id).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/meme/voting - admin: toggle voting open/closed for a round
+      if (path === '/api/meme/voting' && request.method === 'POST') {
+        const { round_id, open } = await request.json();
+        if (!round_id) return json({ error: 'round_id required' }, corsHeaders, 400);
+        await env.DB.prepare('UPDATE meme_rounds SET voting_open = ? WHERE id = ?').bind(open ? 1 : 0, round_id).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/meme/active - get active round with image + captions + votes
+      if (path === '/api/meme/active' && request.method === 'GET') {
+        const round = await env.DB.prepare(
+          'SELECT id, photo_data, title, voting_open, created_at FROM meme_rounds WHERE active = 1'
+        ).first();
+        if (!round) return json({ active: false }, corsHeaders);
+
+        const { results: captions } = await env.DB.prepare(
+          `SELECT c.id, c.user_id, c.user_name, c.caption, c.created_at,
+                  (SELECT COUNT(*) FROM meme_votes v WHERE v.caption_id = c.id) as vote_count
+           FROM meme_captions c WHERE c.round_id = ?
+           ORDER BY vote_count DESC, c.created_at ASC`
+        ).bind(round.id).all();
+
+        // Get current user's votes if user_id provided
+        const userId = url.searchParams.get('user_id');
+        let myVotes = [];
+        let myCaption = null;
+        if (userId) {
+          const { results: votes } = await env.DB.prepare(
+            'SELECT caption_id FROM meme_votes WHERE user_id = ?'
+          ).bind(parseInt(userId)).all();
+          myVotes = votes.map(v => v.caption_id);
+
+          const existing = await env.DB.prepare(
+            'SELECT id, caption FROM meme_captions WHERE round_id = ? AND user_id = ?'
+          ).bind(round.id, parseInt(userId)).first();
+          if (existing) myCaption = existing;
+        }
+
+        return json({
+          active: true,
+          id: round.id,
+          photo_data: round.photo_data,
+          title: round.title,
+          voting_open: round.voting_open,
+          captions,
+          my_votes: myVotes,
+          my_caption: myCaption
+        }, corsHeaders);
+      }
+
+      // POST /api/meme/caption - submit a caption (one per user per round)
+      if (path === '/api/meme/caption' && request.method === 'POST') {
+        const { round_id, user_id, user_name, caption } = await request.json();
+        if (!round_id || !user_id || !caption || !caption.trim()) {
+          return json({ error: 'round_id, user_id, and caption required' }, corsHeaders, 400);
+        }
+        if (caption.length > 200) return json({ error: 'Caption must be 200 characters or less' }, corsHeaders, 400);
+        if (containsBlockedWords(caption)) {
+          return json({ error: 'Please keep captions fun and kind!' }, corsHeaders, 400);
+        }
+
+        await env.DB.prepare(
+          'INSERT INTO meme_captions (round_id, user_id, user_name, caption) VALUES (?, ?, ?, ?) ON CONFLICT(round_id, user_id) DO UPDATE SET caption = excluded.caption'
+        ).bind(round_id, user_id, user_name || '', caption.trim()).run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/meme/vote - toggle vote on a caption (vote as many as you want)
+      if (path === '/api/meme/vote' && request.method === 'POST') {
+        const { user_id, caption_id } = await request.json();
+        if (!user_id || !caption_id) return json({ error: 'user_id and caption_id required' }, corsHeaders, 400);
+
+        // Check if round voting is open
+        const caption = await env.DB.prepare(
+          'SELECT c.round_id, c.user_id FROM meme_captions c JOIN meme_rounds r ON c.round_id = r.id WHERE c.id = ? AND r.voting_open = 1'
+        ).bind(caption_id).first();
+        if (!caption) return json({ error: 'Voting is not open for this round' }, corsHeaders, 400);
+
+        // Can't vote for your own caption
+        if (caption.user_id === user_id) return json({ error: "You can't vote for your own caption!" }, corsHeaders, 400);
+
+        // Toggle: if already voted, remove it; otherwise add it
+        const existing = await env.DB.prepare(
+          'SELECT id FROM meme_votes WHERE user_id = ? AND caption_id = ?'
+        ).bind(user_id, caption_id).first();
+
+        if (existing) {
+          await env.DB.prepare('DELETE FROM meme_votes WHERE id = ?').bind(existing.id).run();
+          return json({ success: true, voted: false }, corsHeaders);
+        } else {
+          await env.DB.prepare(
+            'INSERT INTO meme_votes (user_id, caption_id) VALUES (?, ?)'
+          ).bind(user_id, caption_id).run();
+          return json({ success: true, voted: true }, corsHeaders);
+        }
+      }
+
+      // DELETE /api/meme/rounds/:id - admin: delete a round and all its data
+      const memeDeleteMatch = path.match(/^\/api\/meme\/rounds\/(\d+)$/);
+      if (memeDeleteMatch && request.method === 'DELETE') {
+        const roundId = parseInt(memeDeleteMatch[1]);
+        // Delete votes for captions in this round
+        await env.DB.prepare(
+          'DELETE FROM meme_votes WHERE caption_id IN (SELECT id FROM meme_captions WHERE round_id = ?)'
+        ).bind(roundId).run();
+        await env.DB.prepare('DELETE FROM meme_captions WHERE round_id = ?').bind(roundId).run();
+        await env.DB.prepare('DELETE FROM meme_rounds WHERE id = ?').bind(roundId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/meme/results/:id - get results for a specific round (admin or public when voting closed)
+      const memeResultsMatch = path.match(/^\/api\/meme\/results\/(\d+)$/);
+      if (memeResultsMatch && request.method === 'GET') {
+        const roundId = parseInt(memeResultsMatch[1]);
+        const round = await env.DB.prepare('SELECT id, title, photo_data, voting_open FROM meme_rounds WHERE id = ?').bind(roundId).first();
+        if (!round) return json({ error: 'Round not found' }, corsHeaders, 404);
+
+        const { results: captions } = await env.DB.prepare(
+          `SELECT c.id, c.user_name, c.caption,
+                  (SELECT COUNT(*) FROM meme_votes v WHERE v.caption_id = c.id) as vote_count
+           FROM meme_captions c WHERE c.round_id = ?
+           ORDER BY vote_count DESC`
+        ).bind(roundId).all();
+
+        return json({ round, captions }, corsHeaders);
+      }
+
       return json({ error: 'Not found' }, corsHeaders, 404);
 
     } catch (err) {

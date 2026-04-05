@@ -3883,26 +3883,8 @@
             messages.forEach(msg => {
                     const post = document.createElement('div');
                     post.className = 'prayer-post type-' + msg.type;
-                    post.style.display = 'flex';
-                    post.style.gap = '10px';
-                    post.style.alignItems = 'flex-start';
 
-                    // Small avatar on left
-                    const avatarWrap = document.createElement('div');
-                    avatarWrap.style.cssText = 'flex-shrink:0;cursor:pointer;padding-top:2px;';
-                    avatarWrap.addEventListener('click', (e) => { e.stopPropagation(); showUserCard(msg.user_id, msg.author_name); });
-                    const avatarEl = document.createElement('div');
-                    avatarEl.className = 'msg-avatar-placeholder';
-                    avatarEl.style.cssText = 'width:24px;height:24px;font-size:0.6rem;border-radius:6px;';
-                    avatarEl.textContent = msg.author_name.charAt(0);
-                    avatarWrap.appendChild(avatarEl);
-                    post.appendChild(avatarWrap);
-                    loadAvatar(msg.user_id, avatarEl, msg.author_name.charAt(0));
-
-                    // Content on right
                     const content = document.createElement('div');
-                    content.style.flex = '1';
-                    content.style.minWidth = '0';
 
                     // Name + type badge inline
                     const nameRow = document.createElement('div');

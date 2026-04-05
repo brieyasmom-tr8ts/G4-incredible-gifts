@@ -6626,7 +6626,7 @@
                 timerEl.textContent = "Time's up!";
                 timerEl.style.color = '#c0392b';
                 showToast('No fact entered — you can try again later!');
-                setTimeout(() => { modal.style.display = 'none'; setTimeout(() => checkGames(), 500); }, 1500);
+                setTimeout(() => { modal.style.display = 'none'; onPopupClosed(); }, 1500);
                 return;
             }
 
@@ -6645,7 +6645,7 @@
                     localStorage.setItem('g4funfact_' + currentUser.id, '1');
                     modal.style.display = 'none';
                     showToast('Fact submitted! Shhh... it\'s a secret!');
-                    setTimeout(() => checkGames(), 500);
+                    onPopupClosed();
                 }
             } catch (e) { showToast('Could not submit. Try again.'); }
             btn.disabled = false;
@@ -6696,7 +6696,7 @@
                 if (funfactTimer) { clearInterval(funfactTimer); funfactTimer = null; }
                 sessionStorage.setItem('g4funfact_skip', '1');
                 modal.style.display = 'none';
-                setTimeout(() => checkGames(), 500);
+                onPopupClosed();
             };
         }
 
@@ -6746,11 +6746,13 @@
 
             document.getElementById('packing-done').onclick = () => {
                 modal.style.display = 'none';
+                onPopupClosed();
             };
 
             document.getElementById('packing-skip').onclick = () => {
                 sessionStorage.setItem('g4packing_skip', '1');
                 modal.style.display = 'none';
+                onPopupClosed();
             };
         }
 
@@ -6847,6 +6849,7 @@
                         localStorage.setItem('g4secretsister_' + currentUser.id, '1');
                         modal.style.display = 'none';
                         showToast('Note sent with love!');
+                        onPopupClosed();
                     }
                 } catch (e) { showToast('Could not send. Try again.'); }
                 btn.disabled = false;
@@ -6856,6 +6859,7 @@
             document.getElementById('ss-skip').onclick = () => {
                 sessionStorage.setItem('g4ss_skip', '1');
                 modal.style.display = 'none';
+                onPopupClosed();
             };
         }
 
@@ -6868,6 +6872,7 @@
 
             document.getElementById('ss-received-close').onclick = () => {
                 modal.style.display = 'none';
+                onPopupClosed();
             };
         }
 
@@ -6903,16 +6908,21 @@
             } catch (e) { /* silently fail */ }
         }
 
-        // Popup queue — show one at a time, next appears when current is closed
+        // Popup queue — show one at a time with escalating delays (30s, 60s, 90s)
         const popupQueue = [];
         let popupActive = false;
+        let popupsShown = 0;
 
         function queuePopup(showFn) {
             popupQueue.push(showFn);
-            if (!popupActive) drainPopupQueue();
         }
 
-        function drainPopupQueue() {
+        function startPopupQueue() {
+            if (popupQueue.length === 0) return;
+            showNextPopup();
+        }
+
+        function showNextPopup() {
             if (popupQueue.length === 0) { popupActive = false; return; }
             popupActive = true;
             const next = popupQueue.shift();
@@ -6921,14 +6931,56 @@
 
         function onPopupClosed() {
             popupActive = false;
-            setTimeout(drainPopupQueue, 300);
+            popupsShown++;
+            if (popupQueue.length === 0) return;
+            // Escalating delay: 30s after 1st, 60s after 2nd, 90s after 3rd+
+            const delays = [30000, 60000, 90000];
+            const delay = delays[Math.min(popupsShown - 1, delays.length - 1)];
+            setTimeout(() => {
+                if (!popupActive) showNextPopup();
+            }, delay);
         }
 
-        // Check for announcements and games after user is loaded
+        // Check for all popups after user is loaded, then start queue
         setTimeout(async () => {
             if (!currentUser) return;
-            // Gather all popups that need to show, then queue them in order
-            // 1. Announcements
+
+            // Priority order: Secret Sister & Hunt first, then announcements, polls, games
+
+            // 1. Secret Sister
+            try {
+                const settings = gameSettings || await apiGet('/api/games/settings').catch(() => ({}));
+                if (settings.secret_sister === '1') {
+                    const ssData = await apiGet('/api/games/secretsister/mine?user_id=' + currentUser.id);
+                    if (ssData && ssData.assignment && !localStorage.getItem('g4secretsister_' + currentUser.id) && !sessionStorage.getItem('g4ss_skip')) {
+                        queuePopup(() => showSecretSisterModal(ssData.assignment.receiver_name));
+                    } else if (settings.secret_sister_reveal === '1' && ssData && ssData.received_note && !localStorage.getItem('g4ss_seen_' + currentUser.id)) {
+                        queuePopup(() => showReceivedNoteModal(ssData.received_note));
+                    }
+                }
+            } catch (e) { /* silently fail */ }
+
+            // 2. Scavenger Hunt
+            if (isHuntTime() && !localStorage.getItem('g4hunt_seen_2026')) {
+                queuePopup(() => {
+                    localStorage.setItem('g4hunt_seen_2026', '1');
+                    document.getElementById('hunt-instructions-modal').style.display = 'flex';
+                    document.getElementById('hunt-instructions-close').onclick = () => {
+                        document.getElementById('hunt-instructions-modal').style.display = 'none';
+                        const huntBtn = document.querySelector('.nav-btn[data-tab="hunt"]');
+                        if (huntBtn) {
+                            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                            huntBtn.classList.add('active');
+                            document.getElementById('hunt-tab').classList.add('active');
+                            loadHuntTab();
+                        }
+                        onPopupClosed();
+                    };
+                });
+            }
+
+            // 3. Announcements
             try {
                 const ann = await apiGet('/api/announcements/active');
                 if (ann && ann.id && !localStorage.getItem('g4ann_' + ann.id)) {
@@ -6946,7 +6998,7 @@
                 }
             } catch (e) { /* silently fail */ }
 
-            // 2. Polls
+            // 4. Polls
             try {
                 const poll = await apiGet('/api/polls/active');
                 if (poll && poll.active && !localStorage.getItem('g4poll_' + poll.id)) {
@@ -6954,26 +7006,33 @@
                 }
             } catch (e) { /* silently fail */ }
 
-            // 3. Games (fun fact, packing)
-            checkGames();
+            // 5. Games (fun fact, packing)
+            try {
+                const settings = gameSettings || {};
+                if (settings.who_am_i === '1') {
+                    const submitted = localStorage.getItem('g4funfact_' + currentUser.id);
+                    const skipped = sessionStorage.getItem('g4funfact_skip');
+                    if (!submitted && !skipped) queuePopup(() => showFunFactModal());
+                }
+                if (settings.packing_points === '1') {
+                    const submitted = localStorage.getItem('g4packing_' + currentUser.id);
+                    const skipped = sessionStorage.getItem('g4packing_skip');
+                    if (!submitted && !skipped) queuePopup(() => showPackingModal());
+                }
+            } catch (e) { /* silently fail */ }
 
-            // 4. Would You Rather
+            // 6. Would You Rather
             try {
                 const data = await apiGet('/api/games/wyr/active');
                 if (data && data.active) {
                     const voted = localStorage.getItem('g4wyr_' + data.id + '_' + currentUser.id);
                     const skipped = sessionStorage.getItem('g4wyr_skip_' + data.id);
-                    if (!voted && !skipped) {
-                        queuePopup(() => showWYRModal(data));
-                    }
+                    if (!voted && !skipped) queuePopup(() => showWYRModal(data));
                 }
             } catch (e) { /* silently fail */ }
 
-            // 5. Secret Sister
-            checkSecretSister();
-
-            // 6. Scavenger Hunt popup (if it's hunt time)
-            checkHuntPopup();
+            // Start the queue — first popup shows immediately
+            startPopupQueue();
         }, 1500);
 
         // ===== SCAVENGER HUNT =====

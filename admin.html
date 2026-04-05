@@ -1723,8 +1723,7 @@ function clearSecretSisters() {
 // --- Scavenger Hunt ---
 async function loadHuntStats() {
     try {
-        const res = await apiFetch('/api/hunt/feed');
-        const subs = await res.json();
+        const subs = await apiFetch('/api/hunt/feed');
         document.getElementById('hunt-sub-count').textContent = subs.length || 0;
         // Count total votes from all submissions
         const totalVotes = subs.reduce((sum, s) => sum + (s.votes || 0), 0);

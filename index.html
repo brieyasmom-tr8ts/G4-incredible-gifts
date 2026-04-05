@@ -2003,6 +2003,11 @@
             background: var(--blush) !important;
             color: white !important;
         }
+        .dir-sort-btn.active {
+            background: var(--accent) !important;
+            color: white !important;
+            border-color: var(--accent) !important;
+        }
         .tab-badge {
             position: absolute;
             top: 4px;
@@ -2733,8 +2738,12 @@
                             <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--accent);line-height:1;"><span id="sisters-num">0</span></div>
                             <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;">women on this journey with you</div>
                         </div>
-                        <div style="margin-bottom:14px;">
+                        <div style="margin-bottom:10px;">
                             <input type="text" id="sisters-search" placeholder="Search by name..." style="width:100%;padding:10px 16px;border:1px solid rgba(139,134,128,0.2);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);background:rgba(255,255,255,0.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);outline:none;transition:var(--transition);">
+                        </div>
+                        <div id="directory-sort" style="display:none;margin-bottom:12px;display:flex;gap:6px;justify-content:flex-end;">
+                            <button class="dir-sort-btn active" data-sort="newest" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);">Newest</button>
+                            <button class="dir-sort-btn" data-sort="alpha" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);">A–Z</button>
                         </div>
                         <div id="connect-people-list" style="display:flex;flex-direction:column;gap:10px;"></div>
                     </div>
@@ -3524,6 +3533,8 @@
 
         // ===== People Directory =====
         let allDirectoryUsers = [];
+        let directorySortMode = 'newest';
+        let directoryPage = 1;
 
         function renderSisterRow(u) {
             const displayName = u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name;
@@ -3575,22 +3586,52 @@
                 return;
             }
 
-            // Show profiles-first (photo/about filled in), then newest
-            const showAll = !!query;
-            const display = showAll ? filtered : [...filtered].sort((a, b) => {
-                const aProfile = (a.photo_data ? 1 : 0) + (a.about ? 1 : 0) + (a.location ? 1 : 0);
-                const bProfile = (b.photo_data ? 1 : 0) + (b.about ? 1 : 0) + (b.location ? 1 : 0);
-                if (bProfile !== aProfile) return bProfile - aProfile;
+            // Sort
+            const sortMode = directorySortMode || 'newest';
+            const display = [...filtered].sort((a, b) => {
+                if (sortMode === 'alpha') {
+                    return a.first_name.localeCompare(b.first_name) || (a.last_initial || '').localeCompare(b.last_initial || '');
+                }
+                // newest: by id descending
                 return b.id - a.id;
             });
-            const toShow = showAll ? display : display.slice(0, 10);
-            toShow.forEach(u => list.appendChild(renderSisterRow(u)));
 
-            if (!showAll && filtered.length > 10) {
-                const more = document.createElement('div');
-                more.style.cssText = 'text-align:center;padding:14px 0;font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;';
-                more.textContent = `+ ${filtered.length - 10} more — search by name to find them!`;
-                list.appendChild(more);
+            // Pagination
+            const perPage = 15;
+            const totalPages = Math.ceil(display.length / perPage);
+            const page = Math.min(directoryPage, totalPages);
+            const start = (page - 1) * perPage;
+            const pageItems = display.slice(start, start + perPage);
+
+            pageItems.forEach(u => list.appendChild(renderSisterRow(u)));
+
+            // Pagination controls
+            if (totalPages > 1) {
+                const pager = document.createElement('div');
+                pager.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 0;flex-wrap:wrap;';
+
+                if (page > 1) {
+                    const prev = document.createElement('button');
+                    prev.style.cssText = 'padding:6px 14px;border:1px solid rgba(139,134,128,0.2);border-radius:10px;background:white;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--dark-text);cursor:pointer;';
+                    prev.textContent = '← Prev';
+                    prev.onclick = () => { directoryPage = page - 1; renderSistersList(filter); };
+                    pager.appendChild(prev);
+                }
+
+                const info = document.createElement('span');
+                info.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);';
+                info.textContent = `Page ${page} of ${totalPages}`;
+                pager.appendChild(info);
+
+                if (page < totalPages) {
+                    const next = document.createElement('button');
+                    next.style.cssText = 'padding:6px 14px;border:1px solid rgba(139,134,128,0.2);border-radius:10px;background:white;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--dark-text);cursor:pointer;';
+                    next.textContent = 'Next →';
+                    next.onclick = () => { directoryPage = page + 1; renderSistersList(filter); };
+                    pager.appendChild(next);
+                }
+
+                list.appendChild(pager);
             }
         }
 
@@ -3631,7 +3672,20 @@
 
                 // Search
                 const searchInput = document.getElementById('sisters-search');
-                searchInput.oninput = () => renderSistersList(searchInput.value);
+                searchInput.oninput = () => { directoryPage = 1; renderSistersList(searchInput.value); };
+
+                // Sort buttons
+                const sortBar = document.getElementById('directory-sort');
+                sortBar.style.display = 'flex';
+                document.querySelectorAll('.dir-sort-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        directorySortMode = btn.dataset.sort;
+                        directoryPage = 1;
+                        document.querySelectorAll('.dir-sort-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        renderSistersList(searchInput.value);
+                    };
+                });
 
                 renderSistersList('');
             } catch(e) {

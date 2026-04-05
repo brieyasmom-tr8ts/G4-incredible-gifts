@@ -521,17 +521,25 @@
             object-fit: cover;
             flex-shrink: 0;
         }
+        .msg-avatar-sm {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+            vertical-align: middle;
+            border: 1.5px solid var(--blush);
+        }
 
         .msg-avatar-placeholder {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
             background: linear-gradient(135deg, var(--blush), var(--rose));
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.65rem;
+            font-size: 0.55rem;
             font-weight: 700;
             font-family: 'Playfair Display', serif;
             flex-shrink: 0;
@@ -1411,29 +1419,6 @@
             background: linear-gradient(180deg, rgba(240,224,216,0.85) 0%, rgba(247,240,235,0.8) 100%);
         }
 
-        .contact-btn {
-            position: absolute;
-            top: calc(12px + max(env(safe-area-inset-top, 0px), 24px));
-            left: 16px;
-            background: rgba(255,255,255,0.7);
-            border: 1px solid rgba(184,122,110,0.25);
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 10;
-            text-decoration: none;
-            transition: var(--transition);
-            backdrop-filter: blur(4px);
-        }
-
-        .contact-btn:hover {
-            background: rgba(201,144,138,0.15);
-            transform: scale(1.05);
-        }
 
         /* Floral overlay - background behind content cards */
         .floral-overlay {
@@ -2018,6 +2003,28 @@
             background: var(--blush) !important;
             color: white !important;
         }
+        .tab-badge {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 9px;
+            background: var(--accent);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            line-height: 18px;
+            text-align: center;
+            font-family: -apple-system, sans-serif;
+            animation: badgePop 0.3s ease;
+        }
+        @keyframes badgePop {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
 
         .uplift-type-btn.active {
             background: rgba(201,144,138,0.15) !important;
@@ -2474,10 +2481,7 @@
 
     <div class="app-container">
         <div class="header" style="position:relative;">
-            <a href="mailto:Heather@GiveSendGo.com" class="contact-btn" aria-label="Contact Us" title="Contact Heather">
-                <span style="font-size:1.1rem;">✉️</span>
-            </a>
-            <button id="header-profile-btn" style="display:none;position:absolute;top:calc(12px + max(env(safe-area-inset-top,0px),24px));right:16px;background:none;border:none;cursor:pointer;padding:0;z-index:10;" aria-label="My Profile">
+<button id="header-profile-btn" style="display:none;position:absolute;top:calc(12px + max(env(safe-area-inset-top,0px),24px));right:16px;background:none;border:none;cursor:pointer;padding:0;z-index:10;" aria-label="My Profile">
                 <div id="header-avatar" class="welcome-avatar-placeholder" style="width:32px;height:32px;font-size:0.75rem;">?</div>
             </button>
             <p class="retreat-label">G4 2026 Women's Retreat</p>
@@ -2615,6 +2619,7 @@
                     <div id="continue-home-link" style="display:none;"></div>
                     <!-- Weather forecast for Ocean City -->
                     <div id="weather-forecast" style="display:none;margin:8px 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(138,158,122,0.08) 0%,rgba(201,144,138,0.06) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.12);"></div>
+
                 </div>
             </div>
 
@@ -2650,7 +2655,7 @@
                     <div style="text-align:center;padding:20px 20px 8px;">
                         <div style="font-size:2rem;margin-bottom:4px;">📸</div>
                         <div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--dark-text);">Scavenger Hunt</div>
-                        <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;margin-top:4px;line-height:1.5;padding:0 16px;">Snap as many as you want! Your sisters will vote for the best photo in each category. Winners announced at 7 PM!</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;margin-top:4px;line-height:1.5;padding:0 16px;">Snap as many as you want! Everyone votes for the best photo in each category. Winners announced at 7 PM!</div>
                         <button id="hunt-how-btn" style="margin-top:8px;padding:6px 16px;border:1px solid rgba(184,122,110,0.25);border-radius:16px;background:rgba(255,255,255,0.7);font-family:Cormorant Garamond,serif;font-size:0.82rem;font-weight:600;color:var(--accent);cursor:pointer;">How It Works</button>
                     </div>
 
@@ -2708,9 +2713,9 @@
                     </div>
                     <!-- Connect Sub-tabs -->
                     <div id="connect-sub-tabs" style="display:flex;gap:0;margin:0 16px 12px;border-radius:12px;overflow:hidden;border:1px solid rgba(139,134,128,0.15);background:rgba(255,255,255,0.5);">
-                        <button class="connect-tab-btn active" data-connect="sisters" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);position:relative;">Sisters</button>
-                        <button class="connect-tab-btn" data-connect="uplift" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);border-right:1px solid rgba(139,134,128,0.12);">Uplift</button>
-                        <button class="connect-tab-btn" data-connect="sharing" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">Polls</button>
+                        <button class="connect-tab-btn active" data-connect="sisters" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);position:relative;">Directory</button>
+                        <button class="connect-tab-btn" data-connect="uplift" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);border-right:1px solid rgba(139,134,128,0.12);position:relative;">Uplift<span id="badge-uplift" class="tab-badge" style="display:none;"></span></button>
+                        <button class="connect-tab-btn" data-connect="sharing" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);position:relative;">Polls<span id="badge-sharing" class="tab-badge" style="display:none;"></span></button>
                     </div>
                     <!-- Sisters Sub-tab -->
                     <div id="connect-sisters" class="connect-panel" style="margin:0 16px;">
@@ -2719,47 +2724,35 @@
                                 <div id="prompt-avatar" style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;border:2px solid var(--blush);"><span style="color:white;font-size:1.1rem;font-family:Playfair Display,serif;font-weight:700;" id="prompt-initial">?</span></div>
                                 <div style="flex:1;">
                                     <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);" id="prompt-name"></div>
-                                    <div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);margin-top:1px;">Add a photo & share your info so your sisters can connect with you</div>
+                                    <div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);margin-top:1px;">Add a photo & share your info so everyone can connect with you</div>
                                 </div>
                                 <div style="flex-shrink:0;padding:6px 12px;background:var(--blush);color:white;border-radius:16px;font-family:Cormorant Garamond,serif;font-size:0.78rem;font-weight:600;">Set Up</div>
                             </div>
                         </div>
                         <div id="sisters-count" style="display:none;text-align:center;margin-bottom:12px;">
                             <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--accent);line-height:1;"><span id="sisters-num">0</span></div>
-                            <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;">sisters on this journey with you</div>
+                            <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;">women on this journey with you</div>
                         </div>
                         <div style="margin-bottom:14px;">
                             <input type="text" id="sisters-search" placeholder="Search by name..." style="width:100%;padding:10px 16px;border:1px solid rgba(139,134,128,0.2);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);background:rgba(255,255,255,0.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);outline:none;transition:var(--transition);">
                         </div>
                         <div id="connect-people-list" style="display:flex;flex-direction:column;gap:10px;"></div>
                     </div>
-                    <!-- Uplift Sub-tab (Prayers + Encouragement combined) -->
-                    <div id="connect-uplift" class="connect-panel" style="display:none;">
-                        <!-- Type picker -->
-                        <div style="display:flex;gap:0;margin:0 16px 12px;border-radius:10px;overflow:hidden;border:1px solid rgba(139,134,128,0.12);background:rgba(255,255,255,0.4);">
-                            <button class="uplift-type-btn active" data-uplift="prayer" style="flex:1;padding:8px 4px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">Prayers</button>
-                            <button class="uplift-type-btn" data-uplift="encouragement" style="flex:1;padding:8px 4px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);">Encouragement</button>
-                        </div>
-                        <!-- Prayer compose -->
-                        <div id="uplift-prayer-section">
-                            <div class="prayer-compose" id="prayer-compose" style="display:none;">
-                                <input type="text" id="prayer-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;font-size:16px;">
-                                <textarea id="prayer-message" placeholder="Share your prayer request..." maxlength="500" style="font-size:16px;"></textarea>
-                                <div class="prayer-char-count"><span id="prayer-char">0</span>/500</div>
-                                <button class="save-btn" id="prayer-send-btn">Share Prayer</button>
+                    <!-- Uplift Sub-tab (Unified Prayer + Encouragement wall) -->
+                    <div id="connect-uplift" class="connect-panel" style="display:none;margin:0 16px;">
+                        <!-- Compose -->
+                        <div class="prayer-compose" id="prayer-compose" style="display:none;">
+                            <div style="display:flex;gap:8px;margin-bottom:10px;">
+                                <button class="uplift-type-btn active" data-type="prayer" onclick="pickUpliftType('prayer')" style="flex:1;padding:8px 4px;border:1px solid rgba(139,134,128,0.15);border-radius:10px;background:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">🙏 Prayer</button>
+                                <button class="uplift-type-btn" data-type="encouragement" onclick="pickUpliftType('encouragement')" style="flex:1;padding:8px 4px;border:1px solid rgba(139,134,128,0.15);border-radius:10px;background:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">💛 Encouragement</button>
                             </div>
-                            <div id="prayer-posts"></div>
+                            <input type="text" id="prayer-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;font-size:16px;">
+                            <textarea id="prayer-message" placeholder="Share your prayer request..." maxlength="500" style="font-size:16px;"></textarea>
+                            <div class="prayer-char-count"><span id="prayer-char">0</span>/500</div>
+                            <button class="save-btn" id="prayer-send-btn">Share</button>
                         </div>
-                        <!-- Encouragement compose -->
-                        <div id="uplift-encouragement-section" style="display:none;">
-                            <div class="prayer-compose" id="encourage-compose" style="display:none;">
-                                <input type="text" id="encourage-for" class="modal-input" placeholder="For someone specific? Type their name (optional)" style="margin-bottom:10px;font-size:16px;">
-                                <textarea id="encourage-message" placeholder="Write an encouragement..." maxlength="500" style="font-size:16px;"></textarea>
-                                <div class="prayer-char-count"><span id="encourage-char">0</span>/500</div>
-                                <button class="save-btn" id="encourage-send-btn">Share Encouragement</button>
-                            </div>
-                            <div id="encourage-posts"></div>
-                        </div>
+                        <!-- Unified feed -->
+                        <div id="prayer-posts"></div>
                     </div>
                     <!-- Sharing Sub-tab (Poll Responses) -->
                     <div id="connect-sharing" class="connect-panel" style="display:none;">
@@ -2996,6 +2989,7 @@
                 <div style="font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--taupe);">Thank you for sharing!</div>
             </div>
             <button class="save-btn" id="poll-close" style="width:100%;display:none;">Close</button>
+            <button id="poll-skip" style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-family:Cormorant Garamond,serif;font-size:0.9rem;cursor:pointer;margin-top:4px;">Skip</button>
         </div>
     </div>
 
@@ -3048,7 +3042,7 @@
         <div class="modal" style="text-align:center;">
             <div style="font-size:2.2rem;margin-bottom:8px;">🎁</div>
             <h2 style="font-family:Playfair Display,serif;font-size:1.3rem;margin-bottom:6px;">You Have a Secret Note!</h2>
-            <p style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--light-text);margin-bottom:16px;line-height:1.5;">A sister wrote this just for you...</p>
+            <p style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--light-text);margin-bottom:16px;line-height:1.5;">Someone wrote this just for you...</p>
             <div id="ss-received-note" style="font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--dark-text);line-height:1.6;padding:16px 20px;background:rgba(201,144,138,0.08);border-radius:14px;border:1px solid rgba(201,144,138,0.15);font-style:italic;margin-bottom:16px;"></div>
             <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);margin-bottom:16px;">— Your Secret Sister 💛</div>
             <button class="save-btn" id="ss-received-close" style="width:100%;">That Made My Day!</button>
@@ -3062,8 +3056,8 @@
             <h2 style="font-family:Playfair Display,serif;font-size:1.2rem;margin-bottom:12px;">Scavenger Hunt!</h2>
             <div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--dark-text);line-height:1.7;text-align:left;padding:0 8px;">
                 <div style="margin-bottom:10px;"><strong>1.</strong> Browse the prompts and pick the ones that look fun to you — no need to do them all!</div>
-                <div style="margin-bottom:10px;"><strong>2.</strong> Tap a prompt, snap a photo (or choose from your camera roll), and add a caption if you want.</div>
-                <div style="margin-bottom:10px;"><strong>3.</strong> Switch to <strong>Gallery & Vote</strong> to see what your sisters are capturing. Vote for your favorite photo in each category!</div>
+                <div style="margin-bottom:10px;"><strong>2.</strong> Tap a prompt, snap a photo (or choose from your camera roll), and add a caption. Group photo? Tag everyone's names in the caption!</div>
+                <div style="margin-bottom:10px;"><strong>3.</strong> Switch to <strong>Gallery & Vote</strong> to see what everyone is capturing. Vote for your favorite photo in each category!</div>
                 <div style="margin-bottom:10px;"><strong>4.</strong> You get <strong>one vote per category</strong> — choose wisely! You can change your vote until <strong>7 PM</strong>.</div>
                 <div><strong>5.</strong> Be creative! Winners will be announced tonight. Your photos will be in the slideshow! 🎉</div>
             </div>
@@ -3080,9 +3074,13 @@
             <div id="hunt-upload-preview" style="display:none;margin-bottom:12px;border-radius:12px;overflow:hidden;max-height:250px;">
                 <img id="hunt-preview-img" style="width:100%;object-fit:cover;">
             </div>
-            <input type="file" id="hunt-photo-input" accept="image/*" style="display:none;">
-            <button id="hunt-choose-photo" class="save-btn" style="width:100%;margin-bottom:8px;">📷 Take or Choose Photo</button>
-            <input type="text" id="hunt-caption-input" placeholder="Add a caption (optional)" style="width:100%;padding:12px;border:1.5px solid var(--warm-grey);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);margin-bottom:8px;">
+            <input type="file" id="hunt-photo-input-camera" accept="image/*" capture="environment" style="display:none;">
+            <input type="file" id="hunt-photo-input-gallery" accept="image/*" style="display:none;">
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <button id="hunt-take-photo" class="save-btn" style="flex:1;">📷 Take Photo</button>
+                <button id="hunt-choose-photo" class="save-btn" style="flex:1;background:var(--warm-grey);">🖼️ Choose Photo</button>
+            </div>
+            <input type="text" id="hunt-caption-input" placeholder="Caption or tag who's in the photo!" style="width:100%;padding:12px;border:1.5px solid var(--warm-grey);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);margin-bottom:8px;">
             <button id="hunt-submit-photo" class="save-btn" style="width:100%;display:none;background:var(--sage);">Submit Photo</button>
             <button id="hunt-upload-cancel" style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-family:Cormorant Garamond,serif;font-size:0.9rem;cursor:pointer;">Cancel</button>
         </div>
@@ -3272,26 +3270,23 @@
         const avatarCache = {};
         async function loadAvatar(userId, element, initial) {
             if (!userId) return;
+            function replaceWithPhoto(src) {
+                const img = document.createElement('img');
+                // If element has a data-avatar-class, use that; otherwise default
+                const cls = element.dataset.avatarClass || element.className.replace('placeholder', '').trim() || 'msg-avatar';
+                img.className = cls;
+                img.src = src;
+                img.alt = '';
+                element.replaceWith(img);
+            }
             if (avatarCache[userId] !== undefined) {
-                if (avatarCache[userId]) {
-                    const img = document.createElement('img');
-                    img.className = element.className.replace('placeholder', '').trim() || 'msg-avatar';
-                    img.src = avatarCache[userId];
-                    img.alt = '';
-                    element.replaceWith(img);
-                }
+                if (avatarCache[userId]) replaceWithPhoto(avatarCache[userId]);
                 return;
             }
             try {
                 const data = await apiGet('/api/users/' + userId + '/photo');
                 avatarCache[userId] = data?.photo_data || '';
-                if (avatarCache[userId]) {
-                    const img = document.createElement('img');
-                    img.className = element.className.replace('placeholder', '').trim() || 'msg-avatar';
-                    img.src = avatarCache[userId];
-                    img.alt = '';
-                    element.replaceWith(img);
-                }
+                if (avatarCache[userId]) replaceWithPhoto(avatarCache[userId]);
             } catch(e) {
                 avatarCache[userId] = '';
             }
@@ -3333,7 +3328,6 @@
                 currentUser = JSON.parse(saved);
                 showWelcome();
                 document.getElementById('prayer-compose').style.display = 'block';
-                document.getElementById('encourage-compose').style.display = 'block';
                 document.getElementById('moments-upload').style.display = 'block';
                 document.getElementById('video-section').style.display = 'block';
                 loadPeople();
@@ -3378,8 +3372,7 @@
                     document.getElementById('setup-modal').style.display = 'none';
                     showWelcome();
                     document.getElementById('prayer-compose').style.display = 'block';
-                    document.getElementById('encourage-compose').style.display = 'block';
-                    document.getElementById('moments-upload').style.display = 'block';
+                        document.getElementById('moments-upload').style.display = 'block';
                     document.getElementById('video-section').style.display = 'block';
                     loadPeople();
                     launchConfetti();
@@ -3508,8 +3501,11 @@
                 const card = document.createElement('div');
                 card.style.cssText = 'background:var(--cream);border-radius:20px;padding:24px;text-align:center;max-width:320px;width:100%;box-shadow:var(--shadow-lg);';
                 card.innerHTML = `
-                    <div style="width:72px;height:72px;border-radius:50%;margin:0 auto 10px;overflow:hidden;border:2.5px solid var(--blush);background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;">
-                        ${user.photo_data ? `<img src="${user.photo_data}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="color:white;font-size:1.6rem;font-family:Playfair Display,serif;font-weight:700;">${user.first_name.charAt(0)}</span>`}
+                    <div style="width:72px;height:72px;border-radius:50%;margin:0 auto 10px;position:relative;overflow:visible;">
+                        <div style="width:100%;height:100%;border-radius:50%;overflow:hidden;border:2.5px solid var(--blush);background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;">
+                            ${user.photo_data ? `<img src="${user.photo_data}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="color:white;font-size:1.6rem;font-family:Playfair Display,serif;font-weight:700;">${user.first_name.charAt(0)}</span>`}
+                        </div>
+                        ${user.is_team ? '<div style="position:absolute;bottom:-2px;right:-2px;background:linear-gradient(135deg,var(--sage),#7a9e6a);color:white;font-size:0.55rem;font-weight:800;padding:3px 5px;border-radius:5px;line-height:1;letter-spacing:0.02em;border:2px solid var(--cream);">G4</div>' : ''}
                     </div>
                     <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;color:var(--dark-text);margin-bottom:8px;">${displayName}</div>
                     ${packingHTML}
@@ -3551,8 +3547,10 @@
             row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);cursor:pointer;transition:var(--transition);';
             row.addEventListener('click', () => showUserCard(u.id, u.first_name));
 
+            const teamOverlay = u.is_team ? '<div style="position:absolute;bottom:-1px;right:-1px;background:linear-gradient(135deg,var(--sage),#7a9e6a);color:white;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;letter-spacing:0.02em;border:1.5px solid white;">G4</div>' : '';
+
             row.innerHTML = `
-                <div style="flex-shrink:0;">${avatarHTML}</div>
+                <div style="flex-shrink:0;position:relative;">${avatarHTML}${teamOverlay}</div>
                 <div style="flex:1;min-width:0;">
                     <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--dark-text);line-height:1.2;">${displayName}</div>
                     ${detailLine ? `<div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detailLine}</div>` : ''}
@@ -3573,7 +3571,7 @@
                 : others;
 
             if (!filtered.length) {
-                list.innerHTML = `<div style="text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">${query ? 'No one found matching "' + query + '"' : 'No other sisters have joined yet.'}</div>`;
+                list.innerHTML = `<div style="text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">${query ? 'No one found matching "' + query + '"' : 'No one else has joined yet.'}</div>`;
                 return;
             }
 
@@ -3591,7 +3589,7 @@
             if (!showAll && filtered.length > 10) {
                 const more = document.createElement('div');
                 more.style.cssText = 'text-align:center;padding:14px 0;font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;';
-                more.textContent = `+ ${filtered.length - 10} more sisters — search by name to find them!`;
+                more.textContent = `+ ${filtered.length - 10} more — search by name to find them!`;
                 list.appendChild(more);
             }
         }
@@ -3705,7 +3703,7 @@
 
                 <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;margin-top:4px;">About You</div>
                 <div class="profile-toggle-row" style="margin-bottom:12px;">
-                    <span class="profile-toggle-label">Share with my sisters</span>
+                    <span class="profile-toggle-label">Share with the group</span>
                     <button class="profile-toggle ${currentUser.show_about ? 'on' : ''}" id="toggle-about"></button>
                 </div>
 
@@ -3881,62 +3879,57 @@
         }
 
         // ===== Prayer Wall =====
-        function renderMessages(messages, container, type) {
-            const filtered = messages.filter(m => m.type === type);
-            if (!filtered.length) {
-                container.innerHTML = type === 'prayer'
-                    ? '<div class="prayer-empty">No prayer requests yet — be the first to lift someone up.</div>'
-                    : '<div class="prayer-empty">No encouragements yet — be the first to brighten someone\'s day.</div>';
+        function renderMessages(messages, container) {
+            if (!messages.length) {
+                container.innerHTML = '<div class="prayer-empty">No posts yet — be the first to lift someone up.</div>';
                 return;
             }
             container.innerHTML = '';
-            filtered.forEach(msg => {
+            messages.forEach(msg => {
                     const post = document.createElement('div');
                     post.className = 'prayer-post type-' + msg.type;
 
-                    // Top row: avatar + author + type badge
-                    const top = document.createElement('div');
-                    top.className = 'prayer-post-top';
-                    top.style.display = 'flex';
-                    top.style.alignItems = 'center';
-                    top.style.gap = '8px';
+                    const content = document.createElement('div');
 
-                    // Avatar (tappable to view profile)
-                    const avatarWrap = document.createElement('div');
-                    avatarWrap.style.cursor = 'pointer';
-                    avatarWrap.addEventListener('click', (e) => { e.stopPropagation(); showUserCard(msg.user_id, msg.author_name); });
-                    const avatarEl = document.createElement('div');
+                    // Name row with inline tiny avatar
+                    const avatarEl = document.createElement('span');
                     avatarEl.className = 'msg-avatar-placeholder';
+                    avatarEl.dataset.avatarClass = 'msg-avatar-sm';
+                    avatarEl.style.cssText = 'width:20px;height:20px;font-size:0.5rem;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:5px;border:1.5px solid var(--blush);background:linear-gradient(135deg,var(--blush),var(--rose));color:white;';
                     avatarEl.textContent = msg.author_name.charAt(0);
-                    avatarWrap.appendChild(avatarEl);
-                    top.appendChild(avatarWrap);
-                    // Try to load photo
                     loadAvatar(msg.user_id, avatarEl, msg.author_name.charAt(0));
 
-                    const authorWrap = document.createElement('div');
-                    authorWrap.style.flex = '1';
-
-                    const author = document.createElement('div');
-                    author.className = 'prayer-post-author';
-                    author.textContent = msg.author_name;
-
-                    authorWrap.appendChild(author);
-                    top.appendChild(authorWrap);
-                    post.appendChild(top);
-
-                    // Tagged name
-                    if (msg.tagged_name) {
-                        const forEl = document.createElement('div');
-                        forEl.className = 'prayer-post-for';
-                        forEl.textContent = 'For ' + msg.tagged_name;
-                        post.appendChild(forEl);
+                    // Name + type badge inline
+                    const nameRow = document.createElement('div');
+                    nameRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:2px;';
+                    const nameEl = document.createElement('span');
+                    nameEl.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.82rem;font-weight:700;color:var(--dark-text);';
+                    nameEl.textContent = msg.author_name;
+                    nameRow.appendChild(avatarEl);
+                    nameRow.appendChild(nameEl);
+                    const typeBadge = document.createElement('span');
+                    typeBadge.style.cssText = 'font-size:0.65rem;padding:1px 6px;border-radius:6px;font-weight:600;';
+                    if (msg.type === 'prayer') {
+                        typeBadge.textContent = '🙏';
+                        typeBadge.style.background = 'rgba(138,158,122,0.12)';
+                    } else {
+                        typeBadge.textContent = '💛';
+                        typeBadge.style.background = 'rgba(201,144,138,0.12)';
                     }
+                    nameRow.appendChild(typeBadge);
+                    if (msg.tagged_name) {
+                        const forEl = document.createElement('span');
+                        forEl.style.cssText = 'font-size:0.75rem;color:var(--light-text);font-style:italic;';
+                        forEl.textContent = 'for ' + msg.tagged_name;
+                        nameRow.appendChild(forEl);
+                    }
+                    content.appendChild(nameRow);
 
                     // Message
                     const message = document.createElement('div');
-                    message.className = 'prayer-post-message';
+                    message.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--dark-text);line-height:1.45;';
                     message.textContent = msg.message;
-                    post.appendChild(message);
+                    content.appendChild(message);
 
                     // Footer: time + actions
                     const footer = document.createElement('div');
@@ -3991,7 +3984,8 @@
                     }
 
                     footer.appendChild(actions);
-                    post.appendChild(footer);
+                    content.appendChild(footer);
+                    post.appendChild(content);
                     container.appendChild(post);
                 });
         }
@@ -4001,11 +3995,34 @@
             try {
                 const messages = await apiGet('/api/messages');
                 allMessages = messages || [];
-                renderMessages(allMessages, document.getElementById('prayer-posts'), 'prayer');
-                renderMessages(allMessages, document.getElementById('encourage-posts'), 'encouragement');
+                renderMessages(allMessages, document.getElementById('prayer-posts'));
+                updateUpliftBadge();
             } catch (e) {
                 document.getElementById('prayer-posts').innerHTML = '<div class="prayer-empty">Could not load messages.</div>';
-                document.getElementById('encourage-posts').innerHTML = '<div class="prayer-empty">Could not load messages.</div>';
+            }
+        }
+
+        function updateUpliftBadge() {
+            const lastSeen = parseInt(localStorage.getItem('g4_uplift_seen') || '0');
+            const newCount = allMessages.filter(m => m.id > lastSeen).length;
+            const badge = document.getElementById('badge-uplift');
+            if (newCount > 0) {
+                badge.textContent = newCount;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function updateSharingBadge(totalItems) {
+            const lastSeen = parseInt(localStorage.getItem('g4_polls_seen') || '0');
+            const newCount = Math.max(0, totalItems - lastSeen);
+            const badge = document.getElementById('badge-sharing');
+            if (newCount > 0) {
+                badge.textContent = newCount;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
             }
         }
 
@@ -4014,35 +4031,121 @@
             const empty = document.getElementById('sharing-empty');
             feed.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light-text);font-style:italic;">Loading...</div>';
             try {
-                const responses = await apiGet('/api/polls/feed');
-                if (!responses || responses.length === 0) {
+                const [pollResponses, wyrFeed] = await Promise.all([
+                    apiGet('/api/polls/feed').catch(() => []),
+                    apiGet('/api/games/wyr/feed').catch(() => [])
+                ]);
+
+                let html = '';
+                const totalPollItems = (pollResponses ? pollResponses.length : 0) + (wyrFeed ? wyrFeed.length : 0);
+                updateSharingBadge(totalPollItems);
+
+                // WYR results (with inline voting for unvoted questions)
+                const wyrCards = [];
+                if (wyrFeed && wyrFeed.length > 0) {
+                    for (const q of wyrFeed) {
+                        const voted = currentUser ? localStorage.getItem('g4wyr_' + q.id + '_' + currentUser.id) : null;
+                        const card = document.createElement('div');
+                        card.style.cssText = 'margin-bottom:16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);overflow:hidden;';
+
+                        const header = `<div style="padding:14px 16px 10px;border-bottom:1px solid rgba(139,134,128,0.08);">
+                            <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);line-height:1.4;">🤔 Would You Rather</div>
+                            <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);margin-top:2px;">${q.total} vote${q.total !== 1 ? 's' : ''}</div>
+                        </div>`;
+
+                        if (!voted && currentUser) {
+                            // Show vote buttons
+                            card.innerHTML = header + `<div style="padding:12px 16px;" id="wyr-vote-area-${q.id}">
+                                <button class="wyr-feed-btn" data-qid="${q.id}" data-choice="A" style="display:block;width:100%;padding:14px 16px;margin-bottom:8px;border:2px solid rgba(201,144,138,0.25);border-radius:14px;background:rgba(255,255,255,0.8);font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;color:var(--dark-text);cursor:pointer;transition:all 0.2s;text-align:center;">${escHtml(q.option_a)}</button>
+                                <button class="wyr-feed-btn" data-qid="${q.id}" data-choice="B" style="display:block;width:100%;padding:14px 16px;border:2px solid rgba(138,158,122,0.25);border-radius:14px;background:rgba(255,255,255,0.8);font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;color:var(--dark-text);cursor:pointer;transition:all 0.2s;text-align:center;">${escHtml(q.option_b)}</button>
+                            </div>`;
+                        } else {
+                            // Show results
+                            card.innerHTML = header + `<div style="padding:12px 16px;">
+                                <div style="margin-bottom:12px;">
+                                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                                        <span style="font-family:Cormorant Garamond,serif;font-size:0.95rem;font-weight:600;color:var(--accent);">${escHtml(q.option_a)}</span>
+                                        <span style="font-family:Cormorant Garamond,serif;font-size:0.85rem;font-weight:700;color:var(--accent);">${q.pct_a}%</span>
+                                    </div>
+                                    <div style="height:6px;background:rgba(200,185,176,0.2);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+                                        <div style="height:100%;width:${q.pct_a}%;background:var(--accent);border-radius:3px;transition:width 0.3s;"></div>
+                                    </div>
+                                    <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--taupe);">${q.voters_a.map(n => escHtml(n)).join(', ') || '<em>None yet</em>'}</div>
+                                </div>
+                                <div>
+                                    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+                                        <span style="font-family:Cormorant Garamond,serif;font-size:0.95rem;font-weight:600;color:var(--sage);">${escHtml(q.option_b)}</span>
+                                        <span style="font-family:Cormorant Garamond,serif;font-size:0.85rem;font-weight:700;color:var(--sage);">${q.pct_b}%</span>
+                                    </div>
+                                    <div style="height:6px;background:rgba(200,185,176,0.2);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+                                        <div style="height:100%;width:${q.pct_b}%;background:var(--sage);border-radius:3px;transition:width 0.3s;"></div>
+                                    </div>
+                                    <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--taupe);">${q.voters_b.map(n => escHtml(n)).join(', ') || '<em>None yet</em>'}</div>
+                                </div>
+                            </div>`;
+                        }
+                        wyrCards.push(card);
+                    }
+                }
+
+                // Poll responses
+                if (pollResponses && pollResponses.length > 0) {
+                    const grouped = {};
+                    for (const r of pollResponses) {
+                        if (!grouped[r.poll_id]) grouped[r.poll_id] = { question: r.question, type: r.type, responses: [] };
+                        grouped[r.poll_id].responses.push(r);
+                    }
+                    html += Object.values(grouped).map(group => `
+                        <div style="margin-bottom:16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);overflow:hidden;">
+                            <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(139,134,128,0.08);">
+                                <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);line-height:1.4;">📊 ${escHtml(group.question)}</div>
+                                <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);margin-top:2px;">${group.responses.length} response${group.responses.length !== 1 ? 's' : ''}</div>
+                            </div>
+                            <div style="padding:8px 12px;">
+                                ${group.responses.map(r => `
+                                    <div style="padding:10px 12px;margin:4px 0;background:rgba(247,240,235,0.5);border-radius:10px;">
+                                        <div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--dark-text);line-height:1.4;">${escHtml(r.response)}</div>
+                                        <div style="font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--accent);font-weight:600;margin-top:4px;">— ${escHtml(r.user_name)}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+
+                if (!html && wyrCards.length === 0) {
                     feed.innerHTML = '';
                     empty.style.display = 'block';
-                    return;
+                } else {
+                    empty.style.display = 'none';
+                    feed.innerHTML = '';
+                    // Add WYR cards as DOM elements (so vote buttons work)
+                    for (const card of wyrCards) feed.appendChild(card);
+                    // Add poll HTML
+                    if (html) feed.insertAdjacentHTML('beforeend', html);
+
+                    // Wire up WYR vote buttons
+                    feed.querySelectorAll('.wyr-feed-btn').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            const qId = parseInt(btn.dataset.qid);
+                            const choice = btn.dataset.choice;
+                            btn.disabled = true;
+                            try {
+                                const res = await apiPost('/api/games/wyr/vote', {
+                                    user_id: currentUser.id,
+                                    question_id: qId,
+                                    choice: choice
+                                });
+                                localStorage.setItem('g4wyr_' + qId + '_' + currentUser.id, choice);
+                                // Reload to show results
+                                loadSharingFeed();
+                            } catch (e) {
+                                showToast('Could not vote. Try again.');
+                                btn.disabled = false;
+                            }
+                        });
+                    });
                 }
-                empty.style.display = 'none';
-                // Group responses by poll question
-                const grouped = {};
-                for (const r of responses) {
-                    if (!grouped[r.poll_id]) grouped[r.poll_id] = { question: r.question, type: r.type, responses: [] };
-                    grouped[r.poll_id].responses.push(r);
-                }
-                feed.innerHTML = Object.values(grouped).map(group => `
-                    <div style="margin-bottom:16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);overflow:hidden;">
-                        <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(139,134,128,0.08);">
-                            <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);line-height:1.4;">📊 ${escHtml(group.question)}</div>
-                            <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);margin-top:2px;">${group.responses.length} response${group.responses.length !== 1 ? 's' : ''}</div>
-                        </div>
-                        <div style="padding:8px 12px;">
-                            ${group.responses.map(r => `
-                                <div style="padding:10px 12px;margin:4px 0;background:rgba(247,240,235,0.5);border-radius:10px;">
-                                    <div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--dark-text);line-height:1.4;">${escHtml(r.response)}</div>
-                                    <div style="font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--accent);font-weight:600;margin-top:4px;">— ${escHtml(r.user_name)}</div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `).join('');
             } catch (e) {
                 feed.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light-text);">Could not load responses.</div>';
             }
@@ -4058,25 +4161,46 @@
                     const panel = document.getElementById('connect-' + btn.dataset.connect);
                     if (panel) panel.style.display = 'block';
                     if (btn.dataset.connect === 'sisters') loadPeople();
-                    if (btn.dataset.connect === 'sharing') loadSharingFeed();
+                    if (btn.dataset.connect === 'uplift') {
+                        // Mark all current messages as seen
+                        if (allMessages.length > 0) {
+                            const maxId = Math.max(...allMessages.map(m => m.id));
+                            localStorage.setItem('g4_uplift_seen', String(maxId));
+                        }
+                        document.getElementById('badge-uplift').style.display = 'none';
+                    }
+                    if (btn.dataset.connect === 'sharing') {
+                        loadSharingFeed();
+                        // Mark polls as seen after loading
+                        setTimeout(() => {
+                            const badge = document.getElementById('badge-sharing');
+                            const current = parseInt(badge.textContent || '0');
+                            if (current > 0) {
+                                const prev = parseInt(localStorage.getItem('g4_polls_seen') || '0');
+                                localStorage.setItem('g4_polls_seen', String(prev + current));
+                            }
+                            badge.style.display = 'none';
+                        }, 500);
+                    }
                 });
             });
 
-            // Uplift type toggle (Prayers / Encouragement within the Uplift tab)
-            document.querySelectorAll('.uplift-type-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    document.querySelectorAll('.uplift-type-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    const type = btn.dataset.uplift;
-                    document.getElementById('uplift-prayer-section').style.display = type === 'prayer' ? 'block' : 'none';
-                    document.getElementById('uplift-encouragement-section').style.display = type === 'encouragement' ? 'block' : 'none';
-                });
-            });
+            // (Uplift type picker is handled by pickUpliftType function)
 
             // Prayer compose - character count
             document.getElementById('prayer-message').addEventListener('input', (e) => {
                 document.getElementById('prayer-char').textContent = e.target.value.length;
             });
+
+            // Uplift type picker
+            let upliftType = 'prayer';
+            window.pickUpliftType = function(type) {
+                upliftType = type;
+                document.querySelectorAll('.uplift-type-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('.uplift-type-btn[data-type="' + type + '"]').classList.add('active');
+                const msg = document.getElementById('prayer-message');
+                msg.placeholder = type === 'prayer' ? 'Share your prayer request...' : 'Write an encouragement...';
+            };
 
             // Send
             document.getElementById('prayer-send-btn').addEventListener('click', async () => {
@@ -4096,7 +4220,7 @@
                     const result = await apiPost('/api/messages', {
                         user_id: currentUser.id,
                         author_name: currentUser.display_name || currentUser.first_name,
-                        type: 'prayer',
+                        type: upliftType,
                         tagged_name: forEl.value || null,
                         message: message
                     });
@@ -4106,49 +4230,15 @@
                         forEl.value = '';
                         document.getElementById('prayer-char').textContent = '0';
                         loadPrayerWall();
-                        showToast('Prayer shared \ud83d\ude4f');
+                        showToast(upliftType === 'prayer' ? 'Prayer shared \ud83d\ude4f' : 'Encouragement sent \u2764\ufe0f');
                     }
                 } catch (e) { showToast('Could not post. Please try again.'); }
                 sendBtn.disabled = false;
-                sendBtn.textContent = 'Share Prayer';
-            });
-
-            // Encouragement compose
-            document.getElementById('encourage-message').addEventListener('input', (e) => {
-                document.getElementById('encourage-char').textContent = e.target.value.length;
-            });
-
-            document.getElementById('encourage-send-btn').addEventListener('click', async () => {
-                if (!currentUser) { showToast('Please set up your name first.'); return; }
-                const messageEl = document.getElementById('encourage-message');
-                const forEl = document.getElementById('encourage-for');
-                const message = messageEl.value.trim();
-                if (!message) return;
-                const sendBtn = document.getElementById('encourage-send-btn');
-                sendBtn.disabled = true;
-                sendBtn.textContent = 'Sharing...';
-                try {
-                    const result = await apiPost('/api/messages', {
-                        user_id: currentUser.id,
-                        author_name: currentUser.display_name || currentUser.first_name,
-                        type: 'encouragement',
-                        tagged_name: forEl.value || null,
-                        message: message
-                    });
-                    if (result.error) { showToast(result.error); }
-                    else {
-                        messageEl.value = '';
-                        forEl.value = '';
-                        document.getElementById('encourage-char').textContent = '0';
-                        loadPrayerWall();
-                        showToast('Encouragement sent \u2764\ufe0f');
-                    }
-                } catch (e) { showToast('Could not post. Please try again.'); }
-                sendBtn.disabled = false;
-                sendBtn.textContent = 'Share Encouragement';
+                sendBtn.textContent = 'Share';
             });
 
             loadPrayerWall();
+            loadSharingFeed();
             loadPeople();
         }
 
@@ -4216,19 +4306,26 @@
             localStorage.setItem('incredibleGiftState', JSON.stringify(appState));
         }
 
-        function initTabs() {
+        function switchToTab(tabName) {
             const navBtns = document.querySelectorAll('.nav-btn');
             const tabContents = document.querySelectorAll('.tab-content');
+            const btn = document.querySelector('.nav-btn[data-tab="' + tabName + '"]');
+            const activeTab = document.getElementById(tabName + '-tab');
+            if (!btn || !activeTab) return;
+            navBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(tab => tab.classList.remove('active'));
+            btn.classList.add('active');
+            activeTab.classList.add('active');
+            document.querySelector('.content-area').scrollTop = 0;
+            animateCards(activeTab);
+            sessionStorage.setItem('g4_active_tab', tabName);
+        }
+
+        function initTabs() {
+            const navBtns = document.querySelectorAll('.nav-btn');
             navBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const tabName = btn.dataset.tab;
-                    navBtns.forEach(b => b.classList.remove('active'));
-                    tabContents.forEach(tab => tab.classList.remove('active'));
-                    btn.classList.add('active');
-                    const activeTab = document.getElementById(tabName + '-tab');
-                    activeTab.classList.add('active');
-                    document.querySelector('.content-area').scrollTop = 0;
-                    animateCards(activeTab);
+                    switchToTab(btn.dataset.tab);
                 });
             });
         }
@@ -4685,10 +4782,27 @@
                 const daysUntil = Math.ceil((retreatStart - now) / msPerDay);
                 indicator.style.display = 'inline-flex';
                 statusDot.style.display = 'none';
-                if (daysUntil === 1) {
-                    statusText.textContent = 'Tomorrow! Get ready \u2728';
-                } else if (daysUntil <= 7) {
-                    statusText.textContent = daysUntil + ' days away \u2013 start packing!';
+                if (daysUntil <= 0) {
+                    statusText.textContent = 'Today is the day! See you for our first session at 7 PM! \ud83c\udf89';
+                } else if (daysUntil === 1) {
+                    statusText.textContent = 'Can you believe it is TOMORROW?! \ud83d\ude31\u2728';
+                } else if (daysUntil <= 14) {
+                    const msgs = {
+                        2: "2 Days \u2013 Make your packing list and check it twice! \u2705\u2705",
+                        3: "3 Days \u2013 Have you listened to the Spotify songs yet? \ud83c\udfa7",
+                        4: "4 Days \u2013 Share a prayer request or encouragement on the Uplift page! \ud83d\ude4f",
+                        5: "5 Days \u2013 Check out the schedule below and fill out your profile! \ud83d\udc47",
+                        6: "6 Days \u2013 We can almost smell the ocean air! \ud83c\udf0a",
+                        7: "1 Week Away \u2013 Not that we\u2019re counting or anything! \ud83c\udf89",
+                        8: "8 Days \u2013 Did someone say beach?! \ud83c\udfd6\ufe0f",
+                        9: "9 Days \u2013 Good things are coming, sis! \u2728",
+                        10: "10 Days \u2013 Double digits! The countdown is REAL! \ud83d\udd25",
+                        11: "11 Days \u2013 Clear that calendar, you\u2019ve got plans! \ud83d\udcc5",
+                        12: "12 Days \u2013 You deserve this getaway more than you know! \ud83d\udc9b",
+                        13: "13 Days \u2013 Something special is brewing! \u2615",
+                        14: "2 Weeks Out \u2013 Get excited, it\u2019s coming FAST! \ud83d\ude4c"
+                    };
+                    statusText.textContent = msgs[daysUntil] || daysUntil + ' days to go!';
                 } else {
                     statusText.textContent = 'April 9\u201311 \u2013 Ocean City, MD';
                 }
@@ -5790,6 +5904,9 @@
 
         loadState();
         initTabs();
+        // Restore last active tab on refresh
+        const savedTab = sessionStorage.getItem('g4_active_tab');
+        if (savedTab) switchToTab(savedTab);
 
         buildSchedule();
         buildPrayerCountdown();
@@ -6180,8 +6297,10 @@
             const body = document.getElementById('poll-modal-body');
             const thanks = document.getElementById('poll-modal-thanks');
             const closeBtn = document.getElementById('poll-close');
+            const skipBtn = document.getElementById('poll-skip');
             thanks.style.display = 'none';
             closeBtn.style.display = 'none';
+            skipBtn.style.display = 'block';
 
             if (poll.type === 'multiple_choice' && poll.options.length > 0) {
                 body.innerHTML = poll.options.map(opt => `
@@ -6208,6 +6327,7 @@
                             btn.style.borderColor = 'var(--sage)';
                             thanks.style.display = 'block';
                             closeBtn.style.display = 'block';
+                            skipBtn.style.display = 'none';
                         } catch (e) { /* silently fail */ }
                     });
                 });
@@ -6231,11 +6351,17 @@
                         body.style.display = 'none';
                         thanks.style.display = 'block';
                         closeBtn.style.display = 'block';
+                        skipBtn.style.display = 'none';
                     } catch (e) { /* silently fail */ }
                 });
             }
 
             closeBtn.onclick = () => { modal.style.display = 'none'; onPopupClosed(); };
+            skipBtn.onclick = () => {
+                sessionStorage.setItem('g4poll_skip_' + poll.id, '1');
+                modal.style.display = 'none';
+                onPopupClosed();
+            };
             modal.style.display = 'flex';
             modal.classList.add('animate-in');
         }
@@ -6722,7 +6848,7 @@
 
         // ===== SCAVENGER HUNT =====
         const HUNT_PROMPTS = [
-            { category: 'Meet Your Sisters', prompts: [
+            { category: 'Meet & Mingle', prompts: [
                 { id: 'meet1', text: 'Take a photo with someone you\'ve never met before' },
                 { id: 'meet2', text: 'Group selfie with your whole table' },
                 { id: 'meet3', text: 'Someone who lives in a different state than you' },
@@ -6750,7 +6876,9 @@
             ]},
             { category: 'Beach Vibes', prompts: [
                 { id: 'beach1', text: 'Find the coolest seashell you can' },
-                { id: 'beach2', text: 'Write G4 2026 in the sand' }
+                { id: 'beach2', text: 'Write G4 2026 in the sand' },
+                { id: 'beach3', text: 'Pic of feet in the ocean' },
+                { id: 'beach4', text: 'Creative boardwalk photo' }
             ]},
             { category: 'Wild Card', prompts: [
                 { id: 'wild1', text: 'Capture JOY in one photo' }
@@ -6816,18 +6944,22 @@
             document.getElementById('hunt-upload-prompt').textContent = prompt.text;
             document.getElementById('hunt-upload-preview').style.display = 'none';
             document.getElementById('hunt-preview-img').src = '';
-            document.getElementById('hunt-photo-input').value = '';
+            document.getElementById('hunt-photo-input-camera').value = '';
+            document.getElementById('hunt-photo-input-gallery').value = '';
             document.getElementById('hunt-caption-input').value = '';
             document.getElementById('hunt-submit-photo').style.display = 'none';
             document.getElementById('hunt-upload-modal').style.display = 'flex';
         }
 
-        // Hunt photo input handler
+        // Hunt photo input handlers
+        document.getElementById('hunt-take-photo').addEventListener('click', () => {
+            document.getElementById('hunt-photo-input-camera').click();
+        });
         document.getElementById('hunt-choose-photo').addEventListener('click', () => {
-            document.getElementById('hunt-photo-input').click();
+            document.getElementById('hunt-photo-input-gallery').click();
         });
 
-        document.getElementById('hunt-photo-input').addEventListener('change', (e) => {
+        function handleHuntPhoto(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
@@ -6852,7 +6984,9 @@
                 img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
-        });
+        }
+        document.getElementById('hunt-photo-input-camera').addEventListener('change', handleHuntPhoto);
+        document.getElementById('hunt-photo-input-gallery').addEventListener('change', handleHuntPhoto);
 
         document.getElementById('hunt-submit-photo').addEventListener('click', async () => {
             if (!huntCompressedPhoto || !huntCurrentPrompt || !currentUser) return;
@@ -6918,8 +7052,8 @@
                                         <div class="hunt-gallery-name">${escHtml(s.user_name)}</div>
                                         ${s.caption ? `<div class="hunt-gallery-caption">${escHtml(s.caption)}</div>` : ''}
                                         ${!isOwn ? `<button class="hunt-vote-btn${isVoted ? ' voted' : ''}" onclick="huntVote('${p.id}', ${s.id}, this)" data-prompt="${p.id}" data-sub="${s.id}">
-                                            ${isVoted ? '💛 Voted' : '🤍 Vote'} <span style="margin-left:2px;">${s.votes}</span>
-                                        </button>` : `<div style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--sage);margin-top:4px;">Your photo · ${s.votes} vote${s.votes !== 1 ? 's' : ''}</div>`}
+                                            ${isVoted ? '💛 Voted' : '🤍 Vote'}
+                                        </button>` : `<div style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--sage);margin-top:4px;">Your photo</div>`}
                                     </div>
                                 </div>`;
                             });
@@ -6950,8 +7084,22 @@
                     showToast(result.error);
                     return;
                 }
-                // Refresh gallery to update vote states
-                loadHuntGallery();
+                // Update just the vote buttons for this prompt inline
+                const allBtns = document.querySelectorAll('.hunt-vote-btn[data-prompt="' + promptId + '"]');
+                allBtns.forEach(b => {
+                    const subId = parseInt(b.dataset.sub);
+                    const card = b.closest('.hunt-gallery-card');
+                    if (subId === submissionId) {
+                        b.className = 'hunt-vote-btn voted';
+                        b.innerHTML = '💛 Voted';
+                        if (card) card.classList.add('voted');
+                    } else {
+                        const wasVoted = b.classList.contains('voted');
+                        b.className = 'hunt-vote-btn';
+                        if (wasVoted) b.innerHTML = '🤍 Vote';
+                        if (card) card.classList.remove('voted');
+                    }
+                });
                 showToast('Vote recorded! 💛');
             } catch(e) {
                 showToast('Could not vote, try again');

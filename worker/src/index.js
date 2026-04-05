@@ -1368,8 +1368,10 @@ export default {
             title TEXT DEFAULT '',
             active INTEGER DEFAULT 0,
             voting_open INTEGER DEFAULT 0,
+            caption_deadline TEXT DEFAULT '',
             created_at TEXT DEFAULT (datetime('now'))
           )`).run();
+          try { await env.DB.prepare('ALTER TABLE meme_rounds ADD COLUMN caption_deadline TEXT DEFAULT ""').run(); } catch(e) { /* exists */ }
           await env.DB.prepare(`CREATE TABLE IF NOT EXISTS meme_captions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             round_id INTEGER NOT NULL,
@@ -1415,10 +1417,29 @@ export default {
       // POST /api/meme/activate - admin: activate a round (deactivates others)
       if (path === '/api/meme/activate' && request.method === 'POST') {
         const { round_id } = await request.json();
-        await env.DB.prepare('UPDATE meme_rounds SET active = 0').run();
+        await env.DB.prepare('UPDATE meme_rounds SET active = 0, caption_deadline = ""').run();
         if (round_id) {
           await env.DB.prepare('UPDATE meme_rounds SET active = 1 WHERE id = ?').bind(round_id).run();
         }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/meme/start - start the 60-second caption timer for active round
+      if (path === '/api/meme/start' && request.method === 'POST') {
+        const { seconds } = await request.json();
+        const duration = seconds || 60;
+        const deadline = new Date(Date.now() + duration * 1000).toISOString();
+        await env.DB.prepare(
+          'UPDATE meme_rounds SET caption_deadline = ? WHERE active = 1'
+        ).bind(deadline).run();
+        return json({ success: true, deadline }, corsHeaders);
+      }
+
+      // POST /api/meme/stop - stop accepting captions (clear deadline, set to past)
+      if (path === '/api/meme/stop' && request.method === 'POST') {
+        await env.DB.prepare(
+          'UPDATE meme_rounds SET caption_deadline = ? WHERE active = 1'
+        ).bind('stopped').run();
         return json({ success: true }, corsHeaders);
       }
 
@@ -1430,11 +1451,18 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
-      // GET /api/meme/active - get active round with image + captions + votes
+      // GET /api/meme/active - get active round with image + captions + deadline
       if (path === '/api/meme/active' && request.method === 'GET') {
-        const round = await env.DB.prepare(
-          'SELECT id, photo_data, title, voting_open, created_at FROM meme_rounds WHERE active = 1'
-        ).first();
+        let round;
+        try {
+          round = await env.DB.prepare(
+            'SELECT id, photo_data, title, voting_open, caption_deadline, created_at FROM meme_rounds WHERE active = 1'
+          ).first();
+        } catch(e) {
+          round = await env.DB.prepare(
+            'SELECT id, photo_data, title, voting_open, created_at FROM meme_rounds WHERE active = 1'
+          ).first();
+        }
         if (!round) return json({ active: false }, corsHeaders);
 
         const { results: captions } = await env.DB.prepare(
@@ -1466,10 +1494,111 @@ export default {
           photo_data: round.photo_data,
           title: round.title,
           voting_open: round.voting_open,
+          caption_deadline: round.caption_deadline || '',
           captions,
           my_votes: myVotes,
           my_caption: myCaption
         }, corsHeaders);
+      }
+
+      // POST /api/meme/judge - AI picks the top funniest captions
+      if (path === '/api/meme/judge' && request.method === 'POST') {
+        const { round_id, top_n } = await request.json();
+        if (!round_id) return json({ error: 'round_id required' }, corsHeaders, 400);
+
+        const round = await env.DB.prepare(
+          'SELECT id, photo_data, title FROM meme_rounds WHERE id = ?'
+        ).bind(round_id).first();
+        if (!round) return json({ error: 'Round not found' }, corsHeaders, 404);
+
+        const { results: captions } = await env.DB.prepare(
+          'SELECT id, user_name, caption FROM meme_captions WHERE round_id = ? ORDER BY created_at ASC'
+        ).bind(round_id).all();
+
+        if (captions.length === 0) return json({ ranked: [] }, corsHeaders);
+        if (captions.length <= (top_n || 5)) {
+          // Few enough to show all - just shuffle for fun
+          const shuffled = [...captions].sort(() => Math.random() - 0.5);
+          return json({ ranked: shuffled.map(c => ({ id: c.id, user_name: c.user_name, caption: c.caption })) }, corsHeaders);
+        }
+
+        // Build the list of captions for Claude
+        const captionList = captions.map((c, i) => `${i + 1}. "${c.caption}"`).join('\n');
+        const pickCount = Math.min(top_n || 5, captions.length);
+
+        // Prepare the image for Claude (extract base64 and media type)
+        let imageContent = [];
+        if (round.photo_data && round.photo_data.startsWith('data:')) {
+          const match = round.photo_data.match(/^data:(image\/[^;]+);base64,(.+)$/);
+          if (match) {
+            imageContent = [{
+              type: 'image',
+              source: { type: 'base64', media_type: match[1], data: match[2] }
+            }];
+          }
+        }
+
+        const prompt = `You're the judge of a "What Do You Meme?" caption contest at a women's Christian retreat. You're looking at a meme image and here are the submitted captions:
+
+${captionList}
+
+Pick the top ${pickCount} FUNNIEST captions. They should be:
+- Genuinely funny, clever, or witty
+- Clean and appropriate for a women's Christian retreat
+- Good match for the image
+
+Order them from "pretty funny" to "absolutely hilarious" (save the best for last - it's a dramatic reveal).
+
+Skip any captions that are mean-spirited, inappropriate, or just not funny.
+
+Respond ONLY with a JSON array of the caption numbers you picked, in order from least to most funny. Example: [3, 7, 1, 12, 5]
+
+Just the JSON array, nothing else.`;
+
+        try {
+          const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': env.CLAUDE_API_KEY,
+              'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+              model: 'claude-sonnet-4-20250514',
+              max_tokens: 200,
+              messages: [{
+                role: 'user',
+                content: [
+                  ...imageContent,
+                  { type: 'text', text: prompt }
+                ]
+              }]
+            })
+          });
+
+          const claudeData = await claudeRes.json();
+          const responseText = claudeData.content?.[0]?.text || '[]';
+
+          // Parse the array of indices
+          const match = responseText.match(/\[[\d,\s]+\]/);
+          if (!match) {
+            // Fallback: return all captions shuffled
+            const shuffled = [...captions].sort(() => Math.random() - 0.5);
+            return json({ ranked: shuffled.map(c => ({ id: c.id, user_name: c.user_name, caption: c.caption })), ai_used: false }, corsHeaders);
+          }
+
+          const indices = JSON.parse(match[0]);
+          const ranked = indices
+            .map(i => captions[i - 1])
+            .filter(Boolean)
+            .map(c => ({ id: c.id, user_name: c.user_name, caption: c.caption }));
+
+          return json({ ranked, ai_used: true }, corsHeaders);
+        } catch (e) {
+          // AI failed - fallback to random order
+          const shuffled = [...captions].sort(() => Math.random() - 0.5).slice(0, top_n || 5);
+          return json({ ranked: shuffled.map(c => ({ id: c.id, user_name: c.user_name, caption: c.caption })), ai_used: false, error: e.message }, corsHeaders);
+        }
       }
 
       // POST /api/meme/caption - submit a caption (one per user per round)
@@ -1482,6 +1611,19 @@ export default {
         if (containsBlockedWords(caption)) {
           return json({ error: 'Please keep captions fun and kind!' }, corsHeaders, 400);
         }
+
+        // Check if caption deadline has passed
+        try {
+          const round = await env.DB.prepare('SELECT caption_deadline FROM meme_rounds WHERE id = ?').bind(round_id).first();
+          if (round && round.caption_deadline) {
+            if (round.caption_deadline === 'stopped') {
+              return json({ error: "Time's up! Captions are closed." }, corsHeaders, 400);
+            }
+            if (new Date(round.caption_deadline) < new Date()) {
+              return json({ error: "Time's up! Captions are closed." }, corsHeaders, 400);
+            }
+          }
+        } catch(e) { /* deadline column may not exist yet */ }
 
         await env.DB.prepare(
           'INSERT INTO meme_captions (round_id, user_id, user_name, caption) VALUES (?, ?, ?, ?) ON CONFLICT(round_id, user_id) DO UPDATE SET caption = excluded.caption'

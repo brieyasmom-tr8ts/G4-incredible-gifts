@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Do You Meme? - Slideshow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Cormorant+Garamond:wght@400;500&display=swap">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --cream: #f7f0eb;
+            --dark-text: #4a3728;
+            --light-text: #8a7b72;
+            --accent: #b87a6e;
+            --rose: #d4a59a;
+            --blush: #c9908a;
+            --warm-grey: #c8b9b0;
+            --sage: #8a9e7a;
+        }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: #1a1410;
+            color: var(--cream);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Georgia, serif;
+        }
+
+        /* ====== PHASES ====== */
+        .phase { display: none; width: 100%; height: 100vh; position: relative; }
+        .phase.active { display: flex; }
+
+        /* ====== WAITING PHASE ====== */
+        #phase-waiting {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1410, #2a1f18);
+        }
+        #phase-waiting h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--rose), var(--blush));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        #phase-waiting p { font-size: 1.4rem; color: var(--warm-grey); }
+        .round-title-display {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--rose);
+            margin-top: 1.5rem;
+        }
+
+        /* ====== TIMER PHASE ====== */
+        #phase-timer {
+            flex-direction: column;
+            align-items: center;
+            background: #1a1410;
+        }
+        .timer-image-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            width: 100%;
+            position: relative;
+        }
+        .timer-image-area img {
+            max-width: 85%;
+            max-height: 65vh;
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+            object-fit: contain;
+        }
+        .timer-bar {
+            width: 100%;
+            padding: 30px 40px;
+            background: linear-gradient(0deg, rgba(26,20,16,1), rgba(26,20,16,0.8));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+        .timer-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            color: var(--warm-grey);
+        }
+        .timer-countdown {
+            font-family: 'Playfair Display', serif;
+            font-size: 5rem;
+            font-weight: 800;
+            color: var(--cream);
+            transition: color 0.3s;
+        }
+        .timer-countdown.urgent { color: #e07a6a; }
+        .timer-progress {
+            width: 100%;
+            max-width: 600px;
+            height: 8px;
+            background: rgba(200,185,176,0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .timer-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sage), var(--accent));
+            border-radius: 4px;
+            transition: width 0.5s linear;
+        }
+        .timer-progress-fill.urgent {
+            background: linear-gradient(90deg, #e07a6a, #c55a4a);
+        }
+        .caption-counter {
+            font-size: 1.1rem;
+            color: var(--warm-grey);
+            margin-top: 4px;
+        }
+
+        /* ====== JUDGING PHASE ====== */
+        #phase-judging {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1410, #2a1f18);
+        }
+        .judging-spinner {
+            width: 60px; height: 60px;
+            border: 4px solid rgba(200,185,176,0.2);
+            border-top-color: var(--rose);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1.5rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #phase-judging h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: var(--rose);
+            margin-bottom: 0.5rem;
+        }
+        #phase-judging p { font-size: 1.2rem; color: var(--warm-grey); }
+
+        /* ====== REVEAL PHASE ====== */
+        #phase-reveal {
+            flex-direction: column;
+            align-items: center;
+            background: #1a1410;
+        }
+        .reveal-image-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            width: 100%;
+            flex-shrink: 0;
+        }
+        .reveal-image-area img {
+            max-width: 70%;
+            max-height: 45vh;
+            border-radius: 16px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+            object-fit: contain;
+        }
+        .reveal-caption-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 60px;
+            width: 100%;
+        }
+        .reveal-caption-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--cream);
+            text-align: center;
+            line-height: 1.3;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: captionSlideIn 0.6s ease forwards;
+            max-width: 900px;
+        }
+        .reveal-caption-text::before,
+        .reveal-caption-text::after {
+            content: '"';
+            color: var(--rose);
+            opacity: 0.6;
+        }
+        .reveal-author {
+            font-size: 1.5rem;
+            color: var(--warm-grey);
+            margin-top: 16px;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+        .reveal-author.visible {
+            opacity: 1;
+        }
+        .reveal-counter {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 1.1rem;
+            color: var(--warm-grey);
+            opacity: 0.6;
+        }
+
+        @keyframes captionSlideIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ====== WINNER PHASE ====== */
+        #phase-winner {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a1410, #2a1f18);
+            text-align: center;
+        }
+        .winner-crown { font-size: 5rem; margin-bottom: 1rem; }
+        .winner-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            color: var(--rose);
+            margin-bottom: 1.5rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .winner-caption {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--cream);
+            max-width: 800px;
+            line-height: 1.3;
+            margin-bottom: 1.5rem;
+        }
+        .winner-caption::before, .winner-caption::after {
+            content: '"';
+            color: var(--rose);
+        }
+        .winner-author {
+            font-size: 2rem;
+            color: var(--warm-grey);
+        }
+
+        /* Confetti canvas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* ====== CONTROLS (bottom bar) ====== */
+        .controls {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(26,20,16,0.95);
+            border-top: 1px solid rgba(200,185,176,0.15);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            z-index: 50;
+            backdrop-filter: blur(10px);
+        }
+        .controls.hidden { display: none; }
+        .ctrl-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ctrl-btn:active { transform: scale(0.96); }
+        .ctrl-btn.primary {
+            background: linear-gradient(135deg, var(--accent), var(--rose));
+            color: #fff;
+        }
+        .ctrl-btn.secondary {
+            background: rgba(200,185,176,0.15);
+            color: var(--warm-grey);
+        }
+        .ctrl-btn.danger {
+            background: rgba(224, 122, 106, 0.15);
+            color: #e07a6a;
+        }
+        .ctrl-label {
+            font-size: 0.85rem;
+            color: var(--warm-grey);
+            opacity: 0.6;
+        }
+
+        /* Keyboard hint */
+        .key-hints {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            font-size: 0.8rem;
+            color: rgba(200,185,176,0.3);
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<!-- PHASE: Waiting for round -->
+<div class="phase active" id="phase-waiting">
+    <h1>What Do You Meme?</h1>
+    <p>Waiting for a round to start...</p>
+    <div id="waiting-round-title" class="round-title-display" style="display:none;"></div>
+</div>
+
+<!-- PHASE: Timer / Caption writing -->
+<div class="phase" id="phase-timer">
+    <div class="timer-image-area">
+        <img id="timer-meme-image" src="" alt="Meme">
+    </div>
+    <div class="timer-bar">
+        <div class="timer-text">Write your best caption!</div>
+        <div class="timer-countdown" id="timer-countdown">60</div>
+        <div class="timer-progress">
+            <div class="timer-progress-fill" id="timer-progress-fill" style="width:100%;"></div>
+        </div>
+        <div class="caption-counter" id="caption-counter">0 captions submitted</div>
+    </div>
+</div>
+
+<!-- PHASE: AI Judging -->
+<div class="phase" id="phase-judging">
+    <div class="judging-spinner"></div>
+    <h2>Picking the best ones...</h2>
+    <p id="judging-count">15 captions submitted</p>
+</div>
+
+<!-- PHASE: Caption Reveal -->
+<div class="phase" id="phase-reveal">
+    <div class="reveal-image-area">
+        <img id="reveal-meme-image" src="" alt="Meme">
+    </div>
+    <div class="reveal-caption-area">
+        <div class="reveal-caption-text" id="reveal-caption-text"></div>
+        <div class="reveal-author" id="reveal-author"></div>
+    </div>
+    <div class="reveal-counter" id="reveal-counter"></div>
+</div>
+
+<!-- PHASE: Winner -->
+<div class="phase" id="phase-winner">
+    <div class="winner-crown">&#x1f451;</div>
+    <div class="winner-label">Funniest Caption</div>
+    <div class="winner-caption" id="winner-caption"></div>
+    <div class="winner-author" id="winner-author"></div>
+</div>
+
+<!-- Controls -->
+<div class="controls" id="controls">
+    <span class="ctrl-label" id="ctrl-label">Ready</span>
+    <button class="ctrl-btn primary" id="ctrl-main" onclick="handleMainAction()">Start Round</button>
+    <button class="ctrl-btn secondary" id="ctrl-secondary" style="display:none;" onclick="handleSecondaryAction()">Skip</button>
+</div>
+
+<div class="key-hints">Space/Enter = Next &middot; R = Refresh</div>
+
+<script>
+const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
+
+// State
+let currentRound = null;
+let rankedCaptions = [];
+let currentCaptionIndex = -1;
+let authorRevealTimer = null;
+let timerInterval = null;
+let pollInterval = null;
+let phase = 'waiting'; // waiting, timer, judging, reveal, winner
+
+// ===== PHASE MANAGEMENT =====
+function setPhase(newPhase) {
+    phase = newPhase;
+    document.querySelectorAll('.phase').forEach(p => p.classList.remove('active'));
+    document.getElementById('phase-' + newPhase).classList.add('active');
+    updateControls();
+}
+
+function updateControls() {
+    const label = document.getElementById('ctrl-label');
+    const main = document.getElementById('ctrl-main');
+    const secondary = document.getElementById('ctrl-secondary');
+    const controls = document.getElementById('controls');
+    controls.classList.remove('hidden');
+    secondary.style.display = 'none';
+
+    switch(phase) {
+        case 'waiting':
+            label.textContent = currentRound ? 'Round ready' : 'No active round';
+            main.textContent = currentRound ? 'Start Timer (60s)' : 'Refresh';
+            main.className = 'ctrl-btn primary';
+            break;
+        case 'timer':
+            label.textContent = 'Captions coming in...';
+            main.textContent = 'End Early';
+            main.className = 'ctrl-btn danger';
+            break;
+        case 'judging':
+            controls.classList.add('hidden');
+            break;
+        case 'reveal':
+            if (currentCaptionIndex < rankedCaptions.length - 1) {
+                label.textContent = `Caption ${currentCaptionIndex + 1} of ${rankedCaptions.length}`;
+                main.textContent = 'Next Caption';
+                main.className = 'ctrl-btn primary';
+            } else {
+                label.textContent = 'Last caption!';
+                main.textContent = 'Show Winner';
+                main.className = 'ctrl-btn primary';
+            }
+            break;
+        case 'winner':
+            label.textContent = 'Round complete!';
+            main.textContent = 'Next Round';
+            main.className = 'ctrl-btn primary';
+            break;
+    }
+}
+
+// ===== MAIN ACTION HANDLER =====
+function handleMainAction() {
+    switch(phase) {
+        case 'waiting':
+            if (currentRound) startTimer();
+            else loadActiveRound();
+            break;
+        case 'timer':
+            stopTimer();
+            break;
+        case 'reveal':
+            if (currentCaptionIndex < rankedCaptions.length - 1) {
+                showNextCaption();
+            } else {
+                showWinner();
+            }
+            break;
+        case 'winner':
+            // Reset for next round
+            loadActiveRound();
+            break;
+    }
+}
+
+// ===== LOAD ROUND =====
+async function loadActiveRound() {
+    try {
+        const res = await fetch(`${API_URL}/api/meme/active`);
+        const data = await res.json();
+
+        if (!data.active) {
+            currentRound = null;
+            setPhase('waiting');
+            return;
+        }
+
+        currentRound = data;
+        document.getElementById('timer-meme-image').src = data.photo_data;
+        document.getElementById('reveal-meme-image').src = data.photo_data;
+
+        if (data.title) {
+            document.getElementById('waiting-round-title').textContent = data.title;
+            document.getElementById('waiting-round-title').style.display = 'block';
+        } else {
+            document.getElementById('waiting-round-title').style.display = 'none';
+        }
+
+        // Check if timer is already running
+        if (data.caption_deadline && data.caption_deadline !== 'stopped') {
+            const remaining = Math.max(0, Math.floor((new Date(data.caption_deadline) - Date.now()) / 1000));
+            if (remaining > 0) {
+                startCountdown(remaining, data.caption_deadline);
+                return;
+            }
+        }
+
+        setPhase('waiting');
+    } catch(e) {
+        console.error('Failed to load round:', e);
+    }
+}
+
+// ===== TIMER =====
+async function startTimer() {
+    try {
+        const res = await fetch(`${API_URL}/api/meme/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ seconds: 60 })
+        });
+        const data = await res.json();
+        if (data.deadline) {
+            startCountdown(60, data.deadline);
+        }
+    } catch(e) {
+        console.error('Failed to start timer:', e);
+    }
+}
+
+function startCountdown(seconds, deadline) {
+    setPhase('timer');
+    const totalSeconds = seconds;
+    const deadlineTime = new Date(deadline).getTime();
+
+    // Poll for caption count
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/meme/active`);
+            const data = await res.json();
+            if (data.captions) {
+                document.getElementById('caption-counter').textContent =
+                    data.captions.length + ' caption' + (data.captions.length !== 1 ? 's' : '') + ' submitted';
+            }
+        } catch(e) {}
+    }, 3000);
+
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((deadlineTime - Date.now()) / 1000));
+        const el = document.getElementById('timer-countdown');
+        const fill = document.getElementById('timer-progress-fill');
+
+        el.textContent = remaining;
+        const pct = (remaining / totalSeconds) * 100;
+        fill.style.width = pct + '%';
+
+        if (remaining <= 10) {
+            el.classList.add('urgent');
+            fill.classList.add('urgent');
+        } else {
+            el.classList.remove('urgent');
+            fill.classList.remove('urgent');
+        }
+
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            clearInterval(pollInterval);
+            timerInterval = null;
+            pollInterval = null;
+            onTimerEnd();
+        }
+    }, 250);
+}
+
+async function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    if (pollInterval) clearInterval(pollInterval);
+    timerInterval = null;
+    pollInterval = null;
+
+    try {
+        await fetch(`${API_URL}/api/meme/stop`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+    } catch(e) {}
+
+    onTimerEnd();
+}
+
+async function onTimerEnd() {
+    if (!currentRound) return;
+
+    // Fetch final caption count
+    try {
+        const res = await fetch(`${API_URL}/api/meme/active`);
+        const data = await res.json();
+        currentRound = data;
+    } catch(e) {}
+
+    const captionCount = currentRound.captions ? currentRound.captions.length : 0;
+
+    if (captionCount === 0) {
+        // No captions - go back to waiting
+        setPhase('waiting');
+        return;
+    }
+
+    // Show judging phase and call AI
+    setPhase('judging');
+    document.getElementById('judging-count').textContent = captionCount + ' captions submitted';
+
+    try {
+        const res = await fetch(`${API_URL}/api/meme/judge`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                round_id: currentRound.id,
+                top_n: Math.min(7, captionCount)
+            })
+        });
+        const data = await res.json();
+        rankedCaptions = data.ranked || [];
+
+        if (rankedCaptions.length === 0) {
+            setPhase('waiting');
+            return;
+        }
+
+        currentCaptionIndex = -1;
+        // Small dramatic pause
+        setTimeout(() => {
+            setPhase('reveal');
+            showNextCaption();
+        }, 1500);
+    } catch(e) {
+        console.error('AI judging failed:', e);
+        // Fallback: show all captions in random order
+        rankedCaptions = (currentRound.captions || [])
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 7)
+            .map(c => ({ id: c.id, user_name: c.user_name, caption: c.caption }));
+        currentCaptionIndex = -1;
+        setTimeout(() => {
+            setPhase('reveal');
+            showNextCaption();
+        }, 1000);
+    }
+}
+
+// ===== CAPTION REVEAL =====
+function showNextCaption() {
+    if (authorRevealTimer) clearTimeout(authorRevealTimer);
+
+    currentCaptionIndex++;
+    if (currentCaptionIndex >= rankedCaptions.length) {
+        showWinner();
+        return;
+    }
+
+    const caption = rankedCaptions[currentCaptionIndex];
+    const textEl = document.getElementById('reveal-caption-text');
+    const authorEl = document.getElementById('reveal-author');
+    const counterEl = document.getElementById('reveal-counter');
+
+    // Reset animation
+    textEl.style.animation = 'none';
+    textEl.offsetHeight; // trigger reflow
+    textEl.style.animation = 'captionSlideIn 0.6s ease forwards';
+
+    textEl.textContent = caption.caption;
+    authorEl.textContent = '~ ' + caption.user_name + ' ~';
+    authorEl.classList.remove('visible');
+    counterEl.textContent = (currentCaptionIndex + 1) + ' / ' + rankedCaptions.length;
+
+    setPhase('reveal');
+
+    // Auto-reveal author after 8 seconds
+    authorRevealTimer = setTimeout(() => {
+        authorEl.classList.add('visible');
+    }, 8000);
+}
+
+// ===== WINNER =====
+function showWinner() {
+    if (authorRevealTimer) clearTimeout(authorRevealTimer);
+
+    // The last caption in ranked list is the funniest (AI ordered weakest-to-strongest)
+    const winner = rankedCaptions[rankedCaptions.length - 1];
+    if (!winner) return;
+
+    document.getElementById('winner-caption').textContent = winner.caption;
+    document.getElementById('winner-author').textContent = '~ ' + winner.user_name + ' ~';
+
+    setPhase('winner');
+    launchConfetti();
+}
+
+// ===== CONFETTI =====
+function launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const pieces = [];
+    const colors = ['#c9908a', '#d4a59a', '#b87a6e', '#8a9e7a', '#f7f0eb', '#FFD700', '#FF69B4'];
+
+    for (let i = 0; i < 150; i++) {
+        pieces.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height - canvas.height,
+            w: Math.random() * 10 + 5,
+            h: Math.random() * 6 + 3,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            vx: (Math.random() - 0.5) * 4,
+            vy: Math.random() * 3 + 2,
+            rotation: Math.random() * 360,
+            rotSpeed: (Math.random() - 0.5) * 10,
+            opacity: 1
+        });
+    }
+
+    let frame = 0;
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        frame++;
+
+        for (const p of pieces) {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.05;
+            p.rotation += p.rotSpeed;
+            if (frame > 120) p.opacity = Math.max(0, p.opacity - 0.01);
+
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rotation * Math.PI / 180);
+            ctx.globalAlpha = p.opacity;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+            ctx.restore();
+        }
+
+        if (frame < 300 && pieces.some(p => p.opacity > 0)) {
+            requestAnimationFrame(animate);
+        } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+    animate();
+}
+
+// ===== KEYBOARD CONTROLS =====
+document.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleMainAction();
+    }
+    if (e.key === 'r' || e.key === 'R') {
+        loadActiveRound();
+    }
+});
+
+// ===== INIT =====
+loadActiveRound();
+// Poll for round changes every 5 seconds while waiting
+setInterval(() => {
+    if (phase === 'waiting') loadActiveRound();
+}, 5000);
+</script>
+</body>
+</html>

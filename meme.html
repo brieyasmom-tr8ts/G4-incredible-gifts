@@ -10,7 +10,7 @@
     <title>What Do You Meme? - G4 2026</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Cormorant+Garamond:wght@400;500&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Cormorant+Garamond:wght@400;500&display=swap">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -30,7 +30,8 @@
         }
 
         html, body {
-            width: 100%; min-height: 100vh;
+            width: 100%; height: 100%;
+            overflow: hidden;
             overscroll-behavior: none;
         }
 
@@ -38,238 +39,246 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Georgia, serif;
             background: var(--cream);
             color: var(--dark-text);
-        }
-
-        .app-container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 0 16px 100px;
-        }
-
-        /* Header */
-        .header {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 0;
-            border-bottom: 1px solid var(--warm-grey);
-            margin-bottom: 20px;
+            flex-direction: column;
         }
-        .header h1 {
+
+        /* ====== SCREENS ====== */
+        .screen { display: none; flex-direction: column; height: 100vh; height: 100dvh; }
+        .screen.active { display: flex; }
+
+        /* ====== LOGIN ====== */
+        #screen-login {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+        }
+        #screen-login p {
+            color: var(--light-text);
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+        }
+        #screen-login a {
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* ====== WAITING ====== */
+        #screen-waiting {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+        }
+        .waiting-icon { font-size: 4rem; margin-bottom: 16px; }
+        .waiting-title {
             font-family: 'Playfair Display', serif;
-            font-size: 1.4rem;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .waiting-sub {
+            color: var(--light-text);
+            font-size: 1rem;
+        }
+        .pulse-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1.5s ease infinite;
+            margin-left: 4px;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.3); }
+        }
+
+        /* ====== CAPTION WRITING (timer active) ====== */
+        #screen-caption {
+            padding: 0;
+        }
+        .caption-header {
+            padding: 16px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(200,185,176,0.3);
+        }
+        .caption-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
             font-weight: 700;
             color: var(--dark-text);
         }
-        .back-link {
-            color: var(--accent);
-            text-decoration: none;
-            font-size: 0.9rem;
+        .phone-timer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 8px;
         }
-
-        /* Login gate */
-        .login-gate {
-            text-align: center;
-            padding: 60px 20px;
-        }
-        .login-gate p {
-            color: var(--light-text);
-            margin-bottom: 16px;
-        }
-        .login-gate a {
-            color: var(--accent);
-            font-weight: 600;
-        }
-
-        /* Meme image */
-        .meme-card {
-            background: #fff;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: var(--shadow-md);
-            margin-bottom: 20px;
-        }
-        .meme-card img {
-            width: 100%;
-            display: block;
-        }
-        .meme-title {
-            padding: 12px 16px;
+        .phone-timer-num {
             font-family: 'Playfair Display', serif;
-            font-size: 1.1rem;
-            font-weight: 600;
-            text-align: center;
-            color: var(--dark-text);
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--accent);
+            transition: color 0.3s;
+        }
+        .phone-timer-num.urgent { color: #d45a4a; }
+        .phone-timer-label {
+            font-size: 0.85rem;
+            color: var(--light-text);
+        }
+        .phone-timer-bar {
+            width: 80%;
+            max-width: 280px;
+            height: 5px;
+            background: rgba(200,185,176,0.25);
+            border-radius: 3px;
+            margin: 6px auto 0;
+            overflow: hidden;
+        }
+        .phone-timer-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 3px;
+            transition: width 0.5s linear, background 0.3s;
+        }
+        .phone-timer-fill.urgent { background: #d45a4a; }
+
+        /* Meme thumbnail */
+        .phone-meme {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            overflow: hidden;
+        }
+        .phone-meme img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 12px;
+            box-shadow: var(--shadow-md);
+            object-fit: contain;
         }
 
-        /* Caption form */
-        .caption-form {
+        /* Caption input area */
+        .caption-input-area {
+            padding: 16px 20px;
+            padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
             background: #fff;
-            border-radius: 14px;
-            padding: 16px;
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 20px;
+            border-top: 1px solid rgba(200,185,176,0.3);
         }
-        .caption-form label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--dark-text);
-            font-size: 0.95rem;
-        }
-        .caption-form .input-row {
+        .caption-input-row {
             display: flex;
             gap: 8px;
         }
-        .caption-form input {
+        .caption-input-row input {
             flex: 1;
-            padding: 10px 14px;
-            border: 1.5px solid var(--warm-grey);
-            border-radius: 10px;
-            font-size: 1rem;
+            padding: 12px 16px;
+            border: 2px solid var(--warm-grey);
+            border-radius: 12px;
+            font-size: 1.05rem;
             background: var(--cream);
             color: var(--dark-text);
             outline: none;
             transition: border-color 0.2s;
         }
-        .caption-form input:focus {
+        .caption-input-row input:focus {
             border-color: var(--accent);
         }
-        .caption-form button {
-            padding: 10px 18px;
+        .caption-input-row button {
+            padding: 12px 20px;
             background: var(--accent);
             color: #fff;
             border: none;
-            border-radius: 10px;
-            font-size: 0.95rem;
-            font-weight: 600;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
             white-space: nowrap;
-            transition: opacity 0.2s;
-        }
-        .caption-form button:active { opacity: 0.8; }
-        .caption-form .hint {
-            font-size: 0.8rem;
-            color: var(--light-text);
-            margin-top: 6px;
-        }
-        .caption-form .my-caption {
-            margin-top: 8px;
-            padding: 8px 12px;
-            background: rgba(184, 122, 110, 0.08);
-            border-radius: 8px;
-            font-size: 0.9rem;
-            color: var(--accent);
-        }
-
-        /* Section labels */
-        .section-label {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--dark-text);
-            margin-bottom: 12px;
-        }
-
-        /* Captions list */
-        .captions-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .caption-item {
-            background: #fff;
-            border-radius: 12px;
-            padding: 14px 16px;
-            box-shadow: var(--shadow-sm);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transition: transform 0.15s;
-        }
-        .caption-item.voted {
-            background: rgba(184, 122, 110, 0.06);
-            border: 1.5px solid var(--rose);
-        }
-        .caption-item.mine {
-            border-left: 3px solid var(--sage);
-        }
-        .caption-text {
-            flex: 1;
-        }
-        .caption-text .text {
-            font-size: 1rem;
-            font-weight: 500;
-            line-height: 1.3;
-            color: var(--dark-text);
-        }
-        .caption-text .author {
-            font-size: 0.8rem;
-            color: var(--light-text);
-            margin-top: 2px;
-        }
-        .vote-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            padding: 8px 12px;
-            border: 1.5px solid var(--warm-grey);
-            border-radius: 10px;
-            background: transparent;
-            cursor: pointer;
             transition: all 0.2s;
-            min-width: 52px;
         }
-        .vote-btn .heart {
-            font-size: 1.3rem;
-            transition: transform 0.2s;
-        }
-        .vote-btn .count {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--light-text);
-        }
-        .vote-btn.voted {
-            border-color: var(--accent);
-            background: rgba(184, 122, 110, 0.08);
-        }
-        .vote-btn.voted .heart {
-            transform: scale(1.15);
-        }
-        .vote-btn.voted .count {
-            color: var(--accent);
-        }
-        .vote-btn:active {
-            transform: scale(0.95);
-        }
-        .vote-btn.own-caption {
-            opacity: 0.4;
+        .caption-input-row button:active { transform: scale(0.96); opacity: 0.9; }
+        .caption-input-row button:disabled {
+            background: var(--warm-grey);
             cursor: default;
         }
-
-        /* Empty state */
-        .empty-state {
+        .caption-status {
             text-align: center;
-            padding: 40px 20px;
+            font-size: 0.85rem;
             color: var(--light-text);
+            margin-top: 8px;
         }
-        .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
-        .empty-state p { font-size: 0.95rem; }
+        .caption-status.submitted { color: var(--sage); font-weight: 600; }
 
-        /* No round */
-        .no-round {
+        /* ====== SUBMITTED / WATCH SCREEN ====== */
+        #screen-submitted {
+            align-items: center;
+            justify-content: center;
             text-align: center;
-            padding: 80px 20px;
+            padding: 40px;
         }
-        .no-round .icon { font-size: 3rem; margin-bottom: 12px; }
-        .no-round h2 {
+        .submitted-check {
+            width: 80px; height: 80px;
+            background: var(--sage);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .submitted-check svg { width: 40px; height: 40px; }
+        @keyframes popIn {
+            0% { transform: scale(0); }
+            100% { transform: scale(1); }
+        }
+        .submitted-title {
             font-family: 'Playfair Display', serif;
-            font-size: 1.3rem;
+            font-size: 1.6rem;
+            font-weight: 700;
             margin-bottom: 8px;
         }
-        .no-round p { color: var(--light-text); }
+        .submitted-caption-preview {
+            font-size: 1.1rem;
+            color: var(--accent);
+            font-weight: 500;
+            margin-bottom: 20px;
+            padding: 12px 20px;
+            background: rgba(184, 122, 110, 0.08);
+            border-radius: 12px;
+            max-width: 320px;
+        }
+        .submitted-caption-preview::before,
+        .submitted-caption-preview::after {
+            content: '"';
+            color: var(--rose);
+        }
+        .submitted-sub {
+            color: var(--light-text);
+            font-size: 1rem;
+        }
+        .watching-animation {
+            margin-top: 24px;
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+        .watching-dot {
+            width: 10px; height: 10px;
+            background: var(--rose);
+            border-radius: 50%;
+            animation: watchBounce 1.4s ease infinite;
+        }
+        .watching-dot:nth-child(2) { animation-delay: 0.2s; }
+        .watching-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes watchBounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
+        }
 
         /* Toast */
         .toast {
@@ -289,344 +298,277 @@
             text-align: center;
             max-width: 90vw;
         }
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* Voting badge */
-        .voting-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-        .voting-badge.open { background: rgba(138, 158, 122, 0.15); color: var(--sage); }
-        .voting-badge.closed { background: rgba(200, 185, 176, 0.3); color: var(--taupe); }
-
-        /* Winner highlight */
-        .caption-item.winner {
-            background: linear-gradient(135deg, rgba(184, 122, 110, 0.08), rgba(212, 165, 154, 0.12));
-            border: 1.5px solid var(--rose);
-            position: relative;
-        }
-        .winner-badge {
-            position: absolute;
-            top: -8px;
-            right: 12px;
-            background: var(--accent);
-            color: #fff;
-            padding: 2px 10px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-
-        /* Refresh btn */
-        .refresh-btn {
-            background: none;
-            border: none;
-            color: var(--accent);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 4px;
-            transition: transform 0.3s;
-        }
-        .refresh-btn.spinning {
-            animation: spin 0.6s ease;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Rank numbers */
-        .rank {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--warm-grey);
-            min-width: 24px;
-            text-align: center;
-        }
-        .caption-item:first-child .rank { color: var(--accent); }
+        .toast.show { transform: translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <div class="header">
-            <a href="index.html" class="back-link">Back</a>
-            <h1>What Do You Meme?</h1>
-            <button class="refresh-btn" onclick="loadRound()">&#x21bb;</button>
+
+<!-- LOGIN -->
+<div class="screen active" id="screen-login">
+    <div class="waiting-icon">&#x1f5bc;</div>
+    <p>Sign in on the main app first!</p>
+    <a href="index.html">Go to app</a>
+</div>
+
+<!-- WAITING FOR ROUND -->
+<div class="screen" id="screen-waiting">
+    <div class="waiting-icon">&#x1f5bc;</div>
+    <div class="waiting-title">What Do You Meme?</div>
+    <div class="waiting-sub">Waiting for the next round<span class="pulse-dot"></span></div>
+</div>
+
+<!-- CAPTION WRITING -->
+<div class="screen" id="screen-caption">
+    <div class="caption-header">
+        <h2>Write Your Caption!</h2>
+        <div class="phone-timer">
+            <span class="phone-timer-num" id="phone-timer-num">60</span>
+            <span class="phone-timer-label">seconds left</span>
         </div>
-
-        <div id="login-gate" class="login-gate" style="display:none;">
-            <p>Sign in on the main app first to play!</p>
-            <a href="index.html">Go to app</a>
-        </div>
-
-        <div id="content" style="display:none;">
-            <!-- No active round -->
-            <div id="no-round" class="no-round" style="display:none;">
-                <div class="icon">&#x1f5bc;</div>
-                <h2>No Meme Yet!</h2>
-                <p>Check back soon - a new meme image will be posted for captioning!</p>
-            </div>
-
-            <!-- Active round -->
-            <div id="active-round" style="display:none;">
-                <div class="meme-card">
-                    <img id="meme-image" src="" alt="Meme image">
-                    <div id="meme-title" class="meme-title" style="display:none;"></div>
-                </div>
-
-                <!-- Caption submission -->
-                <div id="caption-form-section" class="caption-form">
-                    <label>Write your caption:</label>
-                    <div class="input-row">
-                        <input type="text" id="caption-input" placeholder="Your funniest caption..." maxlength="200">
-                        <button onclick="submitCaption()">Send</button>
-                    </div>
-                    <div class="hint">One caption per round. You can update it anytime.</div>
-                    <div id="my-caption-display" class="my-caption" style="display:none;"></div>
-                </div>
-
-                <!-- Voting status -->
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
-                    <div class="section-label">Captions</div>
-                    <div id="voting-badge" class="voting-badge"></div>
-                </div>
-
-                <!-- Captions list -->
-                <div id="captions-list" class="captions-list"></div>
-                <div id="empty-captions" class="empty-state" style="display:none;">
-                    <div class="icon">&#x1f4ad;</div>
-                    <p>No captions yet. Be the first!</p>
-                </div>
-            </div>
+        <div class="phone-timer-bar">
+            <div class="phone-timer-fill" id="phone-timer-fill" style="width:100%;"></div>
         </div>
     </div>
+    <div class="phone-meme">
+        <img id="phone-meme-image" src="" alt="Meme">
+    </div>
+    <div class="caption-input-area">
+        <div class="caption-input-row">
+            <input type="text" id="caption-input" placeholder="Your funniest caption..." maxlength="200" autocomplete="off">
+            <button id="submit-btn" onclick="submitCaption()">Send</button>
+        </div>
+        <div class="caption-status" id="caption-status">Make it funny!</div>
+    </div>
+</div>
 
-    <div id="toast" class="toast"></div>
+<!-- SUBMITTED - WATCH SCREEN -->
+<div class="screen" id="screen-submitted">
+    <div class="submitted-check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+    </div>
+    <div class="submitted-title">Caption Sent!</div>
+    <div class="submitted-caption-preview" id="submitted-preview"></div>
+    <div class="submitted-sub">Now watch the screen!</div>
+    <div class="watching-animation">
+        <div class="watching-dot"></div>
+        <div class="watching-dot"></div>
+        <div class="watching-dot"></div>
+    </div>
+</div>
 
-    <script>
-        const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
-        let currentUser = null;
-        let currentRound = null;
-        let myVotes = [];
+<div id="toast" class="toast"></div>
 
-        function init() {
-            const saved = localStorage.getItem('g4user');
-            if (saved) {
-                currentUser = JSON.parse(saved);
-                document.getElementById('login-gate').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-                loadRound();
-                // Auto-refresh every 15 seconds
-                setInterval(loadRound, 15000);
-            } else {
-                document.getElementById('login-gate').style.display = 'block';
-                document.getElementById('content').style.display = 'none';
-            }
+<script>
+const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
+let currentUser = null;
+let currentRound = null;
+let timerInterval = null;
+let hasSubmitted = false;
+let submittedCaption = '';
+
+function setScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+}
+
+function init() {
+    const saved = localStorage.getItem('g4user');
+    if (saved) {
+        currentUser = JSON.parse(saved);
+        setScreen('waiting');
+        pollForRound();
+    } else {
+        setScreen('login');
+    }
+}
+
+// Poll every 3 seconds for round state
+let pollTimer = null;
+function pollForRound() {
+    loadRound();
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(loadRound, 3000);
+}
+
+async function loadRound() {
+    try {
+        const userParam = currentUser ? `?user_id=${currentUser.id}` : '';
+        const res = await fetch(`${API_URL}/api/meme/active${userParam}`);
+        const data = await res.json();
+
+        if (!data.active) {
+            currentRound = null;
+            hasSubmitted = false;
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            setScreen('waiting');
+            return;
         }
 
-        async function loadRound() {
-            const btn = document.querySelector('.refresh-btn');
-            btn.classList.add('spinning');
-            setTimeout(() => btn.classList.remove('spinning'), 600);
+        const prevRoundId = currentRound ? currentRound.id : null;
+        currentRound = data;
 
-            try {
-                const userParam = currentUser ? `?user_id=${currentUser.id}` : '';
-                const res = await fetch(`${API_URL}/api/meme/active${userParam}`);
-                const data = await res.json();
-
-                if (!data.active) {
-                    document.getElementById('no-round').style.display = 'block';
-                    document.getElementById('active-round').style.display = 'none';
-                    return;
-                }
-
-                document.getElementById('no-round').style.display = 'none';
-                document.getElementById('active-round').style.display = 'block';
-
-                currentRound = data;
-                myVotes = data.my_votes || [];
-
-                // Set image
-                document.getElementById('meme-image').src = data.photo_data;
-                if (data.title) {
-                    document.getElementById('meme-title').textContent = data.title;
-                    document.getElementById('meme-title').style.display = 'block';
-                } else {
-                    document.getElementById('meme-title').style.display = 'none';
-                }
-
-                // Show my existing caption
-                if (data.my_caption) {
-                    document.getElementById('caption-input').value = data.my_caption.caption;
-                    document.getElementById('my-caption-display').textContent = 'Your caption: "' + data.my_caption.caption + '"';
-                    document.getElementById('my-caption-display').style.display = 'block';
-                } else {
-                    document.getElementById('my-caption-display').style.display = 'none';
-                }
-
-                // Voting badge
-                const badge = document.getElementById('voting-badge');
-                if (data.voting_open) {
-                    badge.textContent = 'Voting Open';
-                    badge.className = 'voting-badge open';
-                } else {
-                    badge.textContent = 'Voting Closed';
-                    badge.className = 'voting-badge closed';
-                }
-
-                // Render captions
-                renderCaptions(data.captions, data.voting_open);
-            } catch (e) {
-                console.error('Failed to load round:', e);
-            }
+        // New round? Reset state
+        if (data.id !== prevRoundId) {
+            hasSubmitted = false;
+            submittedCaption = '';
         }
 
-        function renderCaptions(captions, votingOpen) {
-            const list = document.getElementById('captions-list');
-            const empty = document.getElementById('empty-captions');
+        // Check if user already submitted for this round
+        if (data.my_caption) {
+            hasSubmitted = true;
+            submittedCaption = data.my_caption.caption;
+        }
 
-            if (!captions || captions.length === 0) {
-                list.innerHTML = '';
-                empty.style.display = 'block';
+        // Set phone meme image
+        document.getElementById('phone-meme-image').src = data.photo_data;
+
+        // Check timer state
+        const deadline = data.caption_deadline;
+        if (deadline && deadline !== 'stopped') {
+            const remaining = Math.max(0, Math.ceil((new Date(deadline) - Date.now()) / 1000));
+            if (remaining > 0) {
+                // Timer is active
+                if (hasSubmitted) {
+                    // Already submitted, show watch screen
+                    document.getElementById('submitted-preview').textContent = submittedCaption;
+                    setScreen('submitted');
+                } else {
+                    // Show caption input with timer
+                    startPhoneTimer(deadline);
+                    setScreen('caption');
+                }
                 return;
             }
-            empty.style.display = 'none';
-
-            // Find max votes for winner highlighting
-            const maxVotes = Math.max(...captions.map(c => c.vote_count));
-
-            list.innerHTML = captions.map((c, i) => {
-                const isVoted = myVotes.includes(c.id);
-                const isMine = currentUser && c.user_id === currentUser.id;
-                const isWinner = maxVotes > 0 && c.vote_count === maxVotes && !votingOpen;
-
-                let classes = 'caption-item';
-                if (isVoted) classes += ' voted';
-                if (isMine) classes += ' mine';
-                if (isWinner) classes += ' winner';
-
-                const heartIcon = isVoted ? '&#x2764;&#xfe0f;' : '&#x1f90d;';
-                const btnClass = isMine ? 'vote-btn own-caption' : (isVoted ? 'vote-btn voted' : 'vote-btn');
-                const btnClick = isMine ? '' : (votingOpen ? `onclick="toggleVote(${c.id})"` : '');
-
-                return `
-                    <div class="${classes}">
-                        <div class="rank">${i + 1}</div>
-                        <div class="caption-text">
-                            <div class="text">${escapeHtml(c.caption)}</div>
-                            <div class="author">${escapeHtml(c.user_name)}</div>
-                        </div>
-                        <button class="${btnClass}" ${btnClick}>
-                            <span class="heart">${heartIcon}</span>
-                            <span class="count">${c.vote_count}</span>
-                        </button>
-                        ${isWinner ? '<span class="winner-badge">TOP</span>' : ''}
-                    </div>
-                `;
-            }).join('');
         }
 
-        async function submitCaption() {
-            if (!currentUser || !currentRound) return;
+        // Timer ended or stopped
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
 
-            const input = document.getElementById('caption-input');
-            const caption = input.value.trim();
-            if (!caption) {
-                showToast('Write a caption first!');
-                return;
-            }
-
-            try {
-                const displayName = currentUser.last_initial
-                    ? `${currentUser.first_name} ${currentUser.last_initial}.`
-                    : currentUser.first_name;
-
-                const res = await fetch(`${API_URL}/api/meme/caption`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        round_id: currentRound.id,
-                        user_id: currentUser.id,
-                        user_name: displayName,
-                        caption
-                    })
-                });
-                const data = await res.json();
-                if (data.error) {
-                    showToast(data.error);
-                    return;
-                }
-                showToast('Caption submitted!');
-                loadRound();
-            } catch (e) {
-                showToast('Failed to submit caption');
-            }
+        if (hasSubmitted) {
+            document.getElementById('submitted-preview').textContent = submittedCaption;
+            setScreen('submitted');
+        } else if (deadline === 'stopped' || (deadline && new Date(deadline) < new Date())) {
+            // Time's up, didn't submit
+            setScreen('submitted');
+            document.querySelector('.submitted-title').textContent = "Time's up!";
+            document.getElementById('submitted-preview').textContent = "You didn't submit a caption this round";
+            document.querySelector('.submitted-sub').textContent = 'Watch the screen for the results!';
+        } else {
+            // No timer started yet, waiting
+            setScreen('waiting');
         }
 
-        async function toggleVote(captionId) {
-            if (!currentUser) return;
+    } catch(e) {
+        console.error('Poll error:', e);
+    }
+}
 
-            try {
-                const res = await fetch(`${API_URL}/api/meme/vote`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: currentUser.id,
-                        caption_id: captionId
-                    })
-                });
-                const data = await res.json();
-                if (data.error) {
-                    showToast(data.error);
-                    return;
-                }
+function startPhoneTimer(deadline) {
+    const deadlineTime = new Date(deadline).getTime();
+    // Estimate total seconds based on difference from now (max 60)
+    const totalSeconds = Math.min(60, Math.ceil((deadlineTime - Date.now()) / 1000));
 
-                // Update local state immediately for snappy UX
-                if (data.voted) {
-                    myVotes.push(captionId);
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((deadlineTime - Date.now()) / 1000));
+        const numEl = document.getElementById('phone-timer-num');
+        const fillEl = document.getElementById('phone-timer-fill');
+
+        numEl.textContent = remaining;
+        const pct = (remaining / totalSeconds) * 100;
+        fillEl.style.width = pct + '%';
+
+        if (remaining <= 10) {
+            numEl.classList.add('urgent');
+            fillEl.classList.add('urgent');
+        } else {
+            numEl.classList.remove('urgent');
+            fillEl.classList.remove('urgent');
+        }
+
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('caption-status').textContent = "Time's up!";
+            // Switch to submitted/watch screen
+            setTimeout(() => {
+                if (hasSubmitted) {
+                    document.getElementById('submitted-preview').textContent = submittedCaption;
+                    setScreen('submitted');
                 } else {
-                    myVotes = myVotes.filter(id => id !== captionId);
+                    document.querySelector('.submitted-title').textContent = "Time's up!";
+                    document.getElementById('submitted-preview').textContent = "Watch the screen!";
+                    document.querySelector('.submitted-sub').textContent = '';
+                    setScreen('submitted');
                 }
-
-                // Update vote counts in current data
-                if (currentRound && currentRound.captions) {
-                    const caption = currentRound.captions.find(c => c.id === captionId);
-                    if (caption) {
-                        caption.vote_count += data.voted ? 1 : -1;
-                    }
-                    // Re-sort by vote count
-                    currentRound.captions.sort((a, b) => b.vote_count - a.vote_count || new Date(a.created_at) - new Date(b.created_at));
-                    renderCaptions(currentRound.captions, currentRound.voting_open);
-                }
-            } catch (e) {
-                showToast('Failed to vote');
-            }
+            }, 1000);
         }
+    }, 250);
+}
 
-        function escapeHtml(str) {
-            const d = document.createElement('div');
-            d.textContent = str;
-            return d.innerHTML;
-        }
+async function submitCaption() {
+    if (!currentUser || !currentRound) return;
+    const input = document.getElementById('caption-input');
+    const caption = input.value.trim();
+    if (!caption) {
+        showToast('Write a caption first!');
+        return;
+    }
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2500);
-        }
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
 
-        // Enter key to submit caption
-        document.getElementById('caption-input').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') submitCaption();
+    try {
+        const displayName = currentUser.last_initial
+            ? `${currentUser.first_name} ${currentUser.last_initial}.`
+            : currentUser.first_name;
+
+        const res = await fetch(`${API_URL}/api/meme/caption`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                round_id: currentRound.id,
+                user_id: currentUser.id,
+                user_name: displayName,
+                caption
+            })
         });
+        const data = await res.json();
+        if (data.error) {
+            showToast(data.error);
+            btn.disabled = false;
+            return;
+        }
 
-        init();
-    </script>
+        hasSubmitted = true;
+        submittedCaption = caption;
+        document.getElementById('submitted-preview').textContent = caption;
+        // Reset the submitted screen text in case it was modified
+        document.querySelector('.submitted-title').textContent = 'Caption Sent!';
+        document.querySelector('.submitted-sub').textContent = 'Now watch the screen!';
+        setScreen('submitted');
+    } catch(e) {
+        showToast('Failed to submit');
+        btn.disabled = false;
+    }
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// Enter key to submit
+document.getElementById('caption-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') submitCaption();
+});
+
+init();
+</script>
 </body>
 </html>

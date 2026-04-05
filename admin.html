@@ -896,7 +896,8 @@ async function refreshAll() {
         loadWYRQuestions(),
         loadActiveAnnouncement(),
         loadPolls(),
-        loadHuntStats()
+        loadHuntStats(),
+        loadMemeRounds()
     ]);
 }
 
@@ -1773,6 +1774,90 @@ function clearHuntData() {
             showToast('All hunt data cleared');
             loadHuntStats();
         } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+// --- Meme ---
+let memeUploadData = null;
+
+function previewMemeUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        memeUploadData = e.target.result;
+        document.getElementById('meme-preview-img').src = memeUploadData;
+        document.getElementById('meme-upload-preview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+}
+
+async function createMemeRound() {
+    if (!memeUploadData) { showToast('Upload an image first'); return; }
+    const title = document.getElementById('meme-round-title').value.trim();
+    try {
+        await apiFetch('/api/meme/rounds', {
+            method: 'POST',
+            body: { photo_data: memeUploadData, title }
+        });
+        showToast('Meme round created!');
+        memeUploadData = null;
+        document.getElementById('meme-upload-preview').style.display = 'none';
+        document.getElementById('meme-upload-input').value = '';
+        document.getElementById('meme-round-title').value = '';
+        loadMemeRounds();
+    } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function loadMemeRounds() {
+    try {
+        const rounds = await apiFetch('/api/meme/rounds');
+        const list = document.getElementById('meme-rounds-list');
+        if (!rounds.length) {
+            list.innerHTML = '<div style="color:var(--light-text);font-size:0.9rem;">No rounds yet. Upload an image above.</div>';
+            return;
+        }
+        list.innerHTML = rounds.map(r => {
+            const isActive = r.active ? true : false;
+            return `
+            <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem;background:${isActive ? 'rgba(138,158,122,0.08)' : 'rgba(200,185,176,0.06)'};border-radius:10px;margin-bottom:0.5rem;${isActive ? 'border:1.5px solid var(--sage)' : ''}">
+                <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.95rem;">${esc(r.title) || 'Round #' + r.id}</div>
+                    <div style="font-size:0.8rem;color:var(--light-text);">${r.caption_count} captions ${isActive ? '&middot; <span style="color:var(--sage);font-weight:600;">ACTIVE</span>' : ''}</div>
+                </div>
+                ${isActive
+                    ? '<button class="btn btn-danger-outline" style="font-size:0.8rem;padding:0.3rem 0.6rem;" onclick="deactivateMemeRound()">Deactivate</button>'
+                    : '<button class="btn btn-refresh" style="font-size:0.8rem;padding:0.3rem 0.6rem;" onclick="activateMemeRound(' + r.id + ')">Activate</button>'
+                }
+                <button class="btn btn-danger-outline" style="font-size:0.8rem;padding:0.3rem 0.6rem;" onclick="deleteMemeRound(${r.id})">Delete</button>
+            </div>`;
+        }).join('');
+    } catch(e) { console.error('Failed to load meme rounds:', e); }
+}
+
+async function activateMemeRound(roundId) {
+    try {
+        await apiFetch('/api/meme/activate', { method: 'POST', body: { round_id: roundId } });
+        showToast('Round activated!');
+        loadMemeRounds();
+    } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function deactivateMemeRound() {
+    try {
+        await apiFetch('/api/meme/activate', { method: 'POST', body: { round_id: null } });
+        showToast('Round deactivated');
+        loadMemeRounds();
+    } catch(e) { showToast('Error: ' + e.message); }
+}
+
+async function deleteMemeRound(roundId) {
+    showModal('Delete Meme Round', 'Delete this round and all its captions?', async () => {
+        try {
+            await apiFetch('/api/meme/rounds/' + roundId, { method: 'DELETE' });
+            showToast('Round deleted');
+            loadMemeRounds();
+        } catch(e) { showToast('Error: ' + e.message); }
     });
 }
 

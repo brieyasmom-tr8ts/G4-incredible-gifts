@@ -2612,12 +2612,10 @@
 
                         <button id="prep-toggle" style="width:100%;padding:8px;border:none;background:none;font-size:0.82rem;color:var(--accent);cursor:pointer;font-weight:600;transition:var(--transition);">Hide details ▴</button>
                     </div>
-                    <div id="schedule-wrapper">
-                        <div id="schedule-toggle" style="display:none;margin:8px 16px;padding:14px 20px;background:linear-gradient(135deg,var(--blush),var(--rose));border-radius:14px;box-shadow:0 4px 12px rgba(201,144,138,0.25);text-align:center;cursor:pointer;transition:var(--transition);">
-                            <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:600;color:white;">View Full Schedule</div>
-                            <div style="font-size:0.8rem;color:rgba(255,255,255,0.85);margin-top:2px;">3 days · 3 sessions · 1 amazing party night</div>
-                        </div>
-                        <div id="schedule-container"></div>
+                    <!-- Schedule link (schedule moved to its own tab) -->
+                    <div id="schedule-home-link" style="margin:8px 16px;padding:14px 20px;background:linear-gradient(135deg,var(--blush),var(--rose));border-radius:14px;box-shadow:0 4px 12px rgba(201,144,138,0.25);text-align:center;cursor:pointer;transition:var(--transition);" onclick="switchToTab('schedule')">
+                        <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:600;color:white;">View Full Schedule</div>
+                        <div style="font-size:0.8rem;color:rgba(255,255,255,0.85);margin-top:2px;">3 days · 3 sessions · 1 amazing party night</div>
                     </div>
                     <!-- People Directory moved to Connect tab -->
                     <div id="not-alone-home-preview"></div>
@@ -2625,6 +2623,17 @@
                     <!-- Weather forecast for Ocean City -->
                     <div id="weather-forecast" style="display:none;margin:8px 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(138,158,122,0.08) 0%,rgba(201,144,138,0.06) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.12);"></div>
 
+                </div>
+            </div>
+
+            <!-- SCHEDULE TAB -->
+            <div id="schedule-tab" class="tab-content">
+                <div style="padding:16px 16px 100px;">
+                    <div style="text-align:center;margin-bottom:12px;">
+                        <div style="font-family:Playfair Display,serif;font-size:1.4rem;font-weight:700;color:var(--dark-text);">Schedule</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;">April 9-11, 2026</div>
+                    </div>
+                    <div id="schedule-container"></div>
                 </div>
             </div>
 
@@ -4370,6 +4379,7 @@
 
         // All possible nav items (Home is always shown)
         const ALL_NAV_ITEMS = [
+            { key: 'nav_schedule', tab: 'schedule', icon: '\ud83d\udcc6', label: 'Schedule' },
             { key: 'nav_moments', tab: 'moments', icon: '\ud83d\udcf8', label: 'Moments' },
             { key: 'nav_connect', tab: 'prayer', icon: '\ud83d\udc9b', label: 'Connect' },
             { key: 'nav_journey', tab: 'journey', icon: '\ud83c\udf81', label: 'Journey' },

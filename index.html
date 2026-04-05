@@ -521,6 +521,14 @@
             object-fit: cover;
             flex-shrink: 0;
         }
+        .msg-avatar-sm {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 2px solid var(--blush);
+        }
 
         .msg-avatar-placeholder {
             width: 22px;
@@ -3262,26 +3270,23 @@
         const avatarCache = {};
         async function loadAvatar(userId, element, initial) {
             if (!userId) return;
+            function replaceWithPhoto(src) {
+                const img = document.createElement('img');
+                // If element has a data-avatar-class, use that; otherwise default
+                const cls = element.dataset.avatarClass || element.className.replace('placeholder', '').trim() || 'msg-avatar';
+                img.className = cls;
+                img.src = src;
+                img.alt = '';
+                element.replaceWith(img);
+            }
             if (avatarCache[userId] !== undefined) {
-                if (avatarCache[userId]) {
-                    const img = document.createElement('img');
-                    img.className = element.className.replace('placeholder', '').trim() || 'msg-avatar';
-                    img.src = avatarCache[userId];
-                    img.alt = '';
-                    element.replaceWith(img);
-                }
+                if (avatarCache[userId]) replaceWithPhoto(avatarCache[userId]);
                 return;
             }
             try {
                 const data = await apiGet('/api/users/' + userId + '/photo');
                 avatarCache[userId] = data?.photo_data || '';
-                if (avatarCache[userId]) {
-                    const img = document.createElement('img');
-                    img.className = element.className.replace('placeholder', '').trim() || 'msg-avatar';
-                    img.src = avatarCache[userId];
-                    img.alt = '';
-                    element.replaceWith(img);
-                }
+                if (avatarCache[userId]) replaceWithPhoto(avatarCache[userId]);
             } catch(e) {
                 avatarCache[userId] = '';
             }
@@ -3887,33 +3892,34 @@
                     const content = document.createElement('div');
 
                     // Name row with inline tiny avatar
-                    const avatarEl = document.createElement('span');
+                    // Avatar (directory size, sits left of content)
+                    const avatarEl = document.createElement('div');
                     avatarEl.className = 'msg-avatar-placeholder';
-                    avatarEl.style.cssText = 'width:16px;height:16px;font-size:0.45rem;border-radius:4px;display:inline-flex;vertical-align:middle;margin-right:4px;';
+                    avatarEl.dataset.avatarClass = 'msg-avatar-sm';
+                    avatarEl.style.cssText = 'width:48px;height:48px;min-width:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--blush);background:linear-gradient(135deg,var(--blush),var(--rose));color:white;font-size:1.1rem;font-family:Playfair Display,serif;font-weight:700;flex-shrink:0;';
                     avatarEl.textContent = msg.author_name.charAt(0);
                     loadAvatar(msg.user_id, avatarEl, msg.author_name.charAt(0));
 
-                    // Name + type badge inline
+                    // Name + type badge
                     const nameRow = document.createElement('div');
-                    nameRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:2px;';
+                    nameRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:2px;flex-wrap:wrap;';
                     const nameEl = document.createElement('span');
-                    nameEl.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.82rem;font-weight:700;color:var(--dark-text);';
+                    nameEl.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:700;color:var(--dark-text);';
                     nameEl.textContent = msg.author_name;
-                    nameRow.appendChild(avatarEl);
                     nameRow.appendChild(nameEl);
                     const typeBadge = document.createElement('span');
-                    typeBadge.style.cssText = 'font-size:0.65rem;padding:1px 6px;border-radius:6px;font-weight:600;';
+                    typeBadge.style.cssText = 'font-size:0.7rem;padding:1px 7px;border-radius:6px;font-weight:600;';
                     if (msg.type === 'prayer') {
-                        typeBadge.textContent = '🙏';
-                        typeBadge.style.background = 'rgba(138,158,122,0.12)';
+                        typeBadge.textContent = '🙏 Prayer';
+                        typeBadge.style.background = 'rgba(138,158,122,0.15)';
                     } else {
-                        typeBadge.textContent = '💛';
-                        typeBadge.style.background = 'rgba(201,144,138,0.12)';
+                        typeBadge.textContent = '💛 Encouragement';
+                        typeBadge.style.background = 'rgba(201,144,138,0.15)';
                     }
                     nameRow.appendChild(typeBadge);
                     if (msg.tagged_name) {
                         const forEl = document.createElement('span');
-                        forEl.style.cssText = 'font-size:0.75rem;color:var(--light-text);font-style:italic;';
+                        forEl.style.cssText = 'font-size:0.78rem;color:var(--blush);font-style:italic;';
                         forEl.textContent = 'for ' + msg.tagged_name;
                         nameRow.appendChild(forEl);
                     }
@@ -3979,6 +3985,12 @@
 
                     footer.appendChild(actions);
                     content.appendChild(footer);
+                    // Flex row: avatar left, content right
+                    content.style.cssText = 'flex:1;min-width:0;';
+                    post.style.display = 'flex';
+                    post.style.gap = '12px';
+                    post.style.alignItems = 'flex-start';
+                    post.appendChild(avatarEl);
                     post.appendChild(content);
                     container.appendChild(post);
                 });
@@ -4300,19 +4312,26 @@
             localStorage.setItem('incredibleGiftState', JSON.stringify(appState));
         }
 
-        function initTabs() {
+        function switchToTab(tabName) {
             const navBtns = document.querySelectorAll('.nav-btn');
             const tabContents = document.querySelectorAll('.tab-content');
+            const btn = document.querySelector('.nav-btn[data-tab="' + tabName + '"]');
+            const activeTab = document.getElementById(tabName + '-tab');
+            if (!btn || !activeTab) return;
+            navBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(tab => tab.classList.remove('active'));
+            btn.classList.add('active');
+            activeTab.classList.add('active');
+            document.querySelector('.content-area').scrollTop = 0;
+            animateCards(activeTab);
+            sessionStorage.setItem('g4_active_tab', tabName);
+        }
+
+        function initTabs() {
+            const navBtns = document.querySelectorAll('.nav-btn');
             navBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const tabName = btn.dataset.tab;
-                    navBtns.forEach(b => b.classList.remove('active'));
-                    tabContents.forEach(tab => tab.classList.remove('active'));
-                    btn.classList.add('active');
-                    const activeTab = document.getElementById(tabName + '-tab');
-                    activeTab.classList.add('active');
-                    document.querySelector('.content-area').scrollTop = 0;
-                    animateCards(activeTab);
+                    switchToTab(btn.dataset.tab);
                 });
             });
         }
@@ -5891,6 +5910,9 @@
 
         loadState();
         initTabs();
+        // Restore last active tab on refresh
+        const savedTab = sessionStorage.getItem('g4_active_tab');
+        if (savedTab) switchToTab(savedTab);
 
         buildSchedule();
         buildPrayerCountdown();

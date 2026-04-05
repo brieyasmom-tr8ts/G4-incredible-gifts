@@ -882,13 +882,13 @@ function esc(str) {
 
 function fmtDate(d) {
     if (!d) return '';
-    try { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    try { return new Date(d).toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', year: 'numeric' }); }
     catch { return d; }
 }
 
 function fmtDateTime(d) {
     if (!d) return '';
-    try { return new Date(d).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+    try { return new Date(d).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
     catch { return d; }
 }
 

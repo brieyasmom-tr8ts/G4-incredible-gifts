@@ -2744,6 +2744,7 @@
                         <div id="directory-sort" style="display:none;margin-bottom:12px;display:flex;gap:6px;justify-content:flex-end;">
                             <button class="dir-sort-btn active" data-sort="newest" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);">Newest</button>
                             <button class="dir-sort-btn" data-sort="alpha" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);">A–Z</button>
+                            <button class="dir-sort-btn" data-sort="profile" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);">Featured</button>
                         </div>
                         <div id="connect-people-list" style="display:flex;flex-direction:column;gap:10px;"></div>
                     </div>
@@ -3591,6 +3592,12 @@
             const display = [...filtered].sort((a, b) => {
                 if (sortMode === 'alpha') {
                     return a.first_name.localeCompare(b.first_name) || (a.last_initial || '').localeCompare(b.last_initial || '');
+                }
+                if (sortMode === 'profile') {
+                    const aScore = (a.photo_data ? 3 : 0) + (a.about ? 2 : 0) + (a.location ? 1 : 0) + (a.church ? 1 : 0) + (a.job ? 1 : 0);
+                    const bScore = (b.photo_data ? 3 : 0) + (b.about ? 2 : 0) + (b.location ? 1 : 0) + (b.church ? 1 : 0) + (b.job ? 1 : 0);
+                    if (bScore !== aScore) return bScore - aScore;
+                    return a.first_name.localeCompare(b.first_name);
                 }
                 // newest: by id descending
                 return b.id - a.id;

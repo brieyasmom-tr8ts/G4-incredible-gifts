@@ -315,6 +315,86 @@
             color: rgba(200,185,176,0.3);
             z-index: 50;
         }
+
+        /* Round picker panel */
+        .round-picker-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .round-picker-overlay.open { display: flex; }
+        .round-picker {
+            background: #2a2018;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .round-picker h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            color: var(--rose);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .round-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        .round-card {
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            position: relative;
+        }
+        .round-card:hover { border-color: var(--rose); transform: scale(1.03); }
+        .round-card.active-round { border-color: var(--sage); }
+        .round-card.played { opacity: 0.5; }
+        .round-card img {
+            width: 100%;
+            aspect-ratio: 4/3;
+            object-fit: cover;
+            display: block;
+        }
+        .round-card-label {
+            padding: 6px 8px;
+            font-size: 0.75rem;
+            color: var(--warm-grey);
+            text-align: center;
+            background: rgba(26,20,16,0.8);
+        }
+        .round-card-badge {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 700;
+        }
+        .round-card-badge.now { background: var(--sage); color: #fff; }
+        .round-card-badge.done { background: rgba(200,185,176,0.3); color: var(--warm-grey); }
+        .picker-close {
+            display: block;
+            margin: 16px auto 0;
+            padding: 8px 24px;
+            background: rgba(200,185,176,0.15);
+            color: var(--warm-grey);
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -370,8 +450,18 @@
     <div class="winner-author" id="winner-author"></div>
 </div>
 
+<!-- Round Picker -->
+<div class="round-picker-overlay" id="round-picker-overlay" onclick="if(event.target===this)closeRoundPicker()">
+    <div class="round-picker">
+        <h3>Pick a Round</h3>
+        <div class="round-grid" id="round-grid"></div>
+        <button class="picker-close" onclick="closeRoundPicker()">Close</button>
+    </div>
+</div>
+
 <!-- Controls -->
 <div class="controls" id="controls">
+    <button class="ctrl-btn secondary" onclick="openRoundPicker()">Rounds</button>
     <span class="ctrl-label" id="ctrl-label">Ready</span>
     <button class="ctrl-btn primary" id="ctrl-main" onclick="handleMainAction()">Start Round</button>
     <button class="ctrl-btn secondary" id="ctrl-secondary" style="display:none;" onclick="handleSecondaryAction()">Skip</button>
@@ -458,8 +548,8 @@ function handleMainAction() {
             }
             break;
         case 'winner':
-            // Reset for next round
-            loadActiveRound();
+            // Pick next round
+            openRoundPicker();
             break;
     }
 }
@@ -755,6 +845,72 @@ document.addEventListener('keydown', (e) => {
         loadActiveRound();
     }
 });
+
+// ===== ROUND PICKER =====
+let allRounds = [];
+
+async function loadAllRounds() {
+    try {
+        const res = await fetch(`${API_URL}/api/meme/rounds`);
+        allRounds = await res.json();
+    } catch(e) { allRounds = []; }
+}
+
+function openRoundPicker() {
+    loadAllRounds().then(() => {
+        const grid = document.getElementById('round-grid');
+        if (allRounds.length === 0) {
+            grid.innerHTML = '<div style="text-align:center;color:var(--warm-grey);padding:2rem;grid-column:1/-1;">No rounds uploaded yet. Add images in admin.</div>';
+        } else {
+            grid.innerHTML = allRounds.map(r => {
+                const isActive = currentRound && currentRound.id === r.id;
+                const hasCaption = r.caption_count > 0;
+                let badgeHtml = '';
+                if (isActive) badgeHtml = '<div class="round-card-badge now">NOW</div>';
+                else if (hasCaption) badgeHtml = '<div class="round-card-badge done">PLAYED</div>';
+                return `
+                    <div class="round-card ${isActive ? 'active-round' : ''} ${hasCaption && !isActive ? 'played' : ''}" onclick="pickRound(${r.id})">
+                        <img src="" data-round-id="${r.id}" alt="Round ${r.id}">
+                        ${badgeHtml}
+                        <div class="round-card-label">${r.title || 'Round ' + r.id} (${r.caption_count})</div>
+                    </div>`;
+            }).join('');
+            // Load thumbnails
+            allRounds.forEach(async (r) => {
+                try {
+                    const res = await fetch(`${API_URL}/api/meme/active`);
+                    // We need individual round images - let's use results endpoint
+                    const data = await fetch(`${API_URL}/api/meme/results/${r.id}`);
+                    const result = await data.json();
+                    if (result.round && result.round.photo_data) {
+                        const img = document.querySelector(`img[data-round-id="${r.id}"]`);
+                        if (img) img.src = result.round.photo_data;
+                    }
+                } catch(e) {}
+            });
+        }
+        document.getElementById('round-picker-overlay').classList.add('open');
+    });
+}
+
+function closeRoundPicker() {
+    document.getElementById('round-picker-overlay').classList.remove('open');
+}
+
+async function pickRound(roundId) {
+    closeRoundPicker();
+    try {
+        const res = await fetch(`${API_URL}/api/meme/activate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ round_id: roundId })
+        });
+        await res.json();
+        loadActiveRound();
+    } catch(e) {
+        console.error('Failed to activate round:', e);
+    }
+}
 
 // ===== INIT =====
 loadActiveRound();

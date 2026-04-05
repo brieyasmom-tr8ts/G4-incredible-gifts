@@ -1995,6 +1995,28 @@
             background: var(--blush) !important;
             color: white !important;
         }
+        .tab-badge {
+            position: absolute;
+            top: 4px;
+            right: 8px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 9px;
+            background: var(--accent);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            line-height: 18px;
+            text-align: center;
+            font-family: -apple-system, sans-serif;
+            animation: badgePop 0.3s ease;
+        }
+        @keyframes badgePop {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
 
         .uplift-type-btn.active {
             background: rgba(201,144,138,0.15) !important;
@@ -2684,8 +2706,8 @@
                     <!-- Connect Sub-tabs -->
                     <div id="connect-sub-tabs" style="display:flex;gap:0;margin:0 16px 12px;border-radius:12px;overflow:hidden;border:1px solid rgba(139,134,128,0.15);background:rgba(255,255,255,0.5);">
                         <button class="connect-tab-btn active" data-connect="sisters" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);position:relative;">Directory</button>
-                        <button class="connect-tab-btn" data-connect="uplift" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);border-right:1px solid rgba(139,134,128,0.12);">Uplift</button>
-                        <button class="connect-tab-btn" data-connect="sharing" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);">Polls</button>
+                        <button class="connect-tab-btn" data-connect="uplift" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);border-left:1px solid rgba(139,134,128,0.12);border-right:1px solid rgba(139,134,128,0.12);position:relative;">Uplift<span id="badge-uplift" class="tab-badge" style="display:none;"></span></button>
+                        <button class="connect-tab-btn" data-connect="sharing" style="flex:1;padding:10px 6px;border:none;background:none;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;color:var(--light-text);cursor:pointer;transition:var(--transition);position:relative;">Polls<span id="badge-sharing" class="tab-badge" style="display:none;"></span></button>
                     </div>
                     <!-- Sisters Sub-tab -->
                     <div id="connect-sisters" class="connect-panel" style="margin:0 16px;">
@@ -3988,9 +4010,34 @@
                 allMessages = messages || [];
                 renderMessages(allMessages, document.getElementById('prayer-posts'), 'prayer');
                 renderMessages(allMessages, document.getElementById('encourage-posts'), 'encouragement');
+                updateUpliftBadge();
             } catch (e) {
                 document.getElementById('prayer-posts').innerHTML = '<div class="prayer-empty">Could not load messages.</div>';
                 document.getElementById('encourage-posts').innerHTML = '<div class="prayer-empty">Could not load messages.</div>';
+            }
+        }
+
+        function updateUpliftBadge() {
+            const lastSeen = parseInt(localStorage.getItem('g4_uplift_seen') || '0');
+            const newCount = allMessages.filter(m => m.id > lastSeen).length;
+            const badge = document.getElementById('badge-uplift');
+            if (newCount > 0) {
+                badge.textContent = newCount;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function updateSharingBadge(totalItems) {
+            const lastSeen = parseInt(localStorage.getItem('g4_polls_seen') || '0');
+            const newCount = Math.max(0, totalItems - lastSeen);
+            const badge = document.getElementById('badge-sharing');
+            if (newCount > 0) {
+                badge.textContent = newCount;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
             }
         }
 
@@ -4005,6 +4052,8 @@
                 ]);
 
                 let html = '';
+                const totalPollItems = (pollResponses ? pollResponses.length : 0) + (wyrFeed ? wyrFeed.length : 0);
+                updateSharingBadge(totalPollItems);
 
                 // WYR results (with inline voting for unvoted questions)
                 const wyrCards = [];
@@ -4127,7 +4176,27 @@
                     const panel = document.getElementById('connect-' + btn.dataset.connect);
                     if (panel) panel.style.display = 'block';
                     if (btn.dataset.connect === 'sisters') loadPeople();
-                    if (btn.dataset.connect === 'sharing') loadSharingFeed();
+                    if (btn.dataset.connect === 'uplift') {
+                        // Mark all current messages as seen
+                        if (allMessages.length > 0) {
+                            const maxId = Math.max(...allMessages.map(m => m.id));
+                            localStorage.setItem('g4_uplift_seen', String(maxId));
+                        }
+                        document.getElementById('badge-uplift').style.display = 'none';
+                    }
+                    if (btn.dataset.connect === 'sharing') {
+                        loadSharingFeed();
+                        // Mark polls as seen after loading
+                        setTimeout(() => {
+                            const badge = document.getElementById('badge-sharing');
+                            const current = parseInt(badge.textContent || '0');
+                            if (current > 0) {
+                                const prev = parseInt(localStorage.getItem('g4_polls_seen') || '0');
+                                localStorage.setItem('g4_polls_seen', String(prev + current));
+                            }
+                            badge.style.display = 'none';
+                        }, 500);
+                    }
                 });
             });
 
@@ -4218,6 +4287,7 @@
             });
 
             loadPrayerWall();
+            loadSharingFeed();
             loadPeople();
         }
 

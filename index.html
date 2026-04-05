@@ -3898,7 +3898,6 @@
                     avatarEl.dataset.avatarClass = 'msg-avatar-sm';
                     avatarEl.style.cssText = 'width:48px;height:48px;min-width:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--blush);background:linear-gradient(135deg,var(--blush),var(--rose));color:white;font-size:1.1rem;font-family:Playfair Display,serif;font-weight:700;flex-shrink:0;';
                     avatarEl.textContent = msg.author_name.charAt(0);
-                    loadAvatar(msg.user_id, avatarEl, msg.author_name.charAt(0));
 
                     // Name + type badge
                     const nameRow = document.createElement('div');
@@ -3993,6 +3992,8 @@
                     post.appendChild(avatarEl);
                     post.appendChild(content);
                     container.appendChild(post);
+                    // Load avatar after element is in DOM so replaceWith works
+                    loadAvatar(msg.user_id, avatarEl, msg.author_name.charAt(0));
                 });
         }
 
@@ -4324,7 +4325,7 @@
             activeTab.classList.add('active');
             document.querySelector('.content-area').scrollTop = 0;
             animateCards(activeTab);
-            sessionStorage.setItem('g4_active_tab', tabName);
+            localStorage.setItem('g4_active_tab', tabName);
         }
 
         function initTabs() {
@@ -5911,7 +5912,7 @@
         loadState();
         initTabs();
         // Restore last active tab on refresh
-        const savedTab = sessionStorage.getItem('g4_active_tab');
+        const savedTab = localStorage.getItem('g4_active_tab');
         if (savedTab) switchToTab(savedTab);
 
         buildSchedule();

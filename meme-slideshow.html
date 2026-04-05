@@ -50,11 +50,14 @@
             -webkit-text-fill-color: transparent;
         }
         #phase-waiting p { font-size: 1.4rem; color: var(--warm-grey); }
-        .round-title-display {
-            font-family: 'Playfair Display', serif;
-            font-size: 2rem;
-            color: var(--rose);
-            margin-top: 1.5rem;
+        .waiting-thumbnail {
+            margin-top: 2rem;
+            width: 220px;
+            height: 165px;
+            border-radius: 12px;
+            object-fit: cover;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            border: 2px solid rgba(200,185,176,0.2);
         }
 
         /* ====== TIMER PHASE ====== */
@@ -405,7 +408,7 @@
 <div class="phase active" id="phase-waiting">
     <h1>What Do You Meme?</h1>
     <p>Waiting for a round to start...</p>
-    <div id="waiting-round-title" class="round-title-display" style="display:none;"></div>
+    <img id="waiting-thumbnail" class="waiting-thumbnail" style="display:none;" alt="Current round">
 </div>
 
 <!-- PHASE: Timer / Caption writing -->
@@ -570,11 +573,13 @@ async function loadActiveRound() {
         document.getElementById('timer-meme-image').src = data.photo_data;
         document.getElementById('reveal-meme-image').src = data.photo_data;
 
-        if (data.title) {
-            document.getElementById('waiting-round-title').textContent = data.title;
-            document.getElementById('waiting-round-title').style.display = 'block';
+        // Show thumbnail on waiting screen
+        const thumb = document.getElementById('waiting-thumbnail');
+        if (data.photo_data) {
+            thumb.src = data.photo_data;
+            thumb.style.display = 'block';
         } else {
-            document.getElementById('waiting-round-title').style.display = 'none';
+            thumb.style.display = 'none';
         }
 
         // Check if timer is already running
@@ -872,7 +877,6 @@ function openRoundPicker() {
                     <div class="round-card ${isActive ? 'active-round' : ''} ${hasCaption && !isActive ? 'played' : ''}" onclick="pickRound(${r.id})">
                         <img src="" data-round-id="${r.id}" alt="Round ${r.id}">
                         ${badgeHtml}
-                        <div class="round-card-label">${r.title || 'Round ' + r.id} (${r.caption_count})</div>
                     </div>`;
             }).join('');
             // Load thumbnails

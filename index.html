@@ -6865,6 +6865,7 @@
 
         // Check for announcements and games after user is loaded
         setTimeout(async () => {
+            if (!currentUser) return;
             // Gather all popups that need to show, then queue them in order
             // 1. Announcements
             try {

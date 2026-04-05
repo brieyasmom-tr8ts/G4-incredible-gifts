@@ -3893,7 +3893,7 @@
                     avatarWrap.addEventListener('click', (e) => { e.stopPropagation(); showUserCard(msg.user_id, msg.author_name); });
                     const avatarEl = document.createElement('div');
                     avatarEl.className = 'msg-avatar-placeholder';
-                    avatarEl.style.cssText = 'width:32px;height:32px;font-size:0.75rem;';
+                    avatarEl.style.cssText = 'width:24px;height:24px;font-size:0.6rem;border-radius:6px;';
                     avatarEl.textContent = msg.author_name.charAt(0);
                     avatarWrap.appendChild(avatarEl);
                     post.appendChild(avatarWrap);

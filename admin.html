@@ -749,15 +749,15 @@
                 <!-- Upload new round -->
                 <div style="border:2px dashed var(--warm-grey);border-radius:12px;padding:1.5rem;text-align:center;margin-bottom:1rem;cursor:pointer;" onclick="document.getElementById('meme-upload-input').click()">
                     <div style="font-size:1.5rem;margin-bottom:0.5rem;">&#x1f5bc;</div>
-                    <div style="font-size:0.9rem;color:var(--taupe);">Click to upload a meme image</div>
-                    <input type="file" id="meme-upload-input" accept="image/*" style="display:none;" onchange="previewMemeUpload(this)">
+                    <div style="font-size:0.9rem;color:var(--taupe);">Click to upload meme images (select multiple)</div>
+                    <input type="file" id="meme-upload-input" accept="image/*" multiple style="display:none;" onchange="handleMemeFiles(this)">
                 </div>
-                <div id="meme-upload-preview" style="display:none;margin-bottom:1rem;text-align:center;">
-                    <img id="meme-preview-img" style="max-width:300px;max-height:250px;border-radius:10px;margin-bottom:0.5rem;">
-                    <div style="display:flex;gap:0.5rem;justify-content:center;align-items:center;">
-                        <input type="text" id="meme-round-title" placeholder="Round title (optional)" style="padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;width:200px;">
-                        <button class="btn btn-refresh" onclick="createMemeRound()">Create Round</button>
-                    </div>
+                <div id="meme-upload-queue" style="display:none;margin-bottom:1rem;">
+                    <div style="font-weight:600;margin-bottom:0.5rem;color:var(--taupe);">Ready to upload:</div>
+                    <div id="meme-queue-items" style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.75rem;"></div>
+                    <button class="btn btn-refresh" onclick="uploadAllMemeRounds()">Create All Rounds</button>
+                    <button class="btn btn-danger-outline" style="margin-left:0.5rem;" onclick="clearMemeQueue()">Clear</button>
+                    <div id="meme-upload-status" style="font-size:0.85rem;color:var(--light-text);margin-top:0.5rem;"></div>
                 </div>
 
                 <!-- Existing rounds -->
@@ -1836,35 +1836,91 @@ async function toggleNavItem(key, on) {
 }
 
 // --- Meme ---
-let memeUploadData = null;
+let memeQueue = []; // array of { data: base64, name: string }
 
-function previewMemeUpload(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        memeUploadData = e.target.result;
-        document.getElementById('meme-preview-img').src = memeUploadData;
-        document.getElementById('meme-upload-preview').style.display = 'block';
-    };
-    reader.readAsDataURL(file);
+function compressImage(file, maxWidth, quality) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
+                if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+                canvas.width = w;
+                canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+async function handleMemeFiles(input) {
+    const files = Array.from(input.files);
+    if (!files.length) return;
+
+    const status = document.getElementById('meme-upload-status');
+    status.textContent = 'Compressing images...';
+    document.getElementById('meme-upload-queue').style.display = 'block';
+
+    for (const file of files) {
+        const compressed = await compressImage(file, 1280, 0.8);
+        memeQueue.push({ data: compressed, name: file.name.replace(/\.[^.]+$/, '') });
+    }
+
+    renderMemeQueue();
+    status.textContent = '';
+    input.value = '';
+}
+
+function renderMemeQueue() {
+    const container = document.getElementById('meme-queue-items');
+    container.innerHTML = memeQueue.map((item, i) => `
+        <div style="position:relative;width:120px;">
+            <img src="${item.data}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;box-shadow:var(--shadow-sm);">
+            <button onclick="memeQueue.splice(${i},1);renderMemeQueue();" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:var(--accent);color:white;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
+            <div style="font-size:0.75rem;color:var(--light-text);margin-top:2px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(item.name)}</div>
+        </div>
+    `).join('');
+    if (memeQueue.length === 0) document.getElementById('meme-upload-queue').style.display = 'none';
+}
+
+function clearMemeQueue() {
+    memeQueue = [];
+    renderMemeQueue();
+    document.getElementById('meme-upload-queue').style.display = 'none';
+}
+
+async function uploadAllMemeRounds() {
+    if (!memeQueue.length) { showToast('No images to upload'); return; }
+    const status = document.getElementById('meme-upload-status');
+    let success = 0;
+    for (let i = 0; i < memeQueue.length; i++) {
+        status.textContent = `Uploading ${i + 1} of ${memeQueue.length}...`;
+        try {
+            await apiFetch('/api/meme/rounds', {
+                method: 'POST',
+                body: { photo_data: memeQueue[i].data, title: memeQueue[i].name }
+            });
+            success++;
+        } catch(e) {
+            showToast('Error uploading ' + memeQueue[i].name + ': ' + e.message);
+        }
+    }
+    showToast(success + ' round' + (success !== 1 ? 's' : '') + ' created!');
+    memeQueue = [];
+    document.getElementById('meme-upload-queue').style.display = 'none';
+    status.textContent = '';
+    loadMemeRounds();
 }
 
 async function createMemeRound() {
-    if (!memeUploadData) { showToast('Upload an image first'); return; }
-    const title = document.getElementById('meme-round-title').value.trim();
-    try {
-        await apiFetch('/api/meme/rounds', {
-            method: 'POST',
-            body: { photo_data: memeUploadData, title }
-        });
-        showToast('Meme round created!');
-        memeUploadData = null;
-        document.getElementById('meme-upload-preview').style.display = 'none';
-        document.getElementById('meme-upload-input').value = '';
-        document.getElementById('meme-round-title').value = '';
-        loadMemeRounds();
-    } catch(e) { showToast('Error: ' + e.message); }
+    // Single upload fallback
+    if (!memeQueue.length) { showToast('Upload an image first'); return; }
+    await uploadAllMemeRounds();
 }
 
 async function loadMemeRounds() {

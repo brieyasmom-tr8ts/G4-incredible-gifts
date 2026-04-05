@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G4 2026 - Who Am I?</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #2a2320 0%, #1a1a1a 40%, #1e2a1e 100%);
+            color: white;
+            font-family: Cormorant Garamond, serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+        .start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            gap: 0;
+            text-align: center;
+            padding: 20px;
+        }
+        .start-logo {
+            font-size: 3.5rem;
+            margin-bottom: 16px;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .start-screen h1 {
+            font-family: Playfair Display, serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .start-screen .subtitle {
+            font-size: 1.3rem;
+            color: rgba(255,255,255,0.5);
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+        .start-screen .theme {
+            font-family: Playfair Display, serif;
+            font-size: 1.1rem;
+            color: rgba(201,144,138,0.8);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+        }
+        .start-divider {
+            width: 60px;
+            height: 1px;
+            background: rgba(255,255,255,0.15);
+            margin: 0 auto 28px;
+        }
+        .start-count {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 20px;
+        }
+        .start-btn {
+            padding: 20px 50px;
+            border: 1.5px solid rgba(255,255,255,0.15);
+            border-radius: 18px;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-family: Playfair Display, serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .start-btn:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: rgba(201,144,138,0.5);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            padding: 40px 40px 100px;
+            text-align: center;
+        }
+        .slide.active { opacity: 1; }
+
+        .slide-fact {
+            font-family: Playfair Display, serif;
+            font-size: 2.8rem;
+            font-weight: 600;
+            line-height: 1.4;
+            max-width: 70vw;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+        }
+        .slide-question {
+            font-family: Cormorant Garamond, serif;
+            font-size: 1.5rem;
+            color: rgba(201,144,138,0.8);
+            font-style: italic;
+            margin-top: 24px;
+        }
+
+        .slide-reveal {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        .slide-reveal .reveal-fact {
+            font-family: Cormorant Garamond, serif;
+            font-size: 1.4rem;
+            font-style: italic;
+            color: rgba(255,255,255,0.6);
+            max-width: 60vw;
+            line-height: 1.5;
+        }
+        .slide-reveal .reveal-name {
+            font-family: Playfair Display, serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: white;
+            animation: revealPop 0.6s ease;
+        }
+        .slide-reveal .reveal-emoji {
+            font-size: 3rem;
+        }
+        @keyframes revealPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .slide-number {
+            position: absolute;
+            top: 24px;
+            right: 30px;
+            font-size: 1rem;
+            color: rgba(255,255,255,0.2);
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 16px;
+            z-index: 10;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7) 30%);
+        }
+        .controls button {
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .controls button:hover { background: rgba(255,255,255,0.15); }
+        .controls button.reveal-btn { background: rgba(201,144,138,0.4); border-color: rgba(201,144,138,0.6); }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.5);
+        }
+
+        @media (max-width: 600px) {
+            .start-screen h1 { font-size: 2rem; }
+            .slide-fact { font-size: 1.8rem; max-width: 85vw; }
+            .slide-reveal .reveal-name { font-size: 2.5rem; }
+            .slide-reveal .reveal-fact { font-size: 1.1rem; max-width: 85vw; }
+        }
+    </style>
+</head>
+<body>
+    <div class="start-screen" id="start-screen">
+        <div class="start-logo">🤫</div>
+        <h1>Who Am I?</h1>
+        <div class="subtitle">G4 2026</div>
+        <div class="theme">Incredible Gifts</div>
+        <div class="start-divider"></div>
+        <div class="start-count" id="start-count">Loading...</div>
+        <button class="start-btn" onclick="startGame()">Start the Game</button>
+    </div>
+    <div class="loading" id="loading" style="display:none;">Loading facts...</div>
+    <div id="slideshow"></div>
+    <div class="controls" id="controls" style="display:none;">
+        <button onclick="prevSlide()">← Back</button>
+        <button class="reveal-btn" onclick="revealOrNext()" id="action-btn">Reveal</button>
+        <button onclick="nextSlide()">Skip →</button>
+        <button onclick="shuffleFacts()">🔀 Shuffle</button>
+        <button onclick="backToStart()">Exit</button>
+    </div>
+
+    <script>
+        const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
+
+        let facts = [];
+        let currentIndex = 0;
+        let revealed = false; // is current fact's author revealed?
+
+        async function loadFacts() {
+            const res = await fetch(API_URL + '/api/games/funfacts');
+            return res.json();
+        }
+
+        // Shuffle array
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Load count on start screen
+        (async function() {
+            try {
+                const data = await loadFacts();
+                document.getElementById('start-count').textContent = data.length + ' fun facts submitted';
+            } catch(e) {
+                document.getElementById('start-count').textContent = '';
+            }
+        })();
+
+        async function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('loading').style.display = 'flex';
+
+            const data = await loadFacts();
+            facts = shuffle(data || []);
+
+            if (facts.length === 0) {
+                document.getElementById('loading').textContent = 'No fun facts yet!';
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('controls').style.display = 'flex';
+            renderSlides();
+            showSlide(0);
+        }
+
+        function renderSlides() {
+            const container = document.getElementById('slideshow');
+            let html = '';
+
+            facts.forEach((f, i) => {
+                // Fact slide (question)
+                html += '<div class="slide" id="slide-' + i + '-fact">' +
+                    '<div class="slide-number">' + (i + 1) + ' of ' + facts.length + '</div>' +
+                    '<div class="slide-fact">"' + escHtml(f.fact) + '"</div>' +
+                    '<div class="slide-question">Who am I?</div>' +
+                '</div>';
+
+                // Reveal slide
+                html += '<div class="slide" id="slide-' + i + '-reveal">' +
+                    '<div class="slide-number">' + (i + 1) + ' of ' + facts.length + '</div>' +
+                    '<div class="slide-reveal">' +
+                        '<div class="reveal-fact">"' + escHtml(f.fact) + '"</div>' +
+                        '<div class="reveal-emoji">🎉</div>' +
+                        '<div class="reveal-name">' + escHtml(f.author_name) + '</div>' +
+                    '</div>' +
+                '</div>';
+            });
+
+            container.innerHTML = html;
+        }
+
+        function escHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str || '';
+            return d.innerHTML;
+        }
+
+        function showSlide(idx) {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+
+            if (idx < 0) idx = 0;
+            if (idx >= facts.length) idx = facts.length - 1;
+            currentIndex = idx;
+            revealed = false;
+
+            const el = document.getElementById('slide-' + idx + '-fact');
+            if (el) el.classList.add('active');
+            updateActionBtn();
+        }
+
+        function showReveal(idx) {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            revealed = true;
+
+            const el = document.getElementById('slide-' + idx + '-reveal');
+            if (el) el.classList.add('active');
+            updateActionBtn();
+        }
+
+        function updateActionBtn() {
+            const btn = document.getElementById('action-btn');
+            if (revealed) {
+                btn.textContent = 'Next →';
+                btn.className = '';
+            } else {
+                btn.textContent = 'Reveal';
+                btn.className = 'reveal-btn';
+            }
+        }
+
+        function revealOrNext() {
+            if (!revealed) {
+                showReveal(currentIndex);
+            } else {
+                if (currentIndex < facts.length - 1) {
+                    showSlide(currentIndex + 1);
+                } else {
+                    // End - show a final slide
+                    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+                    const container = document.getElementById('slideshow');
+                    let endSlide = document.getElementById('slide-end');
+                    if (!endSlide) {
+                        endSlide = document.createElement('div');
+                        endSlide.id = 'slide-end';
+                        endSlide.className = 'slide';
+                        endSlide.innerHTML = '<div class="slide-reveal">' +
+                            '<div class="reveal-emoji">🎉</div>' +
+                            '<div class="reveal-name" style="font-size:2.5rem;">That\'s everyone!</div>' +
+                            '<div class="reveal-fact">Now you know a little more about each other.</div>' +
+                        '</div>';
+                        container.appendChild(endSlide);
+                    }
+                    endSlide.classList.add('active');
+                }
+            }
+        }
+
+        function nextSlide() {
+            if (currentIndex < facts.length - 1) showSlide(currentIndex + 1);
+        }
+
+        function prevSlide() {
+            if (revealed) {
+                showSlide(currentIndex);
+            } else if (currentIndex > 0) {
+                showSlide(currentIndex - 1);
+            }
+        }
+
+        function shuffleFacts() {
+            facts = shuffle(facts);
+            renderSlides();
+            showSlide(0);
+        }
+
+        function backToStart() {
+            document.getElementById('slideshow').innerHTML = '';
+            document.getElementById('controls').style.display = 'none';
+            document.getElementById('start-screen').style.display = 'flex';
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') revealOrNext();
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'Escape') backToStart();
+        });
+    </script>
+</body>
+</html>

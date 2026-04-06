@@ -3663,7 +3663,7 @@
 
             const badges = [];
             if (u.is_team) badges.push('<div style="background:linear-gradient(135deg,var(--sage),#7a9e6a);color:white;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;letter-spacing:0.02em;border:1.5px solid white;">G4</div>');
-            if (u.is_speaker) badges.push('<div style="background:linear-gradient(135deg,#e8ddd6,#e6c9c3);font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;border:1.5px solid white;">🎤</div>');
+            if (u.is_speaker) badges.push('<div style="background:#f5eeea;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;border:1.5px solid white;">🎤</div>');
             const badgeOverlay = badges.length ? `<div style="position:absolute;bottom:-2px;right:-2px;display:flex;gap:1px;">${badges.join('')}</div>` : '';
 
             row.innerHTML = `

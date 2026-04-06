@@ -3629,7 +3629,7 @@
                             ${user.photo_data ? `<img src="${user.photo_data}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="color:white;font-size:1.6rem;font-family:Playfair Display,serif;font-weight:700;">${user.first_name.charAt(0)}</span>`}
                         </div>
                         ${user.is_team ? '<div style="position:absolute;bottom:-2px;right:-2px;background:linear-gradient(135deg,var(--sage),#7a9e6a);color:white;font-size:0.55rem;font-weight:800;padding:3px 5px;border-radius:5px;line-height:1;letter-spacing:0.02em;border:2px solid var(--cream);">G4</div>' : ''}
-                        ${user.is_worship ? '<div style="position:absolute;bottom:-2px;' + (user.is_team ? 'left:-2px;' : 'right:-2px;') + 'background:linear-gradient(135deg,#7b68ae,#9b8ec4);color:white;font-size:0.55rem;font-weight:800;padding:3px 5px;border-radius:5px;line-height:1;border:2px solid var(--cream);">🎶</div>' : ''}
+                        ${user.is_worship ? '<div style="position:absolute;bottom:-2px;' + (user.is_team ? 'left:-2px;' : 'right:-2px;') + 'background:#f5d98c;font-size:0.55rem;font-weight:800;padding:3px 5px;border-radius:5px;line-height:1;border:2px solid var(--cream);">🎶</div>' : ''}
                     </div>
                     <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;color:var(--dark-text);margin-bottom:8px;">${displayName}</div>
                     ${packingHTML}
@@ -3676,7 +3676,7 @@
             const badges = [];
             if (u.is_team) badges.push('<div style="background:linear-gradient(135deg,var(--sage),#7a9e6a);color:white;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;letter-spacing:0.02em;border:1.5px solid white;">G4</div>');
             if (u.is_speaker) badges.push('<div style="background:#f5eeea;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;border:1.5px solid white;">🎤</div>');
-            if (u.is_worship) badges.push('<div style="background:linear-gradient(135deg,#7b68ae,#9b8ec4);color:white;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;border:1.5px solid white;">🎶</div>');
+            if (u.is_worship) badges.push('<div style="background:#f5d98c;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;border:1.5px solid white;">🎶</div>');
             const badgeOverlay = badges.length ? `<div style="position:absolute;bottom:-2px;right:-2px;display:flex;gap:1px;">${badges.join('')}</div>` : '';
 
             row.innerHTML = `

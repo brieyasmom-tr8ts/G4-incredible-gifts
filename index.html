@@ -4234,7 +4234,8 @@
                         if (!grouped[r.poll_id]) grouped[r.poll_id] = { question: r.question, type: r.type, responses: [] };
                         grouped[r.poll_id].responses.push(r);
                     }
-                    html += Object.values(grouped).map(group => `
+                    const sortedGroups = Object.entries(grouped).sort((a, b) => b[0] - a[0]).map(e => e[1]);
+                    html += sortedGroups.map(group => `
                         <div style="margin-bottom:16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);overflow:hidden;">
                             <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(139,134,128,0.08);">
                                 <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);line-height:1.4;">📊 ${escHtml(group.question)}</div>

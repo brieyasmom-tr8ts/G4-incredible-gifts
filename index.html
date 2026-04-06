@@ -4210,6 +4210,19 @@
             }).catch(() => {});
         }
 
+        function markPollsSeen() {
+            // Wait for feed to load, then mark total as seen
+            setTimeout(() => {
+                const badge = document.getElementById('badge-sharing');
+                if (badge) {
+                    // Store the total count so badge won't show again until new items appear
+                    const totalItems = parseInt(badge.dataset.total || '0');
+                    if (totalItems > 0) localStorage.setItem('g4_polls_seen', String(totalItems));
+                    badge.style.display = 'none';
+                }
+            }, 500);
+        }
+
         function markConnectSeen() {
             // Use already-loaded directory data if available
             if (allDirectoryUsers && allDirectoryUsers.length) {
@@ -4258,6 +4271,7 @@
             const newCount = Math.max(0, totalItems - lastSeen);
             const badge = document.getElementById('badge-sharing');
             if (!badge) return;
+            badge.dataset.total = String(totalItems);
             if (newCount > 0) {
                 badge.textContent = newCount;
                 badge.style.display = '';
@@ -4413,16 +4427,6 @@
                     }
                     if (btn.dataset.connect === 'sharing') {
                         loadSharingFeed();
-                        // Mark polls as seen after loading
-                        setTimeout(() => {
-                            const badge = document.getElementById('badge-sharing');
-                            const current = parseInt(badge.textContent || '0');
-                            if (current > 0) {
-                                const prev = parseInt(localStorage.getItem('g4_polls_seen') || '0');
-                                localStorage.setItem('g4_polls_seen', String(prev + current));
-                            }
-                            badge.style.display = 'none';
-                        }, 500);
                     }
                 });
             });
@@ -6258,6 +6262,8 @@
         updateStatus();
         initSetup();
         initPrayerWall();
+        // Lightweight badge check for polls (don't render full feed yet)
+        apiGet('/api/polls/feed').then(r => { if (r && Array.isArray(r)) updateSharingBadge(r.length); }).catch(() => {});
         initAudioNote();
         initSummarize();
         initMomentsUpload();
@@ -6346,7 +6352,7 @@
             const tab = btn.dataset.tab;
             if (tab === 'connect') { loadPeople(); markConnectSeen(); }
             if (tab === 'uplift') loadPrayerWall();
-            if (tab === 'polls') loadSharingFeed();
+            if (tab === 'polls') { loadSharingFeed(); markPollsSeen(); }
             if (tab === 'journey') loadNotAloneInsights();
             if (tab === 'moments') { loadMoments(); markMomentsSeen(); }
             if (tab === 'hunt') loadHuntTab();

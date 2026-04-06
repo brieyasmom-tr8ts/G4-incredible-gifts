@@ -1175,6 +1175,79 @@ export default {
         return json(results, corsHeaders);
       }
 
+      // ===== QUIZ (Know Your Sisters) =====
+
+      // POST /api/quiz/score - save a quiz score
+      if (path === '/api/quiz/score' && request.method === 'POST') {
+        const { user_id, user_name, day, score, total, time_seconds } = await request.json();
+        if (!user_id || !day || score === undefined) {
+          return json({ error: 'Missing fields' }, corsHeaders, 400);
+        }
+
+        await env.DB.prepare(`CREATE TABLE IF NOT EXISTS quiz_scores (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          user_name TEXT NOT NULL,
+          day INTEGER NOT NULL,
+          score INTEGER NOT NULL,
+          total INTEGER NOT NULL,
+          time_seconds REAL DEFAULT 0,
+          created_at TEXT DEFAULT (datetime('now')),
+          UNIQUE(user_id, day)
+        )`).run();
+
+        // Insert or ignore (one attempt per day)
+        const existing = await env.DB.prepare('SELECT id FROM quiz_scores WHERE user_id = ? AND day = ?').bind(user_id, day).first();
+        if (existing) {
+          return json({ error: 'Already completed this quiz', already_done: true }, corsHeaders, 400);
+        }
+
+        await env.DB.prepare(
+          'INSERT INTO quiz_scores (user_id, user_name, day, score, total, time_seconds) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(user_id, user_name, day, score, total, time_seconds || 0).run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/quiz/scores - get all scores (for admin leaderboard)
+      if (path === '/api/quiz/scores' && request.method === 'GET') {
+        await env.DB.prepare(`CREATE TABLE IF NOT EXISTS quiz_scores (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          user_name TEXT NOT NULL,
+          day INTEGER NOT NULL,
+          score INTEGER NOT NULL,
+          total INTEGER NOT NULL,
+          time_seconds REAL DEFAULT 0,
+          created_at TEXT DEFAULT (datetime('now')),
+          UNIQUE(user_id, day)
+        )`).run();
+
+        const { results } = await env.DB.prepare('SELECT * FROM quiz_scores ORDER BY day ASC, score DESC, time_seconds ASC').all();
+        return json(results, corsHeaders);
+      }
+
+      // GET /api/quiz/my?user_id=X - get this user's completed days
+      if (path === '/api/quiz/my' && request.method === 'GET') {
+        const userId = url.searchParams.get('user_id');
+        if (!userId) return json([], corsHeaders);
+
+        await env.DB.prepare(`CREATE TABLE IF NOT EXISTS quiz_scores (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          user_name TEXT NOT NULL,
+          day INTEGER NOT NULL,
+          score INTEGER NOT NULL,
+          total INTEGER NOT NULL,
+          time_seconds REAL DEFAULT 0,
+          created_at TEXT DEFAULT (datetime('now')),
+          UNIQUE(user_id, day)
+        )`).run();
+
+        const { results } = await env.DB.prepare('SELECT day, score, total, time_seconds FROM quiz_scores WHERE user_id = ?').bind(parseInt(userId)).all();
+        return json(results, corsHeaders);
+      }
+
       // ===== POLLS / Q&A =====
 
       // POST /api/polls - create a poll (admin)

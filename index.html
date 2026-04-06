@@ -567,6 +567,26 @@
             width: 24px;
         }
 
+        .nav-badge {
+            position: absolute;
+            top: 4px;
+            right: 50%;
+            transform: translateX(14px);
+            min-width: 16px;
+            height: 16px;
+            padding: 0 4px;
+            background: var(--blush);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            font-family: 'Cormorant Garamond', serif;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
         /* Journey locked overlay */
         .journey-locked-overlay {
             position: absolute;
@@ -4164,6 +4184,47 @@
             }
         }
 
+        function updateMomentsBadge(moments) {
+            const lastSeen = parseInt(localStorage.getItem('g4_moments_seen') || '0');
+            const newCount = moments.filter(m => m.id > lastSeen).length;
+            const badge = document.getElementById('badge-moments');
+            if (!badge) return;
+            if (newCount > 0) {
+                badge.textContent = newCount;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function markMomentsSeen() {
+            // Mark all current moments as seen so badge clears
+            apiGet('/api/moments').then(moments => {
+                if (moments && Array.isArray(moments) && moments.length > 0) {
+                    const maxId = Math.max(...moments.map(m => m.id));
+                    localStorage.setItem('g4_moments_seen', String(maxId));
+                    const badge = document.getElementById('badge-moments');
+                    if (badge) badge.style.display = 'none';
+                }
+            }).catch(() => {});
+        }
+
+        function clearBadge(id) {
+            const badge = document.getElementById(id);
+            if (badge) badge.style.display = 'none';
+        }
+
+        function updateQuizBadge() {
+            const badge = document.getElementById('badge-quiz');
+            if (!badge) return;
+            const active = getActiveQuiz();
+            if (!active) { badge.style.display = 'none'; return; }
+            const done = quizMyScores && quizMyScores.find(s => s.day === active.day);
+            if (done) { badge.style.display = 'none'; return; }
+            badge.textContent = '!';
+            badge.style.display = '';
+        }
+
         function updateSharingBadge(totalItems) {
             const lastSeen = parseInt(localStorage.getItem('g4_polls_seen') || '0');
             const newCount = Math.max(0, totalItems - lastSeen);
@@ -4477,15 +4538,15 @@
         // All possible nav items (Home is always shown)
         const ALL_NAV_ITEMS = [
             { key: 'nav_schedule', tab: 'schedule', icon: '\ud83d\udcc6', label: 'Schedule' },
-            { key: 'nav_moments', tab: 'moments', icon: '\ud83d\udcf8', label: 'Moments' },
+            { key: 'nav_moments', tab: 'moments', icon: '\ud83d\udcf8', label: 'Moments', badge: 'badge-moments' },
             { key: 'nav_connect', tab: 'connect', icon: '\ud83d\udc9b', label: 'Connect' },
-            { key: 'nav_uplift', tab: 'uplift', icon: '\ud83d\ude4f', label: 'Uplift' },
-            { key: 'nav_polls', tab: 'polls', icon: '\ud83d\udcac', label: 'Polls' },
+            { key: 'nav_uplift', tab: 'uplift', icon: '\ud83d\ude4f', label: 'Uplift', badge: 'badge-uplift' },
+            { key: 'nav_polls', tab: 'polls', icon: '\ud83d\udcac', label: 'Polls', badge: 'badge-sharing' },
             { key: 'nav_journey', tab: 'journey', icon: '\ud83c\udf81', label: 'Journey' },
             { key: 'nav_journal', tab: 'journal', icon: '\u2728', label: 'Journal' },
             { key: 'nav_hunt', tab: 'hunt', icon: '\ud83d\udcf7', label: 'Hunt' },
             { key: 'nav_meme', tab: 'meme', icon: '\ud83d\ude02', label: 'Meme', action: 'meme' },
-            { key: 'nav_quiz', tab: 'quiz', icon: '\ud83e\udde0', label: 'Quiz' },
+            { key: 'nav_quiz', tab: 'quiz', icon: '\ud83e\udde0', label: 'Quiz', badge: 'badge-quiz' },
             { key: 'nav_survey', tab: 'home', icon: '\ud83d\udcdd', label: 'Survey', action: 'survey' },
             { key: 'nav_secretsister', tab: 'home', icon: '\ud83d\udc8c', label: 'Secret Sister', action: 'secretsister' }
         ];
@@ -4505,7 +4566,8 @@
             ALL_NAV_ITEMS.forEach(item => {
                 if (navSettings[item.key] !== '1') return;
                 const actionAttr = item.action ? `data-action="${item.action}"` : '';
-                html += `<button class="nav-btn" data-tab="${item.tab}" ${actionAttr}><span class="nav-icon">${item.icon}</span><span>${item.label}</span></button>`;
+                const badgeHtml = item.badge ? `<span class="nav-badge" id="${item.badge}" style="display:none;"></span>` : '';
+                html += `<button class="nav-btn" data-tab="${item.tab}" ${actionAttr}><span class="nav-icon">${item.icon}</span><span>${item.label}</span>${badgeHtml}</button>`;
             });
 
             nav.innerHTML = html;
@@ -5481,6 +5543,7 @@
                     grid.innerHTML = '<div class="moments-empty">The moments gallery is getting set up — check back soon!</div>';
                     return;
                 }
+                updateMomentsBadge(moments);
                 if (moments.length === 0) {
                     grid.innerHTML = '<div class="moments-empty">No moments shared yet — be the first to capture something beautiful from this weekend.</div>';
                     return;
@@ -6258,9 +6321,9 @@
             if (tab === 'uplift') loadPrayerWall();
             if (tab === 'polls') loadSharingFeed();
             if (tab === 'journey') loadNotAloneInsights();
-            if (tab === 'moments') loadMoments();
+            if (tab === 'moments') { loadMoments(); markMomentsSeen(); }
             if (tab === 'hunt') loadHuntTab();
-            if (tab === 'quiz') loadQuizTab();
+            if (tab === 'quiz') { loadQuizTab(); clearBadge('badge-quiz'); }
         });
 
         // ===== Post-Retreat Home =====
@@ -6576,7 +6639,7 @@
 
             closeBtn.onclick = () => { modal.style.display = 'none'; onPopupClosed(); };
             skipBtn.onclick = () => {
-                sessionStorage.setItem('g4poll_skip_' + poll.id, '1');
+                localStorage.setItem('g4poll_' + poll.id, 'skipped');
                 modal.style.display = 'none';
                 onPopupClosed();
             };
@@ -6651,7 +6714,7 @@
             }
             if (t === 'wyr' || t === 'all') {
                 Object.keys(localStorage).filter(k => k.startsWith('g4wyr_')).forEach(k => localStorage.removeItem(k));
-                Object.keys(sessionStorage).filter(k => k.startsWith('g4wyr_skip_')).forEach(k => sessionStorage.removeItem(k));
+                Object.keys(localStorage).filter(k => k.includes('_skip')).forEach(k => localStorage.removeItem(k));
             }
             if (t === 'secretsister' || t === 'all') {
                 localStorage.removeItem('g4secretsister_' + currentUser.id);
@@ -6902,7 +6965,7 @@
 
             document.getElementById('wyr-close').onclick = () => { modal.style.display = 'none'; onPopupClosed(); };
             document.getElementById('wyr-skip').onclick = () => {
-                sessionStorage.setItem('g4wyr_skip_' + data.id, '1');
+                localStorage.setItem('g4wyr_' + data.id + '_skip', '1');
                 modal.style.display = 'none';
                 onPopupClosed();
             };
@@ -7115,15 +7178,16 @@
                 const data = await apiGet('/api/games/wyr/active');
                 if (data && data.active) {
                     const voted = localStorage.getItem('g4wyr_' + data.id + '_' + currentUser.id);
-                    const skipped = sessionStorage.getItem('g4wyr_skip_' + data.id);
+                    const skipped = localStorage.getItem('g4wyr_' + data.id + '_skip');
                     if (!voted && !skipped) queuePopup(() => showWYRModal(data));
                 }
             } catch (e) { /* silently fail */ }
 
-            // Load quiz scores for popup check
+            // Load quiz scores for popup check + badge
             try {
                 quizMyScores = await apiGet('/api/quiz/my?user_id=' + currentUser.id);
             } catch(e) { quizMyScores = []; }
+            updateQuizBadge();
             checkQuizPopup();
 
             // Start the queue — first popup shows immediately

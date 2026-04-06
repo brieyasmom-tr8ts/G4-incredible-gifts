@@ -4648,9 +4648,12 @@
                     buildNav();
                     // Restore last active tab if it's still visible
                     const savedTab = localStorage.getItem('g4_active_tab');
-                    if (savedTab) {
+                    if (savedTab && savedTab !== 'home') {
                         const btn = document.querySelector('.nav-btn[data-tab="' + savedTab + '"]');
-                        if (btn && !btn.dataset.action) switchToTab(savedTab);
+                        if (btn && !btn.dataset.action) {
+                            switchToTab(savedTab);
+                            loadTabData(savedTab);
+                        }
                     }
                 }
             } catch(e) {
@@ -6345,11 +6348,8 @@
             }
         })();
 
-        // Tab-specific data loading (handled via delegation since nav is dynamic)
-        document.getElementById('bottom-nav').addEventListener('click', (e) => {
-            const btn = e.target.closest('.nav-btn');
-            if (!btn) return;
-            const tab = btn.dataset.tab;
+        // Tab-specific data loading
+        function loadTabData(tab) {
             if (tab === 'connect') { loadPeople(); markConnectSeen(); }
             if (tab === 'uplift') loadPrayerWall();
             if (tab === 'polls') { loadSharingFeed(); markPollsSeen(); }
@@ -6357,6 +6357,12 @@
             if (tab === 'moments') { loadMoments(); markMomentsSeen(); }
             if (tab === 'hunt') loadHuntTab();
             if (tab === 'quiz') { loadQuizTab(); clearBadge('badge-quiz'); }
+        }
+
+        document.getElementById('bottom-nav').addEventListener('click', (e) => {
+            const btn = e.target.closest('.nav-btn');
+            if (!btn) return;
+            loadTabData(btn.dataset.tab);
         });
 
         // ===== Post-Retreat Home =====

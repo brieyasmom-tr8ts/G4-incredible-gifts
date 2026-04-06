@@ -3736,7 +3736,7 @@
                     const prev = document.createElement('button');
                     prev.style.cssText = 'padding:6px 14px;border:1px solid rgba(139,134,128,0.2);border-radius:10px;background:white;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--dark-text);cursor:pointer;';
                     prev.textContent = '← Prev';
-                    prev.onclick = () => { directoryPage = page - 1; renderSistersList(filter); document.getElementById('connect-people-list').scrollIntoView({ behavior: 'smooth' }); };
+                    prev.onclick = () => { directoryPage = page - 1; renderSistersList(filter); document.querySelector('.content-area').scrollTop = 0; };
                     pager.appendChild(prev);
                 }
 
@@ -3749,7 +3749,7 @@
                     const next = document.createElement('button');
                     next.style.cssText = 'padding:6px 14px;border:1px solid rgba(139,134,128,0.2);border-radius:10px;background:white;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--dark-text);cursor:pointer;';
                     next.textContent = 'Next →';
-                    next.onclick = () => { directoryPage = page + 1; renderSistersList(filter); document.getElementById('connect-people-list').scrollIntoView({ behavior: 'smooth' }); };
+                    next.onclick = () => { directoryPage = page + 1; renderSistersList(filter); document.querySelector('.content-area').scrollTop = 0; };
                     pager.appendChild(next);
                 }
 

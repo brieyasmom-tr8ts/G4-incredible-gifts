@@ -4764,15 +4764,6 @@
                 if (settings && typeof settings === 'object') {
                     navSettings = settings;
                     buildNav();
-                    // Restore last active tab if it's still visible
-                    const savedTab = localStorage.getItem('g4_active_tab');
-                    if (savedTab && savedTab !== 'home') {
-                        const btn = document.querySelector('.nav-btn[data-tab="' + savedTab + '"]');
-                        if (btn && !btn.dataset.action) {
-                            switchToTab(savedTab);
-                            loadTabData(savedTab);
-                        }
-                    }
                 }
             } catch(e) {
                 console.error('Failed to load nav settings:', e);

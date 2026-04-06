@@ -567,6 +567,80 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // ===== MESSAGE REACTIONS =====
+
+      // Create reactions table if needed
+      if (path.startsWith('/api/messages') && path.includes('/react')) {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS message_reactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            emoji TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(message_id, user_id, emoji)
+          )`).run();
+        } catch(e) { /* already exists */ }
+      }
+
+      // POST /api/messages/:id/react - toggle a reaction
+      const reactMatch = path.match(/^\/api\/messages\/(\d+)\/react$/);
+      if (reactMatch && request.method === 'POST') {
+        const msgId = parseInt(reactMatch[1]);
+        const { user_id, emoji } = await request.json();
+        if (!user_id || !emoji) return json({ error: 'user_id and emoji required' }, corsHeaders, 400);
+
+        const existing = await env.DB.prepare(
+          'SELECT id FROM message_reactions WHERE message_id = ? AND user_id = ? AND emoji = ?'
+        ).bind(msgId, user_id, emoji).first();
+
+        if (existing) {
+          await env.DB.prepare('DELETE FROM message_reactions WHERE id = ?').bind(existing.id).run();
+        } else {
+          await env.DB.prepare(
+            'INSERT INTO message_reactions (message_id, user_id, emoji) VALUES (?, ?, ?)'
+          ).bind(msgId, user_id, emoji).run();
+        }
+
+        const { results: counts } = await env.DB.prepare(
+          'SELECT emoji, COUNT(*) as count FROM message_reactions WHERE message_id = ? GROUP BY emoji'
+        ).bind(msgId).all();
+        const { results: userReactions } = await env.DB.prepare(
+          'SELECT emoji FROM message_reactions WHERE message_id = ? AND user_id = ?'
+        ).bind(msgId, user_id).all();
+
+        return json({
+          success: true,
+          reactions: counts.reduce((acc, r) => { acc[r.emoji] = r.count; return acc; }, {}),
+          user_reacted: userReactions.map(r => r.emoji)
+        }, corsHeaders);
+      }
+
+      // GET /api/messages/reactions - bulk load all reactions
+      if (path === '/api/messages/reactions' && request.method === 'GET') {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS message_reactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            emoji TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(message_id, user_id, emoji)
+          )`).run();
+        } catch(e) {}
+        const { results } = await env.DB.prepare(
+          'SELECT message_id, emoji, COUNT(*) as count FROM message_reactions GROUP BY message_id, emoji'
+        ).all();
+        const userId = parseInt(url.searchParams.get('user_id') || '0');
+        let userReactions = [];
+        if (userId) {
+          ({ results: userReactions } = await env.DB.prepare(
+            'SELECT message_id, emoji FROM message_reactions WHERE user_id = ?'
+          ).bind(userId).all());
+        }
+        return json({ reactions: results, user_reacted: userReactions }, corsHeaders);
+      }
+
       // ===== JOURNEY RESPONSES =====
 
       // POST /api/journey - submit or update a gift response

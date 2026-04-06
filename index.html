@@ -4168,6 +4168,10 @@
 
                     footer.appendChild(actions);
                     content.appendChild(footer);
+
+                    // Emoji reactions
+                    renderReactionBar(msg.id, content);
+
                     // Flex row: avatar left, content right
                     content.style.cssText = 'flex:1;min-width:0;';
                     post.style.display = 'flex';
@@ -4181,10 +4185,78 @@
                 });
         }
 
+        const REACTION_EMOJIS = ['❤️', '🙏', '💪', '🤗', '🥲'];
+        let allReactions = {}; // { messageId: { emoji: count } }
+        let userReacted = {};  // { messageId: [emojis] }
+
+        async function loadReactions() {
+            if (!currentUser) return;
+            try {
+                const data = await apiGet('/api/messages/reactions?user_id=' + currentUser.id);
+                allReactions = {};
+                userReacted = {};
+                if (data.reactions) {
+                    for (const r of data.reactions) {
+                        if (!allReactions[r.message_id]) allReactions[r.message_id] = {};
+                        allReactions[r.message_id][r.emoji] = r.count;
+                    }
+                }
+                if (data.user_reacted) {
+                    for (const r of data.user_reacted) {
+                        if (!userReacted[r.message_id]) userReacted[r.message_id] = [];
+                        userReacted[r.message_id].push(r.emoji);
+                    }
+                }
+            } catch(e) {}
+        }
+
+        function renderReactionBar(msgId, container) {
+            const bar = document.createElement('div');
+            bar.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;';
+            bar.id = 'reactions-' + msgId;
+
+            const msgReactions = allReactions[msgId] || {};
+            const myReactions = userReacted[msgId] || [];
+
+            REACTION_EMOJIS.forEach(emoji => {
+                const count = msgReactions[emoji] || 0;
+                const reacted = myReactions.includes(emoji);
+                const btn = document.createElement('button');
+                btn.style.cssText = `padding:3px 8px;border-radius:12px;font-size:0.75rem;cursor:pointer;transition:all 0.2s;border:1.5px solid ${reacted ? 'var(--blush)' : 'rgba(139,134,128,0.15)'};background:${reacted ? 'rgba(201,144,138,0.12)' : 'rgba(255,255,255,0.6)'};color:var(--dark-text);`;
+                btn.innerHTML = count > 0 ? `${emoji} <span style="font-size:0.7rem;font-weight:600;">${count}</span>` : emoji;
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (!currentUser) return;
+                    try {
+                        const res = await apiPost('/api/messages/' + msgId + '/react', {
+                            user_id: currentUser.id,
+                            emoji: emoji
+                        });
+                        // Update local state
+                        allReactions[msgId] = res.reactions;
+                        userReacted[msgId] = res.user_reacted;
+                        // Re-render just this bar
+                        const existing = document.getElementById('reactions-' + msgId);
+                        if (existing) {
+                            const parent = existing.parentElement;
+                            existing.remove();
+                            renderReactionBar(msgId, parent);
+                        }
+                    } catch(e) {}
+                });
+                bar.appendChild(btn);
+            });
+
+            container.appendChild(bar);
+        }
+
         let allMessages = [];
         async function loadPrayerWall() {
             try {
-                const messages = await apiGet('/api/messages');
+                const [messages] = await Promise.all([
+                    apiGet('/api/messages'),
+                    loadReactions()
+                ]);
                 allMessages = messages || [];
                 renderMessages(allMessages, document.getElementById('prayer-posts'));
                 updateUpliftBadge();

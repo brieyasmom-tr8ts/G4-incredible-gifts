@@ -3772,6 +3772,7 @@
                     return;
                 }
                 allDirectoryUsers = users;
+                updateConnectBadge(users.length);
 
                 // Show count
                 const countEl = document.getElementById('sisters-count');
@@ -4209,6 +4210,14 @@
             }).catch(() => {});
         }
 
+        function markConnectSeen() {
+            // Use already-loaded directory data if available
+            if (allDirectoryUsers && allDirectoryUsers.length) {
+                localStorage.setItem('g4_connect_seen', String(allDirectoryUsers.length));
+            }
+            clearBadge('badge-connect');
+        }
+
         function clearBadge(id) {
             const badge = document.getElementById(id);
             if (badge) badge.style.display = 'none';
@@ -4223,6 +4232,25 @@
             if (done) { badge.style.display = 'none'; return; }
             badge.textContent = '!';
             badge.style.display = '';
+        }
+
+        function updateConnectBadge(userCount) {
+            const lastSeen = parseInt(localStorage.getItem('g4_connect_seen') || '0');
+            const badge = document.getElementById('badge-connect');
+            if (!badge) return;
+            if (lastSeen === 0) {
+                // First time — set baseline, no badge
+                localStorage.setItem('g4_connect_seen', String(userCount));
+                badge.style.display = 'none';
+                return;
+            }
+            const newCount = Math.max(0, userCount - lastSeen);
+            if (newCount > 0) {
+                badge.textContent = newCount;
+                badge.style.display = '';
+            } else {
+                badge.style.display = 'none';
+            }
         }
 
         function updateSharingBadge(totalItems) {
@@ -4539,7 +4567,7 @@
         const ALL_NAV_ITEMS = [
             { key: 'nav_schedule', tab: 'schedule', icon: '\ud83d\udcc6', label: 'Schedule' },
             { key: 'nav_moments', tab: 'moments', icon: '\ud83d\udcf8', label: 'Moments', badge: 'badge-moments' },
-            { key: 'nav_connect', tab: 'connect', icon: '\ud83d\udc9b', label: 'Connect' },
+            { key: 'nav_connect', tab: 'connect', icon: '\ud83d\udc9b', label: 'Connect', badge: 'badge-connect' },
             { key: 'nav_uplift', tab: 'uplift', icon: '\ud83d\ude4f', label: 'Uplift', badge: 'badge-uplift' },
             { key: 'nav_polls', tab: 'polls', icon: '\ud83d\udcac', label: 'Polls', badge: 'badge-sharing' },
             { key: 'nav_journey', tab: 'journey', icon: '\ud83c\udf81', label: 'Journey' },
@@ -6317,7 +6345,7 @@
             const btn = e.target.closest('.nav-btn');
             if (!btn) return;
             const tab = btn.dataset.tab;
-            if (tab === 'connect') loadPeople();
+            if (tab === 'connect') { loadPeople(); markConnectSeen(); }
             if (tab === 'uplift') loadPrayerWall();
             if (tab === 'polls') loadSharingFeed();
             if (tab === 'journey') loadNotAloneInsights();

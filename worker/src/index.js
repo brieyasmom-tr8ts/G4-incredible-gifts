@@ -283,9 +283,15 @@ export default {
             'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, is_speaker, is_worship, created_at FROM users ORDER BY created_at DESC'
           ).all());
         } catch (e) {
-          ({ results } = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, created_at FROM users ORDER BY created_at DESC'
-          ).all());
+          try {
+            ({ results } = await env.DB.prepare(
+              'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, is_speaker, created_at FROM users ORDER BY created_at DESC'
+            ).all());
+          } catch (e2) {
+            ({ results } = await env.DB.prepare(
+              'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, created_at FROM users ORDER BY created_at DESC'
+            ).all());
+          }
         }
         return json(results, corsHeaders);
       }
@@ -307,9 +313,14 @@ export default {
             'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about FROM users ORDER BY first_name ASC'
           ).all());
         }
-        // Add is_team and is_speaker safely
+        // Add is_team, is_speaker, is_worship safely
         try {
-          const { results: flagRows } = await env.DB.prepare('SELECT id, is_team, is_speaker, is_worship FROM users').all();
+          let flagRows;
+          try {
+            ({ results: flagRows } = await env.DB.prepare('SELECT id, is_team, is_speaker, is_worship FROM users').all());
+          } catch (e) {
+            ({ results: flagRows } = await env.DB.prepare('SELECT id, is_team, is_speaker FROM users').all());
+          }
           const teamIds = new Set(flagRows.filter(r => r.is_team).map(r => r.id));
           const speakerIds = new Set(flagRows.filter(r => r.is_speaker).map(r => r.id));
           const worshipIds = new Set(flagRows.filter(r => r.is_worship).map(r => r.id));

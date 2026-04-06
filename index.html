@@ -2973,6 +2973,18 @@
             <div id="continue-tab" class="tab-content">
                 <div id="continue-container"></div>
             </div>
+
+            <!-- Quiz Tab -->
+            <div id="quiz-tab" class="tab-content">
+                <div style="padding:8px 16px 24px;">
+                    <div style="text-align:center;margin-bottom:16px;">
+                        <div style="font-size:2rem;margin-bottom:4px;">🧠</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.2rem;font-weight:700;color:var(--dark-text);">Know Your Sisters</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;">How well do you know the women at this retreat?</div>
+                    </div>
+                    <div id="quiz-tab-content"></div>
+                </div>
+            </div>
         </div>
 
         <div class="bottom-nav" id="bottom-nav"></div>
@@ -4473,6 +4485,7 @@
             { key: 'nav_journal', tab: 'journal', icon: '\u2728', label: 'Journal' },
             { key: 'nav_hunt', tab: 'hunt', icon: '\ud83d\udcf7', label: 'Hunt' },
             { key: 'nav_meme', tab: 'meme', icon: '\ud83d\ude02', label: 'Meme', action: 'meme' },
+            { key: 'nav_quiz', tab: 'quiz', icon: '\ud83e\udde0', label: 'Quiz' },
             { key: 'nav_survey', tab: 'home', icon: '\ud83d\udcdd', label: 'Survey', action: 'survey' },
             { key: 'nav_secretsister', tab: 'home', icon: '\ud83d\udc8c', label: 'Secret Sister', action: 'secretsister' }
         ];
@@ -6247,6 +6260,7 @@
             if (tab === 'journey') loadNotAloneInsights();
             if (tab === 'moments') loadMoments();
             if (tab === 'hunt') loadHuntTab();
+            if (tab === 'quiz') loadQuizTab();
         });
 
         // ===== Post-Retreat Home =====
@@ -7106,9 +7120,421 @@
                 }
             } catch (e) { /* silently fail */ }
 
+            // Load quiz scores for popup check
+            try {
+                quizMyScores = await apiGet('/api/quiz/my?user_id=' + currentUser.id);
+            } catch(e) { quizMyScores = []; }
+            checkQuizPopup();
+
             // Start the queue — first popup shows immediately
             startPopupQueue();
         }, 1500);
+
+        // ===== KNOW YOUR SISTERS QUIZ =====
+        const QUIZ_SCHEDULE = [
+            { day: 1, start: new Date('2026-04-07T08:00:00-04:00'), end: new Date('2026-04-08T08:00:00-04:00'), label: 'Day 1: First Impressions', difficulty: 'easy' },
+            { day: 2, start: new Date('2026-04-08T08:00:00-04:00'), end: new Date('2026-04-09T08:00:00-04:00'), label: 'Day 2: Getting Closer', difficulty: 'medium' },
+            { day: 3, start: new Date('2026-04-09T08:00:00-04:00'), end: new Date('2026-04-09T17:00:00-04:00'), label: 'Day 3: Soul Sister Status', difficulty: 'hard' }
+        ];
+
+        let quizDirectory = [];
+        let quizMyScores = [];
+        let quizActive = false;
+        let quizStartTime = 0;
+        let quizQuestions = [];
+        let quizIndex = 0;
+        let quizScore = 0;
+        let quizCurrentDay = null;
+
+        function getActiveQuiz() {
+            const now = new Date();
+            for (const q of QUIZ_SCHEDULE) {
+                if (now >= q.start && now < q.end) return q;
+            }
+            return null;
+        }
+
+        function getNextQuiz() {
+            const now = new Date();
+            for (const q of QUIZ_SCHEDULE) {
+                if (now < q.start) return q;
+            }
+            return null;
+        }
+
+        async function loadQuizTab() {
+            const container = document.getElementById('quiz-tab-content');
+            if (!currentUser) { container.innerHTML = '<div style="text-align:center;color:var(--light-text);padding:2rem;">Set up your profile first</div>'; return; }
+
+            try {
+                quizMyScores = await apiGet('/api/quiz/my?user_id=' + currentUser.id);
+            } catch(e) { quizMyScores = []; }
+
+            const active = getActiveQuiz();
+            const next = getNextQuiz();
+            const alreadyDone = active ? quizMyScores.find(s => s.day === active.day) : null;
+
+            let html = '';
+
+            // Show past scores
+            if (quizMyScores.length > 0) {
+                html += '<div style="margin-bottom:16px;">';
+                html += '<div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;color:var(--dark-text);margin-bottom:8px;">Your Scores</div>';
+                const tierNames = ['Here for the Vibes', 'Getting There', 'Getting There', 'Getting There', 'Getting There', 'Fast Friends', 'Fast Friends', 'Soul Sister', 'Soul Sister'];
+                quizMyScores.forEach(s => {
+                    const dayInfo = QUIZ_SCHEDULE.find(q => q.day === s.day);
+                    const tier = tierNames[Math.min(s.score, 8)];
+                    html += `<div style="padding:12px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <div style="font-weight:600;font-size:0.9rem;color:var(--dark-text);">${dayInfo ? dayInfo.label : 'Day ' + s.day}</div>
+                            <div style="font-size:0.8rem;color:var(--light-text);">${tier} · ${Math.round(s.time_seconds)}s</div>
+                        </div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.4rem;font-weight:700;color:var(--accent);">${s.score}/${s.total}</div>
+                    </div>`;
+                });
+                // Total
+                const totalScore = quizMyScores.reduce((a, b) => a + b.score, 0);
+                const totalMax = quizMyScores.reduce((a, b) => a + b.total, 0);
+                html += `<div style="text-align:center;padding:8px;font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--accent);font-weight:600;">Total: ${totalScore}/${totalMax}</div>`;
+                html += '</div>';
+            }
+
+            // Active quiz
+            if (active && !alreadyDone) {
+                html += `<div style="padding:20px;background:linear-gradient(135deg,rgba(201,144,138,0.1),rgba(212,165,154,0.08));border-radius:16px;text-align:center;border:1px solid rgba(201,144,138,0.15);">
+                    <div style="font-size:1.5rem;margin-bottom:8px;">🧠</div>
+                    <div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);margin-bottom:4px;">${escHtml(active.label)}</div>
+                    <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);margin-bottom:16px;">8 questions about the women at this retreat</div>
+                    <button onclick="startQuiz(${active.day})" style="padding:12px 32px;background:linear-gradient(135deg,var(--blush),var(--rose));color:white;border:none;border-radius:12px;font-family:Playfair Display,serif;font-size:1rem;font-weight:600;cursor:pointer;box-shadow:0 3px 12px rgba(201,144,138,0.3);">Start Quiz</button>
+                </div>`;
+            } else if (active && alreadyDone) {
+                html += `<div style="padding:20px;background:rgba(138,158,122,0.08);border-radius:16px;text-align:center;border:1px solid rgba(138,158,122,0.12);">
+                    <div style="font-size:1.5rem;margin-bottom:8px;">✅</div>
+                    <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;color:var(--sage);">Today's quiz complete!</div>
+                    <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);margin-top:4px;">You scored ${alreadyDone.score}/${alreadyDone.total}</div>
+                    ${next ? `<div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--taupe);margin-top:12px;">Next quiz: ${next.label}</div>` : ''}
+                </div>`;
+            } else if (next) {
+                html += `<div style="padding:20px;background:rgba(200,185,176,0.08);border-radius:16px;text-align:center;">
+                    <div style="font-size:1.5rem;margin-bottom:8px;">⏳</div>
+                    <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;color:var(--taupe);">Next Quiz Coming Soon</div>
+                    <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);margin-top:4px;">${next.label}</div>
+                    <div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);margin-top:8px;">Starts ${next.start.toLocaleDateString('en-US', { weekday: 'long' })} at 8:00 AM</div>
+                </div>`;
+            } else {
+                html += `<div style="padding:20px;text-align:center;color:var(--light-text);"><div style="font-size:1.5rem;margin-bottom:8px;">🏆</div><div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;">The quiz is over! Winners announced at the retreat.</div></div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        async function startQuiz(day) {
+            const active = QUIZ_SCHEDULE.find(q => q.day === day);
+            if (!active) return;
+            quizCurrentDay = day;
+            quizScore = 0;
+            quizIndex = 0;
+            quizStartTime = Date.now();
+
+            // Load directory for question generation
+            try {
+                quizDirectory = await apiGet('/api/users/directory');
+            } catch(e) { quizDirectory = []; }
+
+            // Filter to profiles that have enough data
+            const eligible = quizDirectory.filter(u =>
+                u.id !== currentUser.id &&
+                u.first_name &&
+                u.photo_data &&
+                (u.about || u.location || u.job || u.church || u.retreat_years)
+            );
+
+            if (eligible.length < 4) {
+                showToast('Not enough profiles yet. Check back later!');
+                return;
+            }
+
+            quizQuestions = generateQuizQuestions(eligible, day);
+            quizActive = true;
+            renderQuizQuestion();
+        }
+
+        function generateQuizQuestions(people, day) {
+            const questions = [];
+            const used = new Set();
+            const shuffled = [...people].sort(() => Math.random() - 0.5);
+
+            function pickWrong(correct, pool, field) {
+                const options = pool.filter(p => p.id !== correct.id && p[field] && p[field] !== correct[field]);
+                const shuffOptions = options.sort(() => Math.random() - 0.5).slice(0, 3);
+                return shuffOptions;
+            }
+
+            function addQ(q) {
+                if (questions.length < 8) questions.push(q);
+            }
+
+            // Day 1: Easy - photos + names + locations
+            // Day 2: Medium - jobs, churches, retreat years
+            // Day 3: Hard - about sections, deeper details
+
+            for (const person of shuffled) {
+                if (questions.length >= 8) break;
+                if (used.has(person.id)) continue;
+
+                // Photo question (all days)
+                if (person.photo_data && questions.length < (day === 1 ? 5 : day === 2 ? 3 : 2)) {
+                    const wrongs = shuffled.filter(p => p.id !== person.id).sort(() => Math.random() - 0.5).slice(0, 3);
+                    if (wrongs.length >= 3) {
+                        const opts = [...wrongs.map(w => ({ text: w.first_name + ' ' + (w.last_initial || ''), correct: false })), { text: person.first_name + ' ' + (person.last_initial || ''), correct: true }].sort(() => Math.random() - 0.5);
+                        addQ({ type: 'photo', image: person.photo_data, prompt: 'Who is this?', options: opts, reveal: person.first_name + ' ' + (person.last_initial || ''), funFact: person.about ? person.about.substring(0, 80) : (person.job || person.location || ''), personId: person.id });
+                        used.add(person.id);
+                        continue;
+                    }
+                }
+
+                // Location question (day 1+)
+                if (person.location && !used.has(person.id) && day <= 2) {
+                    const wrongs = pickWrong(person, shuffled, 'location');
+                    if (wrongs.length >= 3) {
+                        const opts = [...wrongs.map(w => ({ text: w.first_name + ' ' + (w.last_initial || ''), correct: false })), { text: person.first_name + ' ' + (person.last_initial || ''), correct: true }].sort(() => Math.random() - 0.5);
+                        addQ({ type: 'text', prompt: `Who is from ${person.location}?`, options: opts, reveal: person.first_name + ' ' + (person.last_initial || ''), funFact: person.job ? `She works as ${person.job}` : '', personId: person.id });
+                        used.add(person.id);
+                        continue;
+                    }
+                }
+
+                // Job question (day 2+)
+                if (person.job && !used.has(person.id) && day >= 2) {
+                    const wrongs = pickWrong(person, shuffled, 'job');
+                    if (wrongs.length >= 3) {
+                        const opts = [...wrongs.map(w => ({ text: w.first_name + ' ' + (w.last_initial || ''), correct: false })), { text: person.first_name + ' ' + (person.last_initial || ''), correct: true }].sort(() => Math.random() - 0.5);
+                        addQ({ type: 'text', prompt: `Who works as ${person.job}?`, options: opts, reveal: person.first_name + ' ' + (person.last_initial || ''), funFact: person.church ? `She attends ${person.church}` : '', personId: person.id });
+                        used.add(person.id);
+                        continue;
+                    }
+                }
+
+                // Church question (day 2+)
+                if (person.church && !used.has(person.id) && day >= 2) {
+                    const wrongs = pickWrong(person, shuffled, 'church');
+                    if (wrongs.length >= 3) {
+                        const opts = [...wrongs.map(w => ({ text: w.first_name + ' ' + (w.last_initial || ''), correct: false })), { text: person.first_name + ' ' + (person.last_initial || ''), correct: true }].sort(() => Math.random() - 0.5);
+                        addQ({ type: 'text', prompt: `Who attends ${person.church}?`, options: opts, reveal: person.first_name + ' ' + (person.last_initial || ''), funFact: person.location ? `She's from ${person.location}` : '', personId: person.id });
+                        used.add(person.id);
+                        continue;
+                    }
+                }
+
+                // Retreat years question (day 2+)
+                if (person.retreat_years && !used.has(person.id) && day >= 2) {
+                    const wrongs = shuffled.filter(p => p.id !== person.id).sort(() => Math.random() - 0.5).slice(0, 3);
+                    if (wrongs.length >= 3) {
+                        const yrsText = person.retreat_years === 'This is my first!' ? 'attending her first retreat' : `been to ${person.retreat_years} retreats`;
+                        const opts = [...wrongs.map(w => ({ text: w.first_name + ' ' + (w.last_initial || ''), correct: false })), { text: person.first_name + ' ' + (person.last_initial || ''), correct: true }].sort(() => Math.random() - 0.5);
+                        addQ({ type: 'text', prompt: `Who has ${yrsText}?`, options: opts, reveal: person.first_name + ' ' + (person.last_initial || ''), funFact: person.about ? person.about.substring(0, 80) : '', personId: person.id });
+                        used.add(person.id);
+                        continue;
+                    }
+                }
+
+                // About question (day 3 primarily)
+                if (person.about && person.about.length > 15 && !used.has(person.id) && day >= 2) {
+                    const wrongs = shuffled.filter(p => p.id !== person.id).sort(() => Math.random() - 0.5).slice(0, 3);
+                    if (wrongs.length >= 3) {
+                        const snippet = person.about.length > 60 ? person.about.substring(0, 60) + '...' : person.about;
+                        const opts = [...wrongs.map(w => ({ text: w.first_name + ' ' + (w.last_initial || ''), correct: false })), { text: person.first_name + ' ' + (person.last_initial || ''), correct: true }].sort(() => Math.random() - 0.5);
+                        addQ({ type: 'text', prompt: `Who wrote: "${snippet}"`, options: opts, reveal: person.first_name + ' ' + (person.last_initial || ''), funFact: person.location ? `She's from ${person.location}` : '', personId: person.id });
+                        used.add(person.id);
+                    }
+                }
+            }
+
+            // If we still need more questions, fill with photo questions from unused people
+            for (const person of shuffled) {
+                if (questions.length >= 8) break;
+                if (used.has(person.id)) continue;
+                if (!person.photo_data) continue;
+                const wrongs = shuffled.filter(p => p.id !== person.id && !used.has(p.id)).sort(() => Math.random() - 0.5).slice(0, 3);
+                if (wrongs.length >= 3) {
+                    const opts = [...wrongs.map(w => ({ text: w.first_name + ' ' + (w.last_initial || ''), correct: false })), { text: person.first_name + ' ' + (person.last_initial || ''), correct: true }].sort(() => Math.random() - 0.5);
+                    addQ({ type: 'photo', image: person.photo_data, prompt: 'Who is this?', options: opts, reveal: person.first_name + ' ' + (person.last_initial || ''), funFact: person.about ? person.about.substring(0, 80) : (person.job || person.location || ''), personId: person.id });
+                    used.add(person.id);
+                }
+            }
+
+            return questions.sort(() => Math.random() - 0.5);
+        }
+
+        function renderQuizQuestion() {
+            const container = document.getElementById('quiz-tab-content');
+            if (quizIndex >= quizQuestions.length) {
+                finishQuiz();
+                return;
+            }
+            const q = quizQuestions[quizIndex];
+            const progress = `${quizIndex + 1} of ${quizQuestions.length}`;
+
+            let html = `<div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);">${progress}</div>
+                <div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--accent);font-weight:600;">Score: ${quizScore}</div>
+            </div>`;
+
+            // Progress bar
+            html += `<div style="height:4px;background:rgba(200,185,176,0.2);border-radius:2px;margin-bottom:16px;overflow:hidden;">
+                <div style="height:100%;width:${((quizIndex) / quizQuestions.length) * 100}%;background:linear-gradient(90deg,var(--blush),var(--rose));border-radius:2px;transition:width 0.3s;"></div>
+            </div>`;
+
+            html += '<div style="background:white;border-radius:16px;box-shadow:var(--shadow-sm);overflow:hidden;border:1px solid rgba(200,185,176,0.1);">';
+
+            // Image if photo question
+            if (q.type === 'photo' && q.image) {
+                html += `<div style="text-align:center;padding:20px 20px 12px;">
+                    <img src="${q.image}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;box-shadow:0 4px 16px rgba(74,55,40,0.15);" alt="">
+                </div>`;
+            }
+
+            // Question text
+            html += `<div style="padding:${q.type === 'photo' ? '0' : '20px'} 20px 16px;text-align:center;">
+                <div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);line-height:1.4;">${escHtml(q.prompt)}</div>
+            </div>`;
+
+            // Options
+            html += '<div style="padding:0 16px 12px;display:flex;flex-direction:column;gap:8px;">';
+            q.options.forEach((opt, i) => {
+                html += `<button class="quiz-option-btn" onclick="answerQuiz(${i})" style="width:100%;padding:14px 16px;border:2px solid rgba(200,185,176,0.25);border-radius:12px;background:white;font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--dark-text);cursor:pointer;transition:all 0.15s;text-align:left;font-weight:500;" onmouseover="this.style.borderColor='var(--blush)';this.style.background='rgba(201,144,138,0.04)'" onmouseout="this.style.borderColor='rgba(200,185,176,0.25)';this.style.background='white'">${escHtml(opt.text)}</button>`;
+            });
+            html += '</div>';
+
+            // Skip
+            html += `<div style="text-align:center;padding:4px 0 16px;">
+                <button onclick="skipQuiz()" style="background:none;border:none;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);cursor:pointer;padding:6px 16px;">Skip this question</button>
+            </div>`;
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function answerQuiz(optionIndex) {
+            const q = quizQuestions[quizIndex];
+            const selected = q.options[optionIndex];
+            const correct = selected.correct;
+            if (correct) quizScore++;
+            showQuizReveal(correct, q);
+        }
+
+        function skipQuiz() {
+            const q = quizQuestions[quizIndex];
+            showQuizReveal(false, q, true);
+        }
+
+        function showQuizReveal(correct, q, skipped) {
+            const container = document.getElementById('quiz-tab-content');
+            const correctAnswer = q.options.find(o => o.correct).text;
+
+            let html = `<div style="background:white;border-radius:16px;box-shadow:var(--shadow-sm);overflow:hidden;border:2px solid ${correct ? 'var(--sage)' : 'var(--blush)'};">`;
+
+            // Result header
+            html += `<div style="padding:24px 20px 16px;text-align:center;background:${correct ? 'rgba(138,158,122,0.08)' : 'rgba(201,144,138,0.08)'};">
+                <div style="font-size:2rem;margin-bottom:8px;">${correct ? '✅' : skipped ? '⏭️' : '❌'}</div>
+                <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;color:${correct ? 'var(--sage)' : 'var(--accent)'};">${correct ? 'Correct!' : skipped ? 'Skipped' : 'Not quite!'}</div>
+                ${!correct ? `<div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--dark-text);margin-top:6px;">The answer was <strong>${escHtml(correctAnswer)}</strong></div>` : ''}
+            </div>`;
+
+            // Fun fact
+            if (q.funFact) {
+                html += `<div style="padding:12px 20px;border-top:1px solid rgba(200,185,176,0.1);">
+                    <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--taupe);line-height:1.4;">💡 ${escHtml(q.funFact)}</div>
+                </div>`;
+            }
+
+            // View profile + next
+            html += `<div style="padding:12px 20px 20px;display:flex;gap:8px;">
+                <button onclick="viewQuizProfile(${q.personId})" style="flex:1;padding:12px;border:1.5px solid var(--warm-grey);border-radius:10px;background:white;font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--taupe);cursor:pointer;">View Profile</button>
+                <button onclick="nextQuizQuestion()" style="flex:2;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--blush),var(--rose));color:white;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:600;cursor:pointer;">${quizIndex + 1 < quizQuestions.length ? 'Next Question →' : 'See My Score'}</button>
+            </div>`;
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function viewQuizProfile(userId) {
+            const person = quizDirectory.find(u => u.id === userId);
+            if (person) {
+                switchToTab('connect');
+                setTimeout(() => {
+                    if (typeof viewPerson === 'function') viewPerson(userId);
+                }, 300);
+            }
+        }
+
+        function nextQuizQuestion() {
+            quizIndex++;
+            renderQuizQuestion();
+        }
+
+        async function finishQuiz() {
+            const elapsed = (Date.now() - quizStartTime) / 1000;
+            const total = quizQuestions.length;
+            quizActive = false;
+
+            // Save score
+            const userName = currentUser.first_name + (currentUser.last_initial ? ' ' + currentUser.last_initial : '');
+            try {
+                await apiPost('/api/quiz/score', {
+                    user_id: currentUser.id,
+                    user_name: userName,
+                    day: quizCurrentDay,
+                    score: quizScore,
+                    total: total,
+                    time_seconds: Math.round(elapsed * 10) / 10
+                });
+            } catch(e) { /* already submitted or error */ }
+
+            // Tier name
+            const tiers = [
+                { min: 8, name: 'Soul Sister', emoji: '👑' },
+                { min: 6, name: 'Fast Friends', emoji: '💛' },
+                { min: 4, name: 'Getting There', emoji: '🌸' },
+                { min: 0, name: 'Here for the Vibes', emoji: '✨' }
+            ];
+            const tier = tiers.find(t => quizScore >= t.min);
+
+            const container = document.getElementById('quiz-tab-content');
+            container.innerHTML = `
+                <div style="background:white;border-radius:16px;box-shadow:var(--shadow-sm);padding:32px 24px;text-align:center;border:1px solid rgba(200,185,176,0.1);">
+                    <div style="font-size:3rem;margin-bottom:8px;">${tier.emoji}</div>
+                    <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--dark-text);margin-bottom:4px;">${quizScore}/${total}</div>
+                    <div style="font-family:Playfair Display,serif;font-size:1.1rem;color:var(--accent);margin-bottom:4px;">${tier.name}</div>
+                    <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);margin-bottom:20px;">Completed in ${Math.round(elapsed)} seconds</div>
+                    <div style="width:60px;height:1px;background:var(--warm-grey);margin:0 auto 20px;opacity:0.4;"></div>
+                    <div style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--taupe);line-height:1.5;">
+                        ${quizScore >= 6 ? 'You really know your sisters! 🎉' : quizScore >= 4 ? 'Not bad! Browse some profiles to learn more.' : 'Time to check out some profiles and get to know everyone!'}
+                    </div>
+                    <button onclick="switchToTab('connect')" style="margin-top:16px;padding:12px 24px;border:1.5px solid var(--warm-grey);border-radius:10px;background:white;font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--taupe);cursor:pointer;">Browse Profiles</button>
+                </div>`;
+
+            launchConfetti();
+        }
+
+        // Quiz popup check
+        function checkQuizPopup() {
+            if (!currentUser) return;
+            const active = getActiveQuiz();
+            if (!active) return;
+            const alreadyDone = quizMyScores && quizMyScores.find(s => s.day === active.day);
+            if (alreadyDone) return;
+            const popupKey = 'g4quiz_popup_' + active.day;
+            if (sessionStorage.getItem(popupKey)) return;
+            sessionStorage.setItem(popupKey, '1');
+
+            queuePopup(() => {
+                const container = document.getElementById('quiz-tab-content');
+                // Show a toast-style nudge instead of blocking popup
+                showToast('🧠 Today\'s quiz is ready! Tap the Quiz tab');
+                onPopupClosed();
+            });
+        }
 
         // ===== SCAVENGER HUNT =====
         const HUNT_PROMPTS = [

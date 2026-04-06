@@ -612,6 +612,7 @@
             <button class="nav-tab" data-section="feedback"><span class="nav-icon">📝</span> Feedback <span class="badge" id="count-feedback">0</span></button>
             <button class="nav-tab" data-section="polls"><span class="nav-icon">💬</span> Polls/Q&A <span class="badge" id="count-polls">0</span></button>
             <button class="nav-tab" data-section="games"><span class="nav-icon">🎮</span> Games</button>
+            <button class="nav-tab" data-section="quiz"><span class="nav-icon">🧠</span> Quiz</button>
             <button class="nav-tab" data-section="meme"><span class="nav-icon">😂</span> Meme</button>
         </nav>
         <div class="sidebar-footer">
@@ -920,6 +921,44 @@
             </div>
         </div>
 
+        <!-- Quiz -->
+        <div class="section" id="section-quiz">
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.25rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.5rem;">🧠 Know Your Sisters Quiz</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">Daily quiz generated from women's profiles. Scores tracked for prizes.</div>
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <div style="padding:12px 16px;background:rgba(138,158,122,0.08);border-radius:10px;flex:1;min-width:140px;text-align:center;">
+                        <div style="font-size:0.78rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Day 1 — Tue Apr 7</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--sage);margin-top:4px;" id="quiz-day1-count">0</div>
+                        <div style="font-size:0.8rem;color:var(--taupe);">completed</div>
+                    </div>
+                    <div style="padding:12px 16px;background:rgba(201,144,138,0.08);border-radius:10px;flex:1;min-width:140px;text-align:center;">
+                        <div style="font-size:0.78rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Day 2 — Wed Apr 8</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--blush);margin-top:4px;" id="quiz-day2-count">0</div>
+                        <div style="font-size:0.8rem;color:var(--taupe);">completed</div>
+                    </div>
+                    <div style="padding:12px 16px;background:rgba(184,122,110,0.08);border-radius:10px;flex:1;min-width:140px;text-align:center;">
+                        <div style="font-size:0.78rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Day 3 — Thu Apr 9</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--accent);margin-top:4px;" id="quiz-day3-count">0</div>
+                        <div style="font-size:0.8rem;color:var(--taupe);">completed</div>
+                    </div>
+                </div>
+                <button class="btn btn-refresh" onclick="loadQuizScores()">Refresh</button>
+            </div>
+
+            <!-- Daily Winners -->
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.25rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;">Daily Winners</div>
+                <div id="quiz-daily-winners" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+            </div>
+
+            <!-- Overall Leaderboard -->
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;margin-bottom:1rem;">Overall Leaderboard (All 3 Days)</div>
+                <div id="quiz-overall-leaderboard" style="display:flex;flex-direction:column;gap:0.5rem;"></div>
+            </div>
+        </div>
+
         <!-- Feedback -->
         <div class="section" id="section-feedback">
             <div id="feedback-list" style="display:flex;flex-direction:column;gap:16px;"></div>
@@ -1027,7 +1066,7 @@ function closeModal() { document.getElementById('modal').classList.remove('show'
 const SECTION_TITLES = {
     stats: 'Stats', users: 'Users', navmenu: 'Nav Menu', videos: 'Videos',
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
-    polls: 'Polls / Q&A', games: 'Games', meme: 'Meme'
+    polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme'
 };
 
 function toggleSidebar() {
@@ -1068,7 +1107,8 @@ async function refreshAll() {
         loadPolls(),
         loadHuntStats(),
         loadMemeRounds(),
-        loadStats()
+        loadStats(),
+        loadQuizScores()
     ]);
 }
 
@@ -2089,6 +2129,7 @@ const NAV_ITEMS = [
     { key: 'nav_journal', label: 'Journal', icon: '&#x2728;', desc: 'Personal journal' },
     { key: 'nav_hunt', label: 'Scavenger Hunt', icon: '&#x1f4f7;', desc: 'Photo scavenger hunt with voting' },
     { key: 'nav_meme', label: 'Meme', icon: '&#x1f602;', desc: 'What Do You Meme? game' },
+    { key: 'nav_quiz', label: 'Quiz', icon: '&#x1f9e0;', desc: 'Know Your Sisters daily quiz' },
     { key: 'nav_survey', label: 'Survey', icon: '&#x1f4dd;', desc: 'Retreat feedback form' },
     { key: 'nav_secretsister', label: 'Secret Sister', icon: '&#x1f48c;', desc: 'Anonymous encouragement notes' }
 ];
@@ -2263,6 +2304,70 @@ async function deleteMemeRound(roundId) {
             loadMemeRounds();
         } catch(e) { showToast('Error: ' + e.message); }
     });
+}
+
+// --- Quiz ---
+async function loadQuizScores() {
+    try {
+        const scores = await apiFetch('/api/quiz/scores');
+        const dayNames = { 1: 'Tuesday', 2: 'Wednesday', 3: 'Thursday' };
+
+        // Count per day
+        for (let d = 1; d <= 3; d++) {
+            const dayScores = scores.filter(s => s.day === d);
+            const el = document.getElementById('quiz-day' + d + '-count');
+            if (el) el.textContent = dayScores.length;
+        }
+
+        // Daily winners
+        const winnersEl = document.getElementById('quiz-daily-winners');
+        let winnersHtml = '';
+        for (let d = 1; d <= 3; d++) {
+            const dayScores = scores.filter(s => s.day === d).sort((a, b) => b.score - a.score || a.time_seconds - b.time_seconds);
+            const winner = dayScores[0];
+            const colors = { 1: 'var(--sage)', 2: 'var(--blush)', 3: 'var(--accent)' };
+            winnersHtml += `<div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;background:rgba(247,240,235,0.5);border-radius:10px;">
+                <div style="width:36px;height:36px;border-radius:50%;background:${colors[d]};color:white;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;flex-shrink:0;">D${d}</div>
+                <div style="flex:1;">
+                    <div style="font-weight:600;font-size:0.95rem;">${dayNames[d]}</div>
+                    ${winner
+                        ? `<div style="font-size:0.85rem;color:var(--accent);font-weight:600;">🏆 ${esc(winner.user_name)} — ${winner.score}/${winner.total} (${Math.round(winner.time_seconds)}s)</div>`
+                        : `<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;">No scores yet</div>`
+                    }
+                </div>
+                <div style="font-size:0.8rem;color:var(--light-text);">${dayScores.length} played</div>
+            </div>`;
+        }
+        winnersEl.innerHTML = winnersHtml;
+
+        // Overall leaderboard (sum scores across all days)
+        const userTotals = {};
+        for (const s of scores) {
+            if (!userTotals[s.user_id]) userTotals[s.user_id] = { name: s.user_name, total: 0, maxTotal: 0, time: 0, days: 0 };
+            userTotals[s.user_id].total += s.score;
+            userTotals[s.user_id].maxTotal += s.total;
+            userTotals[s.user_id].time += s.time_seconds;
+            userTotals[s.user_id].days++;
+        }
+        const leaderboard = Object.values(userTotals).sort((a, b) => b.total - a.total || a.time - b.time);
+        const boardEl = document.getElementById('quiz-overall-leaderboard');
+        if (leaderboard.length === 0) {
+            boardEl.innerHTML = '<div style="color:var(--light-text);font-style:italic;font-size:0.9rem;">No scores yet</div>';
+        } else {
+            boardEl.innerHTML = leaderboard.map((u, i) => `
+                <div style="display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;background:${i < 3 ? 'rgba(201,144,138,0.06)' : 'transparent'};border-radius:10px;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:${i === 0 ? 'linear-gradient(135deg,#FFD700,#FFA500)' : i === 1 ? 'linear-gradient(135deg,#C0C0C0,#A0A0A0)' : i === 2 ? 'linear-gradient(135deg,#CD7F32,#A0522D)' : 'var(--warm-grey)'};color:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;">${i + 1}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;font-size:0.92rem;color:var(--dark-text);">${esc(u.name)}</div>
+                        <div style="font-size:0.78rem;color:var(--light-text);">${u.days} day${u.days > 1 ? 's' : ''} · ${Math.round(u.time)}s total</div>
+                    </div>
+                    <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;color:var(--accent);">${u.total}/${u.maxTotal}</div>
+                </div>
+            `).join('');
+        }
+    } catch(e) {
+        console.error('Quiz scores:', e);
+    }
 }
 
 // --- Reset All ---

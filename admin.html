@@ -1755,18 +1755,33 @@ async function viewResponses(id) {
                     </div>`;
                 }).join('') +
                 '<div style="margin-top:0.75rem;font-size:0.85rem;color:var(--light-text);">' +
-                responses.map(r => `<span style="display:inline-block;margin:2px 4px;padding:2px 8px;background:rgba(201,144,138,0.1);border-radius:6px;">${esc(r.user_name)}: ${esc(r.response)}</span>`).join('') +
+                responses.map(r => `<span style="display:inline-flex;align-items:center;gap:4px;margin:2px 4px;padding:2px 8px;background:rgba(201,144,138,0.1);border-radius:6px;">${esc(r.user_name)}: ${esc(r.response)} <button onclick="deleteResponse(${r.id},${id})" style="background:none;border:none;cursor:pointer;font-size:0.75rem;color:var(--light-text);padding:0 2px;" title="Delete">&times;</button></span>`).join('') +
                 '</div></div>';
         } else {
             container.innerHTML = '<div style="background:rgba(247,240,235,0.5);border-radius:12px;padding:1rem;margin-bottom:1rem;">' +
                 '<div style="font-family:Playfair Display,serif;font-size:0.95rem;margin-bottom:0.75rem;">Responses (' + responses.length + ')</div>' +
-                responses.map(r => `<div style="padding:0.6rem 0.8rem;background:white;border-radius:8px;margin-bottom:6px;border:1px solid rgba(122,107,99,0.08);">
-                    <div style="font-size:0.8rem;color:var(--accent);font-weight:600;margin-bottom:2px;">${esc(r.user_name)}</div>
-                    <div style="font-size:0.9rem;color:var(--dark-text);">${esc(r.response)}</div>
+                responses.map(r => `<div style="padding:0.6rem 0.8rem;background:white;border-radius:8px;margin-bottom:6px;border:1px solid rgba(122,107,99,0.08);display:flex;justify-content:space-between;align-items:flex-start;">
+                    <div style="flex:1;">
+                        <div style="font-size:0.8rem;color:var(--accent);font-weight:600;margin-bottom:2px;">${esc(r.user_name)}</div>
+                        <div style="font-size:0.9rem;color:var(--dark-text);">${esc(r.response)}</div>
+                    </div>
+                    <button onclick="deleteResponse(${r.id},${id})" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--light-text);padding:0 4px;flex-shrink:0;" title="Delete">&times;</button>
                 </div>`).join('') +
                 '</div>';
         }
         container.style.display = 'block';
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function deleteResponse(responseId, pollId) {
+    if (!confirm('Delete this response?')) return;
+    try {
+        await apiFetch('/api/polls/response/' + responseId, { method: 'DELETE' });
+        showToast('Response deleted');
+        // Refresh the responses view
+        const container = document.getElementById('poll-responses-' + pollId);
+        if (container) container.style.display = 'none';
+        viewResponses(pollId);
     } catch (e) { showToast('Error: ' + e.message); }
 }
 

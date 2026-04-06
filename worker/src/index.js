@@ -1415,6 +1415,14 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // DELETE /api/polls/response/:id - delete a single poll response
+      const pollResponseDeleteMatch = path.match(/^\/api\/polls\/response\/(\d+)$/);
+      if (pollResponseDeleteMatch && request.method === 'DELETE') {
+        const responseId = parseInt(pollResponseDeleteMatch[1]);
+        await env.DB.prepare('DELETE FROM poll_responses WHERE id = ?').bind(responseId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
       // ===== SCAVENGER HUNT =====
 
       // Create tables on first use

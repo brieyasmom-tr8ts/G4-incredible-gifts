@@ -1745,6 +1745,7 @@ async function loadPolls() {
             return;
         }
         empty.style.display = 'none';
+        polls.sort((a, b) => b.id - a.id);
 
         list.innerHTML = polls.map(p => `
             <div id="poll-card-${p.id}" style="background:white;border-radius:14px;box-shadow:var(--shadow-sm);padding:1rem 1.25rem;margin-bottom:0.75rem;border-left:4px solid ${p.active ? 'var(--sage)' : 'var(--warm-grey)'};">

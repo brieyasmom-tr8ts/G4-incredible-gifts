@@ -4231,6 +4231,16 @@
             }).catch(() => {});
         }
 
+        function markUpliftSeen() {
+            setTimeout(() => {
+                if (allMessages.length > 0) {
+                    const maxId = Math.max(...allMessages.map(m => m.id));
+                    localStorage.setItem('g4_uplift_seen', String(maxId));
+                }
+                clearBadge('badge-uplift');
+            }, 500);
+        }
+
         function markPollsSeen() {
             // Wait for feed to load, then mark total as seen
             setTimeout(() => {
@@ -6372,7 +6382,7 @@
         // Tab-specific data loading
         function loadTabData(tab) {
             if (tab === 'connect') { loadPeople(); markConnectSeen(); }
-            if (tab === 'uplift') loadPrayerWall();
+            if (tab === 'uplift') { loadPrayerWall(); markUpliftSeen(); }
             if (tab === 'polls') { loadSharingFeed(); markPollsSeen(); }
             if (tab === 'journey') loadNotAloneInsights();
             if (tab === 'moments') { loadMoments(); markMomentsSeen(); }

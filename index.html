@@ -3661,11 +3661,13 @@
             row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);cursor:pointer;transition:var(--transition);';
             row.addEventListener('click', () => showUserCard(u.id, u.first_name));
 
-            const teamOverlay = u.is_team ? '<div style="position:absolute;bottom:-1px;right:-1px;background:linear-gradient(135deg,var(--sage),#7a9e6a);color:white;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;letter-spacing:0.02em;border:1.5px solid white;">G4</div>' : '';
-            const speakerOverlay = u.is_speaker ? '<div style="position:absolute;top:-1px;right:-1px;background:linear-gradient(135deg,var(--accent),#b87a6e);color:white;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;letter-spacing:0.02em;border:1.5px solid white;">🎤</div>' : '';
+            const badges = [];
+            if (u.is_team) badges.push('<div style="background:linear-gradient(135deg,var(--sage),#7a9e6a);color:white;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;letter-spacing:0.02em;border:1.5px solid white;">G4</div>');
+            if (u.is_speaker) badges.push('<div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:white;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;letter-spacing:0.02em;border:1.5px solid white;">🎤</div>');
+            const badgeOverlay = badges.length ? `<div style="position:absolute;bottom:-2px;right:-2px;display:flex;gap:1px;">${badges.join('')}</div>` : '';
 
             row.innerHTML = `
-                <div style="flex-shrink:0;position:relative;">${avatarHTML}${teamOverlay}${speakerOverlay}</div>
+                <div style="flex-shrink:0;position:relative;">${avatarHTML}${badgeOverlay}</div>
                 <div style="flex:1;min-width:0;">
                     <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--dark-text);line-height:1.2;">${displayName}</div>
                     ${detailLine ? `<div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detailLine}</div>` : ''}

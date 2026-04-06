@@ -1090,7 +1090,6 @@ export default {
             const { results: votes } = await env.DB.prepare(
               'SELECT v.choice, u.first_name, u.last_initial FROM wyr_votes v JOIN users u ON v.user_id = u.id WHERE v.question_id = ? ORDER BY v.choice, u.first_name'
             ).bind(q.id).all();
-            if (votes.length === 0) continue;
             const votersA = votes.filter(v => v.choice === 'A').map(v => v.last_initial ? `${v.first_name} ${v.last_initial}.` : v.first_name);
             const votersB = votes.filter(v => v.choice === 'B').map(v => v.last_initial ? `${v.first_name} ${v.last_initial}.` : v.first_name);
             const total = votes.length;
@@ -1100,8 +1099,8 @@ export default {
               option_b: q.option_b,
               count_a: votersA.length,
               count_b: votersB.length,
-              pct_a: Math.round((votersA.length / total) * 100),
-              pct_b: Math.round((votersB.length / total) * 100),
+              pct_a: total > 0 ? Math.round((votersA.length / total) * 100) : 0,
+              pct_b: total > 0 ? Math.round((votersB.length / total) * 100) : 0,
               total,
               voters_a: votersA,
               voters_b: votersB

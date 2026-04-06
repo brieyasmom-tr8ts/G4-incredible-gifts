@@ -829,7 +829,14 @@
             <!-- Would You Rather -->
             <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
                 <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;margin-bottom:0.75rem;">🎤 Would You Rather – Live Poll</div>
-                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:0.5rem;">Create questions, activate one at a time. Everyone gets a popup to vote and sees live results.</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:0.75rem;">Create questions, activate one at a time. Everyone gets a popup to vote and sees live results.</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(201,144,138,0.08);border-radius:10px;margin-bottom:0.75rem;">
+                    <span style="font-size:0.9rem;color:var(--taupe);">Show WYR results on Polls page</span>
+                    <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
+                        <input type="checkbox" id="toggle-wyr-on-polls" style="opacity:0;width:0;height:0;" onchange="toggleGame('show_wyr_on_polls', this.checked)">
+                        <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                    </label>
+                </div>
                 <div style="margin-bottom:1rem;"><button class="btn" style="background:var(--blush);color:white;font-size:0.8rem;padding:0.25rem 0.6rem;" onclick="openTestLink('wyr')">📋 Test Link</button></div>
                 <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
                     <input type="text" id="wyr-option-a" placeholder="Option A..." style="flex:1;min-width:120px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
@@ -1522,6 +1529,7 @@ async function loadGameSettings() {
         document.getElementById('toggle-show-packing-names').checked = settings.show_packing_names === '1';
         document.getElementById('toggle-secret-sister').checked = settings.secret_sister === '1';
         document.getElementById('toggle-ss-reveal').checked = settings.secret_sister_reveal === '1';
+        document.getElementById('toggle-wyr-on-polls').checked = settings.show_wyr_on_polls === '1';
         renderNavToggles();
     } catch (e) { console.error('Game settings:', e); }
 }

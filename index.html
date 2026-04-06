@@ -4170,9 +4170,10 @@
             const empty = document.getElementById('sharing-empty');
             feed.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light-text);font-style:italic;">Loading...</div>';
             try {
+                const showWyr = gameSettings && gameSettings.show_wyr_on_polls === '1';
                 const [pollResponses, wyrFeed] = await Promise.all([
                     apiGet('/api/polls/feed').catch(() => []),
-                    apiGet('/api/games/wyr/feed').catch(() => [])
+                    showWyr ? apiGet('/api/games/wyr/feed').catch(() => []) : Promise.resolve([])
                 ]);
 
                 let html = '';
@@ -4181,7 +4182,7 @@
 
                 // WYR results (with inline voting for unvoted questions)
                 const wyrCards = [];
-                if (wyrFeed && wyrFeed.length > 0) {
+                if (showWyr && wyrFeed && wyrFeed.length > 0) {
                     for (const q of wyrFeed) {
                         const voted = currentUser ? localStorage.getItem('g4wyr_' + q.id + '_' + currentUser.id) : null;
                         const card = document.createElement('div');

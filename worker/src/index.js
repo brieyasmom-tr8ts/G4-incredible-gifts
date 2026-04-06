@@ -1,3 +1,4 @@
+// G4 Retreat API Worker
 // Blocked words filter
 const BLOCKED_WORDS = [
   'damn', 'hell', 'shit', 'fuck', 'ass', 'bitch', 'crap',

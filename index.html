@@ -4388,7 +4388,7 @@
             const empty = document.getElementById('sharing-empty');
             feed.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light-text);font-style:italic;">Loading...</div>';
             try {
-                const showWyr = gameSettings && gameSettings.show_wyr_on_polls === '1';
+                const showWyr = !gameSettings || gameSettings.show_wyr_on_polls !== '0';
                 const [pollResponses, wyrFeed] = await Promise.all([
                     apiGet('/api/polls/feed').catch(() => []),
                     showWyr ? apiGet('/api/games/wyr/feed').catch(() => []) : Promise.resolve([])

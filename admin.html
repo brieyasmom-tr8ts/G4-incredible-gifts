@@ -1578,7 +1578,7 @@ async function loadGameSettings() {
         document.getElementById('toggle-show-packing-names').checked = settings.show_packing_names === '1';
         document.getElementById('toggle-secret-sister').checked = settings.secret_sister === '1';
         document.getElementById('toggle-ss-reveal').checked = settings.secret_sister_reveal === '1';
-        document.getElementById('toggle-wyr-on-polls').checked = settings.show_wyr_on_polls === '1';
+        document.getElementById('toggle-wyr-on-polls').checked = settings.show_wyr_on_polls !== '0';
         renderNavToggles();
     } catch (e) { console.error('Game settings:', e); }
 }

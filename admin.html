@@ -1291,6 +1291,7 @@ function renderUsersTable() {
             <td>${fmtDateTime(u.created_at)}</td>
             <td style="white-space:nowrap;">
                 <button class="btn" style="background:${u.is_team ? 'var(--sage)' : 'rgba(200,185,176,0.3)'};color:${u.is_team ? 'white' : 'var(--taupe)'};font-size:0.7rem;padding:0.2rem 0.5rem;margin-right:4px;" onclick="toggleTeam(${u.id}, ${u.is_team ? 0 : 1})">${u.is_team ? '⭐ Team' : 'Team'}</button>
+                <button class="btn" style="background:${u.is_speaker ? 'var(--accent)' : 'rgba(200,185,176,0.3)'};color:${u.is_speaker ? 'white' : 'var(--taupe)'};font-size:0.7rem;padding:0.2rem 0.5rem;margin-right:4px;" onclick="toggleSpeaker(${u.id}, ${u.is_speaker ? 0 : 1})">${u.is_speaker ? '🎤 Speaker' : 'Speaker'}</button>
                 <button class="btn btn-danger-outline" onclick="deleteUser(${u.id}, '${esc(u.first_name)}')">Delete</button>
             </td>
         </tr>
@@ -1311,6 +1312,14 @@ async function toggleTeam(userId, isTeam) {
     try {
         await apiFetch('/api/users/' + userId + '/team', { method: 'POST', body: { is_team: isTeam } });
         showToast(isTeam ? 'Marked as G4 Team' : 'Removed from G4 Team');
+        loadUsers();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function toggleSpeaker(userId, isSpeaker) {
+    try {
+        await apiFetch('/api/users/' + userId + '/speaker', { method: 'POST', body: { is_speaker: isSpeaker } });
+        showToast(isSpeaker ? 'Marked as Speaker' : 'Removed from Speakers');
         loadUsers();
     } catch (e) { showToast('Error: ' + e.message); }
 }

@@ -2807,10 +2807,11 @@
                         <div style="margin-bottom:10px;">
                             <input type="text" id="sisters-search" placeholder="Search by name..." style="width:100%;padding:10px 16px;border:1px solid rgba(139,134,128,0.2);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);background:rgba(255,255,255,0.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);outline:none;transition:var(--transition);">
                         </div>
-                        <div id="directory-sort" style="display:none;margin-bottom:12px;display:flex;gap:6px;justify-content:flex-end;">
+                        <div id="directory-sort" style="display:none;margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
                             <button class="dir-sort-btn active" data-sort="newest" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);">Newest</button>
                             <button class="dir-sort-btn" data-sort="alpha" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);">A–Z</button>
-                            <button class="dir-sort-btn" data-sort="profile" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);">Complete Profiles</button>
+                            <button class="dir-sort-btn" data-sort="team" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);">G4 Team</button>
+                            <button class="dir-sort-btn" data-sort="speakers" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);">Speakers</button>
                         </div>
                         <div id="connect-people-list" style="display:flex;flex-direction:column;gap:10px;"></div>
                     </div>
@@ -3661,9 +3662,10 @@
             row.addEventListener('click', () => showUserCard(u.id, u.first_name));
 
             const teamOverlay = u.is_team ? '<div style="position:absolute;bottom:-1px;right:-1px;background:linear-gradient(135deg,var(--sage),#7a9e6a);color:white;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;letter-spacing:0.02em;border:1.5px solid white;">G4</div>' : '';
+            const speakerOverlay = u.is_speaker ? '<div style="position:absolute;top:-1px;right:-1px;background:linear-gradient(135deg,var(--accent),#b87a6e);color:white;font-size:0.5rem;font-weight:800;padding:2px 4px;border-radius:4px;line-height:1;letter-spacing:0.02em;border:1.5px solid white;">🎤</div>' : '';
 
             row.innerHTML = `
-                <div style="flex-shrink:0;position:relative;">${avatarHTML}${teamOverlay}</div>
+                <div style="flex-shrink:0;position:relative;">${avatarHTML}${teamOverlay}${speakerOverlay}</div>
                 <div style="flex:1;min-width:0;">
                     <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--dark-text);line-height:1.2;">${displayName}</div>
                     ${detailLine ? `<div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${detailLine}</div>` : ''}
@@ -3688,16 +3690,26 @@
                 return;
             }
 
-            // Sort
+            // Filter by role tabs
             const sortMode = directorySortMode || 'newest';
-            const display = [...filtered].sort((a, b) => {
+            let roleFiltered = filtered;
+            if (sortMode === 'team') {
+                roleFiltered = filtered.filter(u => u.is_team);
+            } else if (sortMode === 'speakers') {
+                roleFiltered = filtered.filter(u => u.is_speaker);
+            }
+
+            if (!roleFiltered.length && (sortMode === 'team' || sortMode === 'speakers')) {
+                list.innerHTML = `<div style="text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">No ${sortMode === 'team' ? 'team members' : 'speakers'} tagged yet.</div>`;
+                return;
+            }
+
+            // Sort
+            const display = [...roleFiltered].sort((a, b) => {
                 if (sortMode === 'alpha') {
                     return a.first_name.localeCompare(b.first_name) || (a.last_initial || '').localeCompare(b.last_initial || '');
                 }
-                if (sortMode === 'profile') {
-                    const aScore = (a.photo_data ? 3 : 0) + (a.about ? 2 : 0) + (a.location ? 1 : 0) + (a.church ? 1 : 0) + (a.job ? 1 : 0);
-                    const bScore = (b.photo_data ? 3 : 0) + (b.about ? 2 : 0) + (b.location ? 1 : 0) + (b.church ? 1 : 0) + (b.job ? 1 : 0);
-                    if (bScore !== aScore) return bScore - aScore;
+                if (sortMode === 'team' || sortMode === 'speakers') {
                     return a.first_name.localeCompare(b.first_name);
                 }
                 // newest: by id descending

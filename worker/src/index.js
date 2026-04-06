@@ -112,6 +112,8 @@ export default {
 
         // Add is_team column to users if missing
         try { await env.DB.prepare('ALTER TABLE users ADD COLUMN is_team INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
+        // Add is_speaker column to users if missing
+        try { await env.DB.prepare('ALTER TABLE users ADD COLUMN is_speaker INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
 
         return json({ success: true, columns_added: added, tables_ensured: tablesCreated, message: added.length ? 'Added missing columns' : 'All columns already exist' }, corsHeaders);
       }
@@ -276,7 +278,7 @@ export default {
         let results;
         try {
           ({ results } = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, is_speaker, created_at FROM users ORDER BY created_at DESC'
           ).all());
         } catch (e) {
           ({ results } = await env.DB.prepare(
@@ -303,12 +305,16 @@ export default {
             'SELECT id, first_name, last_initial, photo_data, email, phone, birthday, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about FROM users ORDER BY first_name ASC'
           ).all());
         }
-        // Add is_team safely
+        // Add is_team and is_speaker safely
         try {
-          const { results: teamRows } = await env.DB.prepare('SELECT id, is_team FROM users WHERE is_team = 1').all();
-          const teamIds = new Set(teamRows.map(r => r.id));
-          for (const u of results) u.is_team = teamIds.has(u.id) ? 1 : 0;
-        } catch (e) { /* column doesn't exist yet */ }
+          const { results: flagRows } = await env.DB.prepare('SELECT id, is_team, is_speaker FROM users').all();
+          const teamIds = new Set(flagRows.filter(r => r.is_team).map(r => r.id));
+          const speakerIds = new Set(flagRows.filter(r => r.is_speaker).map(r => r.id));
+          for (const u of results) {
+            u.is_team = teamIds.has(u.id) ? 1 : 0;
+            u.is_speaker = speakerIds.has(u.id) ? 1 : 0;
+          }
+        } catch (e) { /* columns don't exist yet */ }
         const directory = results.map(u => ({
           id: u.id,
           first_name: u.first_name,
@@ -325,7 +331,8 @@ export default {
           retreat_years: u.show_about ? (u.retreat_years || '') : '',
           about: u.show_about ? (u.about || '') : '',
           packing_score: u.packing_score != null ? u.packing_score : null,
-          is_team: u.is_team ? 1 : 0
+          is_team: u.is_team ? 1 : 0,
+          is_speaker: u.is_speaker ? 1 : 0
         }));
         return json(directory, corsHeaders);
       }
@@ -337,7 +344,7 @@ export default {
         let user;
         try {
           user = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, created_at FROM users WHERE id = ?'
+            'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, is_speaker, created_at FROM users WHERE id = ?'
           ).bind(userId).first();
         } catch (e) {
           user = await env.DB.prepare(
@@ -368,6 +375,7 @@ export default {
           retreat_years: (isOwner || user.show_about) ? (user.retreat_years || '') : '',
           about: (isOwner || user.show_about) ? (user.about || '') : '',
           is_team: user.is_team || 0,
+          is_speaker: user.is_speaker || 0,
           created_at: user.created_at
         }, corsHeaders);
       }
@@ -423,6 +431,16 @@ export default {
         const { is_team } = await request.json();
         try { await env.DB.prepare('ALTER TABLE users ADD COLUMN is_team INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
         await env.DB.prepare('UPDATE users SET is_team = ? WHERE id = ?').bind(is_team ? 1 : 0, userId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/users/:id/speaker - toggle speaker flag
+      const speakerToggleMatch = path.match(/^\/api\/users\/(\d+)\/speaker$/);
+      if (speakerToggleMatch && request.method === 'POST') {
+        const userId = parseInt(speakerToggleMatch[1]);
+        const { is_speaker } = await request.json();
+        try { await env.DB.prepare('ALTER TABLE users ADD COLUMN is_speaker INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
+        await env.DB.prepare('UPDATE users SET is_speaker = ? WHERE id = ?').bind(is_speaker ? 1 : 0, userId).run();
         return json({ success: true }, corsHeaders);
       }
 

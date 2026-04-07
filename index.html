@@ -7386,6 +7386,26 @@
             const next = getNextQuiz();
             const alreadyDone = active ? quizMyScores.find(s => s.day === active.day) : null;
 
+            // Resume in-progress quiz if there is one for the active day
+            if (active && !alreadyDone) {
+                const savedRaw = localStorage.getItem('g4quiz_progress_' + currentUser.id + '_' + active.day);
+                if (savedRaw) {
+                    try {
+                        const saved = JSON.parse(savedRaw);
+                        if (saved && saved.questions && saved.questions.length && saved.index < saved.questions.length) {
+                            quizCurrentDay = active.day;
+                            quizQuestions = saved.questions;
+                            quizIndex = saved.index;
+                            quizScore = saved.score || 0;
+                            quizStartTime = saved.startTime || Date.now();
+                            quizActive = true;
+                            renderQuizQuestion();
+                            return;
+                        }
+                    } catch(e) { /* ignore corrupt save */ }
+                }
+            }
+
             let html = '';
 
             // Show past scores
@@ -7468,7 +7488,25 @@
 
             quizQuestions = generateQuizQuestions(eligible, day);
             quizActive = true;
+            saveQuizProgress();
             renderQuizQuestion();
+        }
+
+        function saveQuizProgress() {
+            if (!currentUser || !quizCurrentDay || !quizQuestions.length) return;
+            try {
+                localStorage.setItem('g4quiz_progress_' + currentUser.id + '_' + quizCurrentDay, JSON.stringify({
+                    questions: quizQuestions,
+                    index: quizIndex,
+                    score: quizScore,
+                    startTime: quizStartTime
+                }));
+            } catch(e) { /* storage full or unavailable */ }
+        }
+
+        function clearQuizProgress() {
+            if (!currentUser || !quizCurrentDay) return;
+            try { localStorage.removeItem('g4quiz_progress_' + currentUser.id + '_' + quizCurrentDay); } catch(e) {}
         }
 
         function generateQuizQuestions(people, day) {
@@ -7476,8 +7514,13 @@
             const used = new Set();
             const shuffled = [...people].sort(() => Math.random() - 0.5);
 
+            function normalizeField(val) {
+                return (val || '').toString().toLowerCase().replace(/[\s,.\-]+/g, ' ').trim();
+            }
+
             function pickWrong(correct, pool, field) {
-                const options = pool.filter(p => p.id !== correct.id && p[field] && p[field] !== correct[field]);
+                const correctVal = normalizeField(correct[field]);
+                const options = pool.filter(p => p.id !== correct.id && p[field] && normalizeField(p[field]) !== correctVal);
                 const shuffOptions = options.sort(() => Math.random() - 0.5).slice(0, 3);
                 return shuffOptions;
             }
@@ -7632,6 +7675,7 @@
             const selected = q.options[optionIndex];
             const correct = selected.correct;
             if (correct) quizScore++;
+            saveQuizProgress();
             showQuizReveal(correct, q);
         }
 
@@ -7682,6 +7726,7 @@
 
         function nextQuizQuestion() {
             quizIndex++;
+            saveQuizProgress();
             renderQuizQuestion();
         }
 
@@ -7689,6 +7734,7 @@
             const elapsed = (Date.now() - quizStartTime) / 1000;
             const total = quizQuestions.length;
             quizActive = false;
+            clearQuizProgress();
 
             // Save score
             const userName = currentUser.first_name + (currentUser.last_initial ? ' ' + currentUser.last_initial : '');

@@ -3652,7 +3652,7 @@
         let directoryPage = 1;
 
         function renderSisterRow(u) {
-            const displayName = u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name;
+            const displayName = u.last_name ? `${u.first_name} ${u.last_name}` : (u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name);
             const avatarSize = '48px';
             let avatarHTML;
             if (u.photo_data) {
@@ -3697,7 +3697,7 @@
             const query = (filter || '').toLowerCase();
             const others = allDirectoryUsers;
             const filtered = query
-                ? others.filter(u => u.first_name.toLowerCase().includes(query) || (u.last_initial && (u.first_name + ' ' + u.last_initial).toLowerCase().includes(query)))
+                ? others.filter(u => u.first_name.toLowerCase().includes(query) || (u.last_name && (u.first_name + ' ' + u.last_name).toLowerCase().includes(query)) || (u.last_initial && (u.first_name + ' ' + u.last_initial).toLowerCase().includes(query)))
                 : others;
 
             if (!filtered.length) {

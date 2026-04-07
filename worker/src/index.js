@@ -301,7 +301,7 @@ export default {
         let results;
         try {
           ({ results } = await env.DB.prepare(
-            `SELECT u.id, u.first_name, u.last_initial, u.photo_data, u.email, u.phone, u.birthday,
+            `SELECT u.id, u.first_name, u.last_initial, u.last_name, u.photo_data, u.email, u.phone, u.birthday,
                     u.show_email, u.show_phone, u.show_birthday, u.show_about,
                     u.instagram, u.facebook, u.location, u.job, u.church, u.retreat_years, u.about,
                     p.score as packing_score
@@ -334,6 +334,7 @@ export default {
           id: u.id,
           first_name: u.first_name,
           last_initial: u.last_initial || '',
+          last_name: u.last_name || '',
           photo_data: u.photo_data || '',
           email: u.show_email ? (u.email || '') : '',
           phone: u.show_phone ? (u.phone || '') : '',

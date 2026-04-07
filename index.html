@@ -7715,13 +7715,11 @@
         }
 
         function viewQuizProfile(userId) {
-            const person = quizDirectory.find(u => u.id === userId);
-            if (person) {
-                switchToTab('connect');
-                setTimeout(() => {
-                    if (typeof viewPerson === 'function') viewPerson(userId);
-                }, 300);
-            }
+            if (!userId) return;
+            switchToTab('connect');
+            setTimeout(() => {
+                if (typeof showUserCard === 'function') showUserCard(userId);
+            }, 300);
         }
 
         function nextQuizQuestion() {

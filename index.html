@@ -7597,7 +7597,7 @@
 
                 // Retreat years question (day 2+)
                 if (person.retreat_years && !used.has(person.id) && day >= 2) {
-                    const wrongs = shuffled.filter(p => p.id !== person.id).sort(() => Math.random() - 0.5).slice(0, 3);
+                    const wrongs = pickWrong(person, shuffled, 'retreat_years');
                     if (wrongs.length >= 3) {
                         const yrsText = person.retreat_years === 'This is my first!' ? 'attending her first retreat' : `been to ${person.retreat_years} retreats`;
                         const opts = [...wrongs.map(w => ({ text: w.first_name + ' ' + (w.last_initial || ''), correct: false })), { text: person.first_name + ' ' + (person.last_initial || ''), correct: true }].sort(() => Math.random() - 0.5);
@@ -7609,7 +7609,7 @@
 
                 // About question (day 3 primarily)
                 if (person.about && person.about.length > 15 && !used.has(person.id) && day >= 2) {
-                    const wrongs = shuffled.filter(p => p.id !== person.id).sort(() => Math.random() - 0.5).slice(0, 3);
+                    const wrongs = pickWrong(person, shuffled, 'about');
                     if (wrongs.length >= 3) {
                         const snippet = person.about.length > 60 ? person.about.substring(0, 60) + '...' : person.about;
                         const opts = [...wrongs.map(w => ({ text: w.first_name + ' ' + (w.last_initial || ''), correct: false })), { text: person.first_name + ' ' + (person.last_initial || ''), correct: true }].sort(() => Math.random() - 0.5);
@@ -7733,22 +7733,13 @@
 
         function viewQuizProfile(userId) {
             if (!userId) return;
-            switchToTab('connect');
-            setTimeout(() => {
-                if (typeof showUserCard === 'function') {
-                    showUserCard(userId);
-                    // After the modal opens, hook into its close handlers to return to quiz
-                    setTimeout(() => {
-                        const overlays = document.querySelectorAll('div[style*="z-index:1500"]');
-                        const overlay = overlays[overlays.length - 1];
-                        if (overlay) {
-                            const returnToQuiz = () => { switchToTab('quiz'); loadTabData('quiz'); };
-                            const origRemove = overlay.remove.bind(overlay);
-                            overlay.remove = function() { origRemove(); returnToQuiz(); };
-                        }
-                    }, 50);
-                }
-            }, 300);
+            // Open the profile card directly on top of the quiz tab.
+            // The modal is a fixed-position overlay (z-index:1500), so it
+            // shows above the quiz UI. Closing it leaves the user on the
+            // quiz tab with their progress intact — no tab switching needed.
+            if (typeof showUserCard === 'function') {
+                showUserCard(userId);
+            }
         }
 
         function nextQuizQuestion() {

@@ -7352,6 +7352,7 @@
         let quizDirectory = [];
         let quizMyScores = [];
         let quizActive = false;
+        let quizAnswered = false;
         let quizStartTime = 0;
         let quizQuestions = [];
         let quizIndex = 0;
@@ -7392,13 +7393,24 @@
                 if (savedRaw) {
                     try {
                         const saved = JSON.parse(savedRaw);
-                        if (saved && saved.questions && saved.questions.length && saved.index < saved.questions.length) {
+                        if (saved && saved.questions && saved.questions.length) {
                             quizCurrentDay = active.day;
                             quizQuestions = saved.questions;
                             quizIndex = saved.index;
                             quizScore = saved.score || 0;
                             quizStartTime = saved.startTime || Date.now();
+                            quizAnswered = !!saved.answered;
                             quizActive = true;
+                            // If they already answered the current question, advance past it
+                            if (quizAnswered) {
+                                quizIndex++;
+                                quizAnswered = false;
+                                saveQuizProgress();
+                            }
+                            if (quizIndex >= quizQuestions.length) {
+                                finishQuiz();
+                                return;
+                            }
                             renderQuizQuestion();
                             return;
                         }
@@ -7466,6 +7478,7 @@
             quizCurrentDay = day;
             quizScore = 0;
             quizIndex = 0;
+            quizAnswered = false;
             quizStartTime = Date.now();
 
             // Load directory for question generation
@@ -7499,7 +7512,8 @@
                     questions: quizQuestions,
                     index: quizIndex,
                     score: quizScore,
-                    startTime: quizStartTime
+                    startTime: quizStartTime,
+                    answered: quizAnswered
                 }));
             } catch(e) { /* storage full or unavailable */ }
         }
@@ -7675,12 +7689,15 @@
             const selected = q.options[optionIndex];
             const correct = selected.correct;
             if (correct) quizScore++;
+            quizAnswered = true;
             saveQuizProgress();
             showQuizReveal(correct, q);
         }
 
         function skipQuiz() {
             const q = quizQuestions[quizIndex];
+            quizAnswered = true;
+            saveQuizProgress();
             showQuizReveal(false, q, true);
         }
 
@@ -7724,6 +7741,7 @@
 
         function nextQuizQuestion() {
             quizIndex++;
+            quizAnswered = false;
             saveQuizProgress();
             renderQuizQuestion();
         }

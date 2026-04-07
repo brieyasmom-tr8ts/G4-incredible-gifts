@@ -7735,7 +7735,19 @@
             if (!userId) return;
             switchToTab('connect');
             setTimeout(() => {
-                if (typeof showUserCard === 'function') showUserCard(userId);
+                if (typeof showUserCard === 'function') {
+                    showUserCard(userId);
+                    // After the modal opens, hook into its close handlers to return to quiz
+                    setTimeout(() => {
+                        const overlays = document.querySelectorAll('div[style*="z-index:1500"]');
+                        const overlay = overlays[overlays.length - 1];
+                        if (overlay) {
+                            const returnToQuiz = () => { switchToTab('quiz'); loadTabData('quiz'); };
+                            const origRemove = overlay.remove.bind(overlay);
+                            overlay.remove = function() { origRemove(); returnToQuiz(); };
+                        }
+                    }, 50);
+                }
             }, 300);
         }
 

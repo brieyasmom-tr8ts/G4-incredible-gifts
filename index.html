@@ -3574,7 +3574,7 @@
                 const user = await apiGet('/api/users/' + userId);
                 if (!user || user.error) return;
 
-                const displayName = user.last_initial ? `${user.first_name} ${user.last_initial}.` : user.first_name;
+                const displayName = user.last_name ? `${user.first_name} ${user.last_name}` : (user.last_initial ? `${user.first_name} ${user.last_initial}.` : user.first_name);
 
                 const overlay = document.createElement('div');
                 overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:1500;display:flex;align-items:center;justify-content:center;padding:20px;';

@@ -360,7 +360,7 @@ export default {
         let user;
         try {
           user = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, is_speaker, created_at FROM users WHERE id = ?'
+            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, is_speaker, created_at FROM users WHERE id = ?'
           ).bind(userId).first();
         } catch (e) {
           user = await env.DB.prepare(
@@ -375,6 +375,7 @@ export default {
           id: user.id,
           first_name: user.first_name,
           last_initial: user.last_initial,
+          last_name: user.last_name || '',
           photo_data: user.photo_data || '',
           email: (isOwner || user.show_email) ? user.email : '',
           phone: (isOwner || user.show_phone) ? user.phone : '',

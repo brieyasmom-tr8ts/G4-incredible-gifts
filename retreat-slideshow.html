@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G4 2026 - Retreat Slideshow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #2a2320 0%, #1a1a1a 40%, #1e2a1e 100%);
+            color: white;
+            font-family: 'Cormorant Garamond', serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Start screen */
+        .start-screen {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+        .start-icon { font-size: 4rem; margin-bottom: 16px; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .start-title { font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 700; margin-bottom: 6px; }
+        .start-subtitle { font-size: 1.15rem; color: rgba(255,255,255,0.65); margin-bottom: 24px; font-style: italic; }
+        .start-count { font-size: 1rem; color: rgba(255,255,255,0.55); margin-bottom: 22px; }
+
+        .filter-section { margin-bottom: 18px; max-width: 540px; width: 100%; }
+        .filter-section-label { font-size: 0.85rem; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+        .filter-row {
+            display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            background: rgba(255,255,255,0.06);
+            color: rgba(255,255,255,0.6);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.92rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn.active { background: rgba(201,144,138,0.3); border-color: rgba(201,144,138,0.55); color: white; }
+
+        .speed-row { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+        .speed-label { font-size: 0.95rem; color: rgba(255,255,255,0.65); }
+        .speed-input {
+            width: 70px; padding: 8px 10px; border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px; background: rgba(255,255,255,0.1); color: white;
+            font-family: 'Cormorant Garamond', serif; font-size: 1rem; text-align: center;
+        }
+
+        .start-btn {
+            padding: 16px 40px;
+            border: 2px solid rgba(201,144,138,0.5);
+            border-radius: 14px;
+            background: rgba(201,144,138,0.18);
+            color: white;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .start-btn:hover { background: rgba(201,144,138,0.32); border-color: rgba(201,144,138,0.7); }
+        .start-error { margin-top: 14px; color: #e6a39a; font-size: 0.95rem; min-height: 1.2em; }
+
+        /* Slides */
+        .slide {
+            position: absolute;
+            inset: 0;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            padding: 40px 30px 130px;
+        }
+        .slide.active { display: flex; opacity: 1; }
+
+        .slide-kicker {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: rgba(201,144,138,0.85);
+            margin-bottom: 18px;
+        }
+        .slide-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.6rem;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.15;
+            margin-bottom: 14px;
+            max-width: 90vw;
+        }
+        .slide-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1.4rem;
+            color: rgba(255,255,255,0.75);
+            text-align: center;
+            margin-bottom: 22px;
+            max-width: 80vw;
+        }
+        .slide-body {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            line-height: 1.5;
+            max-width: 800px;
+        }
+        .slide-attribution {
+            margin-top: 22px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            color: rgba(201,144,138,0.85);
+            font-weight: 600;
+        }
+
+        .slide-photo {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid rgba(201,144,138,0.5);
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+            margin-bottom: 22px;
+            background: rgba(255,255,255,0.06);
+        }
+        .slide-photo-large {
+            max-width: 78vw;
+            max-height: 58vh;
+            border-radius: 16px;
+            object-fit: contain;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+            margin-bottom: 22px;
+        }
+
+        .name-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px 20px;
+            max-width: 90vw;
+            margin-top: 8px;
+        }
+        .name-pill {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 24px;
+            background: rgba(201,144,138,0.18);
+            border: 1px solid rgba(201,144,138,0.4);
+        }
+
+        .wyr-options {
+            display: flex;
+            gap: 30px;
+            margin: 18px 0 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 92vw;
+        }
+        .wyr-option {
+            flex: 1 1 280px;
+            min-width: 260px;
+            max-width: 380px;
+            padding: 22px 20px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.06);
+            border: 1.5px solid rgba(255,255,255,0.15);
+        }
+        .wyr-option-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: rgba(255,255,255,0.95);
+        }
+        .wyr-option-pct {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.05rem;
+            color: rgba(201,144,138,0.85);
+            margin-bottom: 10px;
+        }
+        .wyr-voters {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            color: rgba(255,255,255,0.7);
+            font-style: italic;
+            line-height: 1.4;
+        }
+        .vs-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.4rem;
+            color: rgba(201,144,138,0.7);
+        }
+
+        .leaderboard {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+            min-width: 320px;
+        }
+        .leaderboard-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 18px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            gap: 30px;
+        }
+        .leaderboard-rank {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            color: rgba(201,144,138,0.85);
+            min-width: 30px;
+        }
+        .leaderboard-name { flex: 1; text-align: left; color: white; }
+        .leaderboard-score { font-family: 'Playfair Display', serif; font-weight: 700; color: white; }
+
+        .quote-mark {
+            font-family: 'Playfair Display', serif;
+            font-size: 5rem;
+            color: rgba(201,144,138,0.4);
+            line-height: 0.5;
+            margin-bottom: 6px;
+        }
+
+        /* Counter + Up Next + Controls */
+        .slide-counter {
+            position: fixed;
+            top: 16px;
+            right: 20px;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.4);
+            z-index: 50;
+            font-family: 'Cormorant Garamond', serif;
+        }
+        .upnext-panel {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            max-width: 320px;
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.55);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            font-family: 'Cormorant Garamond', serif;
+            z-index: 55;
+            backdrop-filter: blur(6px);
+        }
+        .upnext-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: rgba(201,144,138,0.85);
+            margin-bottom: 4px;
+        }
+        .upnext-text {
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.9);
+            line-height: 1.3;
+        }
+        .upnext-skip-btn {
+            margin-top: 8px;
+            padding: 6px 12px;
+            background: rgba(201,144,138,0.25);
+            border: 1px solid rgba(201,144,138,0.45);
+            color: white;
+            border-radius: 8px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upnext-skip-btn:hover { background: rgba(201,144,138,0.4); }
+
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.7));
+            z-index: 50;
+            flex-wrap: wrap;
+        }
+        .ctrl-btn {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ctrl-btn:hover { background: rgba(255,255,255,0.2); }
+        .ctrl-btn.skip { background: rgba(201,144,138,0.22); border-color: rgba(201,144,138,0.45); }
+        .ctrl-btn.skip:hover { background: rgba(201,144,138,0.38); }
+
+        .keyhint {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.35);
+            font-family: 'Cormorant Garamond', serif;
+            z-index: 49;
+            pointer-events: none;
+        }
+
+        @media (max-width: 700px) {
+            .slide-title { font-size: 1.9rem; }
+            .slide-body { font-size: 1.2rem; }
+            .upnext-panel { max-width: 220px; padding: 8px 12px; }
+            .upnext-text { font-size: 0.85rem; }
+            .name-pill { font-size: 1.1rem; padding: 6px 14px; }
+            .wyr-options { gap: 14px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Start Screen -->
+<div class="start-screen" id="start-screen">
+    <div class="start-icon">✨</div>
+    <div class="start-title">G4 2026 Retreat Slideshow</div>
+    <div class="start-subtitle">A welcome loop for the morning gathering</div>
+    <div class="start-count" id="start-count">Loading content…</div>
+
+    <div class="filter-section">
+        <div class="filter-section-label">Include in slideshow</div>
+        <div class="filter-row" id="category-filters"></div>
+    </div>
+
+    <div class="speed-row">
+        <span class="speed-label">Seconds per slide:</span>
+        <input type="number" class="speed-input" id="speed-input" value="8" min="3" max="60">
+    </div>
+
+    <button class="start-btn" onclick="startSlideshow()">Start Slideshow</button>
+    <div class="start-error" id="start-error"></div>
+</div>
+
+<!-- Slideshow -->
+<div id="slideshow" style="display:none;">
+    <div class="upnext-panel" id="upnext-panel">
+        <div class="upnext-label">Up next</div>
+        <div class="upnext-text" id="upnext-text">—</div>
+        <button class="upnext-skip-btn" onclick="skipNext()">Skip this one</button>
+    </div>
+    <div class="slide-counter" id="slide-counter"></div>
+    <div id="slides-container"></div>
+    <div class="keyhint">← back · space next · S skip next · P pause · Esc exit</div>
+    <div class="controls">
+        <button class="ctrl-btn" onclick="prevSlide()">◀ Back</button>
+        <button class="ctrl-btn" id="pause-btn" onclick="togglePause()">Pause</button>
+        <button class="ctrl-btn" onclick="nextSlide()">Next ▶</button>
+        <button class="ctrl-btn skip" onclick="skipNext()">Skip Next</button>
+        <button class="ctrl-btn" onclick="exitSlideshow()">Exit</button>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
+
+    // Categories the user can toggle on/off from the start screen
+    const CATEGORIES = [
+        { key: 'welcome',     label: 'Welcome',         default: true  },
+        { key: 'firsttimers', label: 'First-Timers',    default: true  },
+        { key: 'team',        label: 'Meet the Team',   default: true  },
+        { key: 'speakers',    label: 'Speakers',        default: true  },
+        { key: 'worship',     label: 'Worship Team',    default: true  },
+        { key: 'profile',     label: 'Meet Everyone',   default: true  },
+        { key: 'wyr',         label: 'Would You Rather',default: true  },
+        { key: 'poll',        label: 'Polls',           default: true  },
+        { key: 'encouragement', label: 'Encouragement', default: true  },
+        { key: 'moment',      label: 'Photo Moments',   default: true  },
+        { key: 'funfact',     label: 'Fun Facts',       default: true  },
+        { key: 'packing',     label: 'Packing Scores',  default: true  }
+    ];
+
+    let activeCategories = new Set(CATEGORIES.filter(c => c.default).map(c => c.key));
+    let allSlides = [];     // queue of slide objects (after shuffle)
+    let currentIndex = 0;
+    let timer = null;
+    let paused = false;
+
+    function escHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str == null ? '' : String(str);
+        return d.innerHTML;
+    }
+
+    function shuffle(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    function buildCategoryFilters() {
+        const row = document.getElementById('category-filters');
+        row.innerHTML = '';
+        CATEGORIES.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'filter-btn' + (activeCategories.has(cat.key) ? ' active' : '');
+            btn.textContent = cat.label;
+            btn.onclick = () => {
+                if (activeCategories.has(cat.key)) {
+                    activeCategories.delete(cat.key);
+                    btn.classList.remove('active');
+                } else {
+                    activeCategories.add(cat.key);
+                    btn.classList.add('active');
+                }
+            };
+            row.appendChild(btn);
+        });
+    }
+
+    // ---- Data fetching (graceful — any failure just yields empty) ----
+    async function safeFetch(path) {
+        try {
+            const res = await fetch(API_URL + path);
+            if (!res.ok) return null;
+            return await res.json();
+        } catch (e) { return null; }
+    }
+
+    async function loadAll() {
+        const [users, wyr, polls, messages, moments, funfacts, packing, announcement] = await Promise.all([
+            safeFetch('/api/users/directory'),
+            safeFetch('/api/games/wyr/feed'),
+            safeFetch('/api/polls/feed'),
+            safeFetch('/api/messages'),
+            safeFetch('/api/moments'),
+            safeFetch('/api/games/funfacts'),
+            safeFetch('/api/games/packing'),
+            safeFetch('/api/announcements/active')
+        ]);
+        return {
+            users: users || [],
+            wyr: wyr || [],
+            polls: polls || [],
+            messages: messages || [],
+            moments: moments || [],
+            funfacts: funfacts || [],
+            packing: packing || [],
+            announcement: announcement || null
+        };
+    }
+
+    // ---- First-time detection (best-effort heuristic) ----
+    function isFirstTimer(u) {
+        if (!u) return false;
+        const ry = (u.retreat_years || '').trim().toLowerCase();
+        if (!ry) return true;                    // empty = unknown, treat as first-time
+        if (/first|1st/.test(ry)) return true;
+        if (/^2026$/.test(ry)) return true;      // only this retreat listed
+        return false;
+    }
+
+    function fullName(u) {
+        const last = (u.last_name && u.last_name.length > 1) ? (' ' + u.last_name) : (u.last_initial ? (' ' + u.last_initial + '.') : '');
+        return (u.first_name || '') + last;
+    }
+
+    // ---- Slide builders ----
+    function makeSlides(data) {
+        const slides = [];
+
+        // Welcome slide
+        if (activeCategories.has('welcome')) {
+            slides.push({
+                type: 'welcome',
+                summary: 'Welcome message',
+                html: `
+                    <div class="slide-kicker">G4 Women's Retreat</div>
+                    <div class="slide-title">Welcome, Sisters</div>
+                    <div class="slide-subtitle">"Every good and perfect gift is from above" — James 1:17</div>
+                    <div class="slide-body">So glad you're here. Settle in, grab some coffee, and look around at these beautiful faces.</div>
+                `
+            });
+        }
+
+        // Active announcement
+        if (activeCategories.has('welcome') && data.announcement && data.announcement.message) {
+            slides.push({
+                type: 'announcement',
+                summary: 'Announcement',
+                html: `
+                    <div class="slide-kicker">Announcement</div>
+                    <div class="slide-title">${escHtml(data.announcement.message)}</div>
+                `
+            });
+        }
+
+        // First-timers
+        if (activeCategories.has('firsttimers')) {
+            const firsts = data.users.filter(isFirstTimer);
+            if (firsts.length) {
+                slides.push({
+                    type: 'firsttimers',
+                    summary: `First-time G4 girls (${firsts.length})`,
+                    html: `
+                        <div class="slide-kicker">A warm welcome to</div>
+                        <div class="slide-title">Our First-Time G4 Girls</div>
+                        <div class="slide-subtitle">We are so glad you're with us this year</div>
+                        <div class="name-grid">
+                            ${firsts.map(u => `<div class="name-pill">${escHtml(fullName(u))}</div>`).join('')}
+                        </div>
+                    `
+                });
+            }
+        }
+
+        // Meet the team
+        if (activeCategories.has('team')) {
+            const team = data.users.filter(u => u.is_team);
+            if (team.length) {
+                slides.push({
+                    type: 'team',
+                    summary: `Meet the Team (${team.length})`,
+                    html: `
+                        <div class="slide-kicker">Behind the scenes</div>
+                        <div class="slide-title">Meet the Team</div>
+                        <div class="slide-subtitle">The women making this weekend happen</div>
+                        <div class="name-grid">
+                            ${team.map(u => `<div class="name-pill">${escHtml(fullName(u))}</div>`).join('')}
+                        </div>
+                    `
+                });
+            }
+        }
+
+        // Worship team
+        if (activeCategories.has('worship')) {
+            const worship = data.users.filter(u => u.is_worship);
+            if (worship.length) {
+                slides.push({
+                    type: 'worship',
+                    summary: `Worship Team (${worship.length})`,
+                    html: `
+                        <div class="slide-kicker">Leading us in song</div>
+                        <div class="slide-title">The Worship Team</div>
+                        <div class="slide-subtitle">"Sing to the Lord a new song"</div>
+                        <div class="name-grid">
+                            ${worship.map(u => `<div class="name-pill">${escHtml(fullName(u))}</div>`).join('')}
+                        </div>
+                    `
+                });
+            }
+        }
+
+        // Speakers
+        if (activeCategories.has('speakers')) {
+            const speakers = data.users.filter(u => u.is_speaker);
+            speakers.forEach(s => {
+                slides.push({
+                    type: 'speakers',
+                    summary: `Speaker: ${fullName(s)}`,
+                    html: `
+                        <div class="slide-kicker">Speaker</div>
+                        ${s.photo_data ? `<img class="slide-photo" src="${s.photo_data}" alt="">` : ''}
+                        <div class="slide-title">${escHtml(fullName(s))}</div>
+                        ${s.church ? `<div class="slide-subtitle">${escHtml(s.church)}</div>` : ''}
+                        ${s.about ? `<div class="slide-body">${escHtml(s.about)}</div>` : ''}
+                    `
+                });
+            });
+        }
+
+        // Individual profile spotlights — random sample
+        if (activeCategories.has('profile')) {
+            const withPhoto = data.users.filter(u => u.photo_data && !u.is_speaker);
+            withPhoto.forEach(u => {
+                const bits = [];
+                if (u.location) bits.push(u.location);
+                if (u.church)   bits.push(u.church);
+                slides.push({
+                    type: 'profile',
+                    summary: `Spotlight: ${fullName(u)}`,
+                    html: `
+                        <div class="slide-kicker">A G4 Sister</div>
+                        <img class="slide-photo" src="${u.photo_data}" alt="">
+                        <div class="slide-title">${escHtml(fullName(u))}</div>
+                        ${bits.length ? `<div class="slide-subtitle">${escHtml(bits.join(' · '))}</div>` : ''}
+                        ${u.about ? `<div class="slide-body">"${escHtml(u.about)}"</div>` : ''}
+                    `
+                });
+            });
+        }
+
+        // Would You Rather poll results
+        if (activeCategories.has('wyr')) {
+            data.wyr.forEach(q => {
+                const votersA = (q.voters_a || []).join(', ') || '—';
+                const votersB = (q.voters_b || []).join(', ') || '—';
+                slides.push({
+                    type: 'wyr',
+                    summary: `Would You Rather: ${q.option_a} or ${q.option_b}`,
+                    html: `
+                        <div class="slide-kicker">Would You Rather</div>
+                        <div class="slide-title">${escHtml(q.option_a)} <span style="color:rgba(201,144,138,0.7);font-style:italic;font-weight:400;">or</span> ${escHtml(q.option_b)}?</div>
+                        <div class="wyr-options">
+                            <div class="wyr-option">
+                                <div class="wyr-option-label">${escHtml(q.option_a)}</div>
+                                <div class="wyr-option-pct">${q.pct_a || 0}% · ${q.count_a || 0} vote${q.count_a === 1 ? '' : 's'}</div>
+                                <div class="wyr-voters">${escHtml(votersA)}</div>
+                            </div>
+                            <div class="wyr-option">
+                                <div class="wyr-option-label">${escHtml(q.option_b)}</div>
+                                <div class="wyr-option-pct">${q.pct_b || 0}% · ${q.count_b || 0} vote${q.count_b === 1 ? '' : 's'}</div>
+                                <div class="wyr-voters">${escHtml(votersB)}</div>
+                            </div>
+                        </div>
+                    `
+                });
+            });
+        }
+
+        // Polls
+        if (activeCategories.has('poll')) {
+            data.polls.forEach(p => {
+                const responses = (p.responses || []).slice(0, 12);
+                slides.push({
+                    type: 'poll',
+                    summary: `Poll: ${p.question}`,
+                    html: `
+                        <div class="slide-kicker">Poll</div>
+                        <div class="slide-title">${escHtml(p.question)}</div>
+                        <div class="leaderboard">
+                            ${responses.map(r => `
+                                <div class="leaderboard-row">
+                                    <div class="leaderboard-name">${escHtml(r.user_name || 'Anonymous')}</div>
+                                    <div class="leaderboard-score" style="font-weight:400;font-style:italic;">${escHtml(r.response)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `
+                });
+            });
+        }
+
+        // Encouragement messages (NOT prayer requests)
+        if (activeCategories.has('encouragement')) {
+            const encouragements = data.messages.filter(m => m.type === 'encouragement');
+            encouragements.forEach(m => {
+                const tagged = m.tagged_name ? ` to ${m.tagged_name}` : '';
+                slides.push({
+                    type: 'encouragement',
+                    summary: `Encouragement from ${m.author_name}${tagged}`,
+                    html: `
+                        <div class="slide-kicker">Encouragement${m.tagged_name ? ' for ' + escHtml(m.tagged_name) : ''}</div>
+                        <div class="quote-mark">"</div>
+                        <div class="slide-body">${escHtml(m.message)}</div>
+                        <div class="slide-attribution">— ${escHtml(m.author_name || 'Anonymous')}</div>
+                    `
+                });
+            });
+        }
+
+        // Photo moments
+        if (activeCategories.has('moment')) {
+            data.moments.filter(m => m.photo_data).forEach(m => {
+                slides.push({
+                    type: 'moment',
+                    summary: `Photo from ${m.author_name || 'a sister'}${m.caption ? ' — ' + m.caption.slice(0, 40) : ''}`,
+                    html: `
+                        <div class="slide-kicker">A Moment</div>
+                        <img class="slide-photo-large" src="${m.photo_data}" alt="">
+                        ${m.caption ? `<div class="slide-subtitle">"${escHtml(m.caption)}"</div>` : ''}
+                        <div class="slide-attribution">— ${escHtml(m.author_name || 'Anonymous')}</div>
+                    `
+                });
+            });
+        }
+
+        // Fun facts
+        if (activeCategories.has('funfact')) {
+            data.funfacts.forEach(f => {
+                slides.push({
+                    type: 'funfact',
+                    summary: `Fun fact from ${f.author_name}`,
+                    html: `
+                        <div class="slide-kicker">Did you know?</div>
+                        <div class="slide-title" style="font-size:2rem;">A fun fact about ${escHtml(f.author_name || 'one of us')}</div>
+                        <div class="slide-body" style="margin-top:14px;">${escHtml(f.fact)}</div>
+                    `
+                });
+            });
+        }
+
+        // Packing leaderboard
+        if (activeCategories.has('packing') && data.packing.length) {
+            const top = data.packing.slice(0, 10);
+            slides.push({
+                type: 'packing',
+                summary: `Packing Game Leaderboard (top ${top.length})`,
+                html: `
+                    <div class="slide-kicker">Packing Game</div>
+                    <div class="slide-title">Top Packers</div>
+                    <div class="leaderboard">
+                        ${top.map((p, i) => `
+                            <div class="leaderboard-row">
+                                <div class="leaderboard-rank">${i + 1}</div>
+                                <div class="leaderboard-name">${escHtml(p.author_name || 'Anonymous')}</div>
+                                <div class="leaderboard-score">${p.score}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `
+            });
+        }
+
+        return shuffle(slides);
+    }
+
+    // ---- Slideshow rendering ----
+    function renderSlide(slide) {
+        const el = document.createElement('div');
+        el.className = 'slide';
+        el.innerHTML = slide.html;
+        return el;
+    }
+
+    function showSlideAt(index) {
+        const container = document.getElementById('slides-container');
+        // remove old slides (we render lazily — only the active one + neighbors live in DOM)
+        container.innerHTML = '';
+        if (!allSlides.length) return;
+        index = ((index % allSlides.length) + allSlides.length) % allSlides.length;
+        currentIndex = index;
+        const node = renderSlide(allSlides[index]);
+        node.classList.add('active');
+        container.appendChild(node);
+
+        document.getElementById('slide-counter').textContent = (index + 1) + ' / ' + allSlides.length;
+        updateUpNext();
+    }
+
+    function updateUpNext() {
+        const upText = document.getElementById('upnext-text');
+        if (allSlides.length < 2) {
+            upText.textContent = '—';
+            return;
+        }
+        const nextIdx = (currentIndex + 1) % allSlides.length;
+        upText.textContent = allSlides[nextIdx].summary || allSlides[nextIdx].type;
+    }
+
+    function nextSlide() {
+        if (!allSlides.length) return;
+        showSlideAt(currentIndex + 1);
+        if (!paused) restartTimer();
+    }
+
+    function prevSlide() {
+        if (!allSlides.length) return;
+        showSlideAt(currentIndex - 1);
+        if (!paused) restartTimer();
+    }
+
+    // Skip removes the upcoming slide from the queue entirely (for this run)
+    function skipNext() {
+        if (allSlides.length < 2) return;
+        const nextIdx = (currentIndex + 1) % allSlides.length;
+        allSlides.splice(nextIdx, 1);
+        // currentIndex stays the same — the slide AFTER it is now at nextIdx
+        // unless we removed something at index 0 wrapping around; recompute display
+        if (currentIndex >= allSlides.length) currentIndex = 0;
+        document.getElementById('slide-counter').textContent = (currentIndex + 1) + ' / ' + allSlides.length;
+        updateUpNext();
+    }
+
+    function getSpeed() {
+        return (parseInt(document.getElementById('speed-input').value) || 8) * 1000;
+    }
+
+    function startTimer() { timer = setInterval(nextSlide, getSpeed()); }
+    function stopTimer() { if (timer) clearInterval(timer); timer = null; }
+    function restartTimer() { stopTimer(); startTimer(); }
+
+    function togglePause() {
+        paused = !paused;
+        document.getElementById('pause-btn').textContent = paused ? 'Play' : 'Pause';
+        if (paused) stopTimer(); else startTimer();
+    }
+
+    function exitSlideshow() {
+        stopTimer();
+        document.getElementById('slideshow').style.display = 'none';
+        document.getElementById('start-screen').style.display = 'flex';
+    }
+
+    async function startSlideshow() {
+        const errEl = document.getElementById('start-error');
+        errEl.textContent = '';
+        if (!activeCategories.size) {
+            errEl.textContent = 'Pick at least one category to include.';
+            return;
+        }
+        const data = window.__retreatData;
+        if (!data) {
+            errEl.textContent = 'Content is still loading…';
+            return;
+        }
+        allSlides = makeSlides(data);
+        if (!allSlides.length) {
+            errEl.textContent = 'No slides for the selected categories yet.';
+            return;
+        }
+        currentIndex = 0;
+        paused = false;
+        document.getElementById('pause-btn').textContent = 'Pause';
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('slideshow').style.display = 'block';
+        showSlideAt(0);
+        startTimer();
+    }
+
+    // ---- Init ----
+    async function init() {
+        buildCategoryFilters();
+        const data = await loadAll();
+        window.__retreatData = data;
+        const counts = [
+            data.users.length + ' women',
+            data.wyr.length + ' would-you-rathers',
+            data.polls.length + ' polls',
+            data.messages.filter(m => m.type === 'encouragement').length + ' encouragements',
+            data.moments.length + ' photos',
+            data.funfacts.length + ' fun facts'
+        ];
+        document.getElementById('start-count').textContent = counts.join(' · ');
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', e => {
+        if (document.getElementById('slideshow').style.display === 'none') return;
+        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
+        else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
+        else if (e.key === 'p' || e.key === 'P') togglePause();
+        else if (e.key === 's' || e.key === 'S') skipNext();
+        else if (e.key === 'Escape') exitSlideshow();
+    });
+
+    init();
+</script>
+</body>
+</html>

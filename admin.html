@@ -2611,16 +2611,18 @@ async function loadQuizScores() {
             const dayScores = scores.filter(s => s.day === d).sort((a, b) => b.score - a.score || a.time_seconds - b.time_seconds);
             const winner = dayScores[0];
             const colors = { 1: 'var(--sage)', 2: 'var(--blush)', 3: 'var(--accent)' };
-            winnersHtml += `<div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;background:rgba(247,240,235,0.5);border-radius:10px;">
-                <div style="width:36px;height:36px;border-radius:50%;background:${colors[d]};color:white;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;flex-shrink:0;">D${d}</div>
-                <div style="flex:1;">
-                    <div style="font-weight:600;font-size:0.95rem;">${dayNames[d]}</div>
+            // Rows are also .quiz-day-card so the delegated click listener
+            // opens the per-day leaderboard when you tap one.
+            winnersHtml += `<div class="quiz-day-card" data-quiz-day="${d}" style="cursor:pointer;display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;background:rgba(247,240,235,0.5);border-radius:10px;border:2px solid transparent;transition:all 0.2s;">
+                <div style="width:36px;height:36px;border-radius:50%;background:${colors[d]};color:white;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;flex-shrink:0;pointer-events:none;">D${d}</div>
+                <div style="flex:1;pointer-events:none;">
+                    <div style="font-weight:600;font-size:0.95rem;">${dayNames[d]} <span style="font-weight:400;color:var(--light-text);font-size:0.8rem;">· tap to see all scores</span></div>
                     ${winner
                         ? `<div style="font-size:0.85rem;color:var(--accent);font-weight:600;">🏆 ${esc(winner.user_name)} — ${winner.score}/${winner.total} (${Math.round(winner.time_seconds)}s)</div>`
                         : `<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;">No scores yet</div>`
                     }
                 </div>
-                <div style="font-size:0.8rem;color:var(--light-text);">${dayScores.length} played</div>
+                <div style="font-size:0.8rem;color:var(--light-text);pointer-events:none;">${dayScores.length} played</div>
             </div>`;
         }
         winnersEl.innerHTML = winnersHtml;

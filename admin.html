@@ -1007,6 +1007,7 @@ function authenticate() {
     document.getElementById('app').style.display = '';
     refreshAll();
     startAutoRefresh();
+    if (typeof restoreAdminSection === 'function') restoreAdminSection();
 }
 
 document.getElementById('gate-password').addEventListener('keydown', e => {
@@ -1024,6 +1025,7 @@ if (getKey() === 'g4p@ssw0rd') {
     document.getElementById('app').style.display = '';
     refreshAll();
     startAutoRefresh();
+    // restoreAdminSection is called below once the function is declared.
 }
 
 // --- API Helpers ---
@@ -1075,7 +1077,7 @@ function toggleSidebar() {
 }
 
 // --- Tabs ---
-function activateAdminSection(sectionName) {
+function activateAdminSection(sectionName, opts) {
     const tab = document.querySelector('.nav-tab[data-section="' + sectionName + '"]');
     const section = document.getElementById('section-' + sectionName);
     if (!tab || !section) return false;
@@ -1087,21 +1089,33 @@ function activateAdminSection(sectionName) {
     if (titleEl) titleEl.textContent = SECTION_TITLES[sectionName] || sectionName;
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebar-overlay').classList.remove('open');
-    try { localStorage.setItem('g4admin_section', sectionName); } catch(e) {}
+    if (!opts || opts.persist !== false) {
+        try { localStorage.setItem('g4admin_section', sectionName); } catch(e) {}
+    }
     return true;
+}
+
+function restoreAdminSection() {
+    try {
+        const saved = localStorage.getItem('g4admin_section');
+        if (saved) return activateAdminSection(saved, { persist: false });
+    } catch(e) {}
+    return false;
 }
 
 document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => activateAdminSection(tab.dataset.section));
 });
 
-// Restore the last-viewed admin section after a refresh
-(function restoreAdminSection() {
-    try {
-        const saved = localStorage.getItem('g4admin_section');
-        if (saved) activateAdminSection(saved);
-    } catch(e) {}
-})();
+// Restore the last-viewed admin section as soon as the script runs
+restoreAdminSection();
+// Restore again after the DOM has fully settled (in case anything else
+// flips the active class during early init).
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', restoreAdminSection);
+}
+// Restore on bfcache restore (mobile Safari back/forward, etc.)
+window.addEventListener('pageshow', restoreAdminSection);
 
 // --- Data Fetch ---
 async function refreshAll() {

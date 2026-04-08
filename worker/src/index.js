@@ -65,8 +65,10 @@ export default {
           `CREATE TABLE IF NOT EXISTS packing_scores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL UNIQUE,
-            user_name TEXT NOT NULL,
+            user_name TEXT DEFAULT '',
+            author_name TEXT DEFAULT '',
             score INTEGER NOT NULL,
+            answers TEXT DEFAULT '',
             created_at TEXT DEFAULT (datetime('now'))
           )`,
           `CREATE TABLE IF NOT EXISTS wyr_questions (
@@ -938,15 +940,22 @@ export default {
         if (!user_id || score === undefined) {
           return json({ error: 'user_id and score are required' }, corsHeaders, 400);
         }
-        // Upsert — one score per user
+        // Lazy migrations: older databases were created with only
+        // (user_id, user_name, score). Add the new columns if missing.
+        try { await env.DB.prepare("ALTER TABLE packing_scores ADD COLUMN author_name TEXT DEFAULT ''").run(); } catch(e) {}
+        try { await env.DB.prepare("ALTER TABLE packing_scores ADD COLUMN answers TEXT DEFAULT ''").run(); } catch(e) {}
+        // Upsert — one score per user. We write user_name as well, so any
+        // pre-existing NOT NULL constraint on legacy tables is satisfied.
         await env.DB.prepare(
-          'INSERT INTO packing_scores (user_id, author_name, score, answers) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET score = excluded.score, answers = excluded.answers, author_name = excluded.author_name'
-        ).bind(user_id, author_name || '', score, answers || '').run();
+          'INSERT INTO packing_scores (user_id, user_name, author_name, score, answers) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET score = excluded.score, answers = excluded.answers, author_name = excluded.author_name, user_name = excluded.user_name'
+        ).bind(user_id, author_name || '', author_name || '', score, answers || '').run();
         return json({ success: true }, corsHeaders);
       }
 
       // GET /api/games/packing - get packing leaderboard
       if (path === '/api/games/packing' && request.method === 'GET') {
+        try { await env.DB.prepare("ALTER TABLE packing_scores ADD COLUMN author_name TEXT DEFAULT ''").run(); } catch(e) {}
+        try { await env.DB.prepare("ALTER TABLE packing_scores ADD COLUMN answers TEXT DEFAULT ''").run(); } catch(e) {}
         const { results } = await env.DB.prepare(
           'SELECT id, user_id, author_name, score, created_at FROM packing_scores ORDER BY score DESC'
         ).all();

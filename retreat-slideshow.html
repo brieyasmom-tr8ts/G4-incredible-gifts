@@ -42,16 +42,48 @@
         }
         .filter-btn {
             padding: 8px 16px;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1.5px dashed rgba(255,255,255,0.22);
             border-radius: 20px;
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.6);
+            background: transparent;
+            color: rgba(255,255,255,0.35);
             font-family: 'Cormorant Garamond', serif;
             font-size: 0.92rem;
             cursor: pointer;
             transition: all 0.2s;
+            text-decoration: line-through;
         }
-        .filter-btn.active { background: rgba(201,144,138,0.3); border-color: rgba(201,144,138,0.55); color: white; }
+        .filter-btn.active {
+            background: rgba(201,144,138,0.35);
+            border: 1.5px solid rgba(201,144,138,0.7);
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .filter-btn.active::before { content: '✓ '; color: rgba(255,255,255,0.85); }
+
+        .filter-hint {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.45);
+            margin: -4px 0 10px;
+            font-style: italic;
+        }
+        .filter-quick {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .filter-quick-btn {
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.75);
+            border-radius: 14px;
+            font-family: 'Cormorant Garamond', serif;
+            cursor: pointer;
+        }
+        .filter-quick-btn:hover { background: rgba(255,255,255,0.16); }
 
         .speed-row { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
         .speed-label { font-size: 0.95rem; color: rgba(255,255,255,0.65); }
@@ -253,6 +285,19 @@
             margin-bottom: 6px;
         }
 
+        /* Chrome auto-hide — everything with .presenter-chrome fades out
+           after a few seconds of no mouse/key activity so the audience sees
+           a clean slideshow. Moving the mouse or pressing a key brings it
+           back. */
+        .presenter-chrome {
+            transition: opacity 0.5s ease;
+        }
+        body.chrome-hidden .presenter-chrome {
+            opacity: 0;
+            pointer-events: none;
+        }
+        body.chrome-hidden { cursor: none; }
+
         /* Counter + Up Next + Controls */
         .slide-counter {
             position: fixed;
@@ -363,7 +408,12 @@
     <div class="start-count" id="start-count">Loading content…</div>
 
     <div class="filter-section">
-        <div class="filter-section-label">Include in slideshow</div>
+        <div class="filter-section-label">Categories to include</div>
+        <div class="filter-hint">All categories are on by default. Tap a category to exclude it. A dashed, crossed-out pill means it's excluded.</div>
+        <div class="filter-quick">
+            <button type="button" class="filter-quick-btn" onclick="setAllCategories(true)">Include all</button>
+            <button type="button" class="filter-quick-btn" onclick="setAllCategories(false)">Exclude all</button>
+        </div>
         <div class="filter-row" id="category-filters"></div>
     </div>
 
@@ -372,21 +422,21 @@
         <input type="number" class="speed-input" id="speed-input" value="8" min="3" max="60">
     </div>
 
-    <button class="start-btn" onclick="startSlideshow()">Start Slideshow</button>
+    <button class="start-btn" id="start-btn" onclick="startSlideshow()" disabled style="opacity:0.6;cursor:wait;">Loading content…</button>
     <div class="start-error" id="start-error"></div>
 </div>
 
 <!-- Slideshow -->
 <div id="slideshow" style="display:none;">
-    <div class="upnext-panel" id="upnext-panel">
-        <div class="upnext-label">Up next</div>
+    <div class="upnext-panel presenter-chrome" id="upnext-panel">
+        <div class="upnext-label">Up next (host only)</div>
         <div class="upnext-text" id="upnext-text">—</div>
         <button class="upnext-skip-btn" onclick="skipNext()">Skip this one</button>
     </div>
-    <div class="slide-counter" id="slide-counter"></div>
+    <div class="slide-counter presenter-chrome" id="slide-counter"></div>
     <div id="slides-container"></div>
-    <div class="keyhint">← back · space next · S skip next · P pause · Esc exit</div>
-    <div class="controls">
+    <div class="keyhint presenter-chrome">← back · space next · S skip next · P pause · H hide chrome · Esc exit</div>
+    <div class="controls presenter-chrome">
         <button class="ctrl-btn" onclick="prevSlide()">◀ Back</button>
         <button class="ctrl-btn" id="pause-btn" onclick="togglePause()">Pause</button>
         <button class="ctrl-btn" onclick="nextSlide()">Next ▶</button>
@@ -441,6 +491,7 @@
         CATEGORIES.forEach(cat => {
             const btn = document.createElement('button');
             btn.type = 'button';
+            btn.dataset.catKey = cat.key;
             btn.className = 'filter-btn' + (activeCategories.has(cat.key) ? ' active' : '');
             btn.textContent = cat.label;
             btn.onclick = () => {
@@ -453,6 +504,19 @@
                 }
             };
             row.appendChild(btn);
+        });
+    }
+
+    function setAllCategories(on) {
+        document.querySelectorAll('#category-filters .filter-btn').forEach(btn => {
+            const key = btn.dataset.catKey;
+            if (on) {
+                activeCategories.add(key);
+                btn.classList.add('active');
+            } else {
+                activeCategories.delete(key);
+                btn.classList.remove('active');
+            }
         });
     }
 
@@ -503,22 +567,57 @@
         return (u.first_name || '') + last;
     }
 
+    // Static welcome/scripture slides — used both for the "welcome" category
+    // and as a guaranteed fallback if every data source is empty.
+    const STATIC_WELCOME_SLIDES = [
+        {
+            type: 'welcome',
+            summary: 'Welcome, Sisters',
+            html: `
+                <div class="slide-kicker">G4 Women's Retreat</div>
+                <div class="slide-title">Welcome, Sisters</div>
+                <div class="slide-subtitle">"Every good and perfect gift is from above" — James 1:17</div>
+                <div class="slide-body">So glad you're here. Settle in, grab some coffee, and look around at these beautiful faces.</div>
+            `
+        },
+        {
+            type: 'welcome',
+            summary: 'Scripture — James 1:17',
+            html: `
+                <div class="slide-kicker">Scripture</div>
+                <div class="slide-title">Every Good &amp; Perfect Gift</div>
+                <div class="slide-body" style="font-style:italic;">"Every good and perfect gift is from above, coming down from the Father of the heavenly lights, who does not change like shifting shadows."</div>
+                <div class="slide-attribution">James 1:17</div>
+            `
+        },
+        {
+            type: 'welcome',
+            summary: 'Good morning',
+            html: `
+                <div class="slide-kicker">Good Morning</div>
+                <div class="slide-title">Grab a cup of coffee</div>
+                <div class="slide-subtitle">Find a friend · Find a seat · Take a deep breath</div>
+                <div class="slide-body">Today is a gift. We're so glad you're here.</div>
+            `
+        },
+        {
+            type: 'welcome',
+            summary: 'G4 2026',
+            html: `
+                <div class="slide-kicker">G4 2026</div>
+                <div class="slide-title">Incredible Gifts</div>
+                <div class="slide-subtitle">A weekend of worship, laughter, and sisterhood</div>
+            `
+        }
+    ];
+
     // ---- Slide builders ----
     function makeSlides(data) {
         const slides = [];
 
-        // Welcome slide
+        // Welcome slides (always 4 static ones when the welcome category is on)
         if (activeCategories.has('welcome')) {
-            slides.push({
-                type: 'welcome',
-                summary: 'Welcome message',
-                html: `
-                    <div class="slide-kicker">G4 Women's Retreat</div>
-                    <div class="slide-title">Welcome, Sisters</div>
-                    <div class="slide-subtitle">"Every good and perfect gift is from above" — James 1:17</div>
-                    <div class="slide-body">So glad you're here. Settle in, grab some coffee, and look around at these beautiful faces.</div>
-                `
-            });
+            STATIC_WELCOME_SLIDES.forEach(s => slides.push(s));
         }
 
         // Active announcement
@@ -827,6 +926,9 @@
 
     function exitSlideshow() {
         stopTimer();
+        document.body.classList.remove('chrome-hidden');
+        if (chromeHideTimer) clearTimeout(chromeHideTimer);
+        chromeManuallyHidden = false;
         document.getElementById('slideshow').style.display = 'none';
         document.getElementById('start-screen').style.display = 'flex';
     }
@@ -838,14 +940,24 @@
             errEl.textContent = 'Pick at least one category to include.';
             return;
         }
-        const data = window.__retreatData;
-        if (!data) {
-            errEl.textContent = 'Content is still loading…';
+        // If data is still loading, use an empty dataset — welcome fallback slides still work.
+        const data = window.__retreatData || {
+            users: [], wyr: [], polls: [], messages: [],
+            moments: [], funfacts: [], packing: [], announcement: null
+        };
+        try {
+            allSlides = makeSlides(data);
+        } catch (e) {
+            console.error('makeSlides error:', e);
+            errEl.textContent = 'Error building slides: ' + (e && e.message ? e.message : e);
             return;
         }
-        allSlides = makeSlides(data);
+        // Guaranteed fallback — if somehow nothing produced slides, show the welcome set.
         if (!allSlides.length) {
-            errEl.textContent = 'No slides for the selected categories yet.';
+            allSlides = shuffle([...STATIC_WELCOME_SLIDES]);
+        }
+        if (!allSlides.length) {
+            errEl.textContent = 'No slides to show. Try enabling "Welcome" at the top.';
             return;
         }
         currentIndex = 0;
@@ -853,33 +965,80 @@
         document.getElementById('pause-btn').textContent = 'Pause';
         document.getElementById('start-screen').style.display = 'none';
         document.getElementById('slideshow').style.display = 'block';
+        chromeManuallyHidden = false;
+        document.body.classList.remove('chrome-hidden');
         showSlideAt(0);
         startTimer();
+        showChrome(); // starts the idle-hide timer
     }
 
     // ---- Init ----
     async function init() {
         buildCategoryFilters();
-        const data = await loadAll();
+        const startBtn = document.getElementById('start-btn');
+        const errEl = document.getElementById('start-error');
+        let data;
+        try {
+            data = await loadAll();
+        } catch (e) {
+            console.error('loadAll error:', e);
+            errEl.textContent = 'Could not load content: ' + (e && e.message ? e.message : e) + ' — you can still start with welcome slides.';
+            data = { users: [], wyr: [], polls: [], messages: [], moments: [], funfacts: [], packing: [], announcement: null };
+        }
         window.__retreatData = data;
+        const encourageCount = (data.messages || []).filter(m => m.type === 'encouragement').length;
         const counts = [
-            data.users.length + ' women',
-            data.wyr.length + ' would-you-rathers',
-            data.polls.length + ' polls',
-            data.messages.filter(m => m.type === 'encouragement').length + ' encouragements',
-            data.moments.length + ' photos',
-            data.funfacts.length + ' fun facts'
+            (data.users || []).length + ' women',
+            (data.wyr || []).length + ' would-you-rathers',
+            (data.polls || []).length + ' polls',
+            encourageCount + ' encouragements',
+            (data.moments || []).length + ' photos',
+            (data.funfacts || []).length + ' fun facts'
         ];
         document.getElementById('start-count').textContent = counts.join(' · ');
+        startBtn.disabled = false;
+        startBtn.style.opacity = '1';
+        startBtn.style.cursor = 'pointer';
+        startBtn.textContent = 'Start Slideshow';
     }
+
+    // ---- Chrome auto-hide (so the audience doesn't see Up Next / controls) ----
+    let chromeHideTimer = null;
+    let chromeManuallyHidden = false;
+    const CHROME_IDLE_MS = 3500;
+
+    function showChrome() {
+        if (chromeManuallyHidden) return;
+        document.body.classList.remove('chrome-hidden');
+        if (chromeHideTimer) clearTimeout(chromeHideTimer);
+        chromeHideTimer = setTimeout(() => {
+            if (document.getElementById('slideshow').style.display !== 'none') {
+                document.body.classList.add('chrome-hidden');
+            }
+        }, CHROME_IDLE_MS);
+    }
+    function toggleChromeHidden() {
+        chromeManuallyHidden = !chromeManuallyHidden;
+        if (chromeManuallyHidden) {
+            document.body.classList.add('chrome-hidden');
+            if (chromeHideTimer) clearTimeout(chromeHideTimer);
+        } else {
+            document.body.classList.remove('chrome-hidden');
+            showChrome();
+        }
+    }
+    document.addEventListener('mousemove', showChrome);
+    document.addEventListener('touchstart', showChrome);
 
     // Keyboard controls
     document.addEventListener('keydown', e => {
         if (document.getElementById('slideshow').style.display === 'none') return;
+        showChrome();
         if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
         else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
         else if (e.key === 'p' || e.key === 'P') togglePause();
         else if (e.key === 's' || e.key === 'S') skipNext();
+        else if (e.key === 'h' || e.key === 'H') toggleChromeHidden();
         else if (e.key === 'Escape') exitSlideshow();
     });
 

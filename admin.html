@@ -977,20 +977,20 @@
                 <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.5rem;">🧠 Know Your Sisters Quiz</div>
                 <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">Daily quiz generated from women's profiles. Tap a day below to see every sister who took that day's quiz ranked by score.</div>
                 <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
-                    <div id="quiz-day1-card" class="quiz-day-card" onclick="showQuizDay(1)" style="cursor:pointer;padding:12px 16px;background:rgba(138,158,122,0.08);border:2px solid transparent;border-radius:10px;flex:1;min-width:140px;text-align:center;transition:all 0.2s;">
-                        <div style="font-size:0.78rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Day 1 — Tue Apr 7</div>
-                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--sage);margin-top:4px;" id="quiz-day1-count">0</div>
-                        <div style="font-size:0.8rem;color:var(--taupe);">completed</div>
+                    <div id="quiz-day1-card" class="quiz-day-card" data-quiz-day="1" style="cursor:pointer;padding:12px 16px;background:rgba(138,158,122,0.08);border:2px solid transparent;border-radius:10px;flex:1;min-width:140px;text-align:center;transition:all 0.2s;">
+                        <div style="font-size:0.78rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;pointer-events:none;">Day 1 — Tue Apr 7 · tap to see scores</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--sage);margin-top:4px;pointer-events:none;" id="quiz-day1-count">0</div>
+                        <div style="font-size:0.8rem;color:var(--taupe);pointer-events:none;">completed</div>
                     </div>
-                    <div id="quiz-day2-card" class="quiz-day-card" onclick="showQuizDay(2)" style="cursor:pointer;padding:12px 16px;background:rgba(201,144,138,0.08);border:2px solid transparent;border-radius:10px;flex:1;min-width:140px;text-align:center;transition:all 0.2s;">
-                        <div style="font-size:0.78rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Day 2 — Wed Apr 8</div>
-                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--blush);margin-top:4px;" id="quiz-day2-count">0</div>
-                        <div style="font-size:0.8rem;color:var(--taupe);">completed</div>
+                    <div id="quiz-day2-card" class="quiz-day-card" data-quiz-day="2" style="cursor:pointer;padding:12px 16px;background:rgba(201,144,138,0.08);border:2px solid transparent;border-radius:10px;flex:1;min-width:140px;text-align:center;transition:all 0.2s;">
+                        <div style="font-size:0.78rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;pointer-events:none;">Day 2 — Wed Apr 8 · tap to see scores</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--blush);margin-top:4px;pointer-events:none;" id="quiz-day2-count">0</div>
+                        <div style="font-size:0.8rem;color:var(--taupe);pointer-events:none;">completed</div>
                     </div>
-                    <div id="quiz-day3-card" class="quiz-day-card" onclick="showQuizDay(3)" style="cursor:pointer;padding:12px 16px;background:rgba(184,122,110,0.08);border:2px solid transparent;border-radius:10px;flex:1;min-width:140px;text-align:center;transition:all 0.2s;">
-                        <div style="font-size:0.78rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Day 3 — Thu Apr 9</div>
-                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--accent);margin-top:4px;" id="quiz-day3-count">0</div>
-                        <div style="font-size:0.8rem;color:var(--taupe);">completed</div>
+                    <div id="quiz-day3-card" class="quiz-day-card" data-quiz-day="3" style="cursor:pointer;padding:12px 16px;background:rgba(184,122,110,0.08);border:2px solid transparent;border-radius:10px;flex:1;min-width:140px;text-align:center;transition:all 0.2s;">
+                        <div style="font-size:0.78rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;pointer-events:none;">Day 3 — Thu Apr 9 · tap to see scores</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--accent);margin-top:4px;pointer-events:none;" id="quiz-day3-count">0</div>
+                        <div style="font-size:0.8rem;color:var(--taupe);pointer-events:none;">completed</div>
                     </div>
                 </div>
                 <div id="quiz-day-detail" style="display:none;margin-top:1rem;padding-top:1rem;border-top:1px dashed rgba(200,185,176,0.5);"></div>
@@ -2722,6 +2722,20 @@ function hideQuizDay() {
         if (card) { card.style.borderColor = 'transparent'; card.style.transform = 'none'; }
     }
 }
+
+// Expose to window so both inline handlers and the delegated listener
+// below can reach them — and make sure the delegated click listener is
+// attached once the DOM is ready, regardless of where the script loads.
+window.showQuizDay = showQuizDay;
+window.hideQuizDay = hideQuizDay;
+document.addEventListener('click', function(e) {
+    const card = e.target.closest && e.target.closest('.quiz-day-card');
+    if (!card) return;
+    const day = parseInt(card.getAttribute('data-quiz-day'), 10);
+    if (!day) return;
+    console.log('[quiz] day card clicked:', day);
+    showQuizDay(day);
+});
 
 // --- Reset All ---
 function confirmResetAll() {

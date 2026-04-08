@@ -203,6 +203,40 @@ export default {
         return json(results, corsHeaders);
       }
 
+      // GET /api/churches — list unique church names currently in use
+      // with attendee counts. Publicly readable so the profile datalist
+      // can suggest existing churches.
+      if (path === '/api/churches' && request.method === 'GET') {
+        try {
+          const { results } = await env.DB.prepare(
+            "SELECT TRIM(church) as name, COUNT(*) as count FROM users WHERE church IS NOT NULL AND TRIM(church) != '' GROUP BY LOWER(TRIM(church)) ORDER BY COUNT(*) DESC, TRIM(church) ASC"
+          ).all();
+          return json(results || [], corsHeaders);
+        } catch (e) {
+          return json([], corsHeaders);
+        }
+      }
+
+      // POST /api/admin/churches/rename — bulk-rename/merge the church
+      // field across all users. Body: { from: "old", to: "new" }. Matches
+      // case-insensitively and trims whitespace on the stored value.
+      // Passing an empty `to` clears the church on matching users.
+      if (path === '/api/admin/churches/rename' && request.method === 'POST') {
+        try {
+          const body = await request.json();
+          const from = (body.from || '').trim();
+          const to = (body.to || '').trim();
+          if (!from) return json({ error: '"from" is required' }, corsHeaders, 400);
+          const result = await env.DB.prepare(
+            "UPDATE users SET church = ? WHERE LOWER(TRIM(COALESCE(church, ''))) = ?"
+          ).bind(to, from.toLowerCase()).run();
+          const changes = (result && result.meta && typeof result.meta.changes === 'number') ? result.meta.changes : 0;
+          return json({ success: true, changes }, corsHeaders);
+        } catch (e) {
+          return json({ error: e.message || String(e) }, corsHeaders, 500);
+        }
+      }
+
       // POST /api/admin/debug-update/:id — test direct update of show_about
       const debugUpdateMatch = path.match(/^\/api\/admin\/debug-update\/(\d+)$/);
       if (debugUpdateMatch && request.method === 'POST') {

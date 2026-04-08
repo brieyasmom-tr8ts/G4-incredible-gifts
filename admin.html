@@ -605,6 +605,7 @@
         <nav class="sidebar-nav">
             <button class="nav-tab active" data-section="stats"><span class="nav-icon">📊</span> Stats</button>
             <button class="nav-tab" data-section="users"><span class="nav-icon">👥</span> Users <span class="badge" id="count-users">0</span></button>
+            <button class="nav-tab" data-section="churches"><span class="nav-icon">⛪</span> Churches</button>
             <button class="nav-tab" data-section="navmenu"><span class="nav-icon">🧭</span> Nav Menu</button>
             <button class="nav-tab" data-section="videos"><span class="nav-icon">🎬</span> Videos <span class="badge" id="count-videos">0</span></button>
             <button class="nav-tab" data-section="moments"><span class="nav-icon">📸</span> Moments <span class="badge" id="count-moments">0</span></button>
@@ -693,6 +694,24 @@
             <div class="empty-state" id="empty-users" style="display:none;">
                 <div class="icon">&#128100;</div>
                 <p>No users found</p>
+            </div>
+        </div>
+
+        <!-- Churches -->
+        <div class="section" id="section-churches">
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Clean up church names</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;line-height:1.5;">
+                    Women type their own church name, so you'll see variations like "Grace" and "Grace Seaford".
+                    Rename a church to standardize the spelling, or type an existing name to merge them.
+                    The change updates every matching user in one shot.
+                </div>
+                <button class="btn btn-refresh" onclick="loadChurches()" style="font-size:0.85rem;padding:0.4rem 0.9rem;">Refresh</button>
+            </div>
+            <div id="churches-list" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
+            <div class="empty-state" id="empty-churches" style="display:none;">
+                <div class="icon">&#9962;</div>
+                <p>No church names set yet</p>
             </div>
         </div>
 
@@ -1073,7 +1092,7 @@ function closeModal() { document.getElementById('modal').classList.remove('show'
 
 // --- Sidebar ---
 const SECTION_TITLES = {
-    stats: 'Stats', users: 'Users', navmenu: 'Nav Menu', videos: 'Videos',
+    stats: 'Stats', users: 'Users', churches: 'Churches', navmenu: 'Nav Menu', videos: 'Videos',
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
     polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme'
 };
@@ -1128,6 +1147,7 @@ window.addEventListener('pageshow', restoreAdminSection);
 async function refreshAll() {
     await Promise.allSettled([
         loadUsers(),
+        loadChurches(),
         loadVideos(),
         loadMoments(),
         loadPrayers(),
@@ -1288,6 +1308,87 @@ async function loadUsers() {
         console.error('Users:', e);
         document.getElementById('users-body').innerHTML = '';
         document.getElementById('empty-users').style.display = '';
+    }
+}
+
+// --- Churches (cleanup tool) ---
+let churchesData = [];
+async function loadChurches() {
+    try {
+        const data = await apiFetch('/api/churches');
+        churchesData = Array.isArray(data) ? data : [];
+        renderChurches();
+    } catch (e) {
+        console.error('Churches:', e);
+        churchesData = [];
+        renderChurches();
+    }
+}
+function renderChurches() {
+    const list = document.getElementById('churches-list');
+    const empty = document.getElementById('empty-churches');
+    if (!list) return;
+    if (!churchesData.length) {
+        list.innerHTML = '';
+        if (empty) empty.style.display = '';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    list.innerHTML = churchesData.map((c, i) => {
+        const name = c.name || '';
+        const count = c.count || 0;
+        const safeName = esc(name);
+        return `
+            <div style="background:white;border-radius:12px;box-shadow:var(--shadow-sm);padding:0.85rem 1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+                <div style="flex:0 0 auto;display:flex;align-items:center;gap:0.5rem;">
+                    <span style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;color:var(--dark-text);">${safeName}</span>
+                    <span style="font-size:0.78rem;color:var(--light-text);background:rgba(201,144,138,0.12);padding:2px 8px;border-radius:10px;">${count} ${count === 1 ? 'sister' : 'sisters'}</span>
+                </div>
+                <div style="flex:1;min-width:200px;display:flex;gap:0.5rem;align-items:center;">
+                    <input type="text" id="church-input-${i}" value="${safeName}" placeholder="Rename or type existing church to merge" style="flex:1;min-width:160px;padding:0.45rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.88rem;" list="churches-datalist">
+                    <button class="btn btn-refresh" style="font-size:0.8rem;padding:0.35rem 0.75rem;" onclick="applyChurchRename('${name.replace(/'/g, "\\'")}', ${i})">Save</button>
+                    <button class="btn btn-danger-outline" style="font-size:0.8rem;padding:0.35rem 0.6rem;" onclick="clearChurch('${name.replace(/'/g, "\\'")}')">Clear</button>
+                </div>
+            </div>
+        `;
+    }).join('') + `
+        <datalist id="churches-datalist">
+            ${churchesData.map(c => `<option value="${esc(c.name)}"></option>`).join('')}
+        </datalist>
+    `;
+}
+async function applyChurchRename(from, i) {
+    const input = document.getElementById('church-input-' + i);
+    if (!input) return;
+    const to = input.value.trim();
+    if (to === from.trim()) { return; }
+    if (!confirm(`Rename "${from}" to "${to || '(empty)'}" for all matching sisters?`)) return;
+    try {
+        const res = await apiFetch('/api/admin/churches/rename', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from, to })
+        });
+        if (res && res.error) { alert('Error: ' + res.error); return; }
+        await loadChurches();
+        // Users table might also show the church someday — refresh it too.
+        loadUsers();
+    } catch (e) {
+        alert('Failed to rename: ' + (e.message || e));
+    }
+}
+async function clearChurch(from) {
+    if (!confirm(`Clear "${from}" from all matching sisters? Their church will be blank.`)) return;
+    try {
+        await apiFetch('/api/admin/churches/rename', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from, to: '' })
+        });
+        await loadChurches();
+        loadUsers();
+    } catch (e) {
+        alert('Failed to clear: ' + (e.message || e));
     }
 }
 

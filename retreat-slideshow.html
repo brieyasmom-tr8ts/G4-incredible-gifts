@@ -42,16 +42,48 @@
         }
         .filter-btn {
             padding: 8px 16px;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1.5px dashed rgba(255,255,255,0.22);
             border-radius: 20px;
-            background: rgba(255,255,255,0.06);
-            color: rgba(255,255,255,0.6);
+            background: transparent;
+            color: rgba(255,255,255,0.35);
             font-family: 'Cormorant Garamond', serif;
             font-size: 0.92rem;
             cursor: pointer;
             transition: all 0.2s;
+            text-decoration: line-through;
         }
-        .filter-btn.active { background: rgba(201,144,138,0.3); border-color: rgba(201,144,138,0.55); color: white; }
+        .filter-btn.active {
+            background: rgba(201,144,138,0.35);
+            border: 1.5px solid rgba(201,144,138,0.7);
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .filter-btn.active::before { content: '✓ '; color: rgba(255,255,255,0.85); }
+
+        .filter-hint {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.45);
+            margin: -4px 0 10px;
+            font-style: italic;
+        }
+        .filter-quick {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .filter-quick-btn {
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.75);
+            border-radius: 14px;
+            font-family: 'Cormorant Garamond', serif;
+            cursor: pointer;
+        }
+        .filter-quick-btn:hover { background: rgba(255,255,255,0.16); }
 
         .speed-row { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
         .speed-label { font-size: 0.95rem; color: rgba(255,255,255,0.65); }
@@ -363,7 +395,12 @@
     <div class="start-count" id="start-count">Loading content…</div>
 
     <div class="filter-section">
-        <div class="filter-section-label">Include in slideshow</div>
+        <div class="filter-section-label">Categories to include</div>
+        <div class="filter-hint">All categories are on by default. Tap a category to exclude it. A dashed, crossed-out pill means it's excluded.</div>
+        <div class="filter-quick">
+            <button type="button" class="filter-quick-btn" onclick="setAllCategories(true)">Include all</button>
+            <button type="button" class="filter-quick-btn" onclick="setAllCategories(false)">Exclude all</button>
+        </div>
         <div class="filter-row" id="category-filters"></div>
     </div>
 
@@ -441,6 +478,7 @@
         CATEGORIES.forEach(cat => {
             const btn = document.createElement('button');
             btn.type = 'button';
+            btn.dataset.catKey = cat.key;
             btn.className = 'filter-btn' + (activeCategories.has(cat.key) ? ' active' : '');
             btn.textContent = cat.label;
             btn.onclick = () => {
@@ -453,6 +491,19 @@
                 }
             };
             row.appendChild(btn);
+        });
+    }
+
+    function setAllCategories(on) {
+        document.querySelectorAll('#category-filters .filter-btn').forEach(btn => {
+            const key = btn.dataset.catKey;
+            if (on) {
+                activeCategories.add(key);
+                btn.classList.add('active');
+            } else {
+                activeCategories.delete(key);
+                btn.classList.remove('active');
+            }
         });
     }
 

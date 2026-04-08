@@ -727,6 +727,7 @@
         { key: 'encouragement', label: 'Encouragement', default: true  },
         { key: 'moment',      label: 'Photo Moments',   default: true  },
         { key: 'funfact',     label: 'Fun Facts',       default: true  },
+        { key: 'quiz',        label: 'Daily Quiz',      default: true  },
         { key: 'packing',     label: 'Packing Scores',  default: true  }
     ];
 
@@ -808,7 +809,7 @@
     }
 
     async function loadAll() {
-        const [users, wyr, polls, messages, moments, funfacts, packing, announcement, news, weather] = await Promise.all([
+        const [users, wyr, polls, messages, moments, funfacts, packing, announcement, news, weather, quiz] = await Promise.all([
             safeFetch('/api/users/directory'),
             safeFetch('/api/games/wyr/feed'),
             safeFetch('/api/polls/feed'),
@@ -818,7 +819,8 @@
             safeFetch('/api/games/packing'),
             safeFetch('/api/announcements/active'),
             safeFetch('/api/news'),
-            fetchWeather()
+            fetchWeather(),
+            safeFetch('/api/quiz/scores')
         ]);
         return {
             users: users || [],
@@ -830,7 +832,8 @@
             packing: packing || [],
             announcement: announcement || null,
             news: news || [],
-            weather: weather || null
+            weather: weather || null,
+            quiz: quiz || []
         };
     }
 
@@ -1339,6 +1342,50 @@
                     </div>
                 `
             });
+        }
+
+        // Daily quiz leaderboards — one slide per day that has scores.
+        // Scores come back ordered by day ASC, score DESC, time ASC, so
+        // within each day we already have the winners at the top.
+        if (activeCategories.has('quiz') && data.quiz.length) {
+            const byDay = {};
+            data.quiz.forEach(s => {
+                const day = s.day != null ? s.day : 1;
+                if (!byDay[day]) byDay[day] = [];
+                byDay[day].push(s);
+            });
+            Object.keys(byDay)
+                .map(d => parseInt(d, 10))
+                .sort((a, b) => a - b)
+                .forEach(day => {
+                    const scores = byDay[day]
+                        .slice()
+                        .sort((a, b) => {
+                            if (b.score !== a.score) return b.score - a.score;
+                            return (a.time_seconds || 0) - (b.time_seconds || 0);
+                        })
+                        .slice(0, 10);
+                    if (!scores.length) return;
+                    const total = scores[0].total || 0;
+                    slides.push({
+                        type: 'quiz',
+                        summary: `Daily Quiz — Day ${day} leaderboard`,
+                        html: `
+                            <div class="slide-kicker">Daily Quiz</div>
+                            <div class="slide-title">Day ${day} Top Scorers</div>
+                            ${total ? `<div class="slide-subtitle">${total} questions</div>` : ''}
+                            <div class="leaderboard">
+                                ${scores.map((s, i) => `
+                                    <div class="leaderboard-row">
+                                        <div class="leaderboard-rank">${i + 1}</div>
+                                        <div class="leaderboard-name">${escHtml(s.user_name || 'Anonymous')}</div>
+                                        <div class="leaderboard-score">${s.score}${total ? '/' + total : ''}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `
+                    });
+                });
         }
 
         return shuffle(slides);

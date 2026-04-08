@@ -285,6 +285,19 @@
             margin-bottom: 6px;
         }
 
+        /* Chrome auto-hide — everything with .presenter-chrome fades out
+           after a few seconds of no mouse/key activity so the audience sees
+           a clean slideshow. Moving the mouse or pressing a key brings it
+           back. */
+        .presenter-chrome {
+            transition: opacity 0.5s ease;
+        }
+        body.chrome-hidden .presenter-chrome {
+            opacity: 0;
+            pointer-events: none;
+        }
+        body.chrome-hidden { cursor: none; }
+
         /* Counter + Up Next + Controls */
         .slide-counter {
             position: fixed;
@@ -415,15 +428,15 @@
 
 <!-- Slideshow -->
 <div id="slideshow" style="display:none;">
-    <div class="upnext-panel" id="upnext-panel">
-        <div class="upnext-label">Up next</div>
+    <div class="upnext-panel presenter-chrome" id="upnext-panel">
+        <div class="upnext-label">Up next (host only)</div>
         <div class="upnext-text" id="upnext-text">—</div>
         <button class="upnext-skip-btn" onclick="skipNext()">Skip this one</button>
     </div>
-    <div class="slide-counter" id="slide-counter"></div>
+    <div class="slide-counter presenter-chrome" id="slide-counter"></div>
     <div id="slides-container"></div>
-    <div class="keyhint">← back · space next · S skip next · P pause · Esc exit</div>
-    <div class="controls">
+    <div class="keyhint presenter-chrome">← back · space next · S skip next · P pause · H hide chrome · Esc exit</div>
+    <div class="controls presenter-chrome">
         <button class="ctrl-btn" onclick="prevSlide()">◀ Back</button>
         <button class="ctrl-btn" id="pause-btn" onclick="togglePause()">Pause</button>
         <button class="ctrl-btn" onclick="nextSlide()">Next ▶</button>
@@ -913,6 +926,9 @@
 
     function exitSlideshow() {
         stopTimer();
+        document.body.classList.remove('chrome-hidden');
+        if (chromeHideTimer) clearTimeout(chromeHideTimer);
+        chromeManuallyHidden = false;
         document.getElementById('slideshow').style.display = 'none';
         document.getElementById('start-screen').style.display = 'flex';
     }
@@ -949,8 +965,11 @@
         document.getElementById('pause-btn').textContent = 'Pause';
         document.getElementById('start-screen').style.display = 'none';
         document.getElementById('slideshow').style.display = 'block';
+        chromeManuallyHidden = false;
+        document.body.classList.remove('chrome-hidden');
         showSlideAt(0);
         startTimer();
+        showChrome(); // starts the idle-hide timer
     }
 
     // ---- Init ----
@@ -983,13 +1002,43 @@
         startBtn.textContent = 'Start Slideshow';
     }
 
+    // ---- Chrome auto-hide (so the audience doesn't see Up Next / controls) ----
+    let chromeHideTimer = null;
+    let chromeManuallyHidden = false;
+    const CHROME_IDLE_MS = 3500;
+
+    function showChrome() {
+        if (chromeManuallyHidden) return;
+        document.body.classList.remove('chrome-hidden');
+        if (chromeHideTimer) clearTimeout(chromeHideTimer);
+        chromeHideTimer = setTimeout(() => {
+            if (document.getElementById('slideshow').style.display !== 'none') {
+                document.body.classList.add('chrome-hidden');
+            }
+        }, CHROME_IDLE_MS);
+    }
+    function toggleChromeHidden() {
+        chromeManuallyHidden = !chromeManuallyHidden;
+        if (chromeManuallyHidden) {
+            document.body.classList.add('chrome-hidden');
+            if (chromeHideTimer) clearTimeout(chromeHideTimer);
+        } else {
+            document.body.classList.remove('chrome-hidden');
+            showChrome();
+        }
+    }
+    document.addEventListener('mousemove', showChrome);
+    document.addEventListener('touchstart', showChrome);
+
     // Keyboard controls
     document.addEventListener('keydown', e => {
         if (document.getElementById('slideshow').style.display === 'none') return;
+        showChrome();
         if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); nextSlide(); }
         else if (e.key === 'ArrowLeft') { e.preventDefault(); prevSlide(); }
         else if (e.key === 'p' || e.key === 'P') togglePause();
         else if (e.key === 's' || e.key === 'S') skipNext();
+        else if (e.key === 'h' || e.key === 'H') toggleChromeHidden();
         else if (e.key === 'Escape') exitSlideshow();
     });
 

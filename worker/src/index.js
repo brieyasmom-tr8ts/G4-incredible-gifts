@@ -1068,6 +1068,90 @@ export default {
         return json(results, corsHeaders);
       }
 
+      // ===== NEWS / REMINDERS (retreat slideshow) =====
+      // Separate from the main-app announcement banner. Multiple can be
+      // active at once; each active item becomes its own slideshow slide.
+
+      // Lazy-create the news_items table on every news-related request.
+      if (path.startsWith('/api/news')) {
+        try {
+          await env.DB.prepare(
+            `CREATE TABLE IF NOT EXISTS news_items (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              message TEXT NOT NULL,
+              icon TEXT DEFAULT '',
+              active INTEGER DEFAULT 1,
+              created_at TEXT DEFAULT (datetime('now'))
+            )`
+          ).run();
+        } catch (e) { /* already exists */ }
+      }
+
+      // GET /api/news — list active news items (public; used by slideshow)
+      if (path === '/api/news' && request.method === 'GET') {
+        try {
+          const { results } = await env.DB.prepare(
+            'SELECT id, message, icon, active, created_at FROM news_items WHERE active = 1 ORDER BY id DESC'
+          ).all();
+          return json(results || [], corsHeaders);
+        } catch (e) {
+          return json([], corsHeaders);
+        }
+      }
+
+      // GET /api/news/all — list all news items incl. inactive (admin)
+      if (path === '/api/news/all' && request.method === 'GET') {
+        try {
+          const { results } = await env.DB.prepare(
+            'SELECT id, message, icon, active, created_at FROM news_items ORDER BY id DESC LIMIT 200'
+          ).all();
+          return json(results || [], corsHeaders);
+        } catch (e) {
+          return json([], corsHeaders);
+        }
+      }
+
+      // POST /api/news — create a news item
+      if (path === '/api/news' && request.method === 'POST') {
+        try {
+          const { message, icon } = await request.json();
+          if (!message || !message.trim()) return json({ error: 'message required' }, corsHeaders, 400);
+          const result = await env.DB.prepare(
+            'INSERT INTO news_items (message, icon, active) VALUES (?, ?, 1)'
+          ).bind(message.trim(), (icon || '').trim()).run();
+          return json({ success: true, id: result.meta ? result.meta.last_row_id : null }, corsHeaders);
+        } catch (e) {
+          return json({ error: e.message || String(e) }, corsHeaders, 500);
+        }
+      }
+
+      // POST /api/news/:id/toggle — toggle active on/off
+      const newsToggleMatch = path.match(/^\/api\/news\/(\d+)\/toggle$/);
+      if (newsToggleMatch && request.method === 'POST') {
+        const id = parseInt(newsToggleMatch[1]);
+        try {
+          const current = await env.DB.prepare('SELECT active FROM news_items WHERE id = ?').bind(id).first();
+          if (!current) return json({ error: 'not found' }, corsHeaders, 404);
+          const next = current.active ? 0 : 1;
+          await env.DB.prepare('UPDATE news_items SET active = ? WHERE id = ?').bind(next, id).run();
+          return json({ success: true, active: next }, corsHeaders);
+        } catch (e) {
+          return json({ error: e.message || String(e) }, corsHeaders, 500);
+        }
+      }
+
+      // DELETE /api/news/:id — delete a news item
+      const newsDeleteMatch = path.match(/^\/api\/news\/(\d+)$/);
+      if (newsDeleteMatch && request.method === 'DELETE') {
+        const id = parseInt(newsDeleteMatch[1]);
+        try {
+          await env.DB.prepare('DELETE FROM news_items WHERE id = ?').bind(id).run();
+          return json({ success: true }, corsHeaders);
+        } catch (e) {
+          return json({ error: e.message || String(e) }, corsHeaders, 500);
+        }
+      }
+
       // ===== WOULD YOU RATHER =====
 
       // GET /api/games/wyr/questions - get all questions (admin)

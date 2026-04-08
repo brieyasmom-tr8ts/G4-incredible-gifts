@@ -1508,18 +1508,30 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
-      // GET /api/polls/feed - get recent poll responses for public display (only polls with show_responses = 1)
+      // GET /api/polls/feed - get all polls flagged to show on the polls page,
+      // including their options and any responses (polls with show_responses = 1).
+      // Polls appear here even if they have zero responses so users can answer them.
       if (path === '/api/polls/feed' && request.method === 'GET') {
         try {
-          const { results } = await env.DB.prepare(
-            `SELECT pr.user_name, pr.response, pr.created_at, p.question, p.id as poll_id, p.type
-             FROM poll_responses pr
-             JOIN polls p ON pr.poll_id = p.id
-             WHERE p.show_responses = 1
-             ORDER BY pr.created_at DESC
-             LIMIT 100`
+          const { results: polls } = await env.DB.prepare(
+            `SELECT id, question, type, options, created_at
+             FROM polls
+             WHERE show_responses = 1
+             ORDER BY id DESC`
           ).all();
-          return json(results, corsHeaders);
+
+          for (const poll of polls) {
+            poll.options = poll.options ? JSON.parse(poll.options) : [];
+            const { results: responses } = await env.DB.prepare(
+              `SELECT id, user_id, user_name, response, created_at
+               FROM poll_responses
+               WHERE poll_id = ?
+               ORDER BY created_at DESC`
+            ).bind(poll.id).all();
+            poll.responses = responses || [];
+          }
+
+          return json(polls, corsHeaders);
         } catch (e) {
           return json([], corsHeaders);
         }
@@ -1569,9 +1581,15 @@ export default {
       }
 
       // POST /api/hunt/submit - submit a photo for a prompt
+      // Uploads only allowed Friday April 10 2026, 12:00 PM ET → 5:30 PM ET
       if (path === '/api/hunt/submit' && request.method === 'POST') {
         const { user_id, user_name, prompt_id, photo_data, caption } = await request.json();
         if (!user_id || !prompt_id || !photo_data) return json({ error: 'user_id, prompt_id, photo_data required' }, corsHeaders, 400);
+        const now = new Date();
+        const uploadStart = new Date('2026-04-10T16:00:00Z'); // 12:00 PM ET
+        const uploadEnd   = new Date('2026-04-10T21:30:00Z'); // 5:30 PM ET
+        if (now < uploadStart) return json({ error: 'The hunt has not started yet!' }, corsHeaders, 400);
+        if (now >= uploadEnd) return json({ error: 'Photo uploads are closed — voting is now open!' }, corsHeaders, 400);
         await env.DB.prepare(
           'INSERT INTO hunt_submissions (user_id, user_name, prompt_id, photo_data, caption) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id, prompt_id) DO UPDATE SET photo_data = excluded.photo_data, caption = excluded.caption'
         ).bind(user_id, user_name || '', prompt_id, photo_data, caption || '').run();
@@ -1606,13 +1624,15 @@ export default {
       }
 
       // POST /api/hunt/vote - vote for a submission (one vote per prompt per user, can change)
+      // Voting only allowed Friday April 10 2026, 5:30 PM ET → 7:00 PM ET
       if (path === '/api/hunt/vote' && request.method === 'POST') {
         const { user_id, prompt_id, submission_id } = await request.json();
         if (!user_id || !prompt_id || !submission_id) return json({ error: 'user_id, prompt_id, submission_id required' }, corsHeaders, 400);
-        // Check voting cutoff (7 PM Friday April 10 2026 ET)
         const now = new Date();
-        const cutoff = new Date('2026-04-10T23:00:00Z'); // 7 PM ET = 11 PM UTC
-        if (now > cutoff) return json({ error: 'Voting has closed!' }, corsHeaders, 400);
+        const voteStart = new Date('2026-04-10T21:30:00Z'); // 5:30 PM ET
+        const voteEnd   = new Date('2026-04-10T23:00:00Z'); // 7:00 PM ET
+        if (now < voteStart) return json({ error: 'Voting opens at 5:30 PM!' }, corsHeaders, 400);
+        if (now >= voteEnd)  return json({ error: 'Voting has closed!' }, corsHeaders, 400);
         // Can't vote for your own photo
         const sub = await env.DB.prepare('SELECT user_id FROM hunt_submissions WHERE id = ?').bind(submission_id).first();
         if (sub && sub.user_id === user_id) return json({ error: "You can't vote for your own photo!" }, corsHeaders, 400);

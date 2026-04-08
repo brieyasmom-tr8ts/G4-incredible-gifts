@@ -1840,7 +1840,7 @@ async function loadPolls() {
                     </div>
                     <div style="display:flex;gap:0.4rem;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">
                         <button class="btn" style="background:var(--blush);color:white;font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="viewResponses(${p.id})">View</button>
-                        <button class="btn" style="background:${p.show_responses ? 'var(--sage)' : 'rgba(200,185,176,0.3)'};color:${p.show_responses ? 'white' : 'var(--taupe)'};font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="toggleShowResponses(${p.id}, ${p.show_responses ? 0 : 1})" title="${p.show_responses ? 'Answers are visible on the Connect > Sharing tab' : 'Click to share answers publicly'}">${p.show_responses ? '👁 Public' : '🔒 Private'}</button>
+                        <button class="btn" style="background:${p.show_responses ? 'var(--sage)' : 'rgba(200,185,176,0.3)'};color:${p.show_responses ? 'white' : 'var(--taupe)'};font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="toggleShowResponses(${p.id}, ${p.show_responses ? 0 : 1})" title="${p.show_responses ? 'Showing on the Polls tab — click to hide' : 'Hidden from the Polls tab — click to show'}">${p.show_responses ? '👁 On Polls Tab' : '🔒 Hidden'}</button>
                         ${p.active ?
                             `<button class="btn btn-danger-outline" style="font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="deactivatePoll()">Stop</button>` :
                             `<button class="btn btn-refresh" style="font-size:0.75rem;padding:0.25rem 0.6rem;" onclick="activatePoll(${p.id})">Activate</button>`

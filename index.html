@@ -4404,13 +4404,18 @@
             feed.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--light-text);font-style:italic;">Loading...</div>';
             try {
                 const showWyr = !gameSettings || gameSettings.show_wyr_on_polls !== '0';
-                const [pollResponses, wyrFeed] = await Promise.all([
+                const [pollsData, wyrFeed] = await Promise.all([
                     apiGet('/api/polls/feed').catch(() => []),
                     showWyr ? apiGet('/api/games/wyr/feed').catch(() => []) : Promise.resolve([])
                 ]);
 
+                // pollsData is now an array of polls (each with .responses); previously
+                // it was a flat list of responses. Compute total response count for badge.
+                const polls = Array.isArray(pollsData) ? pollsData : [];
+                const totalResponses = polls.reduce((sum, p) => sum + (p.responses ? p.responses.length : 0), 0);
+
                 let html = '';
-                const totalPollItems = (pollResponses ? pollResponses.length : 0) + (wyrFeed ? wyrFeed.length : 0);
+                const totalPollItems = totalResponses + (wyrFeed ? wyrFeed.length : 0);
                 updateSharingBadge(totalPollItems);
 
                 // WYR results (with inline voting for unvoted questions)
@@ -4461,33 +4466,59 @@
                     }
                 }
 
-                // Poll responses
-                if (pollResponses && pollResponses.length > 0) {
-                    const grouped = {};
-                    for (const r of pollResponses) {
-                        if (!grouped[r.poll_id]) grouped[r.poll_id] = { question: r.question, type: r.type, responses: [] };
-                        grouped[r.poll_id].responses.push(r);
-                    }
-                    const sortedGroups = Object.entries(grouped).sort((a, b) => b[0] - a[0]).map(e => e[1]);
-                    html += sortedGroups.map(group => `
-                        <div style="margin-bottom:16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);overflow:hidden;">
-                            <div style="padding:14px 16px 10px;border-bottom:1px solid rgba(139,134,128,0.08);">
-                                <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);line-height:1.4;">📊 ${escHtml(group.question)}</div>
-                                <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);margin-top:2px;">${group.responses.length} response${group.responses.length !== 1 ? 's' : ''}</div>
-                            </div>
-                            <div style="padding:8px 12px;">
-                                ${group.responses.map(r => `
+                // Polls selected by admin (each as an answerable card).
+                // If the current user hasn't answered, show inline answer UI;
+                // otherwise show the response feed.
+                const pollCards = [];
+                for (const poll of polls) {
+                    const responses = poll.responses || [];
+                    const myResponse = currentUser ? responses.find(r => r.user_id === currentUser.id) : null;
+                    const hasAnswered = !!myResponse;
+
+                    const card = document.createElement('div');
+                    card.style.cssText = 'margin-bottom:16px;background:rgba(255,255,255,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);overflow:hidden;';
+
+                    const header = `<div style="padding:14px 16px 10px;border-bottom:1px solid rgba(139,134,128,0.08);">
+                        <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);line-height:1.4;">📊 ${escHtml(poll.question)}</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);margin-top:2px;">${responses.length} response${responses.length !== 1 ? 's' : ''}</div>
+                    </div>`;
+
+                    if (!hasAnswered && currentUser) {
+                        // Show answer UI
+                        let answerUI = '';
+                        if (poll.type === 'multiple_choice' && poll.options && poll.options.length > 0) {
+                            answerUI = `<div style="padding:12px 16px;" data-poll-answer="${poll.id}">` +
+                                poll.options.map(opt => `
+                                    <button class="poll-feed-mc-btn" data-poll-id="${poll.id}" data-option="${escHtml(opt)}" style="display:block;width:100%;padding:14px 16px;margin-bottom:8px;border:2px solid rgba(201,144,138,0.25);border-radius:14px;background:rgba(255,255,255,0.8);font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;color:var(--dark-text);cursor:pointer;transition:all 0.2s;text-align:center;">${escHtml(opt)}</button>
+                                `).join('') + '</div>';
+                        } else {
+                            answerUI = `<div style="padding:12px 16px;" data-poll-answer="${poll.id}">
+                                <textarea class="poll-feed-open-input" data-poll-id="${poll.id}" placeholder="Type your answer..." style="width:100%;min-height:70px;padding:12px;border:1.5px solid var(--warm-grey);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--dark-text);resize:vertical;margin-bottom:10px;box-sizing:border-box;"></textarea>
+                                <button class="poll-feed-open-submit" data-poll-id="${poll.id}" style="display:block;width:100%;padding:12px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--blush),var(--rose));color:white;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:600;cursor:pointer;">Submit</button>
+                            </div>`;
+                        }
+                        card.innerHTML = header + answerUI;
+                    } else {
+                        // Show responses (or empty state)
+                        let body;
+                        if (responses.length === 0) {
+                            body = `<div style="padding:14px 16px;text-align:center;font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;">No responses yet</div>`;
+                        } else {
+                            body = `<div style="padding:8px 12px;">
+                                ${responses.map(r => `
                                     <div style="padding:10px 12px;margin:4px 0;background:rgba(247,240,235,0.5);border-radius:10px;">
                                         <div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--dark-text);line-height:1.4;">${escHtml(r.response)}</div>
                                         <div style="font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--accent);font-weight:600;margin-top:4px;">— ${escHtml(r.user_name)}</div>
                                     </div>
                                 `).join('')}
-                            </div>
-                        </div>
-                    `).join('');
+                            </div>`;
+                        }
+                        card.innerHTML = header + body;
+                    }
+                    pollCards.push(card);
                 }
 
-                if (!html && wyrCards.length === 0) {
+                if (pollCards.length === 0 && wyrCards.length === 0) {
                     feed.innerHTML = '';
                     empty.style.display = 'block';
                 } else {
@@ -4495,8 +4526,8 @@
                     feed.innerHTML = '';
                     // Add WYR cards as DOM elements (so vote buttons work)
                     for (const card of wyrCards) feed.appendChild(card);
-                    // Add poll HTML
-                    if (html) feed.insertAdjacentHTML('beforeend', html);
+                    // Add poll cards as DOM elements (so answer buttons work)
+                    for (const card of pollCards) feed.appendChild(card);
 
                     // Wire up WYR vote buttons
                     feed.querySelectorAll('.wyr-feed-btn').forEach(btn => {
@@ -4515,6 +4546,54 @@
                                 loadSharingFeed();
                             } catch (e) {
                                 showToast('Could not vote. Try again.');
+                                btn.disabled = false;
+                            }
+                        });
+                    });
+
+                    // Wire up poll multiple-choice answer buttons
+                    feed.querySelectorAll('.poll-feed-mc-btn').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            if (!currentUser) return;
+                            const pollId = parseInt(btn.dataset.pollId);
+                            const choice = btn.dataset.option;
+                            btn.disabled = true;
+                            try {
+                                await apiPost('/api/polls/respond', {
+                                    poll_id: pollId,
+                                    user_id: currentUser.id,
+                                    user_name: currentUser.first_name + (currentUser.last_initial ? ' ' + currentUser.last_initial + '.' : ''),
+                                    response: choice
+                                });
+                                localStorage.setItem('g4poll_' + pollId, '1');
+                                loadSharingFeed();
+                            } catch (e) {
+                                showToast('Could not submit. Try again.');
+                                btn.disabled = false;
+                            }
+                        });
+                    });
+
+                    // Wire up poll open-ended submit buttons
+                    feed.querySelectorAll('.poll-feed-open-submit').forEach(btn => {
+                        btn.addEventListener('click', async () => {
+                            if (!currentUser) return;
+                            const pollId = parseInt(btn.dataset.pollId);
+                            const input = feed.querySelector('.poll-feed-open-input[data-poll-id="' + pollId + '"]');
+                            const answer = input ? input.value.trim() : '';
+                            if (!answer) return;
+                            btn.disabled = true;
+                            try {
+                                await apiPost('/api/polls/respond', {
+                                    poll_id: pollId,
+                                    user_id: currentUser.id,
+                                    user_name: currentUser.first_name + (currentUser.last_initial ? ' ' + currentUser.last_initial + '.' : ''),
+                                    response: answer
+                                });
+                                localStorage.setItem('g4poll_' + pollId, '1');
+                                loadSharingFeed();
+                            } catch (e) {
+                                showToast(e.message || 'Could not submit. Try again.');
                                 btn.disabled = false;
                             }
                         });
@@ -7857,10 +7936,41 @@
         let huntCurrentPrompt = null;
         let huntCompressedPhoto = null;
 
-        function isHuntTime() {
+        // Hunt phases on Friday April 10, 2026 (ET = UTC-4 in DST):
+        //   12:00 PM ET (16:00 UTC) → 5:30 PM ET (21:30 UTC): photo uploads only
+        //   5:30 PM ET (21:30 UTC) → 7:00 PM ET (23:00 UTC): voting only
+        // Outside these windows: hunt is closed.
+        const HUNT_UPLOAD_START = new Date('2026-04-10T16:00:00Z');
+        const HUNT_VOTE_START   = new Date('2026-04-10T21:30:00Z');
+        const HUNT_VOTE_END     = new Date('2026-04-10T23:00:00Z');
+
+        function getHuntPhase() {
             const now = new Date();
-            const huntStart = new Date('2026-04-10T16:00:00Z'); // 12:00 PM ET = 4 PM UTC
-            return now >= huntStart;
+            if (now < HUNT_UPLOAD_START) return 'before';
+            if (now < HUNT_VOTE_START)   return 'upload';
+            if (now < HUNT_VOTE_END)     return 'vote';
+            return 'after';
+        }
+        function isHuntUploadTime() { return getHuntPhase() === 'upload'; }
+        function isHuntVoteTime()   { return getHuntPhase() === 'vote'; }
+        // Backward-compat: "is the hunt happening at all?"
+        function isHuntTime() {
+            const phase = getHuntPhase();
+            return phase === 'upload' || phase === 'vote';
+        }
+
+        function huntPhaseBanner() {
+            const phase = getHuntPhase();
+            if (phase === 'before') {
+                return `<div style="margin:0 16px 12px;padding:10px 14px;border-radius:12px;background:rgba(200,185,176,0.2);font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--taupe);text-align:center;">📸 The hunt opens at 12:00 PM. Come back then to start snapping!</div>`;
+            }
+            if (phase === 'upload') {
+                return `<div style="margin:0 16px 12px;padding:10px 14px;border-radius:12px;background:rgba(138,158,122,0.15);font-family:Cormorant Garamond,serif;font-size:0.85rem;color:#5a7a4a;text-align:center;font-weight:600;">📷 Upload time! Snap photos until 5:30 PM. Voting opens at 5:30.</div>`;
+            }
+            if (phase === 'vote') {
+                return `<div style="margin:0 16px 12px;padding:10px 14px;border-radius:12px;background:rgba(201,144,138,0.15);font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--accent);text-align:center;font-weight:600;">💛 Voting is open! Pick your favorites by 7:00 PM.</div>`;
+            }
+            return `<div style="margin:0 16px 12px;padding:10px 14px;border-radius:12px;background:rgba(200,185,176,0.2);font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--taupe);text-align:center;">🏁 The hunt has wrapped. Thanks for playing!</div>`;
         }
 
         function checkHuntTabSwap() {
@@ -7882,7 +7992,7 @@
             const done = huntCompletedIds.size;
             document.getElementById('hunt-progress').innerHTML = `<span style="font-weight:700;color:var(--accent);">${done}</span> of ${total} captured`;
 
-            let html = '';
+            let html = huntPhaseBanner();
             HUNT_PROMPTS.forEach(cat => {
                 html += `<div class="hunt-category"><div class="hunt-category-title">${escHtml(cat.category)}</div>`;
                 cat.prompts.forEach(p => {
@@ -7898,6 +8008,13 @@
         }
 
         function openHuntUpload(promptId) {
+            const phase = getHuntPhase();
+            if (phase !== 'upload') {
+                if (phase === 'before') showToast('Hunt opens at 12:00 PM!');
+                else if (phase === 'vote') showToast('Uploads are closed — voting is now open!');
+                else showToast('The hunt has ended.');
+                return;
+            }
             const prompt = ALL_PROMPTS.find(p => p.id === promptId);
             if (!prompt) return;
             huntCurrentPrompt = prompt;
@@ -7994,7 +8111,7 @@
             list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--light-text);font-family:Cormorant Garamond,serif;">Loading gallery...</div>';
 
             // Load all prompts that have submissions
-            let html = '';
+            let html = huntPhaseBanner();
             for (const cat of HUNT_PROMPTS) {
                 let catHtml = '';
                 for (const p of cat.prompts) {
@@ -8004,17 +8121,26 @@
                             catHtml += `<div class="hunt-gallery-prompt">
                                 <div class="hunt-gallery-prompt-title">${escHtml(p.text)}</div>
                                 <div class="hunt-gallery-grid">`;
+                            const phase = getHuntPhase();
                             data.submissions.forEach(s => {
                                 const isVoted = data.my_vote === s.id;
                                 const isOwn = s.user_id === currentUser.id;
+                                let actionHtml;
+                                if (isOwn) {
+                                    actionHtml = `<div style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--sage);margin-top:4px;">Your photo</div>`;
+                                } else if (phase === 'vote') {
+                                    actionHtml = `<button class="hunt-vote-btn${isVoted ? ' voted' : ''}" onclick="huntVote('${p.id}', ${s.id}, this)" data-prompt="${p.id}" data-sub="${s.id}">${isVoted ? '💛 Voted' : '🤍 Vote'}</button>`;
+                                } else if (phase === 'upload') {
+                                    actionHtml = `<div style="font-family:Cormorant Garamond,serif;font-size:0.72rem;color:var(--light-text);margin-top:4px;font-style:italic;">Voting opens at 5:30 PM</div>`;
+                                } else {
+                                    actionHtml = `<div style="font-family:Cormorant Garamond,serif;font-size:0.72rem;color:var(--light-text);margin-top:4px;font-style:italic;">Voting closed</div>`;
+                                }
                                 catHtml += `<div class="hunt-gallery-card${isVoted ? ' voted' : ''}">
                                     <img src="${s.photo_data}" alt="" loading="lazy">
                                     <div class="hunt-gallery-info">
                                         <div class="hunt-gallery-name">${escHtml(s.user_name)}</div>
                                         ${s.caption ? `<div class="hunt-gallery-caption">${escHtml(s.caption)}</div>` : ''}
-                                        ${!isOwn ? `<button class="hunt-vote-btn${isVoted ? ' voted' : ''}" onclick="huntVote('${p.id}', ${s.id}, this)" data-prompt="${p.id}" data-sub="${s.id}">
-                                            ${isVoted ? '💛 Voted' : '🤍 Vote'}
-                                        </button>` : `<div style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--sage);margin-top:4px;">Your photo</div>`}
+                                        ${actionHtml}
                                     </div>
                                 </div>`;
                             });
@@ -8035,6 +8161,13 @@
 
         async function huntVote(promptId, submissionId, btn) {
             if (!currentUser) return;
+            const phase = getHuntPhase();
+            if (phase !== 'vote') {
+                if (phase === 'upload') showToast('Voting opens at 5:30 PM!');
+                else if (phase === 'before') showToast('The hunt has not started yet.');
+                else showToast('Voting has closed.');
+                return;
+            }
             try {
                 const result = await apiPost('/api/hunt/vote', {
                     user_id: currentUser.id,

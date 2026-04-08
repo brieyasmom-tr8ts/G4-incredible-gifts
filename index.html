@@ -6482,8 +6482,21 @@
         updateStatus();
         initSetup();
         initPrayerWall();
-        // Lightweight badge check for polls (don't render full feed yet)
-        apiGet('/api/polls/feed').then(r => { if (r && Array.isArray(r)) updateSharingBadge(r.length); }).catch(() => {});
+        // Lightweight badge check for polls (don't render full feed yet).
+        // Use the same metric as loadSharingFeed (sum of responses across
+        // selected polls + WYR feed) so the badge "seen" count stays consistent
+        // across the boot path and the tab-open path.
+        Promise.all([
+            apiGet('/api/polls/feed').catch(() => []),
+            (!gameSettings || gameSettings.show_wyr_on_polls !== '0')
+                ? apiGet('/api/games/wyr/feed').catch(() => [])
+                : Promise.resolve([])
+        ]).then(([polls, wyr]) => {
+            const pollList = Array.isArray(polls) ? polls : [];
+            const wyrList = Array.isArray(wyr) ? wyr : [];
+            const totalResponses = pollList.reduce((s, p) => s + (p.responses ? p.responses.length : 0), 0);
+            updateSharingBadge(totalResponses + wyrList.length);
+        }).catch(() => {});
         initAudioNote();
         initSummarize();
         initMomentsUpload();

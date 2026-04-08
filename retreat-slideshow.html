@@ -174,6 +174,92 @@
             margin-bottom: 22px;
             background: rgba(255,255,255,0.06);
         }
+
+        /* --- Vote / poll layout: question small at top, answer HUGE in
+           middle, small attribution chip with mini avatar at bottom. --- */
+        .vote-kicker {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.22em;
+            color: rgba(201,144,138,0.9);
+            margin-bottom: 14px;
+        }
+        .vote-question {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1.6rem;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            margin-bottom: 30px;
+            max-width: 85vw;
+            line-height: 1.35;
+        }
+        .vote-choice {
+            font-family: 'Playfair Display', serif;
+            font-size: 4.6rem;
+            font-weight: 700;
+            color: #e6b5ac;
+            text-align: center;
+            line-height: 1.05;
+            margin-bottom: 40px;
+            max-width: 92vw;
+            text-shadow: 0 4px 30px rgba(201,144,138,0.25);
+        }
+        .poll-answer {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 2.8rem;
+            font-weight: 600;
+            color: #e6b5ac;
+            text-align: center;
+            line-height: 1.25;
+            margin-bottom: 40px;
+            max-width: 92vw;
+        }
+        .vote-attribution {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 22px 10px 10px;
+            border-radius: 48px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+        .vote-avatar, .vote-avatar-ph {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(201,144,138,0.55);
+            background: rgba(255,255,255,0.1);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            color: rgba(255,255,255,0.85);
+            font-weight: 600;
+        }
+        .vote-attribution-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .vote-attribution-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            color: white;
+            font-weight: 600;
+        }
+        .vote-attribution-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.55);
+        }
+        @media (max-width: 700px) {
+            .vote-choice { font-size: 3rem; }
+            .poll-answer { font-size: 1.9rem; }
+            .vote-question { font-size: 1.2rem; }
+        }
         .slide-photo-large {
             max-width: 78vw;
             max-height: 58vh;
@@ -556,6 +642,15 @@
         }
         return '';
     }
+    // Small circular avatar for attribution chips — falls back to the
+    // first letter of the display name if there's no profile photo.
+    function miniAvatar(user, displayName) {
+        if (user && user.photo_data) {
+            return `<img class="vote-avatar" src="${user.photo_data}" alt="">`;
+        }
+        const initial = (displayName || '?').trim().charAt(0).toUpperCase();
+        return `<div class="vote-avatar-ph">${escHtml(initial)}</div>`;
+    }
 
     // Static welcome/scripture slides — used both for the "welcome" category
     // and as a guaranteed fallback if every data source is empty.
@@ -720,6 +815,8 @@
         }
 
         // Would You Rather — one slide per person per vote
+        // Layout is question-and-choice-dominant so it reads visually
+        // distinct from profile spotlight slides.
         if (activeCategories.has('wyr')) {
             data.wyr.forEach(q => {
                 const makeVoterSlide = (voterName, choiceText) => {
@@ -728,11 +825,16 @@
                         type: 'wyr',
                         summary: `WYR: ${voterName} chose ${choiceText}`,
                         html: `
-                            <div class="slide-kicker">Would You Rather</div>
-                            <div class="slide-subtitle" style="margin-bottom:18px;">${escHtml(q.option_a)} <span style="color:rgba(201,144,138,0.7);font-style:italic;">or</span> ${escHtml(q.option_b)}?</div>
-                            ${photoTag(user)}
-                            <div class="slide-title" style="font-size:2rem;">${escHtml(voterName)} chose</div>
-                            <div class="slide-body" style="font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:700;color:#e6b5ac;margin-top:8px;">${escHtml(choiceText)}</div>
+                            <div class="vote-kicker">Would You Rather</div>
+                            <div class="vote-question">${escHtml(q.option_a)} <span style="color:rgba(201,144,138,0.8);">or</span> ${escHtml(q.option_b)}?</div>
+                            <div class="vote-choice">${escHtml(choiceText)}</div>
+                            <div class="vote-attribution">
+                                ${miniAvatar(user, voterName)}
+                                <div class="vote-attribution-text">
+                                    <div class="vote-attribution-name">${escHtml(voterName)}</div>
+                                    <div class="vote-attribution-label">picks this one</div>
+                                </div>
+                            </div>
                         `
                     });
                 };
@@ -742,6 +844,8 @@
         }
 
         // Polls — one slide per person per response
+        // Same visual system as WYR: question small, answer big, person
+        // as a small attribution chip at the bottom.
         if (activeCategories.has('poll')) {
             data.polls.forEach(p => {
                 (p.responses || []).forEach(r => {
@@ -751,11 +855,16 @@
                         type: 'poll',
                         summary: `Poll: ${voterName} on "${p.question}"`,
                         html: `
-                            <div class="slide-kicker">Poll</div>
-                            <div class="slide-subtitle" style="margin-bottom:18px;">${escHtml(p.question)}</div>
-                            ${photoTag(user)}
-                            <div class="slide-title" style="font-size:2rem;">${escHtml(voterName)} says</div>
-                            <div class="slide-body" style="font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:#e6b5ac;margin-top:8px;">"${escHtml(r.response)}"</div>
+                            <div class="vote-kicker">Poll</div>
+                            <div class="vote-question">${escHtml(p.question)}</div>
+                            <div class="poll-answer">"${escHtml(r.response)}"</div>
+                            <div class="vote-attribution">
+                                ${miniAvatar(user, voterName)}
+                                <div class="vote-attribution-text">
+                                    <div class="vote-attribution-name">${escHtml(voterName)}</div>
+                                    <div class="vote-attribution-label">says</div>
+                                </div>
+                            </div>
                         `
                     });
                 });

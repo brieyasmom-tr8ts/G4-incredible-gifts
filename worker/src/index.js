@@ -999,10 +999,21 @@ export default {
 
       // GET /api/games/wyr/questions - get all questions (admin)
       if (path === '/api/games/wyr/questions' && request.method === 'GET') {
+        // Add show_on_polls column if missing (lazy migration)
+        try { await env.DB.prepare('ALTER TABLE wyr_questions ADD COLUMN show_on_polls INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
         const { results } = await env.DB.prepare(
-          'SELECT id, option_a, option_b, active, created_at FROM wyr_questions ORDER BY id DESC'
+          'SELECT id, option_a, option_b, active, show_on_polls, created_at FROM wyr_questions ORDER BY id DESC'
         ).all();
         return json(results, corsHeaders);
+      }
+
+      // POST /api/games/wyr/show-toggle - toggle a single WYR question's visibility on the polls page (admin)
+      if (path === '/api/games/wyr/show-toggle' && request.method === 'POST') {
+        const { question_id, show } = await request.json();
+        if (!question_id) return json({ error: 'question_id required' }, corsHeaders, 400);
+        try { await env.DB.prepare('ALTER TABLE wyr_questions ADD COLUMN show_on_polls INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
+        await env.DB.prepare('UPDATE wyr_questions SET show_on_polls = ? WHERE id = ?').bind(show ? 1 : 0, question_id).run();
+        return json({ success: true }, corsHeaders);
       }
 
       // POST /api/games/wyr/questions - create a new question (admin)
@@ -1108,10 +1119,12 @@ export default {
       }
 
       // GET /api/games/wyr/feed - public feed of WYR results with voters
+      // Only returns questions admin has flagged with show_on_polls = 1
       if (path === '/api/games/wyr/feed' && request.method === 'GET') {
         try {
+          try { await env.DB.prepare('ALTER TABLE wyr_questions ADD COLUMN show_on_polls INTEGER DEFAULT 0').run(); } catch(e) { /* already exists */ }
           const { results: questions } = await env.DB.prepare(
-            'SELECT id, option_a, option_b, created_at FROM wyr_questions ORDER BY id DESC'
+            'SELECT id, option_a, option_b, created_at FROM wyr_questions WHERE show_on_polls = 1 ORDER BY id DESC'
           ).all();
           const feed = [];
           for (const q of questions) {

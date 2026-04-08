@@ -2823,6 +2823,7 @@
                             <button class="dir-sort-btn" data-sort="team" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);white-space:nowrap;flex-shrink:0;">G4</button>
                             <button class="dir-sort-btn" data-sort="speakers" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);white-space:nowrap;flex-shrink:0;">Speakers</button>
                             <button class="dir-sort-btn" data-sort="worship" style="padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);white-space:nowrap;flex-shrink:0;">Worship</button>
+                            <button class="dir-sort-btn" data-sort="packing" data-packing-only="1" style="display:none;padding:5px 12px;border:1px solid rgba(139,134,128,0.2);border-radius:8px;background:white;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--dark-text);cursor:pointer;transition:var(--transition);white-space:nowrap;flex-shrink:0;">📦 Packers</button>
                         </div>
                         <div id="connect-people-list" style="display:flex;flex-direction:column;gap:10px;"></div>
                     </div>
@@ -3050,7 +3051,8 @@
 
     <!-- Packing Points Game Modal -->
     <div class="modal-overlay" id="packing-modal" style="display:none;">
-        <div class="modal" style="text-align:center;max-height:85vh;overflow-y:auto;">
+        <div class="modal" style="text-align:center;max-height:85vh;overflow-y:auto;position:relative;">
+            <button id="packing-close-x" aria-label="Close" style="position:absolute;top:10px;right:10px;width:32px;height:32px;border:none;border-radius:50%;background:rgba(200,185,176,0.2);color:var(--taupe);font-size:1.1rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>
             <div style="font-size:2.2rem;margin-bottom:8px;">🧳</div>
             <h2 style="font-family:Playfair Display,serif;font-size:1.3rem;margin-bottom:6px;">Packing Points!</h2>
             <p style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--light-text);margin-bottom:16px;line-height:1.5;">How did you pack for this retreat? Check everything that applies and see your score!</p>
@@ -3733,6 +3735,15 @@
                     if (bScore !== aScore) return bScore - aScore;
                     return a.first_name.localeCompare(b.first_name);
                 }
+                if (sortMode === 'packing') {
+                    // Highest packing score first; users with no score sink to the bottom
+                    const aHas = a.packing_score != null;
+                    const bHas = b.packing_score != null;
+                    if (aHas && !bHas) return -1;
+                    if (!aHas && bHas) return 1;
+                    if (aHas && bHas && a.packing_score !== b.packing_score) return b.packing_score - a.packing_score;
+                    return a.first_name.localeCompare(b.first_name);
+                }
                 if (sortMode === 'team' || sortMode === 'speakers' || sortMode === 'worship') {
                     return a.first_name.localeCompare(b.first_name);
                 }
@@ -3822,6 +3833,11 @@
                 // Sort buttons
                 const sortBar = document.getElementById('directory-sort');
                 sortBar.style.display = 'flex';
+                // Show the Packers chip only if admin is exposing packing tiers
+                const packersBtn = sortBar.querySelector('.dir-sort-btn[data-sort="packing"]');
+                if (packersBtn) {
+                    packersBtn.style.display = (gameSettings && gameSettings.show_packing_names === '1') ? '' : 'none';
+                }
                 document.querySelectorAll('.dir-sort-btn').forEach(btn => {
                     btn.onclick = () => {
                         directorySortMode = btn.dataset.sort;
@@ -3957,6 +3973,7 @@
                 <div style="font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;margin-bottom:14px;">Social links are always visible to your sisters</div>
 
                 <button class="save-btn" id="profile-save-btn" style="width:100%;margin-top:8px;">Save Profile</button>
+                ${gameSettings && gameSettings.packing_points === '1' ? `<button id="profile-packing-btn" style="width:100%;margin-top:8px;padding:12px;border:1.5px solid rgba(201,144,138,0.3);background:rgba(255,255,255,0.6);color:var(--accent);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:0.92rem;font-weight:600;cursor:pointer;">🧳 Replay Packing Points</button>` : ''}
                 <button style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-size:0.85rem;cursor:pointer;margin-top:8px;" id="profile-close-btn">Close</button>
             `;
 
@@ -4069,6 +4086,15 @@
                     btn.textContent = 'Save Profile';
                 }
             });
+
+            // Replay Packing Points (only present when packing_points is enabled)
+            const packingBtn = sheet.querySelector('#profile-packing-btn');
+            if (packingBtn) {
+                packingBtn.addEventListener('click', () => {
+                    overlay.remove();
+                    showPackingModal({ manual: true });
+                });
+            }
 
             // Close
             sheet.querySelector('#profile-close-btn').addEventListener('click', () => overlay.remove());
@@ -7079,21 +7105,44 @@
             };
         }
 
-        function showPackingModal() {
+        // showPackingModal({ manual: true }) is used when the user re-opens
+        // the game from their profile sheet — we pre-fill their previous
+        // answers, allow them to update their score, and don't touch the
+        // popup queue (which is only for first-login auto-popups).
+        function showPackingModal(opts) {
+            opts = opts || {};
+            const manual = !!opts.manual;
             const modal = document.getElementById('packing-modal');
             modal.style.display = 'flex';
             modal.classList.add('animate-in');
 
+            // Try to restore previous answers (saved on the last submit)
+            let savedAnswers = [];
+            try {
+                const raw = currentUser ? localStorage.getItem('g4packing_answers_' + currentUser.id) : null;
+                if (raw) savedAnswers = JSON.parse(raw) || [];
+            } catch(e) {}
+            const savedSet = new Set(savedAnswers);
+
             const checklist = document.getElementById('packing-checklist');
             checklist.innerHTML = PACKING_ITEMS.map((item, i) => `
                 <label style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.7);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:var(--transition);">
-                    <input type="checkbox" data-points="${item.points}" data-index="${i}" style="width:20px;height:20px;margin-top:1px;accent-color:var(--accent);flex-shrink:0;">
+                    <input type="checkbox" data-points="${item.points}" data-index="${i}"${savedSet.has(i) ? ' checked' : ''} style="width:20px;height:20px;margin-top:1px;accent-color:var(--accent);flex-shrink:0;">
                     <span style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--dark-text);line-height:1.4;">${item.text} <span style="color:var(--accent);font-weight:600;">(+${item.points})</span></span>
                 </label>
             `).join('');
 
             document.getElementById('packing-result').style.display = 'none';
             document.getElementById('packing-submit').style.display = '';
+            document.getElementById('packing-submit').textContent = manual && savedAnswers.length ? 'Update My Score!' : 'See My Score!';
+            // "Maybe later" only makes sense for the first-time popup
+            const skipBtn = document.getElementById('packing-skip');
+            skipBtn.style.display = manual ? 'none' : '';
+
+            const closeModal = () => {
+                modal.style.display = 'none';
+                if (!manual) onPopupClosed();
+            };
 
             document.getElementById('packing-submit').onclick = async () => {
                 const checks = checklist.querySelectorAll('input[type=checkbox]:checked');
@@ -7109,7 +7158,7 @@
                 document.getElementById('packing-score-label').textContent = label;
                 document.getElementById('packing-result').style.display = '';
                 document.getElementById('packing-submit').style.display = 'none';
-                document.getElementById('packing-skip').style.display = 'none';
+                skipBtn.style.display = 'none';
                 checklist.querySelectorAll('input[type=checkbox]').forEach(cb => cb.disabled = true);
 
                 try {
@@ -7120,18 +7169,17 @@
                         answers: JSON.stringify(answers)
                     });
                     localStorage.setItem('g4packing_' + currentUser.id, '1');
+                    // Cache answers locally so the modal can pre-fill on replay
+                    localStorage.setItem('g4packing_answers_' + currentUser.id, JSON.stringify(answers));
                 } catch (e) { /* ok */ }
             };
 
-            document.getElementById('packing-done').onclick = () => {
-                modal.style.display = 'none';
-                onPopupClosed();
-            };
+            document.getElementById('packing-done').onclick = closeModal;
+            document.getElementById('packing-close-x').onclick = closeModal;
 
-            document.getElementById('packing-skip').onclick = () => {
+            skipBtn.onclick = () => {
                 sessionStorage.setItem('g4packing_skip', '1');
-                modal.style.display = 'none';
-                onPopupClosed();
+                closeModal();
             };
         }
 

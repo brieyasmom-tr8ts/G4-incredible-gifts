@@ -1075,20 +1075,33 @@ function toggleSidebar() {
 }
 
 // --- Tabs ---
+function activateAdminSection(sectionName) {
+    const tab = document.querySelector('.nav-tab[data-section="' + sectionName + '"]');
+    const section = document.getElementById('section-' + sectionName);
+    if (!tab || !section) return false;
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    tab.classList.add('active');
+    section.classList.add('active');
+    const titleEl = document.getElementById('section-title');
+    if (titleEl) titleEl.textContent = SECTION_TITLES[sectionName] || sectionName;
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
+    try { localStorage.setItem('g4admin_section', sectionName); } catch(e) {}
+    return true;
+}
+
 document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        tab.classList.add('active');
-        document.getElementById('section-' + tab.dataset.section).classList.add('active');
-        // Update section title
-        const titleEl = document.getElementById('section-title');
-        if (titleEl) titleEl.textContent = SECTION_TITLES[tab.dataset.section] || tab.dataset.section;
-        // Close sidebar on mobile
-        document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('sidebar-overlay').classList.remove('open');
-    });
+    tab.addEventListener('click', () => activateAdminSection(tab.dataset.section));
 });
+
+// Restore the last-viewed admin section after a refresh
+(function restoreAdminSection() {
+    try {
+        const saved = localStorage.getItem('g4admin_section');
+        if (saved) activateAdminSection(saved);
+    } catch(e) {}
+})();
 
 // --- Data Fetch ---
 async function refreshAll() {

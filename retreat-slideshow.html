@@ -269,6 +269,63 @@
             margin-bottom: 22px;
         }
 
+        /* Multi-person layout — used for first-timers (2-3 per slide) and
+           small church welcome slides. */
+        .person-row {
+            display: flex;
+            gap: 44px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 26px;
+            max-width: 95vw;
+        }
+        .person-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            max-width: 220px;
+        }
+        .person-card-photo, .person-card-photo-ph {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(201,144,138,0.55);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            background: rgba(255,255,255,0.08);
+        }
+        .person-card-photo-ph {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 3.4rem;
+            color: rgba(255,255,255,0.75);
+            font-weight: 600;
+        }
+        .person-card-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.15;
+        }
+        .person-card-meta {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: rgba(255,255,255,0.55);
+            font-style: italic;
+            text-align: center;
+        }
+        @media (max-width: 700px) {
+            .person-row { gap: 22px; }
+            .person-card-photo, .person-card-photo-ph { width: 105px; height: 105px; }
+            .person-card-photo-ph { font-size: 2.4rem; }
+            .person-card-name { font-size: 1.15rem; }
+        }
+
         .name-grid {
             display: flex;
             flex-wrap: wrap;
@@ -491,6 +548,7 @@
     const CATEGORIES = [
         { key: 'welcome',     label: 'Welcome',         default: true  },
         { key: 'firsttimers', label: 'First-Timers',    default: true  },
+        { key: 'church',      label: 'By Church',       default: true  },
         { key: 'team',        label: 'Meet the Team',   default: true  },
         { key: 'speakers',    label: 'Speakers',        default: true  },
         { key: 'worship',     label: 'Worship Team',    default: true  },
@@ -652,6 +710,26 @@
         return `<div class="vote-avatar-ph">${escHtml(initial)}</div>`;
     }
 
+    // A card with a medium circular photo (or initial placeholder), name,
+    // and optional sub-line. Used by first-timer and church welcome slides.
+    function personCard(u, meta) {
+        const photo = u.photo_data
+            ? `<img class="person-card-photo" src="${u.photo_data}" alt="">`
+            : `<div class="person-card-photo-ph">${escHtml((u.first_name || '?').charAt(0).toUpperCase())}</div>`;
+        return `
+            <div class="person-card">
+                ${photo}
+                <div class="person-card-name">${escHtml(fullName(u))}</div>
+                ${meta ? `<div class="person-card-meta">${escHtml(meta)}</div>` : ''}
+            </div>
+        `;
+    }
+    function chunkArray(arr, size) {
+        const out = [];
+        for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+        return out;
+    }
+
     // Static welcome/scripture slides — used both for the "welcome" category
     // and as a guaranteed fallback if every data source is empty.
     const STATIC_WELCOME_SLIDES = [
@@ -718,23 +796,58 @@
             });
         }
 
-        // First-timers
+        // First-timers — chunked into groups of 3 per slide so the names
+        // and faces actually get attention, instead of a long wall of pills.
         if (activeCategories.has('firsttimers')) {
             const firsts = data.users.filter(isFirstTimer);
-            if (firsts.length) {
+            const groups = chunkArray(firsts, 3);
+            groups.forEach((group, gi) => {
                 slides.push({
                     type: 'firsttimers',
-                    summary: `First-time G4 girls (${firsts.length})`,
+                    summary: `First-timers: ${group.map(fullName).join(', ')}`,
                     html: `
                         <div class="slide-kicker">A warm welcome to</div>
-                        <div class="slide-title">Our First-Time G4 Girls</div>
-                        <div class="slide-subtitle">We are so glad you're with us this year</div>
-                        <div class="name-grid">
-                            ${firsts.map(u => `<div class="name-pill">${escHtml(fullName(u))}</div>`).join('')}
+                        <div class="slide-title" style="font-size:2rem;margin-bottom:6px;">Our First-Time G4 Girls</div>
+                        <div class="slide-subtitle">We are so glad you're here this year</div>
+                        <div class="person-row">
+                            ${group.map(u => personCard(u, u.church || u.location || '')).join('')}
                         </div>
                     `
                 });
-            }
+            });
+        }
+
+        // By church — one "Welcome {church}" slide per church. If a church
+        // has ≤3 attendees we show them as photo cards; larger groups get
+        // chunked into multiple slides of 3 cards each so everyone shows
+        // up with a face and name.
+        if (activeCategories.has('church')) {
+            const byChurch = {};
+            data.users.forEach(u => {
+                const church = (u.church || '').trim();
+                if (!church) return;
+                const key = church.toLowerCase();
+                if (!byChurch[key]) byChurch[key] = { name: church, users: [] };
+                byChurch[key].users.push(u);
+            });
+            Object.values(byChurch).forEach(group => {
+                const chunks = chunkArray(group.users, 3);
+                chunks.forEach((chunk, ci) => {
+                    const partLabel = chunks.length > 1 ? ` (${ci + 1}/${chunks.length})` : '';
+                    slides.push({
+                        type: 'church',
+                        summary: `Welcome ${group.name}${partLabel}`,
+                        html: `
+                            <div class="slide-kicker">Welcome</div>
+                            <div class="slide-title" style="color:#e6b5ac;font-size:2.6rem;">${escHtml(group.name)}</div>
+                            <div class="slide-subtitle">${group.users.length === 1 ? 'Our sister with us this year' : `${group.users.length} sisters with us this year`}</div>
+                            <div class="person-row">
+                                ${chunk.map(u => personCard(u, '')).join('')}
+                            </div>
+                        `
+                    });
+                });
+            });
         }
 
         // Meet the team

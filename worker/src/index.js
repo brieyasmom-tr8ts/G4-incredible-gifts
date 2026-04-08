@@ -526,10 +526,40 @@ export default {
 
       // GET /api/messages - get prayer wall messages
       if (path === '/api/messages' && request.method === 'GET') {
-        const { results } = await env.DB.prepare(
-          `SELECT id, user_id, author_name, type, tagged_name, message, prayer_count, created_at
-           FROM messages ORDER BY created_at DESC LIMIT 200`
-        ).all();
+        // Resolve the author's full name (first + last) from the users table
+        // when possible so name policy changes apply to existing posts too.
+        // Falls back to the stored author_name if user is missing or the
+        // join column doesn't exist on legacy schemas.
+        let results;
+        try {
+          ({ results } = await env.DB.prepare(
+            `SELECT m.id, m.user_id, m.author_name, m.type, m.tagged_name, m.message,
+                    m.prayer_count, m.created_at,
+                    u.first_name, u.last_name, u.last_initial
+             FROM messages m
+             LEFT JOIN users u ON m.user_id = u.id
+             ORDER BY m.created_at DESC LIMIT 200`
+          ).all());
+          for (const r of results) {
+            if (r.first_name) {
+              if (r.last_name) {
+                r.author_name = `${r.first_name} ${r.last_name}`;
+              } else if (r.last_initial) {
+                r.author_name = `${r.first_name} ${r.last_initial}.`;
+              } else {
+                r.author_name = r.first_name;
+              }
+            }
+            delete r.first_name;
+            delete r.last_name;
+            delete r.last_initial;
+          }
+        } catch (e) {
+          ({ results } = await env.DB.prepare(
+            `SELECT id, user_id, author_name, type, tagged_name, message, prayer_count, created_at
+             FROM messages ORDER BY created_at DESC LIMIT 200`
+          ).all());
+        }
         return json(results, corsHeaders);
       }
 

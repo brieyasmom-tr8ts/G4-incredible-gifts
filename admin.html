@@ -606,6 +606,7 @@
             <button class="nav-tab active" data-section="stats"><span class="nav-icon">📊</span> Stats</button>
             <button class="nav-tab" data-section="users"><span class="nav-icon">👥</span> Users <span class="badge" id="count-users">0</span></button>
             <button class="nav-tab" data-section="churches"><span class="nav-icon">⛪</span> Churches</button>
+            <button class="nav-tab" data-section="news"><span class="nav-icon">📰</span> News / Reminders</button>
             <button class="nav-tab" data-section="navmenu"><span class="nav-icon">🧭</span> Nav Menu</button>
             <button class="nav-tab" data-section="videos"><span class="nav-icon">🎬</span> Videos <span class="badge" id="count-videos">0</span></button>
             <button class="nav-tab" data-section="moments"><span class="nav-icon">📸</span> Moments <span class="badge" id="count-moments">0</span></button>
@@ -712,6 +713,29 @@
             <div class="empty-state" id="empty-churches" style="display:none;">
                 <div class="icon">&#9962;</div>
                 <p>No church names set yet</p>
+            </div>
+        </div>
+
+        <!-- News / Reminders -->
+        <div class="section" id="section-news">
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">News &amp; Reminders</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;line-height:1.5;">
+                    Add short blurbs that will appear in the morning retreat slideshow
+                    (e.g. "Breakfast at 8:30", "Bring your journal for tonight's session").
+                    Toggle items off when they're no longer relevant — they stay in the
+                    list so you can bring them back later.
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+                    <input type="text" id="news-icon-input" maxlength="4" placeholder="📢" style="width:64px;padding:0.5rem 0.6rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:1.1rem;text-align:center;">
+                    <input type="text" id="news-message-input" placeholder="Reminder message…" style="flex:1;min-width:200px;padding:0.5rem 0.75rem;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;">
+                    <button class="btn btn-refresh" onclick="createNewsItem()">Add</button>
+                </div>
+            </div>
+            <div id="news-list" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
+            <div class="empty-state" id="empty-news" style="display:none;">
+                <div class="icon">&#128240;</div>
+                <p>No news items yet</p>
             </div>
         </div>
 
@@ -1092,7 +1116,8 @@ function closeModal() { document.getElementById('modal').classList.remove('show'
 
 // --- Sidebar ---
 const SECTION_TITLES = {
-    stats: 'Stats', users: 'Users', churches: 'Churches', navmenu: 'Nav Menu', videos: 'Videos',
+    stats: 'Stats', users: 'Users', churches: 'Churches', news: 'News / Reminders',
+    navmenu: 'Nav Menu', videos: 'Videos',
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
     polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme'
 };
@@ -1148,6 +1173,7 @@ async function refreshAll() {
     await Promise.allSettled([
         loadUsers(),
         loadChurches(),
+        loadNews(),
         loadVideos(),
         loadMoments(),
         loadPrayers(),
@@ -1389,6 +1415,81 @@ async function clearChurch(from) {
         loadUsers();
     } catch (e) {
         alert('Failed to clear: ' + (e.message || e));
+    }
+}
+
+// --- News / Reminders (retreat slideshow) ---
+let newsData = [];
+async function loadNews() {
+    try {
+        const data = await apiFetch('/api/news/all');
+        newsData = Array.isArray(data) ? data : [];
+        renderNews();
+    } catch (e) {
+        console.error('News:', e);
+        newsData = [];
+        renderNews();
+    }
+}
+function renderNews() {
+    const list = document.getElementById('news-list');
+    const empty = document.getElementById('empty-news');
+    if (!list) return;
+    if (!newsData.length) {
+        list.innerHTML = '';
+        if (empty) empty.style.display = '';
+        return;
+    }
+    if (empty) empty.style.display = 'none';
+    list.innerHTML = newsData.map(n => {
+        const on = !!n.active;
+        const icon = n.icon || '📢';
+        return `
+            <div style="background:white;border-radius:12px;box-shadow:var(--shadow-sm);padding:0.85rem 1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;${on ? '' : 'opacity:0.55;'}">
+                <div style="font-size:1.6rem;flex:0 0 auto;">${esc(icon)}</div>
+                <div style="flex:1;min-width:200px;font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--dark-text);line-height:1.4;">${esc(n.message)}</div>
+                <div style="flex:0 0 auto;display:flex;gap:0.4rem;">
+                    <button class="btn ${on ? 'btn-refresh' : 'btn-danger-outline'}" style="font-size:0.78rem;padding:0.3rem 0.7rem;" onclick="toggleNewsItem(${n.id})">${on ? '👁 Showing' : '🔒 Hidden'}</button>
+                    <button class="btn btn-danger-outline" style="font-size:0.78rem;padding:0.3rem 0.55rem;" onclick="deleteNewsItem(${n.id})">Delete</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+async function createNewsItem() {
+    const msgEl = document.getElementById('news-message-input');
+    const iconEl = document.getElementById('news-icon-input');
+    const message = (msgEl.value || '').trim();
+    const icon = (iconEl.value || '').trim();
+    if (!message) { msgEl.focus(); return; }
+    try {
+        await apiFetch('/api/news', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, icon })
+        });
+        msgEl.value = '';
+        iconEl.value = '';
+        loadNews();
+    } catch (e) {
+        alert('Failed to create: ' + (e.message || e));
+    }
+}
+async function toggleNewsItem(id) {
+    try {
+        await apiFetch('/api/news/' + id + '/toggle', { method: 'POST' });
+        loadNews();
+    } catch (e) {
+        alert('Failed to toggle: ' + (e.message || e));
+    }
+}
+async function deleteNewsItem(id) {
+    if (!confirm('Delete this news item?')) return;
+    try {
+        await apiFetch('/api/news/' + id, { method: 'DELETE' });
+        loadNews();
+    } catch (e) {
+        alert('Failed to delete: ' + (e.message || e));
     }
 }
 

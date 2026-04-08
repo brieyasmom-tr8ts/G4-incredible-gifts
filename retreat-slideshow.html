@@ -175,87 +175,203 @@
             background: rgba(255,255,255,0.06);
         }
 
-        /* --- Vote / poll layout: question prominent at top, then a
-           horizontal row with the voter's photo on the left and their
-           choice rendered as an italic pull-quote on the right. --- */
+        /* --- Vote / poll layout: designed quotation card. Kicker ·
+           question · quote with a large decorative " behind it ·
+           ornament divider · photo-inline-with-name signature. --- */
         .vote-kicker {
             font-family: 'Playfair Display', serif;
-            font-size: 1rem;
+            font-size: 0.95rem;
             text-transform: uppercase;
-            letter-spacing: 0.22em;
-            color: rgba(201,144,138,0.9);
-            margin-bottom: 20px;
+            letter-spacing: 0.32em;
+            color: rgba(201,144,138,0.95);
+            margin-bottom: 22px;
+            padding: 6px 22px;
+            border-top: 1px solid rgba(201,144,138,0.3);
+            border-bottom: 1px solid rgba(201,144,138,0.3);
         }
         .vote-question {
             font-family: 'Playfair Display', serif;
-            font-size: 2.4rem;
+            font-size: 2.3rem;
             font-weight: 600;
-            color: rgba(255,255,255,0.92);
+            color: rgba(255,255,255,0.93);
             text-align: center;
-            line-height: 1.25;
-            margin-bottom: 44px;
+            line-height: 1.3;
+            margin-bottom: 48px;
             max-width: 90vw;
         }
         .vote-question em {
             font-style: italic;
-            color: rgba(201,144,138,0.75);
+            color: rgba(201,144,138,0.8);
             font-weight: 400;
         }
-        .vote-row {
-            display: flex;
-            align-items: center;
-            gap: 44px;
-            max-width: 92vw;
-        }
-        .vote-row-photo, .vote-row-photo-ph {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid rgba(201,144,138,0.55);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
-            background: rgba(255,255,255,0.08);
-            flex-shrink: 0;
-        }
-        .vote-row-photo-ph {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Playfair Display', serif;
-            font-size: 3.2rem;
-            color: rgba(255,255,255,0.8);
-            font-weight: 600;
-        }
-        .vote-quote {
+        .vote-body {
             display: flex;
             flex-direction: column;
-            text-align: left;
-            min-width: 0;
+            align-items: center;
+            max-width: 88vw;
+            position: relative;
         }
         .vote-quote-text {
             font-family: 'Cormorant Garamond', serif;
             font-style: italic;
-            font-size: 2.8rem;
+            font-size: 2.5rem;
             color: #f2dbd4;
-            line-height: 1.2;
+            line-height: 1.3;
             font-weight: 500;
-            word-break: break-word;
+            text-align: center;
+            max-width: 26ch;
+            position: relative;
+            padding: 0 20px;
         }
-        .vote-quote-name {
+        /* Large decorative opening quote mark behind the text */
+        .vote-quote-text::before {
+            content: '\201C';
             font-family: 'Playfair Display', serif;
-            font-size: 1.2rem;
-            color: rgba(255,255,255,0.7);
+            position: absolute;
+            top: -5.2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10rem;
+            line-height: 1;
+            color: rgba(201,144,138,0.16);
+            font-weight: 700;
+            font-style: normal;
+            pointer-events: none;
+            z-index: -1;
+        }
+        /* Ornament divider between quote and signature */
+        .vote-ornament {
+            position: relative;
+            width: 180px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(201,144,138,0.55) 50%, transparent);
+            margin: 32px 0 18px;
+        }
+        .vote-ornament::after {
+            content: '\2766';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #2a2320 0%, #1a1a1a 40%, #1e2a1e 100%);
+            padding: 0 12px;
+            color: rgba(201,144,138,0.8);
+            font-size: 1.05rem;
+        }
+        /* Signature row — photo inline LEFT of the name */
+        .vote-signature {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .vote-signature-photo, .vote-signature-photo-ph {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(201,144,138,0.55);
+            background: rgba(255,255,255,0.08);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.45);
+            flex-shrink: 0;
+        }
+        .vote-signature-photo-ph {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.55rem;
+            color: rgba(255,255,255,0.8);
+            font-weight: 600;
+        }
+        .vote-signature-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: rgba(255,255,255,0.82);
             font-weight: 500;
-            margin-top: 16px;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.05em;
+        }
+        .vote-signature-name::before {
+            content: '\2014\00a0';
+            color: rgba(201,144,138,0.7);
         }
         @media (max-width: 700px) {
-            .vote-question { font-size: 1.6rem; margin-bottom: 28px; }
-            .vote-row { flex-direction: column; gap: 18px; }
-            .vote-row-photo, .vote-row-photo-ph { width: 110px; height: 110px; }
-            .vote-row-photo-ph { font-size: 2.4rem; }
-            .vote-quote { text-align: center; }
-            .vote-quote-text { font-size: 1.9rem; }
+            .vote-kicker { font-size: 0.8rem; padding: 5px 16px; }
+            .vote-question { font-size: 1.55rem; margin-bottom: 30px; }
+            .vote-quote-text { font-size: 1.85rem; max-width: 22ch; }
+            .vote-quote-text::before { font-size: 7rem; top: -3.5rem; }
+            .vote-signature-photo, .vote-signature-photo-ph { width: 48px; height: 48px; }
+            .vote-signature-photo-ph { font-size: 1.2rem; }
+            .vote-signature-name { font-size: 1.1rem; }
+            .vote-ornament { width: 140px; margin: 24px 0 14px; }
+        }
+
+        /* --- News / reminder slide --- */
+        .news-icon {
+            font-size: 5rem;
+            margin-bottom: 14px;
+            line-height: 1;
+        }
+        .news-message {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.6rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.95);
+            text-align: center;
+            line-height: 1.25;
+            max-width: 22ch;
+            margin-top: 10px;
+        }
+
+        /* --- Weather slide --- */
+        .weather-emoji {
+            font-size: 7rem;
+            line-height: 1;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 6px 20px rgba(0,0,0,0.4));
+        }
+        .weather-temp {
+            font-family: 'Playfair Display', serif;
+            font-size: 5.5rem;
+            font-weight: 700;
+            color: #f2dbd4;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .weather-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            font-size: 1.8rem;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 20px;
+        }
+        .weather-hilo {
+            display: flex;
+            gap: 36px;
+            font-family: 'Playfair Display', serif;
+            color: rgba(255,255,255,0.7);
+            font-size: 1.2rem;
+            margin-bottom: 18px;
+        }
+        .weather-hilo span b {
+            color: #f2dbd4;
+            font-weight: 700;
+            font-size: 1.35rem;
+        }
+        .weather-sun {
+            display: flex;
+            gap: 28px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            color: rgba(255,255,255,0.55);
+            font-style: italic;
+        }
+        @media (max-width: 700px) {
+            .news-icon { font-size: 3.6rem; }
+            .news-message { font-size: 1.6rem; }
+            .weather-emoji { font-size: 5rem; }
+            .weather-temp { font-size: 4rem; }
+            .weather-label { font-size: 1.3rem; }
+            .weather-hilo { font-size: 1rem; gap: 22px; }
         }
         .slide-photo-large {
             max-width: 78vw;
@@ -595,6 +711,8 @@
     // Categories the user can toggle on/off from the start screen
     const CATEGORIES = [
         { key: 'welcome',     label: 'Welcome',         default: true  },
+        { key: 'weather',     label: 'Weather',         default: true  },
+        { key: 'news',        label: 'News & Reminders',default: true  },
         { key: 'firsttimers', label: 'First-Timers',    default: true  },
         { key: 'church',      label: 'By Church',       default: true  },
         { key: 'team',        label: 'Meet the Team',   default: true  },
@@ -674,8 +792,20 @@
         } catch (e) { return null; }
     }
 
+    // Open-Meteo is a free, CORS-enabled, no-signup weather API.
+    // Ocean City, MD coordinates (~38.3365, -75.0849).
+    const WEATHER_URL = 'https://api.open-meteo.com/v1/forecast?latitude=38.3365&longitude=-75.0849&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FNew_York&forecast_days=1';
+
+    async function fetchWeather() {
+        try {
+            const res = await fetch(WEATHER_URL);
+            if (!res.ok) return null;
+            return await res.json();
+        } catch (e) { return null; }
+    }
+
     async function loadAll() {
-        const [users, wyr, polls, messages, moments, funfacts, packing, announcement] = await Promise.all([
+        const [users, wyr, polls, messages, moments, funfacts, packing, announcement, news, weather] = await Promise.all([
             safeFetch('/api/users/directory'),
             safeFetch('/api/games/wyr/feed'),
             safeFetch('/api/polls/feed'),
@@ -683,7 +813,9 @@
             safeFetch('/api/moments'),
             safeFetch('/api/games/funfacts'),
             safeFetch('/api/games/packing'),
-            safeFetch('/api/announcements/active')
+            safeFetch('/api/announcements/active'),
+            safeFetch('/api/news'),
+            fetchWeather()
         ]);
         return {
             users: users || [],
@@ -693,7 +825,9 @@
             moments: moments || [],
             funfacts: funfacts || [],
             packing: packing || [],
-            announcement: announcement || null
+            announcement: announcement || null,
+            news: news || [],
+            weather: weather || null
         };
     }
 
@@ -748,14 +882,14 @@
         }
         return '';
     }
-    // 150px circular photo for the left side of vote/poll slides.
-    // Falls back to a circle with the first letter of the display name.
-    function rowPhoto(user, displayName) {
+    // Small 62px signature photo for vote/poll slides. Goes inline with
+    // the voter's name. Falls back to a circle with their first initial.
+    function signaturePhoto(user, displayName) {
         if (user && user.photo_data) {
-            return `<img class="vote-row-photo" src="${user.photo_data}" alt="">`;
+            return `<img class="vote-signature-photo" src="${user.photo_data}" alt="">`;
         }
         const initial = (displayName || '?').trim().charAt(0).toUpperCase();
-        return `<div class="vote-row-photo-ph">${escHtml(initial)}</div>`;
+        return `<div class="vote-signature-photo-ph">${escHtml(initial)}</div>`;
     }
 
     // A card with a medium circular photo (or initial placeholder), name,
@@ -789,6 +923,44 @@
         const out = [];
         for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
         return out;
+    }
+
+    // WMO weather-code → emoji + label (Open-Meteo uses these codes)
+    const WEATHER_CODES = {
+        0:  { emoji: '\u2600\ufe0f', label: 'Clear' },
+        1:  { emoji: '\ud83c\udf24\ufe0f', label: 'Mostly sunny' },
+        2:  { emoji: '\u26c5', label: 'Partly cloudy' },
+        3:  { emoji: '\u2601\ufe0f', label: 'Overcast' },
+        45: { emoji: '\ud83c\udf2b\ufe0f', label: 'Foggy' },
+        48: { emoji: '\ud83c\udf2b\ufe0f', label: 'Foggy' },
+        51: { emoji: '\ud83c\udf26\ufe0f', label: 'Light drizzle' },
+        53: { emoji: '\ud83c\udf26\ufe0f', label: 'Drizzle' },
+        55: { emoji: '\ud83c\udf27\ufe0f', label: 'Heavy drizzle' },
+        61: { emoji: '\ud83c\udf26\ufe0f', label: 'Light rain' },
+        63: { emoji: '\ud83c\udf27\ufe0f', label: 'Rain' },
+        65: { emoji: '\ud83c\udf27\ufe0f', label: 'Heavy rain' },
+        71: { emoji: '\ud83c\udf28\ufe0f', label: 'Light snow' },
+        73: { emoji: '\ud83c\udf28\ufe0f', label: 'Snow' },
+        75: { emoji: '\u2744\ufe0f', label: 'Heavy snow' },
+        77: { emoji: '\ud83c\udf28\ufe0f', label: 'Snow grains' },
+        80: { emoji: '\ud83c\udf26\ufe0f', label: 'Light showers' },
+        81: { emoji: '\ud83c\udf27\ufe0f', label: 'Showers' },
+        82: { emoji: '\u26c8\ufe0f', label: 'Heavy showers' },
+        85: { emoji: '\ud83c\udf28\ufe0f', label: 'Snow showers' },
+        86: { emoji: '\ud83c\udf28\ufe0f', label: 'Heavy snow showers' },
+        95: { emoji: '\u26c8\ufe0f', label: 'Thunderstorm' },
+        96: { emoji: '\u26c8\ufe0f', label: 'Thunderstorm + hail' },
+        99: { emoji: '\u26c8\ufe0f', label: 'Severe thunderstorm' }
+    };
+    function formatTime(iso) {
+        if (!iso) return '';
+        try {
+            const d = new Date(iso);
+            let h = d.getHours(), m = d.getMinutes();
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${m < 10 ? '0' : ''}${m} ${ampm}`;
+        } catch (e) { return ''; }
     }
 
     // Static welcome/scripture slides — used both for the "welcome" category
@@ -845,7 +1017,7 @@
             STATIC_WELCOME_SLIDES.forEach(s => slides.push(s));
         }
 
-        // Active announcement
+        // Active announcement (one-at-a-time banner)
         if (activeCategories.has('welcome') && data.announcement && data.announcement.message) {
             slides.push({
                 type: 'announcement',
@@ -853,6 +1025,58 @@
                 html: `
                     <div class="slide-kicker">Announcement</div>
                     <div class="slide-title">${escHtml(data.announcement.message)}</div>
+                `
+            });
+        }
+
+        // News / reminders (multiple items, one slide each)
+        if (activeCategories.has('news')) {
+            (data.news || []).forEach(n => {
+                const icon = (n.icon && n.icon.trim()) || '\ud83d\udce2'; // 📢
+                slides.push({
+                    type: 'news',
+                    summary: `News: ${n.message}`,
+                    html: `
+                        <div class="slide-kicker">Reminder</div>
+                        <div class="news-icon">${escHtml(icon)}</div>
+                        <div class="news-message">${escHtml(n.message)}</div>
+                    `
+                });
+            });
+        }
+
+        // Today's weather in Ocean City, MD
+        if (activeCategories.has('weather') && data.weather && data.weather.current) {
+            const cur = data.weather.current;
+            const daily = (data.weather.daily || {});
+            const code = cur.weather_code;
+            const info = WEATHER_CODES[code] || { emoji: '\ud83c\udf24\ufe0f', label: 'Today' };
+            const curTemp = Math.round(cur.temperature_2m);
+            const feels = Math.round(cur.apparent_temperature);
+            const hi = daily.temperature_2m_max && daily.temperature_2m_max[0] != null ? Math.round(daily.temperature_2m_max[0]) : null;
+            const lo = daily.temperature_2m_min && daily.temperature_2m_min[0] != null ? Math.round(daily.temperature_2m_min[0]) : null;
+            const sunrise = daily.sunrise && daily.sunrise[0] ? formatTime(daily.sunrise[0]) : '';
+            const sunset  = daily.sunset  && daily.sunset[0]  ? formatTime(daily.sunset[0])  : '';
+            slides.push({
+                type: 'weather',
+                summary: `Weather: ${info.label}, ${curTemp}\u00b0F`,
+                html: `
+                    <div class="slide-kicker">Today in Ocean City</div>
+                    <div class="weather-emoji">${info.emoji}</div>
+                    <div class="weather-temp">${curTemp}\u00b0</div>
+                    <div class="weather-label">${escHtml(info.label)} &middot; feels like ${feels}\u00b0</div>
+                    ${hi != null && lo != null ? `
+                        <div class="weather-hilo">
+                            <span>High <b>${hi}\u00b0</b></span>
+                            <span>Low <b>${lo}\u00b0</b></span>
+                        </div>
+                    ` : ''}
+                    ${sunrise || sunset ? `
+                        <div class="weather-sun">
+                            ${sunrise ? `<span>\u2600 Sunrise ${escHtml(sunrise)}</span>` : ''}
+                            ${sunset  ? `<span>\ud83c\udf19 Sunset ${escHtml(sunset)}</span>`  : ''}
+                        </div>
+                    ` : ''}
                 `
             });
         }
@@ -983,7 +1207,7 @@
         }
 
         // Would You Rather — one slide per person per vote.
-        // Layout: kicker · question big at top · [photo | "choice" — name]
+        // Designed quotation card layout.
         if (activeCategories.has('wyr')) {
             data.wyr.forEach(q => {
                 const makeVoterSlide = (voterName, choiceText) => {
@@ -994,11 +1218,12 @@
                         html: `
                             <div class="vote-kicker">Would You Rather</div>
                             <div class="vote-question">${escHtml(q.option_a)} <em>or</em> ${escHtml(q.option_b)}?</div>
-                            <div class="vote-row">
-                                ${rowPhoto(user, voterName)}
-                                <div class="vote-quote">
-                                    <div class="vote-quote-text">&ldquo;${escHtml(choiceText)}&rdquo;</div>
-                                    <div class="vote-quote-name">— ${escHtml(voterName)}</div>
+                            <div class="vote-body">
+                                <div class="vote-quote-text">${escHtml(choiceText)}</div>
+                                <div class="vote-ornament"></div>
+                                <div class="vote-signature">
+                                    ${signaturePhoto(user, voterName)}
+                                    <span class="vote-signature-name">${escHtml(voterName)}</span>
                                 </div>
                             </div>
                         `
@@ -1010,7 +1235,7 @@
         }
 
         // Polls — one slide per person per response.
-        // Same layout as WYR: kicker · question · [photo | "answer" — name]
+        // Same designed quotation card layout as WYR.
         if (activeCategories.has('poll')) {
             data.polls.forEach(p => {
                 (p.responses || []).forEach(r => {
@@ -1022,11 +1247,12 @@
                         html: `
                             <div class="vote-kicker">Poll</div>
                             <div class="vote-question">${escHtml(p.question)}</div>
-                            <div class="vote-row">
-                                ${rowPhoto(user, voterName)}
-                                <div class="vote-quote">
-                                    <div class="vote-quote-text">&ldquo;${escHtml(r.response)}&rdquo;</div>
-                                    <div class="vote-quote-name">— ${escHtml(voterName)}</div>
+                            <div class="vote-body">
+                                <div class="vote-quote-text">${escHtml(r.response)}</div>
+                                <div class="vote-ornament"></div>
+                                <div class="vote-signature">
+                                    ${signaturePhoto(user, voterName)}
+                                    <span class="vote-signature-name">${escHtml(voterName)}</span>
                                 </div>
                             </div>
                         `

@@ -834,13 +834,15 @@
         };
     }
 
-    // ---- First-time detection (best-effort heuristic) ----
+    // ---- First-time detection ----
+    // Women with no retreat_years set are skipped — we don't assume
+    // they're first-timers, they just haven't filled in their profile yet.
     function isFirstTimer(u) {
         if (!u) return false;
         const ry = (u.retreat_years || '').trim().toLowerCase();
-        if (!ry) return true;                    // empty = unknown, treat as first-time
+        if (!ry) return false;
         if (/first|1st/.test(ry)) return true;
-        if (/^2026$/.test(ry)) return true;      // only this retreat listed
+        if (/^2026$/.test(ry)) return true;
         return false;
     }
 

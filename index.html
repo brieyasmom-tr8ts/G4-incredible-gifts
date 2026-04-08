@@ -3937,7 +3937,8 @@
 
                 <div class="profile-field">
                     <label>Home Church</label>
-                    <input type="text" id="profile-church" placeholder="Your church name" value="${currentUser.church || ''}" style="font-size:16px;">
+                    <input type="text" id="profile-church" list="profile-church-list" placeholder="Your church name" value="${currentUser.church || ''}" style="font-size:16px;">
+                    <datalist id="profile-church-list"></datalist>
                 </div>
 
                 <div class="profile-field">
@@ -3982,6 +3983,20 @@
 
             overlay.appendChild(sheet);
             document.body.appendChild(overlay);
+
+            // Populate church datalist with existing churches from other
+            // sisters so women see suggestions as they type and variants
+            // don't accumulate. Fire and forget; suggestions are a nice-to-have.
+            fetch(API_URL + '/api/churches')
+                .then(r => r.ok ? r.json() : [])
+                .then(list => {
+                    const dl = sheet.querySelector('#profile-church-list');
+                    if (!dl || !Array.isArray(list)) return;
+                    dl.innerHTML = list.map(c => {
+                        const name = (c && c.name ? String(c.name) : '').replace(/"/g, '&quot;');
+                        return name ? `<option value="${name}">` : '';
+                    }).join('');
+                }).catch(() => {});
 
             // Toggle buttons
             function saveToggles() {

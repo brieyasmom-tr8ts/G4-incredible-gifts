@@ -6486,11 +6486,13 @@
         // Use the same metric as loadSharingFeed (sum of responses across
         // selected polls + WYR feed) so the badge "seen" count stays consistent
         // across the boot path and the tab-open path.
+        // NOTE: we always fetch WYR here because `gameSettings` is declared
+        // with `let` later in this script and is in the temporal dead zone
+        // at this point — touching it would throw a ReferenceError that
+        // halts the rest of script init.
         Promise.all([
             apiGet('/api/polls/feed').catch(() => []),
-            (!gameSettings || gameSettings.show_wyr_on_polls !== '0')
-                ? apiGet('/api/games/wyr/feed').catch(() => [])
-                : Promise.resolve([])
+            apiGet('/api/games/wyr/feed').catch(() => [])
         ]).then(([polls, wyr]) => {
             const pollList = Array.isArray(polls) ? polls : [];
             const wyrList = Array.isArray(wyr) ? wyr : [];

@@ -372,7 +372,7 @@
         <input type="number" class="speed-input" id="speed-input" value="8" min="3" max="60">
     </div>
 
-    <button class="start-btn" onclick="startSlideshow()">Start Slideshow</button>
+    <button class="start-btn" id="start-btn" onclick="startSlideshow()" disabled style="opacity:0.6;cursor:wait;">Loading content…</button>
     <div class="start-error" id="start-error"></div>
 </div>
 
@@ -503,22 +503,57 @@
         return (u.first_name || '') + last;
     }
 
+    // Static welcome/scripture slides — used both for the "welcome" category
+    // and as a guaranteed fallback if every data source is empty.
+    const STATIC_WELCOME_SLIDES = [
+        {
+            type: 'welcome',
+            summary: 'Welcome, Sisters',
+            html: `
+                <div class="slide-kicker">G4 Women's Retreat</div>
+                <div class="slide-title">Welcome, Sisters</div>
+                <div class="slide-subtitle">"Every good and perfect gift is from above" — James 1:17</div>
+                <div class="slide-body">So glad you're here. Settle in, grab some coffee, and look around at these beautiful faces.</div>
+            `
+        },
+        {
+            type: 'welcome',
+            summary: 'Scripture — James 1:17',
+            html: `
+                <div class="slide-kicker">Scripture</div>
+                <div class="slide-title">Every Good &amp; Perfect Gift</div>
+                <div class="slide-body" style="font-style:italic;">"Every good and perfect gift is from above, coming down from the Father of the heavenly lights, who does not change like shifting shadows."</div>
+                <div class="slide-attribution">James 1:17</div>
+            `
+        },
+        {
+            type: 'welcome',
+            summary: 'Good morning',
+            html: `
+                <div class="slide-kicker">Good Morning</div>
+                <div class="slide-title">Grab a cup of coffee</div>
+                <div class="slide-subtitle">Find a friend · Find a seat · Take a deep breath</div>
+                <div class="slide-body">Today is a gift. We're so glad you're here.</div>
+            `
+        },
+        {
+            type: 'welcome',
+            summary: 'G4 2026',
+            html: `
+                <div class="slide-kicker">G4 2026</div>
+                <div class="slide-title">Incredible Gifts</div>
+                <div class="slide-subtitle">A weekend of worship, laughter, and sisterhood</div>
+            `
+        }
+    ];
+
     // ---- Slide builders ----
     function makeSlides(data) {
         const slides = [];
 
-        // Welcome slide
+        // Welcome slides (always 4 static ones when the welcome category is on)
         if (activeCategories.has('welcome')) {
-            slides.push({
-                type: 'welcome',
-                summary: 'Welcome message',
-                html: `
-                    <div class="slide-kicker">G4 Women's Retreat</div>
-                    <div class="slide-title">Welcome, Sisters</div>
-                    <div class="slide-subtitle">"Every good and perfect gift is from above" — James 1:17</div>
-                    <div class="slide-body">So glad you're here. Settle in, grab some coffee, and look around at these beautiful faces.</div>
-                `
-            });
+            STATIC_WELCOME_SLIDES.forEach(s => slides.push(s));
         }
 
         // Active announcement
@@ -838,14 +873,24 @@
             errEl.textContent = 'Pick at least one category to include.';
             return;
         }
-        const data = window.__retreatData;
-        if (!data) {
-            errEl.textContent = 'Content is still loading…';
+        // If data is still loading, use an empty dataset — welcome fallback slides still work.
+        const data = window.__retreatData || {
+            users: [], wyr: [], polls: [], messages: [],
+            moments: [], funfacts: [], packing: [], announcement: null
+        };
+        try {
+            allSlides = makeSlides(data);
+        } catch (e) {
+            console.error('makeSlides error:', e);
+            errEl.textContent = 'Error building slides: ' + (e && e.message ? e.message : e);
             return;
         }
-        allSlides = makeSlides(data);
+        // Guaranteed fallback — if somehow nothing produced slides, show the welcome set.
         if (!allSlides.length) {
-            errEl.textContent = 'No slides for the selected categories yet.';
+            allSlides = shuffle([...STATIC_WELCOME_SLIDES]);
+        }
+        if (!allSlides.length) {
+            errEl.textContent = 'No slides to show. Try enabling "Welcome" at the top.';
             return;
         }
         currentIndex = 0;
@@ -860,17 +905,31 @@
     // ---- Init ----
     async function init() {
         buildCategoryFilters();
-        const data = await loadAll();
+        const startBtn = document.getElementById('start-btn');
+        const errEl = document.getElementById('start-error');
+        let data;
+        try {
+            data = await loadAll();
+        } catch (e) {
+            console.error('loadAll error:', e);
+            errEl.textContent = 'Could not load content: ' + (e && e.message ? e.message : e) + ' — you can still start with welcome slides.';
+            data = { users: [], wyr: [], polls: [], messages: [], moments: [], funfacts: [], packing: [], announcement: null };
+        }
         window.__retreatData = data;
+        const encourageCount = (data.messages || []).filter(m => m.type === 'encouragement').length;
         const counts = [
-            data.users.length + ' women',
-            data.wyr.length + ' would-you-rathers',
-            data.polls.length + ' polls',
-            data.messages.filter(m => m.type === 'encouragement').length + ' encouragements',
-            data.moments.length + ' photos',
-            data.funfacts.length + ' fun facts'
+            (data.users || []).length + ' women',
+            (data.wyr || []).length + ' would-you-rathers',
+            (data.polls || []).length + ' polls',
+            encourageCount + ' encouragements',
+            (data.moments || []).length + ' photos',
+            (data.funfacts || []).length + ' fun facts'
         ];
         document.getElementById('start-count').textContent = counts.join(' · ');
+        startBtn.disabled = false;
+        startBtn.style.opacity = '1';
+        startBtn.style.cursor = 'pointer';
+        startBtn.textContent = 'Start Slideshow';
     }
 
     // Keyboard controls

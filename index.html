@@ -3444,35 +3444,7 @@
             return res.json();
         }
 
-        function editNewsItem(id) {
-            const textEl = document.getElementById('news-text-' + id);
-            const container = document.getElementById('news-item-' + id);
-            if (!textEl || !container) return;
-            const current = textEl.textContent;
-            container.innerHTML =
-                '<input id="news-edit-' + id + '" type="text" value="' + escHtml(current) + '" style="flex:1;padding:8px 10px;border:1.5px solid var(--blush);border-radius:8px;font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--dark-text);outline:none;">' +
-                '<button onclick="saveNewsItem(' + id + ')" style="flex-shrink:0;padding:6px 12px;background:var(--sage);border:none;border-radius:6px;font-size:0.75rem;color:white;cursor:pointer;font-weight:600;">Save</button>' +
-                '<button onclick="loadDashboard()" style="flex-shrink:0;padding:6px 8px;background:none;border:1px solid rgba(200,185,176,0.3);border-radius:6px;font-size:0.75rem;color:var(--light-text);cursor:pointer;">Cancel</button>';
-            document.getElementById('news-edit-' + id).focus();
-        }
 
-        async function saveNewsItem(id) {
-            const input = document.getElementById('news-edit-' + id);
-            if (!input) return;
-            const message = input.value.trim();
-            if (!message) return;
-            try {
-                await fetch(API_URL + '/api/news/' + id, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
-                });
-                showToast('Updated!');
-                loadDashboard();
-            } catch (e) {
-                showToast('Could not save. Try again.');
-            }
-        }
 
         // ===== User Setup =====
         function initSetup() {
@@ -6858,11 +6830,9 @@
                 if (newsEl && news.length) {
                     newsEl.style.display = 'block';
                     newsEl.innerHTML = news.map(function(n) {
-                        return '<div id="news-item-' + n.id + '" style="padding:10px 14px;background:rgba(201,144,138,0.08);border-radius:10px;border-left:3px solid var(--blush);margin-bottom:6px;display:flex;align-items:center;gap:8px;">' +
-                            '<span style="margin-right:4px;">' + escHtml(n.icon || '\ud83d\udce2') + '</span>' +
-                            '<span style="flex:1;font-size:0.92rem;color:var(--dark-text);" id="news-text-' + n.id + '">' + escHtml(n.message) + '</span>' +
-                            '<button onclick="editNewsItem(' + n.id + ')" style="flex-shrink:0;padding:4px 8px;background:none;border:1px solid rgba(200,185,176,0.3);border-radius:6px;font-size:0.75rem;color:var(--light-text);cursor:pointer;">Edit</button>' +
-                            '</div>';
+                        return '<div style="padding:10px 14px;background:rgba(201,144,138,0.08);border-radius:10px;border-left:3px solid var(--blush);margin-bottom:6px;">' +
+                            '<span style="margin-right:8px;">' + escHtml(n.icon || '\ud83d\udce2') + '</span>' +
+                            '<span style="font-size:0.92rem;color:var(--dark-text);">' + escHtml(n.message) + '</span></div>';
                     }).join('');
                 }
 

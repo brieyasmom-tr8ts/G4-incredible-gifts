@@ -1450,6 +1450,7 @@ function renderNews() {
                 <div style="font-size:1.6rem;flex:0 0 auto;">${esc(icon)}</div>
                 <div style="flex:1;min-width:200px;font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--dark-text);line-height:1.4;">${esc(n.message)}</div>
                 <div style="flex:0 0 auto;display:flex;gap:0.4rem;">
+                    <button class="btn btn-refresh" style="font-size:0.78rem;padding:0.3rem 0.7rem;" onclick="editNewsItem(${n.id})">Edit</button>
                     <button class="btn ${on ? 'btn-refresh' : 'btn-danger-outline'}" style="font-size:0.78rem;padding:0.3rem 0.7rem;" onclick="toggleNewsItem(${n.id})">${on ? '👁 Showing' : '🔒 Hidden'}</button>
                     <button class="btn btn-danger-outline" style="font-size:0.78rem;padding:0.3rem 0.55rem;" onclick="deleteNewsItem(${n.id})">Delete</button>
                 </div>
@@ -1491,6 +1492,25 @@ async function deleteNewsItem(id) {
         loadNews();
     } catch (e) {
         alert('Failed to delete: ' + (e.message || e));
+    }
+}
+function editNewsItem(id) {
+    const item = newsData.find(n => n.id === id);
+    if (!item) return;
+    const msg = prompt('Edit message:', item.message);
+    if (msg === null || !msg.trim()) return;
+    saveNewsEdit(id, msg.trim(), item.icon || '📢');
+}
+async function saveNewsEdit(id, message, icon) {
+    try {
+        await apiFetch('/api/news/' + id, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, icon })
+        });
+        loadNews();
+    } catch (e) {
+        alert('Failed to update: ' + (e.message || e));
     }
 }
 

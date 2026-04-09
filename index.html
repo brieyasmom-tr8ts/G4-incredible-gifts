@@ -1550,7 +1550,7 @@
         }
 
         .card-content.expanded {
-            max-height: 2000px;
+            max-height: 5000px;
             opacity: 1;
         }
 
@@ -1594,6 +1594,164 @@
             outline: none;
             border-color: var(--blush);
             background: white;
+        }
+
+        .worksheet-container {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 2px solid rgba(138,158,122,0.2);
+        }
+
+        .worksheet-title {
+            font-family: Playfair Display, serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            text-align: center;
+            margin-bottom: 20px;
+            letter-spacing: 0.01em;
+        }
+
+        .worksheet-section {
+            margin-bottom: 24px;
+            padding: 18px 16px;
+            background: rgba(138,158,122,0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(138,158,122,0.12);
+        }
+
+        .worksheet-section-heading {
+            font-family: Playfair Display, serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark-text);
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .worksheet-intro {
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.92rem;
+            color: var(--taupe);
+            line-height: 1.6;
+            font-style: italic;
+            margin-bottom: 14px;
+            text-align: center;
+        }
+
+        .worksheet-question {
+            margin-bottom: 14px;
+        }
+
+        .worksheet-question-label {
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.9rem;
+            color: var(--dark-text);
+            font-weight: 600;
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+
+        .worksheet-answer {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid rgba(139,134,128,0.25);
+            border-radius: 8px;
+            font-family: Georgia, serif;
+            font-size: 16px;
+            color: var(--dark-text);
+            background: white;
+            resize: vertical;
+            min-height: 56px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .worksheet-answer:focus {
+            outline: none;
+            border-color: var(--blush);
+            box-shadow: 0 0 0 3px rgba(201,144,138,0.1);
+        }
+
+        .worksheet-closing {
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.92rem;
+            color: var(--accent);
+            font-style: italic;
+            text-align: center;
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(201,144,138,0.06);
+            border-radius: 8px;
+        }
+
+        .worksheet-choices {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .worksheet-choice-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: white;
+            border: 1px solid rgba(139,134,128,0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.92rem;
+            color: var(--dark-text);
+        }
+
+        .worksheet-choice-label:has(input:checked) {
+            border-color: var(--sage);
+            background: rgba(138,158,122,0.08);
+        }
+
+        .worksheet-choice-label input[type="radio"] {
+            accent-color: var(--sage);
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .worksheet-save-btn {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, var(--sage), var(--blush));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: Cormorant Garamond, serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.02em;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+        .worksheet-save-btn:hover {
+            opacity: 0.92;
+        }
+
+        .worksheet-save-btn:active {
+            transform: scale(0.98);
+        }
+
+        .worksheet-saved-badge {
+            text-align: center;
+            margin-top: 10px;
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.85rem;
+            color: var(--sage);
+            font-style: italic;
+            display: none;
         }
 
         .day-section {
@@ -4751,7 +4909,39 @@
                 sessions: [
                     { time: '3:00 PM', title: 'Hotel Check-in Opens', movement: '', listenFor: 'Hyatt Place Ocean City Oceanfront\n16th Street, Ocean City, MD', reflection: 'Check-in is in the bay-side building. Across from the conference room building. You will receive your room key there.', hotelLink: 'https://www.hyatt.com/hyatt-place/en-US/oxbzo-hyatt-place-ocean-city-oceanfront' },
                     { time: '7:00 PM', title: 'Doors Open', movement: '', listenFor: '', reflection: 'Please don\u2019t enter the conference room before 7:00 PM \u2014 our team is working hard behind the scenes to make everything special for you! Grab your room key, get settled in, and we\u2019ll see you when the doors open.', infoOnly: true },
-                    { time: '7:15 PM – 10:00 PM', title: 'Session 1: Receive the Gift', movement: 'Receive the Gift', listenFor: 'What has God already given that you haven\'t fully received?', reflection: 'What gift have I been resisting or minimizing?' }
+                    { time: '7:15 PM – 10:00 PM', title: 'Session 1: Receive the Gift', movement: 'Receive the Gift', listenFor: 'What has God already given that you haven\'t fully received?', reflection: 'What gift have I been resisting or minimizing?', worksheet: {
+                        title: 'Day One: Receiving the Gift',
+                        sections: [
+                            {
+                                heading: 'Spiritual Location Exercise',
+                                intro: 'Begin by becoming still before the Lord and becoming attentive to God\u2019s presence with you, with your feet firmly on the ground, taking a few deep, slow breaths. When you\u2019re ready, begin asking yourself the following questions. Don\u2019t overthink them \u2014 take notes as they come to you.',
+                                questions: [
+                                    'What has been pre-occupying my mind today, and over the recent weeks or months?',
+                                    'What are my prevailing emotions?',
+                                    'What questions do I yearn to take to God and have answered?'
+                                ],
+                                closingPrompt: 'Ask your Father in Heaven, "Lord, what do you want me to notice here?"'
+                            },
+                            {
+                                heading: 'Partner Reflection: \u201CThe Free Gift of God\u201D',
+                                intro: 'Which of these stumbling blocks to receiving the gift of God most resonates with me in this season of life right now?',
+                                choices: [
+                                    'We don\u2019t know we need it',
+                                    'We want to earn it ourselves',
+                                    'We feel unworthy'
+                                ],
+                                followUp: 'Why does this resonate with you? Share with your partner.'
+                            },
+                            {
+                                heading: 'Table Discussion: \u201CLife to the Full\u201D',
+                                questions: [
+                                    'Describe to the group in one word or phrase HOW you are coming into this retreat \u2014 physically, mentally, emotionally and/or spiritually.',
+                                    '\u201CWhat comes into our mind when we think about God is the most important thing about us.\u201D \u2014 A.W. Tozer. What word, image or emotion most often comes to your mind when you think about God? How is your answer different now than in the past? Is there anything you\u2019d like to see change about your answer?',
+                                    'If you are a believer, how have the teachings of Jesus changed your life in the last 6\u201312 months?'
+                                ]
+                            }
+                        ]
+                    } }
                 ]
             },
             {
@@ -5124,10 +5314,168 @@
                         });
                         content.appendChild(notesInput);
                         }
+                        if (session.worksheet) {
+                            const ws = session.worksheet;
+                            const wsKey = `worksheet-${dayIndex}-${sessionIndex}`;
+                            const saved = JSON.parse(localStorage.getItem(wsKey) || '{}');
+
+                            const wsContainer = document.createElement('div');
+                            wsContainer.className = 'worksheet-container';
+
+                            const wsTitle = document.createElement('div');
+                            wsTitle.className = 'worksheet-title';
+                            wsTitle.textContent = ws.title;
+                            wsContainer.appendChild(wsTitle);
+
+                            let fieldIndex = 0;
+                            ws.sections.forEach((section, sIdx) => {
+                                const sectionDiv = document.createElement('div');
+                                sectionDiv.className = 'worksheet-section';
+
+                                const heading = document.createElement('div');
+                                heading.className = 'worksheet-section-heading';
+                                heading.textContent = section.heading;
+                                sectionDiv.appendChild(heading);
+
+                                if (section.intro) {
+                                    const intro = document.createElement('div');
+                                    intro.className = 'worksheet-intro';
+                                    intro.textContent = section.intro;
+                                    sectionDiv.appendChild(intro);
+                                }
+
+                                if (section.questions) {
+                                    section.questions.forEach((q, qIdx) => {
+                                        const qDiv = document.createElement('div');
+                                        qDiv.className = 'worksheet-question';
+                                        const label = document.createElement('div');
+                                        label.className = 'worksheet-question-label';
+                                        label.textContent = (qIdx + 1) + '. ' + q;
+                                        qDiv.appendChild(label);
+                                        const textarea = document.createElement('textarea');
+                                        textarea.className = 'worksheet-answer';
+                                        textarea.placeholder = 'Write your thoughts here\u2026';
+                                        const fKey = `q-${sIdx}-${qIdx}`;
+                                        textarea.value = saved[fKey] || '';
+                                        textarea.addEventListener('input', () => {
+                                            const data = JSON.parse(localStorage.getItem(wsKey) || '{}');
+                                            data[fKey] = textarea.value;
+                                            localStorage.setItem(wsKey, JSON.stringify(data));
+                                        });
+                                        qDiv.appendChild(textarea);
+                                        sectionDiv.appendChild(qDiv);
+                                        fieldIndex++;
+                                    });
+                                }
+
+                                if (section.choices) {
+                                    const choicesDiv = document.createElement('div');
+                                    choicesDiv.className = 'worksheet-choices';
+                                    const radioName = `ws-choice-${dayIndex}-${sessionIndex}-${sIdx}`;
+                                    section.choices.forEach((choice, cIdx) => {
+                                        const choiceLabel = document.createElement('label');
+                                        choiceLabel.className = 'worksheet-choice-label';
+                                        const radio = document.createElement('input');
+                                        radio.type = 'radio';
+                                        radio.name = radioName;
+                                        radio.value = choice;
+                                        const cKey = `c-${sIdx}`;
+                                        if (saved[cKey] === choice) radio.checked = true;
+                                        radio.addEventListener('change', () => {
+                                            const data = JSON.parse(localStorage.getItem(wsKey) || '{}');
+                                            data[cKey] = choice;
+                                            localStorage.setItem(wsKey, JSON.stringify(data));
+                                        });
+                                        choiceLabel.appendChild(radio);
+                                        choiceLabel.appendChild(document.createTextNode(choice));
+                                        choicesDiv.appendChild(choiceLabel);
+                                    });
+                                    sectionDiv.appendChild(choicesDiv);
+
+                                    if (section.followUp) {
+                                        const fuDiv = document.createElement('div');
+                                        fuDiv.className = 'worksheet-question';
+                                        const fuLabel = document.createElement('div');
+                                        fuLabel.className = 'worksheet-question-label';
+                                        fuLabel.textContent = section.followUp;
+                                        fuDiv.appendChild(fuLabel);
+                                        const fuTextarea = document.createElement('textarea');
+                                        fuTextarea.className = 'worksheet-answer';
+                                        fuTextarea.placeholder = 'Share your reflection\u2026';
+                                        const fuKey = `fu-${sIdx}`;
+                                        fuTextarea.value = saved[fuKey] || '';
+                                        fuTextarea.addEventListener('input', () => {
+                                            const data = JSON.parse(localStorage.getItem(wsKey) || '{}');
+                                            data[fuKey] = fuTextarea.value;
+                                            localStorage.setItem(wsKey, JSON.stringify(data));
+                                        });
+                                        fuDiv.appendChild(fuTextarea);
+                                        sectionDiv.appendChild(fuDiv);
+                                    }
+                                }
+
+                                if (section.closingPrompt) {
+                                    const closing = document.createElement('div');
+                                    closing.className = 'worksheet-closing';
+                                    closing.textContent = section.closingPrompt;
+                                    sectionDiv.appendChild(closing);
+                                }
+
+                                wsContainer.appendChild(sectionDiv);
+                            });
+
+                            // Save to Journal button
+                            const saveBtn = document.createElement('button');
+                            saveBtn.className = 'worksheet-save-btn';
+                            saveBtn.textContent = 'Save to Journal';
+                            saveBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const data = JSON.parse(localStorage.getItem(wsKey) || '{}');
+                                let journalText = ws.title + '\n\n';
+                                ws.sections.forEach((section, sIdx) => {
+                                    journalText += section.heading + '\n';
+                                    if (section.questions) {
+                                        section.questions.forEach((q, qIdx) => {
+                                            const answer = data[`q-${sIdx}-${qIdx}`] || '';
+                                            journalText += (qIdx + 1) + '. ' + q + '\n';
+                                            journalText += (answer ? '   ' + answer : '   (no response)') + '\n\n';
+                                        });
+                                    }
+                                    if (section.choices) {
+                                        const chosen = data[`c-${sIdx}`] || '(none selected)';
+                                        journalText += 'Selected: ' + chosen + '\n';
+                                        if (section.followUp) {
+                                            const fuAnswer = data[`fu-${sIdx}`] || '';
+                                            journalText += section.followUp + '\n';
+                                            journalText += (fuAnswer ? '   ' + fuAnswer : '   (no response)') + '\n';
+                                        }
+                                        journalText += '\n';
+                                    }
+                                });
+                                appState.journalEntries.unshift({
+                                    date: new Date().toISOString(),
+                                    text: journalText.trim()
+                                });
+                                saveState();
+                                buildJournal();
+                                savedBadge.style.display = 'block';
+                                savedBadge.textContent = 'Saved to your journal!';
+                                showToast('Worksheet saved to Journal \u2728');
+                                if (typeof launchConfetti === 'function') launchConfetti();
+                                setTimeout(() => { savedBadge.style.display = 'none'; }, 4000);
+                            });
+                            wsContainer.appendChild(saveBtn);
+
+                            const savedBadge = document.createElement('div');
+                            savedBadge.className = 'worksheet-saved-badge';
+                            wsContainer.appendChild(savedBadge);
+
+                            content.appendChild(wsContainer);
+                        }
                         card.appendChild(content);
                     }
                     card.addEventListener('click', (e) => {
-                        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
+                        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') return;
                         const cardContents = card.querySelectorAll('.card-content');
                         if (cardContents.length) {
                             card.classList.toggle('expanded');

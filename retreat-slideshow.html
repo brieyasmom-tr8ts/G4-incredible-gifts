@@ -692,6 +692,8 @@
     </div>
 
     <button class="start-btn" id="start-btn" onclick="startSlideshow()" disabled style="opacity:0.6;cursor:wait;">Loading content…</button>
+    <button class="start-btn" id="copy-url-btn" onclick="copyAutoplayUrl()" style="background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.85);margin-top:8px;font-size:0.95rem;">Copy Autoplay URL</button>
+    <div id="copied-msg" style="font-size:0.85rem;color:rgba(138,158,122,0.9);margin-top:6px;min-height:1.2em;"></div>
     <div class="start-error" id="start-error"></div>
 </div>
 
@@ -784,6 +786,22 @@
                 activeCategories.delete(key);
                 btn.classList.remove('active');
             }
+        });
+    }
+
+    function copyAutoplayUrl() {
+        const cats = Array.from(activeCategories);
+        if (!cats.length) {
+            document.getElementById('copied-msg').textContent = 'Pick at least one category first!';
+            return;
+        }
+        const base = window.location.origin + window.location.pathname;
+        const url = base + '?autoplay&cats=' + cats.join(',');
+        navigator.clipboard.writeText(url).then(() => {
+            document.getElementById('copied-msg').textContent = 'Copied! Paste this URL into Proclaim.';
+        }).catch(() => {
+            // Fallback: show it so they can copy manually
+            prompt('Copy this URL:', url);
         });
     }
 
@@ -1521,19 +1539,11 @@
         const params = new URLSearchParams(window.location.search);
         if (params.has('autoplay')) {
             if (params.has('cats')) {
-                const wanted = new Set(params.get('cats').split(',').map(s => s.trim()));
+                const wanted = params.get('cats').split(',').map(s => s.trim());
                 activeCategories.clear();
-                document.querySelectorAll('#category-filters .filter-btn').forEach(btn => {
-                    const key = btn.dataset.catKey;
-                    if (wanted.has(key)) {
-                        if (!btn.classList.contains('active')) btn.click();
-                    } else {
-                        if (btn.classList.contains('active')) btn.click();
-                    }
-                });
+                wanted.forEach(k => activeCategories.add(k));
             } else {
-                // Enable all categories
-                setAllCategories(true);
+                CATEGORIES.forEach(c => activeCategories.add(c.key));
             }
             startSlideshow();
         }

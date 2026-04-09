@@ -1140,6 +1140,22 @@ export default {
         }
       }
 
+      // PUT /api/news/:id — update a news item
+      const newsUpdateMatch = path.match(/^\/api\/news\/(\d+)$/);
+      if (newsUpdateMatch && request.method === 'PUT') {
+        const id = parseInt(newsUpdateMatch[1]);
+        try {
+          const { message, icon } = await request.json();
+          if (!message || !message.trim()) return json({ error: 'message required' }, corsHeaders, 400);
+          await env.DB.prepare(
+            'UPDATE news_items SET message = ?, icon = ? WHERE id = ?'
+          ).bind(message.trim(), icon || '📢', id).run();
+          return json({ success: true }, corsHeaders);
+        } catch (e) {
+          return json({ error: e.message || String(e) }, corsHeaders, 500);
+        }
+      }
+
       // DELETE /api/news/:id — delete a news item
       const newsDeleteMatch = path.match(/^\/api\/news\/(\d+)$/);
       if (newsDeleteMatch && request.method === 'DELETE') {

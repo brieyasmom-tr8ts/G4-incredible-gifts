@@ -2695,6 +2695,28 @@
                     <!-- Weather forecast for Ocean City -->
                     <div id="weather-forecast" style="display:none;margin:8px 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(138,158,122,0.08) 0%,rgba(201,144,138,0.06) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.12);"></div>
 
+                    <!-- Retreat Day Dashboard (replaces prep section during retreat) -->
+                    <div id="retreat-dashboard" style="display:none;padding:0 16px 24px;">
+                        <div style="text-align:center;padding:16px 0 14px;">
+                            <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1rem;color:var(--light-text);line-height:1.6;padding:0 20px;">"Every good and perfect gift is from above, coming down from the Father of the heavenly lights."</div>
+                            <div style="font-family:'Playfair Display',serif;font-size:0.88rem;color:var(--accent);margin-top:4px;font-weight:600;">James 1:17</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:8px;font-weight:500;" id="dashboard-date"></div>
+                        </div>
+
+                        <div id="dashboard-news" style="display:none;margin-bottom:14px;"></div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+                            <button onclick="switchToTab('moments')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">📸 Share a Moment</button>
+                            <button onclick="switchToTab('uplift')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">🙏 Encouragement</button>
+                            <button onclick="switchToTab('polls')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">💬 Polls &amp; WYR</button>
+                            <button onclick="switchToTab('quiz')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">🧠 Daily Quiz</button>
+                        </div>
+
+                        <div id="dashboard-encouragement" style="display:none;margin-bottom:14px;"></div>
+                        <div id="dashboard-photo" style="display:none;margin-bottom:14px;"></div>
+                        <div id="dashboard-quiz" style="display:none;margin-bottom:14px;"></div>
+                    </div>
+
                 </div>
             </div>
 
@@ -6746,11 +6768,13 @@
             });
         }
 
-        // Show prep section before retreat, hide once retreat starts
+        // Show prep section before retreat, dashboard during retreat
         (function() {
             const now = new Date();
-            const retreatStart = new Date('2026-04-09T19:00:00-04:00');
-            if (now < retreatStart) {
+            const retreatDay1 = new Date('2026-04-09T00:00:00-04:00');
+            const retreatEnd  = new Date('2026-04-11T14:00:00-04:00');
+            if (now < retreatDay1) {
+                // Before retreat — show prep/packing info
                 document.getElementById('prep-section').style.display = 'block';
                 const toggle = document.getElementById('prep-toggle');
                 const details = document.getElementById('prep-details');
@@ -6764,11 +6788,108 @@
                         toggle.textContent = 'Location, packing list & more \u25be';
                     }
                 });
+            } else if (now <= retreatEnd) {
+                // During retreat — hide prep, show live dashboard
+                document.getElementById('prep-section').style.display = 'none';
+                loadDashboard();
             } else {
-                // Retreat has started — hide prep, prep-toggle is not needed
+                // After retreat
                 document.getElementById('prep-section').style.display = 'none';
             }
         })();
+
+        async function loadDashboard() {
+            const dash = document.getElementById('retreat-dashboard');
+            if (!dash) return;
+            dash.style.display = 'block';
+
+            // Date line
+            const dateEl = document.getElementById('dashboard-date');
+            if (dateEl) {
+                const now = new Date();
+                const retreatDay1 = new Date('2026-04-09T00:00:00-04:00');
+                const diffDays = Math.floor((now - retreatDay1) / 86400000);
+                const dayNum = Math.max(1, diffDays + 1);
+                const dayLabel = ['Thursday', 'Friday', 'Saturday'][diffDays] || now.toLocaleDateString('en-US', { weekday: 'long' });
+                const monthDay = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                dateEl.textContent = 'Day ' + dayNum + ' \u00b7 ' + dayLabel + ', ' + monthDay;
+            }
+
+            // Fetch live content
+            try {
+                const [news, messages, moments, quiz] = await Promise.all([
+                    fetch(API_URL + '/api/news').then(r => r.ok ? r.json() : []).catch(() => []),
+                    fetch(API_URL + '/api/messages').then(r => r.ok ? r.json() : []).catch(() => []),
+                    fetch(API_URL + '/api/moments').then(r => r.ok ? r.json() : []).catch(() => []),
+                    fetch(API_URL + '/api/quiz/scores').then(r => r.ok ? r.json() : []).catch(() => [])
+                ]);
+
+                // News / reminders
+                const newsEl = document.getElementById('dashboard-news');
+                if (newsEl && news.length) {
+                    newsEl.style.display = 'block';
+                    newsEl.innerHTML = news.map(function(n) {
+                        return '<div style="padding:10px 14px;background:rgba(201,144,138,0.08);border-radius:10px;border-left:3px solid var(--blush);margin-bottom:6px;">' +
+                            '<span style="margin-right:8px;">' + escHtml(n.icon || '\ud83d\udce2') + '</span>' +
+                            '<span style="font-size:0.92rem;color:var(--dark-text);">' + escHtml(n.message) + '</span></div>';
+                    }).join('');
+                }
+
+                // Latest encouragement
+                var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
+                var encEl = document.getElementById('dashboard-encouragement');
+                if (encEl && encouragements.length) {
+                    var latest = encouragements[0];
+                    encEl.style.display = 'block';
+                    encEl.innerHTML =
+                        '<div style="padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);">' +
+                        '<div style="font-size:0.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Latest Encouragement</div>' +
+                        '<div style="font-family:Cormorant Garamond,serif;font-style:italic;font-size:1rem;color:var(--dark-text);line-height:1.5;">\u201c' + escHtml(latest.message) + '\u201d</div>' +
+                        '<div style="font-size:0.85rem;color:var(--light-text);margin-top:6px;">\u2014 ' + escHtml(latest.author_name || 'Anonymous') +
+                        (latest.tagged_name ? ' to ' + escHtml(latest.tagged_name) : '') + '</div></div>';
+                }
+
+                // Latest photo moment
+                var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
+                var photoEl = document.getElementById('dashboard-photo');
+                if (photoEl && photosWithData.length) {
+                    var p = photosWithData[0];
+                    photoEl.style.display = 'block';
+                    photoEl.innerHTML =
+                        '<div style="border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);">' +
+                        '<img src="' + p.photo_data + '" alt="" style="width:100%;display:block;max-height:220px;object-fit:cover;">' +
+                        '<div style="padding:10px 14px;background:white;">' +
+                        '<div style="font-size:0.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">Latest Moment</div>' +
+                        (p.caption ? '<div style="font-size:0.92rem;color:var(--dark-text);">' + escHtml(p.caption) + '</div>' : '') +
+                        '<div style="font-size:0.82rem;color:var(--light-text);">\u2014 ' + escHtml(p.author_name || 'Anonymous') + '</div></div></div>';
+                }
+
+                // Quiz standings (latest day)
+                var quizEl = document.getElementById('dashboard-quiz');
+                if (quizEl && quiz.length) {
+                    var maxDay = Math.max.apply(null, quiz.map(function(s) { return s.day; }));
+                    var dayScores = quiz.filter(function(s) { return s.day === maxDay; })
+                        .sort(function(a, b) { return b.score - a.score || (a.time_seconds || 0) - (b.time_seconds || 0); })
+                        .slice(0, 5);
+                    if (dayScores.length) {
+                        var medals = ['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'];
+                        quizEl.style.display = 'block';
+                        quizEl.innerHTML =
+                            '<div style="padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);">' +
+                            '<div style="font-size:0.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Day ' + maxDay + ' Quiz Top 5</div>' +
+                            dayScores.map(function(s, i) {
+                                return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;' + (i < dayScores.length - 1 ? 'border-bottom:1px solid rgba(200,185,176,0.15);' : '') + '">' +
+                                    '<span style="font-size:1rem;width:24px;text-align:center;">' + (medals[i] || (i + 1)) + '</span>' +
+                                    '<span style="flex:1;font-size:0.92rem;color:var(--dark-text);">' + escHtml(s.user_name) + '</span>' +
+                                    '<span style="font-family:Playfair Display,serif;font-weight:700;color:var(--accent);font-size:0.95rem;">' + s.score + '/' + s.total + '</span></div>';
+                            }).join('') +
+                            '<button onclick="switchToTab(\'quiz\')" style="width:100%;margin-top:10px;padding:8px;background:rgba(138,158,122,0.1);border:1px solid rgba(138,158,122,0.2);border-radius:8px;color:var(--sage);font-family:Cormorant Garamond,serif;font-size:0.88rem;font-weight:600;cursor:pointer;">Take Today\'s Quiz \u2192</button></div>';
+                    }
+                }
+            } catch (e) {
+                console.error('Dashboard load error:', e);
+            }
+        }
 
         checkPostRetreat();
 

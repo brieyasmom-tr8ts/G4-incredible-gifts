@@ -4826,6 +4826,7 @@
             document.querySelector('.content-area').scrollTop = 0;
             animateCards(activeTab);
             localStorage.setItem('g4_active_tab', tabName);
+            if (typeof loadTabData === 'function') loadTabData(tabName);
         }
 
         // All possible nav items (Home is always shown)

@@ -1517,12 +1517,24 @@
         startBtn.textContent = 'Start Slideshow';
 
         // Auto-play: skip start screen if ?autoplay is in the URL
+        // Use ?autoplay for all categories, or ?autoplay&cats=welcome,moment,poll for specific ones
         const params = new URLSearchParams(window.location.search);
         if (params.has('autoplay')) {
-            // Enable all categories
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                if (!btn.classList.contains('active')) btn.click();
-            });
+            if (params.has('cats')) {
+                const wanted = new Set(params.get('cats').split(',').map(s => s.trim()));
+                activeCategories.clear();
+                document.querySelectorAll('#category-filters .filter-btn').forEach(btn => {
+                    const key = btn.dataset.catKey;
+                    if (wanted.has(key)) {
+                        if (!btn.classList.contains('active')) btn.click();
+                    } else {
+                        if (btn.classList.contains('active')) btn.click();
+                    }
+                });
+            } else {
+                // Enable all categories
+                setAllCategories(true);
+            }
             startSlideshow();
         }
     }

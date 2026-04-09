@@ -2714,7 +2714,6 @@
 
                         <div id="dashboard-encouragement" style="display:none;margin-bottom:14px;"></div>
                         <div id="dashboard-photo" style="display:none;margin-bottom:14px;"></div>
-                        <div id="dashboard-quiz" style="display:none;margin-bottom:14px;"></div>
                     </div>
 
                 </div>
@@ -6817,11 +6816,10 @@
 
             // Fetch live content
             try {
-                const [news, messages, moments, quiz] = await Promise.all([
+                const [news, messages, moments] = await Promise.all([
                     fetch(API_URL + '/api/news').then(r => r.ok ? r.json() : []).catch(() => []),
                     fetch(API_URL + '/api/messages').then(r => r.ok ? r.json() : []).catch(() => []),
-                    fetch(API_URL + '/api/moments').then(r => r.ok ? r.json() : []).catch(() => []),
-                    fetch(API_URL + '/api/quiz/scores').then(r => r.ok ? r.json() : []).catch(() => [])
+                    fetch(API_URL + '/api/moments').then(r => r.ok ? r.json() : []).catch(() => [])
                 ]);
 
                 // News / reminders
@@ -6864,28 +6862,6 @@
                         '<div style="font-size:0.82rem;color:var(--light-text);">\u2014 ' + escHtml(p.author_name || 'Anonymous') + '</div></div></div>';
                 }
 
-                // Quiz standings (latest day)
-                var quizEl = document.getElementById('dashboard-quiz');
-                if (quizEl && quiz.length) {
-                    var maxDay = Math.max.apply(null, quiz.map(function(s) { return s.day; }));
-                    var dayScores = quiz.filter(function(s) { return s.day === maxDay; })
-                        .sort(function(a, b) { return b.score - a.score || (a.time_seconds || 0) - (b.time_seconds || 0); })
-                        .slice(0, 5);
-                    if (dayScores.length) {
-                        var medals = ['\ud83e\udd47','\ud83e\udd48','\ud83e\udd49'];
-                        quizEl.style.display = 'block';
-                        quizEl.innerHTML =
-                            '<div style="padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);">' +
-                            '<div style="font-size:0.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Day ' + maxDay + ' Quiz Top 5</div>' +
-                            dayScores.map(function(s, i) {
-                                return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;' + (i < dayScores.length - 1 ? 'border-bottom:1px solid rgba(200,185,176,0.15);' : '') + '">' +
-                                    '<span style="font-size:1rem;width:24px;text-align:center;">' + (medals[i] || (i + 1)) + '</span>' +
-                                    '<span style="flex:1;font-size:0.92rem;color:var(--dark-text);">' + escHtml(s.user_name) + '</span>' +
-                                    '<span style="font-family:Playfair Display,serif;font-weight:700;color:var(--accent);font-size:0.95rem;">' + s.score + '/' + s.total + '</span></div>';
-                            }).join('') +
-                            '<button onclick="switchToTab(\'quiz\')" style="width:100%;margin-top:10px;padding:8px;background:rgba(138,158,122,0.1);border:1px solid rgba(138,158,122,0.2);border-radius:8px;color:var(--sage);font-family:Cormorant Garamond,serif;font-size:0.88rem;font-weight:600;cursor:pointer;">Take Today\'s Quiz \u2192</button></div>';
-                    }
-                }
             } catch (e) {
                 console.error('Dashboard load error:', e);
             }

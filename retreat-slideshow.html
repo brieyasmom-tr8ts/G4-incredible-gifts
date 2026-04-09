@@ -1515,6 +1515,16 @@
         startBtn.style.opacity = '1';
         startBtn.style.cursor = 'pointer';
         startBtn.textContent = 'Start Slideshow';
+
+        // Auto-play: skip start screen if ?autoplay is in the URL
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('autoplay')) {
+            // Enable all categories
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (!btn.classList.contains('active')) btn.click();
+            });
+            startSlideshow();
+        }
     }
 
     // ---- Chrome auto-hide (so the audience doesn't see Up Next / controls) ----

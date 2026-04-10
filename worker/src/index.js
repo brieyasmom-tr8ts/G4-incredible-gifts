@@ -1480,6 +1480,39 @@ export default {
         return json(results, corsHeaders);
       }
 
+      // ===== SUGGESTIONS =====
+
+      // POST /api/suggestions - submit a suggestion or feedback note
+      if (path === '/api/suggestions' && request.method === 'POST') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS suggestions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', tag TEXT DEFAULT 'general', message TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) { /* exists */ }
+
+        const body = await request.json();
+        if (!body.message || !body.message.trim()) {
+          return json({ error: 'Message is required' }, corsHeaders, 400);
+        }
+
+        await env.DB.prepare(
+          'INSERT INTO suggestions (user_id, name, tag, message) VALUES (?, ?, ?, ?)'
+        ).bind(
+          body.user_id || null,
+          body.name || 'Anonymous',
+          body.tag || 'general',
+          body.message.trim()
+        ).run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/suggestions - get all suggestions (admin)
+      if (path === '/api/suggestions' && request.method === 'GET') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS suggestions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', tag TEXT DEFAULT 'general', message TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) { /* exists */ }
+
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM suggestions ORDER BY created_at DESC'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
       // ===== QUIZ (Know Your Sisters) =====
 
       // POST /api/quiz/score - save a quiz score

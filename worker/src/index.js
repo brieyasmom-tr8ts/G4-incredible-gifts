@@ -273,14 +273,16 @@ export default {
           return json({ error: 'First name is required' }, corsHeaders, 400);
         }
 
-        const cleanName = first_name.trim();
+        const rawName = first_name.trim();
+        // Capitalize first letter, lowercase rest for consistent matching
+        const cleanName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
         const cleanLastName = (last_name || '').trim();
         const cleanInitial = cleanLastName ? cleanLastName.charAt(0).toUpperCase() : (last_initial || '').trim().charAt(0).toUpperCase();
         const displayName = cleanInitial ? `${cleanName} ${cleanInitial}.` : cleanName;
 
-        // Check for existing user — return them (re-login)
+        // Check for existing user — case-insensitive match
         const existing = await env.DB.prepare(
-          'SELECT id, first_name, last_initial FROM users WHERE first_name = ? AND last_initial = ?'
+          'SELECT id, first_name, last_initial, last_name FROM users WHERE LOWER(first_name) = LOWER(?) AND UPPER(last_initial) = UPPER(?)'
         ).bind(cleanName, cleanInitial).first();
 
         if (existing) {

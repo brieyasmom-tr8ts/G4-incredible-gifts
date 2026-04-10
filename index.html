@@ -3853,7 +3853,7 @@
                     launchConfetti();
                     showToast('Welcome to the retreat, ' + currentUser.first_name + '! \u2728');
                 } catch (e) {
-                    showToast('Could not connect. Check your connection.');
+                    showToast('Could not connect: ' + (e.message || 'Check your connection'));
                     btn.disabled = false;
                     btn.textContent = "Let's Go!";
                 }

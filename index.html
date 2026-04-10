@@ -7556,34 +7556,48 @@
                 var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
 
                 if (photosWithData.length) {
-                    feedEl.style.display = 'block';
-                    feedEl.innerHTML = '<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
-                        '<div style="height:280px;display:flex;align-items:center;justify-content:center;background:#f5f3f0;padding:8px;">' +
-                        '<img id="feed-slideshow-img" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;transition:opacity 0.5s ease;" alt="">' +
-                        '</div>' +
-                        '<div style="padding:8px 14px 10px;display:flex;justify-content:space-between;align-items:center;">' +
-                        '<div><span id="feed-slideshow-caption" style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--dark-text);"></span> <span id="feed-slideshow-name" style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);"></span></div>' +
-                        '<div id="feed-slideshow-count" style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--light-text);"></div>' +
-                        '</div></div>';
+                    // Only rebuild slideshow if photo count changed
+                    var newCount = photosWithData.length;
+                    if (window._feedSlidePhotos && window._feedSlidePhotos.length === newCount && window._feedSlideshowTimer) {
+                        // Just update the photo data in case new ones replaced old
+                        window._feedSlidePhotos = photosWithData;
+                    } else {
+                        window._feedSlidePhotos = photosWithData;
+                        feedEl.style.display = 'block';
+                        feedEl.innerHTML = '<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
+                            '<div style="height:280px;display:flex;align-items:center;justify-content:center;background:#f5f3f0;padding:8px;">' +
+                            '<img id="feed-slideshow-img" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;transition:opacity 0.5s ease;" alt="">' +
+                            '</div>' +
+                            '<div style="padding:8px 14px 10px;display:flex;justify-content:space-between;align-items:center;">' +
+                            '<div><span id="feed-slideshow-caption" style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--dark-text);"></span> <span id="feed-slideshow-name" style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);"></span></div>' +
+                            '<div id="feed-slideshow-count" style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--light-text);"></div>' +
+                            '</div></div>';
 
-                    var slideIdx = 0;
-                    function showFeedSlide() {
-                        var p = photosWithData[slideIdx];
-                        var img = document.getElementById('feed-slideshow-img');
-                        img.style.opacity = '0';
-                        setTimeout(function() {
-                            img.src = p.photo_data;
-                            img.style.opacity = '1';
-                            document.getElementById('feed-slideshow-caption').textContent = p.caption || '';
-                            document.getElementById('feed-slideshow-name').textContent = p.author_name ? '\u2014 ' + p.author_name : '';
-                            document.getElementById('feed-slideshow-count').textContent = (slideIdx + 1) + ' / ' + photosWithData.length;
-                            slideIdx = (slideIdx + 1) % photosWithData.length;
-                        }, 400);
+                        if (!window._feedSlideIdx) window._feedSlideIdx = 0;
+                        function showFeedSlide() {
+                            var photos = window._feedSlidePhotos;
+                            if (!photos || !photos.length) return;
+                            if (window._feedSlideIdx >= photos.length) window._feedSlideIdx = 0;
+                            var p = photos[window._feedSlideIdx];
+                            var img = document.getElementById('feed-slideshow-img');
+                            if (!img) return;
+                            img.style.opacity = '0';
+                            setTimeout(function() {
+                                img.src = p.photo_data;
+                                img.style.opacity = '1';
+                                var capEl = document.getElementById('feed-slideshow-caption');
+                                var nameEl = document.getElementById('feed-slideshow-name');
+                                var countEl = document.getElementById('feed-slideshow-count');
+                                if (capEl) capEl.textContent = p.caption || '';
+                                if (nameEl) nameEl.textContent = p.author_name ? '\u2014 ' + p.author_name : '';
+                                if (countEl) countEl.textContent = (window._feedSlideIdx + 1) + ' / ' + photos.length;
+                                window._feedSlideIdx = (window._feedSlideIdx + 1) % photos.length;
+                            }, 400);
+                        }
+                        showFeedSlide();
+                        if (window._feedSlideshowTimer) clearInterval(window._feedSlideshowTimer);
+                        if (photosWithData.length > 1) window._feedSlideshowTimer = setInterval(showFeedSlide, 12000);
                     }
-                    showFeedSlide();
-                    // Clear any previous interval before starting a new one
-                    if (window._feedSlideshowTimer) clearInterval(window._feedSlideshowTimer);
-                    if (photosWithData.length > 1) window._feedSlideshowTimer = setInterval(showFeedSlide, 12000);
                 }
 
             } catch (e) {

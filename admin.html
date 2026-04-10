@@ -608,6 +608,7 @@
             <button class="nav-tab" data-section="churches"><span class="nav-icon">⛪</span> Churches</button>
             <button class="nav-tab" data-section="news"><span class="nav-icon">📰</span> News / Reminders</button>
             <button class="nav-tab" data-section="navmenu"><span class="nav-icon">🧭</span> Nav Menu</button>
+            <button class="nav-tab" data-section="homebuttons"><span class="nav-icon">🏠</span> Home Buttons</button>
             <button class="nav-tab" data-section="videos"><span class="nav-icon">🎬</span> Videos <span class="badge" id="count-videos">0</span></button>
             <button class="nav-tab" data-section="moments"><span class="nav-icon">📸</span> Moments <span class="badge" id="count-moments">0</span></button>
             <button class="nav-tab" data-section="prayers"><span class="nav-icon">🙏</span> Prayer Wall <span class="badge" id="count-prayers">0</span></button>
@@ -746,6 +747,15 @@
                 <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;">Toggle which buttons appear on everyone's phones. Home is always visible. Max 6 items recommended.</div>
                 <div id="nav-toggles-list" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
                 <div style="margin-top:1rem;font-size:0.85rem;color:var(--light-text);">Active: <strong id="nav-active-count">0</strong> items (Home + toggled)</div>
+            </div>
+        </div>
+
+        <!-- Home Page Buttons -->
+        <div class="section" id="section-homebuttons">
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.2rem;font-weight:700;margin-bottom:0.25rem;">Home Page Buttons</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;">Toggle which quick-action buttons show on the home screen. Separate from bottom nav.</div>
+                <div id="home-toggles-list" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
             </div>
         </div>
 
@@ -1118,7 +1128,7 @@ function closeModal() { document.getElementById('modal').classList.remove('show'
 // --- Sidebar ---
 const SECTION_TITLES = {
     stats: 'Stats', users: 'Users', churches: 'Churches', news: 'News / Reminders',
-    navmenu: 'Nav Menu', videos: 'Videos',
+    navmenu: 'Nav Menu', homebuttons: 'Home Buttons', videos: 'Videos',
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
     polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme'
 };
@@ -1846,6 +1856,7 @@ async function loadGameSettings() {
         document.getElementById('toggle-ss-reveal').checked = settings.secret_sister_reveal === '1';
         document.getElementById('toggle-wyr-on-polls').checked = settings.show_wyr_on_polls !== '0';
         renderNavToggles();
+        renderHomeToggles();
     } catch (e) { console.error('Game settings:', e); }
 }
 
@@ -2466,6 +2477,36 @@ function renderNavToggles() {
     document.getElementById('nav-active-count').textContent = activeCount;
 }
 
+const HOME_BUTTON_ITEMS = [
+    { key: 'home_moments', label: 'Share a Moment' },
+    { key: 'home_uplift', label: 'Send Encouragement' },
+    { key: 'home_gratitude', label: 'Gratitude Wall' },
+    { key: 'home_photobooth', label: 'Photo Booth' },
+    { key: 'home_polls', label: 'Polls & WYR' },
+    { key: 'home_sendlove', label: 'Love for Marnie' },
+    { key: 'home_journal', label: 'My Journal' },
+    { key: 'home_hunt', label: 'Scavenger Hunt' },
+    { key: 'home_packing', label: 'Packing Points' },
+    { key: 'home_connect', label: 'Connect Directory' },
+    { key: 'home_schedule', label: 'View Schedule' },
+];
+
+function renderHomeToggles() {
+    const list = document.getElementById('home-toggles-list');
+    if (!list) return;
+    list.innerHTML = HOME_BUTTON_ITEMS.map(item => {
+        const isOn = gameSettings[item.key] === '1';
+        return `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1rem;background:${isOn ? 'rgba(201,144,138,0.08)' : 'rgba(200,185,176,0.04)'};border-radius:10px;border:1px solid ${isOn ? 'var(--blush)' : 'rgba(200,185,176,0.2)'};transition:all 0.2s;">
+            <div style="font-weight:600;font-size:0.92rem;">${item.label}</div>
+            <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
+                <input type="checkbox" ${isOn ? 'checked' : ''} style="opacity:0;width:0;height:0;" onchange="toggleNavItem('${item.key}', this.checked)">
+                <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+            </label>
+        </div>`;
+    }).join('');
+}
+
 async function toggleNavItem(key, on) {
     try {
         await apiFetch('/api/games/settings', {
@@ -2474,6 +2515,7 @@ async function toggleNavItem(key, on) {
         });
         gameSettings[key] = on ? '1' : '0';
         renderNavToggles();
+        renderHomeToggles();
     } catch(e) { showToast('Error: ' + e.message); }
 }
 

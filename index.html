@@ -7480,33 +7480,37 @@
 
                 var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
 
-                // Build stacked feed
+                // Build slideshow feed — one photo at a time, shrunk to fit
                 var feedEl = document.getElementById('dashboard-feed');
-                var feedHTML = '';
                 var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
 
-                // Latest photos — full size, proper cards
-                photosWithData.slice(0, 3).forEach(function(p) {
-                    feedHTML += '<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);margin-bottom:10px;cursor:pointer;" onclick="switchToTab(\'moments\')">' +
-                        '<img src="' + p.photo_data + '" alt="" style="width:100%;display:block;">' +
-                        '<div style="padding:10px 14px;">' +
-                        (p.caption ? '<div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--dark-text);">' + escHtml(p.caption) + '</div>' : '') +
-                        '<div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);">' + escHtml(p.author_name || 'Anonymous') + '</div></div></div>';
-                });
-
-                // Latest encouragement
-                var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
-                if (encouragements.length) {
-                    var e = encouragements[0];
-                    feedHTML += '<div style="padding:14px 16px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);margin-bottom:10px;cursor:pointer;" onclick="switchToTab(\'uplift\')">' +
-                        '<div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:600;color:var(--sage);margin-bottom:6px;">Encouragement</div>' +
-                        '<div style="font-family:Cormorant Garamond,serif;font-style:italic;font-size:1rem;color:var(--dark-text);line-height:1.5;">\u201c' + escHtml(e.message) + '\u201d</div>' +
-                        '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);margin-top:6px;">\u2014 ' + escHtml(e.author_name || 'Anonymous') + '</div></div>';
-                }
-
-                if (feedHTML) {
+                if (photosWithData.length) {
                     feedEl.style.display = 'block';
-                    feedEl.innerHTML = feedHTML;
+                    feedEl.innerHTML = '<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
+                        '<div style="height:280px;display:flex;align-items:center;justify-content:center;background:#f5f3f0;padding:8px;">' +
+                        '<img id="feed-slideshow-img" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;transition:opacity 0.5s ease;" alt="">' +
+                        '</div>' +
+                        '<div style="padding:8px 14px 10px;display:flex;justify-content:space-between;align-items:center;">' +
+                        '<div><span id="feed-slideshow-caption" style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--dark-text);"></span> <span id="feed-slideshow-name" style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);"></span></div>' +
+                        '<div id="feed-slideshow-count" style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--light-text);"></div>' +
+                        '</div></div>';
+
+                    var slideIdx = 0;
+                    function showSlide() {
+                        var p = photosWithData[slideIdx];
+                        var img = document.getElementById('feed-slideshow-img');
+                        img.style.opacity = '0';
+                        setTimeout(function() {
+                            img.src = p.photo_data;
+                            img.style.opacity = '1';
+                            document.getElementById('feed-slideshow-caption').textContent = p.caption || '';
+                            document.getElementById('feed-slideshow-name').textContent = p.author_name ? '\u2014 ' + p.author_name : '';
+                            document.getElementById('feed-slideshow-count').textContent = (slideIdx + 1) + ' / ' + photosWithData.length;
+                            slideIdx = (slideIdx + 1) % photosWithData.length;
+                        }, 400);
+                    }
+                    showSlide();
+                    if (photosWithData.length > 1) setInterval(showSlide, 5000);
                 }
 
             } catch (e) {

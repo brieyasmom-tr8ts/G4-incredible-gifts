@@ -9221,20 +9221,20 @@
                 textWithShadow(ctx, 'James 1:17', W/2, H-30, 'rgba(0,0,0,0.3)');
             }
 
-            // 3. Oh Deer — Full diagonal sash corner to corner
+            // 3. Oh Deer — Diagonal sash across top corner
             function frameOhDeer(ctx) {
                 ctx.save();
-                ctx.translate(W/2, H/2 - 80);
-                ctx.rotate(-0.42);
+                ctx.translate(W/2 + 160, 200);
+                ctx.rotate(-0.38);
                 ctx.fillStyle = 'rgba(139,105,20,0.88)';
-                ctx.fillRect(-W*2, -60, W*4, 120);
+                ctx.fillRect(-W*2, -55, W*4, 110);
                 ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                ctx.fillRect(-W*2, -60, W*4, 4);
-                ctx.fillRect(-W*2, 56, W*4, 4);
+                ctx.fillRect(-W*2, -55, W*4, 4);
+                ctx.fillRect(-W*2, 51, W*4, 4);
                 ctx.fillStyle = 'white';
-                ctx.font = 'bold 85px Playfair Display, Georgia, serif';
+                ctx.font = 'bold 80px Playfair Display, Georgia, serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('Oh "Deer"!', 0, 30);
+                ctx.fillText('Oh "Deer"!', 0, 28);
                 ctx.restore();
                 gradientFade(ctx, H-200, 200, 'rgba(74,55,40,0.6)', 'up');
                 ctx.textAlign = 'center';

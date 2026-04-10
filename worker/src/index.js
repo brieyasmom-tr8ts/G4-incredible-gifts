@@ -802,8 +802,8 @@ export default {
           'SELECT COUNT(*) as cnt FROM moments WHERE user_id = ?'
         ).bind(user_id).first();
 
-        if (count && count.cnt >= 5) {
-          return json({ error: 'You can share up to 5 moments. Delete one to add more.' }, corsHeaders, 400);
+        if (count && count.cnt >= 20) {
+          return json({ error: 'You can share up to 20 moments. Delete one to add more.' }, corsHeaders, 400);
         }
 
         // Limit photo size (~2MB base64)

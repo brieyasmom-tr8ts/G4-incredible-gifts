@@ -7651,7 +7651,9 @@
                         var m = list[window._feedSlideIdx];
                         var img = document.getElementById('feed-slideshow-img');
                         if (!img) return;
-                        var src = m.image_url || m.photo_data || (API_URL + '/api/moments/' + m.id + '/image');
+                        // Use photo_data if it's base64, otherwise use image_url
+                        var src = (m.photo_data && m.photo_data.startsWith('data:')) ? m.photo_data : (m.image_url || m.photo_data || (API_URL + '/api/moments/' + m.id + '/image'));
+                        if (!src) { window._feedSlideIdx = (window._feedSlideIdx + 1) % list.length; return; }
                         img.style.opacity = '0';
                         setTimeout(function() {
                             img.src = src;

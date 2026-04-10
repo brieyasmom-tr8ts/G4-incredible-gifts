@@ -7458,8 +7458,10 @@
             const btnContainer = document.getElementById('dashboard-buttons');
             if (btnContainer) {
                 const s = gameSettings || {};
-                btnContainer.innerHTML = HOME_BUTTONS
-                    .filter(b => s[b.key] === '1')
+                // If no home_* keys set yet, show defaults
+                const hasHomeKeys = HOME_BUTTONS.some(b => s[b.key] !== undefined);
+                const visible = HOME_BUTTONS.filter(b => hasHomeKeys ? s[b.key] === '1' : ['home_moments','home_uplift','home_gratitude','home_photobooth','home_polls','home_sendlove'].includes(b.key));
+                btnContainer.innerHTML = visible
                     .map(b => '<button onclick="' + b.action + '" style="' + btnStyle + '">' + b.label + '</button>')
                     .join('');
             }

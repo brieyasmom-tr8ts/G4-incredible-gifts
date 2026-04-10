@@ -2959,15 +2959,8 @@
                         <div id="dashboard-encouragement" style="display:none;"></div>
                         <div id="dashboard-photo" style="display:none;"></div>
 
-                        <!-- Clean text buttons — 2 column grid -->
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-                            <button onclick="switchToTab('moments')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--blush);margin-right:2px;">Share</span> a Moment</button>
-                            <button onclick="switchToTab('uplift')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--sage);margin-right:2px;">Send</span> Encouragement</button>
-                            <button onclick="switchToTab('gratitude')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--sage);margin-right:2px;">Gratitude</span> Wall</button>
-                            <button onclick="switchToTab('photobooth')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--blush);margin-right:2px;">Photo</span> Booth</button>
-                            <button onclick="switchToTab('polls')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--blush);margin-right:2px;">Polls</span> &amp; WYR</button>
-                            <button onclick="switchToTab('sendlove')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--sage);margin-right:2px;">Love for</span> Marnie</button>
-                        </div>
+                        <!-- Quick action buttons — controlled by admin nav toggles -->
+                        <div id="dashboard-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
 
                         <!-- Suggestions — minimal -->
                         <div id="suggestions-box" style="padding:14px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);">
@@ -7446,6 +7439,27 @@
             const dash = document.getElementById('retreat-dashboard');
             if (!dash) return;
             dash.style.display = 'block';
+
+            // Build home buttons from nav settings
+            const btnStyle = 'padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;';
+            const HOME_BUTTONS = [
+                { key: 'nav_moments', action: "switchToTab('moments')", label: '<span style="color:var(--blush);">Share</span> a Moment' },
+                { key: 'nav_uplift', action: "switchToTab('uplift')", label: '<span style="color:var(--sage);">Send</span> Encouragement' },
+                { key: 'nav_gratitude', action: "switchToTab('gratitude')", label: '<span style="color:var(--sage);">Gratitude</span> Wall' },
+                { key: 'nav_photobooth', action: "switchToTab('photobooth')", label: '<span style="color:var(--blush);">Photo</span> Booth' },
+                { key: 'nav_polls', action: "switchToTab('polls')", label: '<span style="color:var(--blush);">Polls</span> &amp; WYR' },
+                { key: 'nav_sendlove', action: "switchToTab('sendlove')", label: '<span style="color:var(--sage);">Love for</span> Marnie' },
+                { key: 'nav_journal', action: "switchToTab('journal')", label: '<span style="color:var(--sage);">My</span> Journal' },
+                { key: 'nav_hunt', action: "switchToTab('hunt')", label: '<span style="color:var(--blush);">Scavenger</span> Hunt' },
+            ];
+            const btnContainer = document.getElementById('dashboard-buttons');
+            if (btnContainer) {
+                const s = navSettings || {};
+                btnContainer.innerHTML = HOME_BUTTONS
+                    .filter(b => s[b.key] === '1')
+                    .map(b => '<button onclick="' + b.action + '" style="' + btnStyle + '">' + b.label + '</button>')
+                    .join('');
+            }
 
             // Date line
             const dateEl = document.getElementById('dashboard-date');

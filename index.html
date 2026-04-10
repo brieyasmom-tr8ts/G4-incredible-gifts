@@ -7612,7 +7612,7 @@
                 const [news, messages, moments] = await Promise.all([
                     fetch(API_URL + '/api/news').then(r => r.ok ? r.json() : []).catch(() => []),
                     fetch(API_URL + '/api/messages').then(r => r.ok ? r.json() : []).catch(() => []),
-                    fetch(API_URL + '/api/moments').then(r => r.ok ? r.json() : []).catch(() => [])
+                    fetch(API_URL + '/api/moments/latest').then(r => r.ok ? r.json() : []).catch(() => [])
                 ]);
 
                 // News / reminders
@@ -7628,57 +7628,59 @@
 
                 var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
 
-                // Slideshow
+                // Slideshow — metadata loaded above, fetch photos one at a time
                 var feedEl = document.getElementById('dashboard-feed');
-                // Use cached photos for instant display, fetch fresh in background
-                var cachedMoments = null;
-                try { cachedMoments = JSON.parse(sessionStorage.getItem('g4_dash_moments')); } catch(e) {}
-                var momentsToUse = (cachedMoments && cachedMoments.length) ? cachedMoments : (moments || []);
-                var photosWithData = momentsToUse.filter(function(m) { return m.photo_data; }).slice(0, 10);
-                // Cache for next load
-                try { sessionStorage.setItem('g4_dash_moments', JSON.stringify((moments || []).slice(0, 10))); } catch(e) {}
-                if (feedEl && photosWithData.length) {
+                var momentsList = (moments || []).filter(function(m) { return m.id; });
+                if (feedEl && momentsList.length && !window._feedSlideshowTimer) {
+                    window._feedSlideList = momentsList;
+                    window._feedSlideCache = window._feedSlideCache || {};
+                    if (!window._feedSlideIdx) window._feedSlideIdx = 0;
+                    feedEl.style.display = 'block';
+                    feedEl.innerHTML = '<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
+                        '<div style="height:280px;display:flex;align-items:center;justify-content:center;background:#f5f3f0;padding:8px;">' +
+                        '<img id="feed-slideshow-img" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;transition:opacity 0.5s ease;" alt="">' +
+                        '</div>' +
+                        '<div style="padding:8px 14px 10px;display:flex;justify-content:space-between;align-items:center;">' +
+                        '<div><span id="feed-slideshow-caption" style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--dark-text);"></span> <span id="feed-slideshow-name" style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);"></span></div>' +
+                        '<div id="feed-slideshow-count" style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--light-text);"></div>' +
+                        '</div></div>';
 
-                        var newCount = photosWithData.length;
-                        if (window._feedSlidePhotos && window._feedSlidePhotos.length === newCount && window._feedSlideshowTimer) {
-                            window._feedSlidePhotos = photosWithData;
-                            return;
+                    async function showFeedSlide() {
+                        var list = window._feedSlideList;
+                        if (!list || !list.length) return;
+                        if (window._feedSlideIdx >= list.length) window._feedSlideIdx = 0;
+                        var m = list[window._feedSlideIdx];
+                        var img = document.getElementById('feed-slideshow-img');
+                        if (!img) return;
+                        // Fetch single photo if not cached
+                        if (!window._feedSlideCache[m.id]) {
+                            try {
+                                var photoData = m.photo_data;
+                                if (!photoData) {
+                                    var r = await fetch(API_URL + '/api/moments/' + m.id + '/photo');
+                                    var d = await r.json();
+                                    if (d && d.photo_data) photoData = d.photo_data;
+                                }
+                                if (photoData) window._feedSlideCache[m.id] = photoData;
+                            } catch(e) {}
                         }
-                        window._feedSlidePhotos = photosWithData;
-                        feedEl.style.display = 'block';
-                        feedEl.innerHTML = '<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
-                            '<div style="height:280px;display:flex;align-items:center;justify-content:center;background:#f5f3f0;padding:8px;">' +
-                            '<img id="feed-slideshow-img" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;transition:opacity 0.5s ease;" alt="">' +
-                            '</div>' +
-                            '<div style="padding:8px 14px 10px;display:flex;justify-content:space-between;align-items:center;">' +
-                            '<div><span id="feed-slideshow-caption" style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--dark-text);"></span> <span id="feed-slideshow-name" style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);"></span></div>' +
-                            '<div id="feed-slideshow-count" style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--light-text);"></div>' +
-                            '</div></div>';
-
-                        if (!window._feedSlideIdx) window._feedSlideIdx = 0;
-                        function showFeedSlide() {
-                            var photos = window._feedSlidePhotos;
-                            if (!photos || !photos.length) return;
-                            if (window._feedSlideIdx >= photos.length) window._feedSlideIdx = 0;
-                            var p = photos[window._feedSlideIdx];
-                            var img = document.getElementById('feed-slideshow-img');
-                            if (!img) return;
-                            img.style.opacity = '0';
-                            setTimeout(function() {
-                                img.src = p.photo_data;
-                                img.style.opacity = '1';
-                                var capEl = document.getElementById('feed-slideshow-caption');
-                                var nameEl = document.getElementById('feed-slideshow-name');
-                                var countEl = document.getElementById('feed-slideshow-count');
-                                if (capEl) capEl.textContent = p.caption || '';
-                                if (nameEl) nameEl.textContent = p.author_name ? '\u2014 ' + p.author_name : '';
-                                if (countEl) countEl.textContent = (window._feedSlideIdx + 1) + ' / ' + photos.length;
-                                window._feedSlideIdx = (window._feedSlideIdx + 1) % photos.length;
-                            }, 400);
-                        }
-                        showFeedSlide();
-                        if (window._feedSlideshowTimer) clearInterval(window._feedSlideshowTimer);
-                        if (photosWithData.length > 1) window._feedSlideshowTimer = setInterval(showFeedSlide, 5000);
+                        var src = window._feedSlideCache[m.id];
+                        if (!src) { window._feedSlideIdx = (window._feedSlideIdx + 1) % list.length; return; }
+                        img.style.opacity = '0';
+                        setTimeout(function() {
+                            img.src = src;
+                            img.style.opacity = '1';
+                            var capEl = document.getElementById('feed-slideshow-caption');
+                            var nameEl = document.getElementById('feed-slideshow-name');
+                            var countEl = document.getElementById('feed-slideshow-count');
+                            if (capEl) capEl.textContent = m.caption || '';
+                            if (nameEl) nameEl.textContent = m.author_name ? '\u2014 ' + m.author_name : '';
+                            if (countEl) countEl.textContent = (window._feedSlideIdx + 1) + ' / ' + list.length;
+                            window._feedSlideIdx = (window._feedSlideIdx + 1) % list.length;
+                        }, 300);
+                    }
+                    showFeedSlide();
+                    window._feedSlideshowTimer = setInterval(showFeedSlide, 5000);
                 }
 
             } catch (e) {

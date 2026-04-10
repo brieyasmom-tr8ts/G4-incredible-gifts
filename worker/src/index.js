@@ -776,13 +776,23 @@ export default {
 
       // ===== MOMENTS =====
 
-      // GET /api/moments/latest - lightweight, just last 10 for slideshow
+      // GET /api/moments/latest - just IDs and metadata for slideshow (no photo data)
       if (path === '/api/moments/latest' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
-          `SELECT id, author_name, photo_data, caption, created_at
-           FROM moments ORDER BY created_at DESC LIMIT 10`
+          `SELECT id, author_name, caption, created_at
+           FROM moments ORDER BY created_at DESC LIMIT 15`
         ).all();
         return json(results, corsHeaders);
+      }
+
+      // GET /api/moments/:id/photo - single photo data
+      const momentPhotoMatch = path.match(/^\/api\/moments\/(\d+)\/photo$/);
+      if (momentPhotoMatch && request.method === 'GET') {
+        const row = await env.DB.prepare(
+          'SELECT photo_data FROM moments WHERE id = ?'
+        ).bind(parseInt(momentPhotoMatch[1])).first();
+        if (!row || !row.photo_data) return json({ error: 'Not found' }, corsHeaders, 404);
+        return json({ photo_data: row.photo_data }, corsHeaders);
       }
 
       // GET /api/moments - get all moments

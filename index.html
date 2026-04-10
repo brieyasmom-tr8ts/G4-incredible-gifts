@@ -3302,6 +3302,42 @@
                 </div>
             </div>
 
+            <!-- SEND LOVE TAB -->
+            <div id="sendlove-tab" class="tab-content">
+                <div style="padding:16px 16px 100px;">
+                    <div style="text-align:center;margin-bottom:16px;">
+                        <div style="font-size:2.5rem;margin-bottom:6px;">💌</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.4rem;font-weight:700;color:var(--dark-text);">Send Love to Marnie</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--light-text);font-style:italic;line-height:1.5;padding:4px 20px 0;">Marnie couldn't be with us this year — she had surgery and is recovering at home. Let's shower her with love! Leave a message or record a video and we'll send her the link.</div>
+                    </div>
+
+                    <!-- Text message -->
+                    <div style="margin-bottom:16px;">
+                        <textarea id="love-message-text" style="width:100%;padding:14px;border:1px solid var(--warm-grey);border-radius:12px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:white;resize:vertical;min-height:100px;box-sizing:border-box;" placeholder="Write Marnie a message... tell her you miss her, share a memory, send encouragement!"></textarea>
+                    </div>
+
+                    <!-- Video record -->
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block;font-family:Cormorant Garamond,serif;font-size:0.88rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Or record a quick video message:</label>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <input type="file" id="love-video-input" accept="video/*" capture="user" style="display:none;">
+                            <button id="love-video-btn" style="flex:1;padding:12px;border:1.5px dashed var(--blush);border-radius:12px;background:rgba(201,144,138,0.06);font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--accent);cursor:pointer;text-align:center;">🎥 Record or Choose Video</button>
+                        </div>
+                        <div id="love-video-preview" style="display:none;margin-top:10px;border-radius:12px;overflow:hidden;">
+                            <video id="love-video-player" controls style="width:100%;border-radius:12px;max-height:240px;"></video>
+                            <button id="love-video-remove" style="display:block;margin:6px auto 0;background:none;border:none;color:var(--light-text);font-size:0.82rem;cursor:pointer;">Remove video</button>
+                        </div>
+                    </div>
+
+                    <!-- Send button -->
+                    <button id="love-send-btn" style="display:block;width:100%;padding:14px;background:linear-gradient(135deg,var(--sage),var(--blush));color:white;border:none;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;cursor:pointer;letter-spacing:0.02em;">Send Love to Marnie</button>
+                    <div id="love-sent-msg" style="display:none;text-align:center;padding:12px;font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--sage);font-style:italic;"></div>
+
+                    <!-- Previous messages from this user -->
+                    <div id="love-my-messages" style="margin-top:24px;"></div>
+                </div>
+            </div>
+
             <!-- PHOTO BOOTH TAB -->
             <div id="photobooth-tab" class="tab-content">
                 <div style="padding:0;overflow:hidden;">
@@ -5232,6 +5268,7 @@
             { key: 'nav_journal', tab: 'journal', icon: '\u2728', label: 'Journal' },
             { key: 'nav_gratitude', tab: 'gratitude', icon: '🙌', label: 'Grateful' },
             { key: 'nav_photobooth', tab: 'photobooth', icon: '🖼️', label: 'Booth' },
+            { key: 'nav_sendlove', tab: 'sendlove', icon: '💌', label: 'Marnie' },
             { key: 'nav_hunt', tab: 'hunt', icon: '\ud83d\udcf7', label: 'Hunt' },
             { key: 'nav_meme', tab: 'meme', icon: '\ud83d\ude02', label: 'Meme', action: 'meme' },
             { key: 'nav_quiz', tab: 'quiz', icon: '\ud83e\udde0', label: 'Quiz', badge: 'badge-quiz' },
@@ -5308,14 +5345,14 @@
             } catch(e) {
                 console.error('Failed to load nav settings:', e);
                 // Fallback: show default nav
-                navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1', nav_gratitude: '1' };
+                navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1', nav_gratitude: '1', nav_sendlove: '1' };
                 buildNav();
             }
         }
 
         function initTabs() {
             // Build default nav first (will be updated when settings load)
-            navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1', nav_gratitude: '1' };
+            navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1', nav_gratitude: '1', nav_sendlove: '1' };
             buildNav();
         }
 
@@ -9033,6 +9070,104 @@
                 if (btn.dataset.tab === 'hunt') loadHuntTab();
             });
         });
+
+        // ===== SEND LOVE (MARNIE) =====
+        (function() {
+            let loveVideoData = null;
+
+            document.getElementById('love-video-btn').addEventListener('click', () => {
+                document.getElementById('love-video-input').click();
+            });
+
+            document.getElementById('love-video-input').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 50 * 1024 * 1024) {
+                    showToast('Video is too large — keep it under 50MB');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = () => {
+                    loveVideoData = reader.result;
+                    document.getElementById('love-video-player').src = loveVideoData;
+                    document.getElementById('love-video-preview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            });
+
+            document.getElementById('love-video-remove').addEventListener('click', () => {
+                loveVideoData = null;
+                document.getElementById('love-video-preview').style.display = 'none';
+                document.getElementById('love-video-input').value = '';
+            });
+
+            document.getElementById('love-send-btn').addEventListener('click', async () => {
+                const text = document.getElementById('love-message-text').value.trim();
+                if (!text && !loveVideoData) {
+                    showToast('Write a message or record a video!');
+                    return;
+                }
+                if (!currentUser) { showToast('Please set up your profile first'); return; }
+
+                const btn = document.getElementById('love-send-btn');
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+
+                try {
+                    const payload = {
+                        user_id: currentUser.id,
+                        name: currentUser.display_name || currentUser.first_name,
+                        message: text,
+                        video_data: loveVideoData || ''
+                    };
+                    const result = await apiPost('/api/lovemessages', payload);
+                    if (result && result.error) {
+                        showToast(result.error);
+                    } else {
+                        document.getElementById('love-message-text').value = '';
+                        loveVideoData = null;
+                        document.getElementById('love-video-preview').style.display = 'none';
+                        document.getElementById('love-video-input').value = '';
+                        const msg = document.getElementById('love-sent-msg');
+                        msg.textContent = 'Sent! Marnie is going to love this. 💛';
+                        msg.style.display = 'block';
+                        showToast('Love sent to Marnie! 💌');
+                        if (typeof launchConfetti === 'function') launchConfetti();
+                        setTimeout(() => { msg.style.display = 'none'; }, 5000);
+                        loadLoveMessages();
+                    }
+                } catch (e) {
+                    showToast('Could not send — try again');
+                }
+                btn.disabled = false;
+                btn.textContent = 'Send Love to Marnie';
+            });
+
+            async function loadLoveMessages() {
+                if (!currentUser) return;
+                try {
+                    const data = await apiGet('/api/lovemessages');
+                    if (!Array.isArray(data)) return;
+                    const mine = data.filter(m => m.user_id === currentUser.id);
+                    const container = document.getElementById('love-my-messages');
+                    if (mine.length === 0) { container.innerHTML = ''; return; }
+                    container.innerHTML = '<div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:600;color:var(--dark-text);margin-bottom:10px;">Your messages:</div>' +
+                        mine.map(m => `
+                            <div style="padding:14px;background:rgba(201,144,138,0.06);border-radius:12px;border:1px solid rgba(201,144,138,0.12);margin-bottom:8px;">
+                                ${m.message ? '<div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--dark-text);line-height:1.5;">' + m.message.replace(/</g,'&lt;') + '</div>' : ''}
+                                ${m.has_video ? '<div style="margin-top:6px;font-size:0.82rem;color:var(--accent);">🎥 Video attached</div>' : ''}
+                                <div style="font-size:0.75rem;color:var(--light-text);margin-top:6px;">${new Date(m.created_at).toLocaleDateString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                            </div>
+                        `).join('');
+                } catch(e) {}
+            }
+
+            const origLoadTab3 = (typeof loadTabData === 'function') ? loadTabData : null;
+            loadTabData = function(tab) {
+                if (origLoadTab3) origLoadTab3(tab);
+                if (tab === 'sendlove') loadLoveMessages();
+            };
+        })();
 
         // ===== GRATITUDE WALL =====
         (function() {

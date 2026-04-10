@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love for Marnie 💌 G4 Retreat 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --cream: #f7f0eb;
+            --blush: #c9908a;
+            --rose: #d4a59a;
+            --sage: #8a9e7a;
+            --taupe: #8b8680;
+            --dark: #4a3728;
+        }
+        body {
+            background: var(--cream);
+            font-family: Cormorant Garamond, serif;
+            color: var(--dark);
+            min-height: 100vh;
+        }
+        .hero {
+            text-align: center;
+            padding: 50px 24px 30px;
+            background: linear-gradient(180deg, rgba(201,144,138,0.15) 0%, rgba(247,240,235,0) 100%);
+        }
+        .hero-emoji { font-size: 3rem; margin-bottom: 10px; }
+        .hero h1 {
+            font-family: Playfair Display, serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        .hero p {
+            font-size: 1.1rem;
+            color: var(--taupe);
+            font-style: italic;
+            line-height: 1.6;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .messages {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 10px 16px 60px;
+        }
+        .message-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 12px rgba(74,55,40,0.06);
+            border: 1px solid rgba(201,144,138,0.1);
+            animation: fadeUp 0.6s ease forwards;
+            opacity: 0;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message-name {
+            font-family: Playfair Display, serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--blush);
+            margin-bottom: 8px;
+        }
+        .message-text {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: var(--dark);
+        }
+        .message-video {
+            margin-top: 12px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .message-video video {
+            width: 100%;
+            border-radius: 12px;
+        }
+        .message-date {
+            font-size: 0.8rem;
+            color: var(--taupe);
+            margin-top: 12px;
+        }
+        .count-line {
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--taupe);
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 1.1rem;
+            color: var(--taupe);
+            font-style: italic;
+        }
+        .footer {
+            text-align: center;
+            padding: 30px 20px 50px;
+            font-family: Cormorant Garamond, serif;
+            font-style: italic;
+            color: var(--taupe);
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <div class="hero-emoji">💌</div>
+        <h1>Love for Marnie</h1>
+        <p>The G4 women are thinking of you this weekend. We miss you and can't wait to see you again. Here's a little love from Ocean City.</p>
+    </div>
+
+    <div class="messages" id="messages">
+        <div class="loading" id="loading">Loading messages...</div>
+    </div>
+
+    <div class="footer" id="footer" style="display:none;">
+        With love from your G4 sisters 💛<br>
+        <span style="font-size:0.85rem;">Incredible Gifts Retreat 2026</span>
+    </div>
+
+    <script>
+        const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
+
+        async function loadMessages() {
+            try {
+                const res = await fetch(API_URL + '/api/lovemessages');
+                const data = await res.json();
+                const container = document.getElementById('messages');
+                document.getElementById('loading').style.display = 'none';
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    container.innerHTML = '<div class="loading">Messages are on the way... check back soon! 💛</div>';
+                    return;
+                }
+
+                container.innerHTML = '<div class="count-line">' + data.length + ' message' + (data.length === 1 ? '' : 's') + ' from your G4 sisters</div>';
+
+                data.forEach((msg, i) => {
+                    const card = document.createElement('div');
+                    card.className = 'message-card';
+                    card.style.animationDelay = (i * 0.1) + 's';
+
+                    let html = '<div class="message-name">' + escapeHtml(msg.name) + '</div>';
+
+                    if (msg.message) {
+                        html += '<div class="message-text">' + escapeHtml(msg.message).replace(/\n/g, '<br>') + '</div>';
+                    }
+
+                    if (msg.has_video && msg.video_data) {
+                        html += '<div class="message-video"><video controls playsinline preload="metadata" src="' + API_URL + '/api/lovemessages/' + msg.id + '/video"></video></div>';
+                    }
+
+                    html += '<div class="message-date">' + new Date(msg.created_at).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '</div>';
+
+                    card.innerHTML = html;
+                    container.appendChild(card);
+                });
+
+                document.getElementById('footer').style.display = 'block';
+            } catch (e) {
+                document.getElementById('loading').textContent = 'Could not load messages. Please try again.';
+            }
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        loadMessages();
+        // Auto-refresh every 30 seconds
+        setInterval(loadMessages, 30000);
+    </script>
+</body>
+</html>

@@ -1481,6 +1481,73 @@ export default {
         return json(results, corsHeaders);
       }
 
+      // ===== LOVE MESSAGES (MARNIE) =====
+
+      // POST /api/lovemessages
+      if (path === '/api/lovemessages' && request.method === 'POST') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS love_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', message TEXT DEFAULT '', video_data TEXT DEFAULT '', has_video INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) {}
+
+        const body = await request.json();
+        if (!body.message && !body.video_data) {
+          return json({ error: 'Please include a message or video' }, corsHeaders, 400);
+        }
+
+        const hasVideo = body.video_data && body.video_data.length > 0 ? 1 : 0;
+
+        // Store video in R2 if available, keep message in D1
+        let videoKey = '';
+        if (hasVideo && env.VIDEOS) {
+          videoKey = 'love-' + Date.now() + '-' + (body.user_id || 0);
+          try {
+            // Convert base64 data URL to binary
+            const base64 = body.video_data.split(',')[1] || body.video_data;
+            const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+            await env.VIDEOS.put(videoKey, binary, { httpMetadata: { contentType: 'video/mp4' } });
+          } catch(e) {
+            // Fallback: skip video if R2 fails
+            videoKey = '';
+          }
+        }
+
+        await env.DB.prepare(
+          'INSERT INTO love_messages (user_id, name, message, video_data, has_video) VALUES (?, ?, ?, ?, ?)'
+        ).bind(
+          body.user_id || null,
+          body.name || 'Anonymous',
+          (body.message || '').trim(),
+          videoKey,
+          hasVideo
+        ).run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/lovemessages
+      if (path === '/api/lovemessages' && request.method === 'GET') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS love_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', message TEXT DEFAULT '', video_data TEXT DEFAULT '', has_video INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) {}
+
+        const { results } = await env.DB.prepare(
+          'SELECT id, user_id, name, message, video_data, has_video, created_at FROM love_messages ORDER BY created_at DESC'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
+      // GET /api/lovemessages/:id/video - stream video from R2
+      const loveVideoMatch = path.match(/^\/api\/lovemessages\/(\d+)\/video$/);
+      if (loveVideoMatch && request.method === 'GET') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS love_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', message TEXT DEFAULT '', video_data TEXT DEFAULT '', has_video INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) {}
+
+        const msg = await env.DB.prepare('SELECT video_data FROM love_messages WHERE id = ?').bind(parseInt(loveVideoMatch[1])).first();
+        if (!msg || !msg.video_data || !env.VIDEOS) {
+          return json({ error: 'Video not found' }, corsHeaders, 404);
+        }
+        const obj = await env.VIDEOS.get(msg.video_data);
+        if (!obj) return json({ error: 'Video not found' }, corsHeaders, 404);
+        return new Response(obj.body, {
+          headers: { ...corsHeaders, 'Content-Type': 'video/mp4', 'Cache-Control': 'public, max-age=86400' }
+        });
+      }
+
       // ===== GRATITUDE WALL =====
 
       // POST /api/gratitude - add a gratitude entry

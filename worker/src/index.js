@@ -776,6 +776,15 @@ export default {
 
       // ===== MOMENTS =====
 
+      // GET /api/moments/latest - lightweight, just last 10 for slideshow
+      if (path === '/api/moments/latest' && request.method === 'GET') {
+        const { results } = await env.DB.prepare(
+          `SELECT id, author_name, photo_data, caption, created_at
+           FROM moments ORDER BY created_at DESC LIMIT 10`
+        ).all();
+        return json(results, corsHeaders);
+      }
+
       // GET /api/moments - get all moments
       if (path === '/api/moments' && request.method === 'GET') {
         const { results } = await env.DB.prepare(

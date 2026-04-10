@@ -5283,6 +5283,7 @@
                 const settings = await apiGet('/api/games/settings');
                 if (settings && typeof settings === 'object') {
                     navSettings = settings;
+                    gameSettings = settings;
                     buildNav();
                 }
             } catch(e) {

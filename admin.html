@@ -1855,6 +1855,15 @@ async function toggleGame(key, enabled) {
             method: 'POST',
             body: { key: key, value: enabled ? '1' : '0' }
         });
+        // Auto-enable show_packing_names when packing_points is turned on
+        if (key === 'packing_points' && enabled) {
+            await apiFetch('/api/games/settings', {
+                method: 'POST',
+                body: { key: 'show_packing_names', value: '1' }
+            });
+            const toggle = document.getElementById('toggle-show-packing-names');
+            if (toggle) toggle.checked = true;
+        }
         showToast(`${key.replace(/_/g, ' ')} ${enabled ? 'ON' : 'OFF'}`);
     } catch (e) { showToast('Error: ' + e.message); }
 }

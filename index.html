@@ -3320,7 +3320,7 @@
                     </div>
 
                     <!-- Bottom bar: frame picker + controls -->
-                    <div style="flex-shrink:0;background:#111;padding:8px 0 6px;">
+                    <div style="flex-shrink:0;background:#111;padding:8px 0 calc(6px + env(safe-area-inset-bottom, 0px));">
                         <!-- Frame picker -->
                         <div id="booth-frame-picker" style="display:flex;gap:6px;overflow-x:auto;padding:0 10px 8px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;"></div>
                         <!-- Controls: flip + snap -->
@@ -3342,7 +3342,7 @@
                             <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 16px;min-height:0;overflow:hidden;">
                                 <img id="booth-preview-img" style="max-width:100%;max-height:100%;border-radius:12px;object-fit:contain;display:block;" alt="Your photo">
                             </div>
-                            <div style="flex-shrink:0;padding:12px 16px 20px;">
+                            <div style="flex-shrink:0;padding:12px 16px calc(20px + env(safe-area-inset-bottom, 20px));">
                                 <div style="display:flex;gap:10px;margin-bottom:8px;">
                                     <button id="booth-retake-btn" style="flex:1;padding:14px;border:2px solid white;background:transparent;color:white;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;cursor:pointer;">Retake</button>
                                     <button id="booth-save-btn" style="flex:1;padding:14px;border:none;background:linear-gradient(135deg,var(--sage),var(--blush));color:white;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;cursor:pointer;">Save & Share</button>

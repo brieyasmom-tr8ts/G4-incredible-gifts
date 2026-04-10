@@ -7611,9 +7611,10 @@
 
             // Fetch live content
             try {
-                const [news, messages] = await Promise.all([
+                const [news, messages, moments] = await Promise.all([
                     fetch(API_URL + '/api/news').then(r => r.ok ? r.json() : []).catch(() => []),
-                    fetch(API_URL + '/api/messages').then(r => r.ok ? r.json() : []).catch(() => [])
+                    fetch(API_URL + '/api/messages').then(r => r.ok ? r.json() : []).catch(() => []),
+                    fetch(API_URL + '/api/moments').then(r => r.ok ? r.json() : []).catch(() => [])
                 ]);
 
                 // News / reminders
@@ -7629,16 +7630,10 @@
 
                 var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
 
-                // Load moments separately so page renders fast
-                (async function() {
-                    var feedEl = document.getElementById('dashboard-feed');
-                    try {
-                        var res = await fetch(API_URL + '/api/moments');
-                        if (!res.ok) return;
-                        var moments = await res.json();
-                        if (!Array.isArray(moments) || !moments.length) return;
-                        var photosWithData = moments.filter(function(m) { return m.photo_data; });
-                        if (!feedEl || !photosWithData.length) return;
+                // Slideshow
+                var feedEl = document.getElementById('dashboard-feed');
+                var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
+                if (feedEl && photosWithData.length) {
 
                         var newCount = photosWithData.length;
                         if (window._feedSlidePhotos && window._feedSlidePhotos.length === newCount && window._feedSlideshowTimer) {
@@ -7680,8 +7675,7 @@
                         showFeedSlide();
                         if (window._feedSlideshowTimer) clearInterval(window._feedSlideshowTimer);
                         if (photosWithData.length > 1) window._feedSlideshowTimer = setInterval(showFeedSlide, 5000);
-                    } catch(e) {}
-                })();
+                }
 
             } catch (e) {
                 console.error('Dashboard load error:', e);

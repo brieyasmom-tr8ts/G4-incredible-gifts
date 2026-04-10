@@ -1004,12 +1004,11 @@ export default {
         if (!user_id || score === undefined) {
           return json({ error: 'user_id and score are required' }, corsHeaders, 400);
         }
-        // Lazy migrations: older databases were created with only
-        // (user_id, user_name, score). Add the new columns if missing.
+        // Lazy migrations: add any missing columns
+        try { await env.DB.prepare("ALTER TABLE packing_scores ADD COLUMN user_name TEXT DEFAULT ''").run(); } catch(e) {}
         try { await env.DB.prepare("ALTER TABLE packing_scores ADD COLUMN author_name TEXT DEFAULT ''").run(); } catch(e) {}
         try { await env.DB.prepare("ALTER TABLE packing_scores ADD COLUMN answers TEXT DEFAULT ''").run(); } catch(e) {}
-        // Upsert — one score per user. We write user_name as well, so any
-        // pre-existing NOT NULL constraint on legacy tables is satisfied.
+        // Upsert — one score per user
         await env.DB.prepare(
           'INSERT INTO packing_scores (user_id, user_name, author_name, score, answers) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET score = excluded.score, answers = excluded.answers, author_name = excluded.author_name, user_name = excluded.user_name'
         ).bind(user_id, author_name || '', author_name || '', score, answers || '').run();

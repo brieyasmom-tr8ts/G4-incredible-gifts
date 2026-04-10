@@ -7631,11 +7631,13 @@
 
                 // Load moments separately so page renders fast
                 (async function() {
+                    var feedEl = document.getElementById('dashboard-feed');
                     try {
                         var res = await fetch(API_URL + '/api/moments');
-                        var moments = res.ok ? await res.json() : [];
-                        var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
-                        var feedEl = document.getElementById('dashboard-feed');
+                        if (!res.ok) return;
+                        var moments = await res.json();
+                        if (!Array.isArray(moments) || !moments.length) return;
+                        var photosWithData = moments.filter(function(m) { return m.photo_data; });
                         if (!feedEl || !photosWithData.length) return;
 
                         var newCount = photosWithData.length;

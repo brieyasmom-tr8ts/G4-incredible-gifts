@@ -7630,7 +7630,13 @@
 
                 // Slideshow
                 var feedEl = document.getElementById('dashboard-feed');
-                var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
+                // Use cached photos for instant display, fetch fresh in background
+                var cachedMoments = null;
+                try { cachedMoments = JSON.parse(sessionStorage.getItem('g4_dash_moments')); } catch(e) {}
+                var momentsToUse = (cachedMoments && cachedMoments.length) ? cachedMoments : (moments || []);
+                var photosWithData = momentsToUse.filter(function(m) { return m.photo_data; }).slice(0, 10);
+                // Cache for next load
+                try { sessionStorage.setItem('g4_dash_moments', JSON.stringify((moments || []).slice(0, 10))); } catch(e) {}
                 if (feedEl && photosWithData.length) {
 
                         var newCount = photosWithData.length;

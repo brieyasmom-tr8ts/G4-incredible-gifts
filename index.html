@@ -2867,7 +2867,6 @@
                             <button onclick="switchToTab('moments')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">📸 Share a Moment</button>
                             <button onclick="switchToTab('uplift')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">🙏 Encouragement</button>
                             <button onclick="switchToTab('polls')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">💬 Polls &amp; WYR</button>
-                            <button onclick="switchToTab('quiz')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">🧠 Daily Quiz</button>
                         </div>
 
                         <div id="dashboard-encouragement" style="display:none;margin-bottom:14px;"></div>
@@ -7546,17 +7545,7 @@
                     }
                 }
 
-                // Packing Points
-                if (settings.packing_points === '1') {
-                    const submitted = localStorage.getItem('g4packing_' + currentUser.id);
-                    const skipped = sessionStorage.getItem('g4packing_skip');
-                    if (!submitted && !skipped) {
-                        const funfactShowing = document.getElementById('funfact-modal').style.display !== 'none';
-                        if (!funfactShowing) {
-                            showPackingModal();
-                        }
-                    }
-                }
+                // Packing Points — handled by popup queue (priority #1)
             } catch (e) {
                 // Silently fail — games are a nice-to-have
             }
@@ -7916,9 +7905,19 @@
         setTimeout(async () => {
             if (!currentUser) return;
 
-            // Priority order: Secret Sister & Hunt first, then announcements, polls, games
+            // Priority order: Packing first, then Secret Sister & Hunt, announcements, polls, games
 
-            // 1. Secret Sister
+            // 1. Packing Points (show first!)
+            try {
+                const settings = gameSettings || {};
+                if (settings.packing_points === '1') {
+                    const submitted = localStorage.getItem('g4packing_' + currentUser.id);
+                    const skipped = sessionStorage.getItem('g4packing_skip');
+                    if (!submitted && !skipped) queuePopup(() => showPackingModal());
+                }
+            } catch (e) { /* silently fail */ }
+
+            // 2. Secret Sister
             try {
                 const settings = gameSettings || await apiGet('/api/games/settings').catch(() => ({}));
                 if (settings.secret_sister === '1') {
@@ -7931,7 +7930,7 @@
                 }
             } catch (e) { /* silently fail */ }
 
-            // 2. Scavenger Hunt
+            // 3. Scavenger Hunt
             if (isHuntTime() && !localStorage.getItem('g4hunt_seen_2026')) {
                 queuePopup(() => {
                     localStorage.setItem('g4hunt_seen_2026', '1');
@@ -7951,7 +7950,7 @@
                 });
             }
 
-            // 3. Announcements
+            // 4. Announcements
             try {
                 const ann = await apiGet('/api/announcements/active');
                 if (ann && ann.id && !localStorage.getItem('g4ann_' + ann.id)) {
@@ -7969,7 +7968,7 @@
                 }
             } catch (e) { /* silently fail */ }
 
-            // 4. Polls
+            // 5. Polls
             try {
                 const poll = await apiGet('/api/polls/active');
                 if (poll && poll.active && !localStorage.getItem('g4poll_' + poll.id)) {
@@ -7977,7 +7976,7 @@
                 }
             } catch (e) { /* silently fail */ }
 
-            // 5. Games (fun fact, packing)
+            // 6. Games (fun fact)
             try {
                 const settings = gameSettings || {};
                 if (settings.who_am_i === '1') {
@@ -7985,14 +7984,9 @@
                     const skipped = sessionStorage.getItem('g4funfact_skip');
                     if (!submitted && !skipped) queuePopup(() => showFunFactModal());
                 }
-                if (settings.packing_points === '1') {
-                    const submitted = localStorage.getItem('g4packing_' + currentUser.id);
-                    const skipped = sessionStorage.getItem('g4packing_skip');
-                    if (!submitted && !skipped) queuePopup(() => showPackingModal());
-                }
             } catch (e) { /* silently fail */ }
 
-            // 6. Would You Rather
+            // 7. Would You Rather
             try {
                 const data = await apiGet('/api/games/wyr/active');
                 if (data && data.active) {

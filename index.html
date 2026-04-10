@@ -3349,10 +3349,10 @@
                     </div>
 
                     <!-- Preview/Share Modal -->
-                    <div id="booth-preview-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:10000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
-                        <div style="position:relative;max-width:360px;width:100%;">
+                    <div id="booth-preview-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:10000;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow-y:auto;">
+                        <div style="position:relative;max-width:92vw;max-height:70vh;width:auto;">
                             <button id="booth-preview-close" style="position:absolute;top:-40px;right:0;background:none;border:none;color:white;font-size:1.8rem;cursor:pointer;z-index:1;">✕</button>
-                            <img id="booth-preview-img" style="width:100%;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.4);" alt="Your photo">
+                            <img id="booth-preview-img" style="max-width:92vw;max-height:70vh;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.4);display:block;" alt="Your photo">
                             <div style="display:flex;gap:10px;margin-top:16px;">
                                 <button id="booth-retake-btn" style="flex:1;padding:14px;border:2px solid white;background:transparent;color:white;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;cursor:pointer;">Retake</button>
                                 <button id="booth-save-btn" style="flex:1;padding:14px;border:none;background:linear-gradient(135deg,var(--sage),var(--blush));color:white;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;cursor:pointer;">Save & Share</button>

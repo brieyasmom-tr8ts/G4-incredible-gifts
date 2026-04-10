@@ -1760,8 +1760,8 @@
 
         .booth-frame-thumb {
             flex-shrink: 0;
-            width: 68px;
-            height: 120px;
+            width: 52px;
+            height: 70px;
             border-radius: 10px;
             border: 2px solid rgba(139,134,128,0.2);
             cursor: pointer;
@@ -2784,9 +2784,6 @@
 
         <div id="welcome-banner" class="welcome-banner" style="display:none;"></div>
 
-        <div id="playlist-section" style="margin:0 16px 8px;display:none;background:rgba(247,240,235,0.6);border-radius:12px;padding:4px;backdrop-filter:blur(8px);">
-            <iframe style="border-radius:8px;" src="https://open.spotify.com/embed/playlist/5fALXWcfFkJphiINaVB3jh?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-        </div>
 
         <div class="content-area">
             <!-- HOME TAB -->
@@ -3317,42 +3314,41 @@
                         <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;">Pick a frame, strike a pose!</div>
                     </div>
 
-                    <!-- Camera View -->
-                    <div id="booth-camera-wrap" style="position:relative;width:100%;max-width:400px;margin:0 auto;background:#1a1a1a;border-radius:16px;overflow:hidden;">
-                        <video id="booth-video" autoplay playsinline muted style="width:100%;display:block;transform:scaleX(-1);"></video>
-                        <canvas id="booth-frame-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
-                        <div id="booth-flash" style="position:absolute;top:0;left:0;width:100%;height:100%;background:white;opacity:0;pointer-events:none;transition:opacity 0.15s;border-radius:16px;"></div>
-                        <div id="booth-no-camera" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:white;font-family:Cormorant Garamond,serif;">
-                            <div style="font-size:2.5rem;margin-bottom:8px;">📷</div>
-                            <div style="font-size:1rem;">Tap "Allow" to use your camera</div>
-                            <button id="booth-retry-cam" style="margin-top:12px;padding:8px 20px;background:var(--blush);color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">Try Again</button>
+                    <!-- Camera + Frame Picker + Controls — all in one view -->
+                    <div style="position:relative;width:100%;max-width:400px;margin:0 auto;">
+                        <!-- Camera View -->
+                        <div id="booth-camera-wrap" style="position:relative;background:#1a1a1a;border-radius:16px;overflow:hidden;">
+                            <video id="booth-video" autoplay playsinline muted style="width:100%;display:block;transform:scaleX(-1);"></video>
+                            <canvas id="booth-frame-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+                            <div id="booth-flash" style="position:absolute;top:0;left:0;width:100%;height:100%;background:white;opacity:0;pointer-events:none;transition:opacity 0.15s;"></div>
+                            <div id="booth-no-camera" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:white;font-family:Cormorant Garamond,serif;">
+                                <div style="font-size:2.5rem;margin-bottom:8px;">📷</div>
+                                <div style="font-size:1rem;">Tap "Allow" to use your camera</div>
+                                <button id="booth-retry-cam" style="margin-top:12px;padding:8px 20px;background:var(--blush);color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">Try Again</button>
+                            </div>
+                            <!-- Frame picker overlaid at bottom of camera -->
+                            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.6));padding:8px 8px 10px;">
+                                <div id="booth-frame-picker" style="display:flex;gap:6px;overflow-x:auto;padding:2px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;"></div>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Capture Button -->
-                    <div style="text-align:center;margin:14px 0 10px;">
-                        <button id="booth-snap-btn" style="width:68px;height:68px;border-radius:50%;border:4px solid var(--blush);background:white;cursor:pointer;box-shadow:0 4px 15px rgba(201,144,138,0.3);transition:transform 0.15s;position:relative;">
-                            <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));margin:auto;"></div>
-                        </button>
-                        <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);margin-top:4px;">Tap to snap!</div>
-                    </div>
-
-                    <!-- Flip camera -->
-                    <div style="text-align:center;margin-bottom:10px;">
-                        <button id="booth-flip-btn" style="padding:6px 16px;border:1px solid var(--warm-grey);border-radius:20px;background:white;font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--taupe);cursor:pointer;">🔄 Flip Camera</button>
-                    </div>
-
-                    <!-- Frame Picker -->
-                    <div style="padding:0 12px;">
-                        <div style="font-family:Playfair Display,serif;font-size:0.9rem;font-weight:600;color:var(--dark-text);margin-bottom:8px;text-align:center;">Choose Your Frame</div>
-                        <div id="booth-frame-picker" style="display:flex;gap:8px;overflow-x:auto;padding:6px 2px 14px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;"></div>
+                        <!-- Controls bar: flip + snap + label -->
+                        <div style="display:flex;align-items:center;justify-content:center;gap:20px;padding:12px 0 4px;">
+                            <button id="booth-flip-btn" style="width:44px;height:44px;border-radius:50%;border:1px solid var(--warm-grey);background:white;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">🔄</button>
+                            <div style="text-align:center;">
+                                <button id="booth-snap-btn" style="width:68px;height:68px;border-radius:50%;border:4px solid var(--blush);background:white;cursor:pointer;box-shadow:0 4px 15px rgba(201,144,138,0.3);transition:transform 0.15s;">
+                                    <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));margin:auto;"></div>
+                                </button>
+                            </div>
+                            <div style="width:44px;"></div>
+                        </div>
                     </div>
 
                     <!-- Preview/Share Modal -->
                     <div id="booth-preview-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:10000;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow-y:auto;">
-                        <div style="position:relative;max-width:92vw;max-height:70vh;width:auto;">
+                        <div style="position:relative;width:92vw;max-width:400px;">
                             <button id="booth-preview-close" style="position:absolute;top:-40px;right:0;background:none;border:none;color:white;font-size:1.8rem;cursor:pointer;z-index:1;">✕</button>
-                            <img id="booth-preview-img" style="max-width:92vw;max-height:70vh;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.4);display:block;" alt="Your photo">
+                            <img id="booth-preview-img" style="width:100%;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.4);display:block;" alt="Your photo">
                             <div style="display:flex;gap:10px;margin-top:16px;">
                                 <button id="booth-retake-btn" style="flex:1;padding:14px;border:2px solid white;background:transparent;color:white;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;cursor:pointer;">Retake</button>
                                 <button id="booth-save-btn" style="flex:1;padding:14px;border:none;background:linear-gradient(135deg,var(--sage),var(--blush));color:white;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;cursor:pointer;">Save & Share</button>
@@ -3856,8 +3852,6 @@
             banner.style.display = 'block';
             setTimeout(() => banner.classList.add('animate-in'), 100);
 
-            // Show Spotify player
-            document.getElementById('playlist-section').style.display = 'block';
 
             // Header profile button
             const profileBtn = document.getElementById('header-profile-btn');

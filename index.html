@@ -2953,10 +2953,8 @@
 
                         <div id="dashboard-news" style="display:none;margin-bottom:14px;"></div>
 
-                        <!-- Rotating feed — small contained card -->
-                        <div id="dashboard-feed" style="display:none;margin-bottom:16px;">
-                            <div id="dashboard-feed-card" style="transition:opacity 0.5s ease;"></div>
-                        </div>
+                        <!-- Live feed — stacked, scrollable -->
+                        <div id="dashboard-feed" style="display:none;margin-bottom:16px;"></div>
 
                         <div id="dashboard-encouragement" style="display:none;"></div>
                         <div id="dashboard-photo" style="display:none;"></div>
@@ -7482,87 +7480,33 @@
 
                 var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
 
-                // Build rotating feed from all content
-                const feedItems = [];
-
-                // Add recent photos
-                var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
-                photosWithData.slice(0, 5).forEach(function(p) {
-                    feedItems.push({
-                        type: 'moment',
-                        html: '<div style="display:flex;gap:12px;align-items:center;padding:14px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
-                            '<img src="' + p.photo_data + '" alt="" style="width:80px;height:80px;border-radius:10px;object-fit:cover;flex-shrink:0;">' +
-                            '<div style="flex:1;min-width:0;">' +
-                            '<div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:600;color:var(--blush);margin-bottom:4px;">Latest Moment</div>' +
-                            (p.caption ? '<div style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--dark-text);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(p.caption) + '</div>' : '') +
-                            '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);">' + escHtml(p.author_name || 'Anonymous') + '</div></div></div>'
-                    });
-                });
-
-                // Add encouragements
-                encouragements.slice(0, 3).forEach(function(e) {
-                    feedItems.push({
-                        type: 'encouragement',
-                        html: '<div style="padding:14px 16px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'uplift\')">' +
-                            '<div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:600;color:var(--sage);margin-bottom:6px;">Encouragement</div>' +
-                            '<div style="font-family:Cormorant Garamond,serif;font-style:italic;font-size:1rem;color:var(--dark-text);line-height:1.5;">\u201c' + escHtml(e.message) + '\u201d</div>' +
-                            '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);margin-top:6px;">\u2014 ' + escHtml(e.author_name || 'Anonymous') +
-                            (e.tagged_name ? ' to ' + escHtml(e.tagged_name) : '') + '</div></div>'
-                    });
-                });
-
-                // Add gratitude
-                try {
-                    const gratData = await fetch(API_URL + '/api/gratitude').then(r => r.ok ? r.json() : []).catch(() => []);
-                    if (Array.isArray(gratData) && gratData.length) {
-                        var gratSlice = gratData.slice(0, 5);
-                        var gratWords = gratSlice.map(function(g) { return escHtml(g.text); }).join('  \u00b7  ');
-                        feedItems.push({
-                            type: 'gratitude',
-                            html: '<div style="padding:14px 16px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;text-align:center;" onclick="switchToTab(\'gratitude\')">' +
-                                '<div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:600;color:var(--sage);margin-bottom:6px;">Gratitude Wall</div>' +
-                                '<div style="font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--dark-text);line-height:1.5;">' + gratWords + '</div>' +
-                                '<div style="font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--blush);margin-top:6px;">' + gratData.length + ' grateful hearts</div></div>'
-                        });
-                    }
-                } catch(e) {}
-
-                // Add WYR
-                try {
-                    const wyrData = await fetch(API_URL + '/api/games/wyr/active').then(r => r.ok ? r.json() : null).catch(() => null);
-                    if (wyrData && wyrData.active && wyrData.total_votes > 0) {
-                        var pctA = Math.round((wyrData.votes_a / wyrData.total_votes) * 100);
-                        var pctB = 100 - pctA;
-                        feedItems.push({
-                            type: 'wyr',
-                            html: '<div style="padding:14px 16px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'polls\')">' +
-                                '<div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:600;color:var(--blush);margin-bottom:8px;">Would You Rather</div>' +
-                                '<div style="display:flex;gap:8px;">' +
-                                '<div style="flex:1;padding:10px;background:rgba(138,158,122,0.08);border-radius:10px;text-align:center;"><div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--dark-text);line-height:1.3;">' + escHtml(wyrData.option_a) + '</div><div style="font-family:Playfair Display,serif;font-weight:700;color:var(--sage);font-size:1.1rem;margin-top:4px;">' + pctA + '%</div></div>' +
-                                '<div style="flex:1;padding:10px;background:rgba(201,144,138,0.08);border-radius:10px;text-align:center;"><div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--dark-text);line-height:1.3;">' + escHtml(wyrData.option_b) + '</div><div style="font-family:Playfair Display,serif;font-weight:700;color:var(--blush);font-size:1.1rem;margin-top:4px;">' + pctB + '%</div></div></div>' +
-                                '<div style="font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--light-text);text-align:center;margin-top:6px;">' + wyrData.total_votes + ' votes</div></div>'
-                        });
-                    }
-                } catch(e) {}
-
-                // Start rotating feed
+                // Build stacked feed
                 var feedEl = document.getElementById('dashboard-feed');
-                var feedCard = document.getElementById('dashboard-feed-card');
-                if (feedItems.length > 0) {
+                var feedHTML = '';
+                var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
+
+                // Latest photos — full size, proper cards
+                photosWithData.slice(0, 3).forEach(function(p) {
+                    feedHTML += '<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);margin-bottom:10px;cursor:pointer;" onclick="switchToTab(\'moments\')">' +
+                        '<img src="' + p.photo_data + '" alt="" style="width:100%;display:block;">' +
+                        '<div style="padding:10px 14px;">' +
+                        (p.caption ? '<div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--dark-text);">' + escHtml(p.caption) + '</div>' : '') +
+                        '<div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);">' + escHtml(p.author_name || 'Anonymous') + '</div></div></div>';
+                });
+
+                // Latest encouragement
+                var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
+                if (encouragements.length) {
+                    var e = encouragements[0];
+                    feedHTML += '<div style="padding:14px 16px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);margin-bottom:10px;cursor:pointer;" onclick="switchToTab(\'uplift\')">' +
+                        '<div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:600;color:var(--sage);margin-bottom:6px;">Encouragement</div>' +
+                        '<div style="font-family:Cormorant Garamond,serif;font-style:italic;font-size:1rem;color:var(--dark-text);line-height:1.5;">\u201c' + escHtml(e.message) + '\u201d</div>' +
+                        '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);margin-top:6px;">\u2014 ' + escHtml(e.author_name || 'Anonymous') + '</div></div>';
+                }
+
+                if (feedHTML) {
                     feedEl.style.display = 'block';
-                    var feedIndex = 0;
-                    function showFeedItem() {
-                        feedCard.style.opacity = '0';
-                        setTimeout(function() {
-                            feedCard.innerHTML = feedItems[feedIndex].html;
-                            feedCard.style.opacity = '1';
-                            feedIndex = (feedIndex + 1) % feedItems.length;
-                        }, 400);
-                    }
-                    showFeedItem();
-                    if (feedItems.length > 1) {
-                        setInterval(showFeedItem, 6000);
-                    }
+                    feedEl.innerHTML = feedHTML;
                 }
 
             } catch (e) {

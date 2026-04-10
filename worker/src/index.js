@@ -834,18 +834,26 @@ export default {
         return new Response('Not found', { status: 404, headers: corsHeaders });
       }
 
-      // GET /api/moments - get all moments (with image URLs instead of base64)
+      // GET /api/moments - get all moments
       if (path === '/api/moments' && request.method === 'GET') {
-        const { results } = await env.DB.prepare(
-          `SELECT id, user_id, author_name, caption, gift_tag, created_at
-           FROM moments ORDER BY created_at DESC LIMIT 200`
-        ).all();
-        // Add image URL to each moment
+        let results;
+        try {
+          ({ results } = await env.DB.prepare(
+            `SELECT id, user_id, author_name, photo_data, caption, gift_tag, r2_key, created_at
+             FROM moments ORDER BY created_at DESC LIMIT 200`
+          ).all());
+        } catch(e) {
+          ({ results } = await env.DB.prepare(
+            `SELECT id, user_id, author_name, photo_data, caption, gift_tag, created_at
+             FROM moments ORDER BY created_at DESC LIMIT 200`
+          ).all());
+        }
+        // For R2 photos, provide image URL instead of empty photo_data
         const baseUrl = new URL(request.url).origin;
         const withUrls = results.map(m => ({
           ...m,
-          image_url: baseUrl + '/api/moments/' + m.id + '/image',
-          photo_data: baseUrl + '/api/moments/' + m.id + '/image'
+          photo_data: m.photo_data || (m.r2_key ? baseUrl + '/api/moments/' + m.id + '/image' : ''),
+          image_url: baseUrl + '/api/moments/' + m.id + '/image'
         }));
         return json(withUrls, corsHeaders);
       }

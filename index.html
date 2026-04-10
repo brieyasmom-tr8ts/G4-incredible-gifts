@@ -1754,6 +1754,54 @@
             display: none;
         }
 
+        .booth-page {
+            padding: 8px 0 100px;
+        }
+
+        .booth-frame-thumb {
+            flex-shrink: 0;
+            width: 80px;
+            height: 107px;
+            border-radius: 10px;
+            border: 2px solid rgba(139,134,128,0.2);
+            cursor: pointer;
+            transition: all 0.2s;
+            scroll-snap-align: start;
+            overflow: hidden;
+            position: relative;
+            background: #f5f3f0;
+        }
+
+        .booth-frame-thumb.active {
+            border-color: var(--blush);
+            box-shadow: 0 2px 12px rgba(201,144,138,0.35);
+            transform: scale(1.05);
+        }
+
+        .booth-frame-thumb canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .booth-frame-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 3px 4px;
+            background: rgba(0,0,0,0.55);
+            color: white;
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.62rem;
+            text-align: center;
+            font-weight: 600;
+            line-height: 1.2;
+        }
+
+        #booth-snap-btn:active {
+            transform: scale(0.9);
+        }
+
         .day-section {
             margin: 20px 0;
         }
@@ -3186,6 +3234,60 @@
                             <span>🎥</span> Record a Video (60 sec max)
                         </button>
                         <div id="video-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PHOTO BOOTH TAB -->
+            <div id="photobooth-tab" class="tab-content">
+                <div class="booth-page">
+                    <div style="text-align:center;padding:8px 16px 12px;">
+                        <div style="font-family:Playfair Display,serif;font-size:1.4rem;font-weight:700;color:var(--dark-text);">Photo Booth</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;">Pick a frame, strike a pose!</div>
+                    </div>
+
+                    <!-- Camera View -->
+                    <div id="booth-camera-wrap" style="position:relative;width:100%;max-width:400px;margin:0 auto;aspect-ratio:3/4;background:#1a1a1a;border-radius:16px;overflow:hidden;">
+                        <video id="booth-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+                        <canvas id="booth-frame-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
+                        <div id="booth-flash" style="position:absolute;top:0;left:0;width:100%;height:100%;background:white;opacity:0;pointer-events:none;transition:opacity 0.15s;border-radius:16px;"></div>
+                        <div id="booth-no-camera" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:white;font-family:Cormorant Garamond,serif;">
+                            <div style="font-size:2.5rem;margin-bottom:8px;">📷</div>
+                            <div style="font-size:1rem;">Tap "Allow" to use your camera</div>
+                            <button id="booth-retry-cam" style="margin-top:12px;padding:8px 20px;background:var(--blush);color:white;border:none;border-radius:8px;font-size:0.9rem;cursor:pointer;">Try Again</button>
+                        </div>
+                    </div>
+
+                    <!-- Capture Button -->
+                    <div style="text-align:center;margin:14px 0 10px;">
+                        <button id="booth-snap-btn" style="width:68px;height:68px;border-radius:50%;border:4px solid var(--blush);background:white;cursor:pointer;box-shadow:0 4px 15px rgba(201,144,138,0.3);transition:transform 0.15s;position:relative;">
+                            <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));margin:auto;"></div>
+                        </button>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);margin-top:4px;">Tap to snap!</div>
+                    </div>
+
+                    <!-- Flip camera -->
+                    <div style="text-align:center;margin-bottom:10px;">
+                        <button id="booth-flip-btn" style="padding:6px 16px;border:1px solid var(--warm-grey);border-radius:20px;background:white;font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--taupe);cursor:pointer;">🔄 Flip Camera</button>
+                    </div>
+
+                    <!-- Frame Picker -->
+                    <div style="padding:0 12px;">
+                        <div style="font-family:Playfair Display,serif;font-size:0.9rem;font-weight:600;color:var(--dark-text);margin-bottom:8px;text-align:center;">Choose Your Frame</div>
+                        <div id="booth-frame-picker" style="display:flex;gap:8px;overflow-x:auto;padding:6px 2px 14px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;"></div>
+                    </div>
+
+                    <!-- Preview/Share Modal -->
+                    <div id="booth-preview-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:10000;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;">
+                        <div style="position:relative;max-width:360px;width:100%;">
+                            <button id="booth-preview-close" style="position:absolute;top:-40px;right:0;background:none;border:none;color:white;font-size:1.8rem;cursor:pointer;z-index:1;">✕</button>
+                            <img id="booth-preview-img" style="width:100%;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.4);" alt="Your photo">
+                            <div style="display:flex;gap:10px;margin-top:16px;">
+                                <button id="booth-retake-btn" style="flex:1;padding:14px;border:2px solid white;background:transparent;color:white;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;cursor:pointer;">Retake</button>
+                                <button id="booth-save-btn" style="flex:1;padding:14px;border:none;background:linear-gradient(135deg,var(--sage),var(--blush));color:white;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;cursor:pointer;">Save & Share</button>
+                            </div>
+                            <button id="booth-download-btn" style="width:100%;margin-top:8px;padding:12px;border:1px solid rgba(255,255,255,0.3);background:transparent;color:white;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:0.9rem;cursor:pointer;">📥 Save to Phone</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -5039,6 +5141,7 @@
             { key: 'nav_polls', tab: 'polls', icon: '\ud83d\udcac', label: 'Polls', badge: 'badge-sharing' },
             { key: 'nav_journey', tab: 'journey', icon: '\ud83c\udf81', label: 'Journey' },
             { key: 'nav_journal', tab: 'journal', icon: '\u2728', label: 'Journal' },
+            { key: 'nav_photobooth', tab: 'photobooth', icon: '🤳', label: 'Booth' },
             { key: 'nav_hunt', tab: 'hunt', icon: '\ud83d\udcf7', label: 'Hunt' },
             { key: 'nav_meme', tab: 'meme', icon: '\ud83d\ude02', label: 'Meme', action: 'meme' },
             { key: 'nav_quiz', tab: 'quiz', icon: '\ud83e\udde0', label: 'Quiz', badge: 'badge-quiz' },
@@ -5114,14 +5217,14 @@
             } catch(e) {
                 console.error('Failed to load nav settings:', e);
                 // Fallback: show default nav
-                navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1' };
+                navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1' };
                 buildNav();
             }
         }
 
         function initTabs() {
             // Build default nav first (will be updated when settings load)
-            navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1' };
+            navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1' };
             buildNav();
         }
 
@@ -8833,6 +8936,469 @@
                 if (btn.dataset.tab === 'hunt') loadHuntTab();
             });
         });
+
+        // ===== PHOTO BOOTH =====
+        (function() {
+            const W = 900, H = 1200; // Canvas resolution (3:4)
+            let boothStream = null;
+            let facingMode = 'user';
+            let currentFrameIndex = 0;
+            let capturedDataURL = null;
+
+            const FRAMES = [
+                { name: 'G4 2026', draw: frameG4 },
+                { name: 'Incredible Gifts', draw: frameIncredibleGifts },
+                { name: 'Oh "Deer"', draw: frameOhDeer },
+                { name: 'Best Friends', draw: frameBestFriends },
+                { name: 'New Friends', draw: frameNewFriends },
+                { name: 'Our Table', draw: frameOurTable },
+                { name: 'Ocean City MD', draw: frameOceanCity },
+                { name: 'Girls Trip 2026', draw: frameGirlsTrip },
+                { name: 'Squad Goals', draw: frameSquadGoals },
+                { name: 'Blessed & Busy', draw: frameBlessedBusy },
+                { name: 'Retreat Hair\nDon\'t Care', draw: frameRetreatHair },
+                { name: 'Living My\nBest Life', draw: frameBestLife },
+                { name: 'Pray Slay Repeat', draw: framePraySlay },
+                { name: 'Fearfully Made', draw: frameFearfully },
+                { name: 'No Filter\nNeeded', draw: frameNoFilter }
+            ];
+
+            // --- Frame drawing functions ---
+            function drawBorder(ctx, color, width) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = width;
+                const r = 20;
+                ctx.strokeRect(width/2, width/2, W - width, H - width);
+            }
+
+            function drawBottomBanner(ctx, text, bg, fg, size) {
+                const bh = 100;
+                ctx.fillStyle = bg;
+                ctx.fillRect(0, H - bh, W, bh);
+                ctx.fillStyle = fg;
+                ctx.font = `bold ${size || 42}px Playfair Display, Georgia, serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, W/2, H - bh/2);
+            }
+
+            function drawTopBanner(ctx, text, bg, fg, size) {
+                const bh = 90;
+                ctx.fillStyle = bg;
+                ctx.fillRect(0, 0, W, bh);
+                ctx.fillStyle = fg;
+                ctx.font = `bold ${size || 38}px Playfair Display, Georgia, serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, W/2, bh/2);
+            }
+
+            function drawCornerEmojis(ctx, emoji, size) {
+                ctx.font = `${size || 50}px serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText(emoji, 50, 55);
+                ctx.fillText(emoji, W-50, 55);
+                ctx.fillText(emoji, 50, H-35);
+                ctx.fillText(emoji, W-50, H-35);
+            }
+
+            function drawScatter(ctx, emojis, count) {
+                ctx.font = '36px serif';
+                ctx.textAlign = 'center';
+                for (let i = 0; i < count; i++) {
+                    const e = emojis[i % emojis.length];
+                    const edge = Math.floor(Math.random() * 4);
+                    let x, y;
+                    if (edge === 0) { x = Math.random() * W; y = Math.random() * 70 + 10; }
+                    else if (edge === 1) { x = Math.random() * W; y = H - Math.random() * 70 - 10; }
+                    else if (edge === 2) { x = Math.random() * 50 + 10; y = Math.random() * H; }
+                    else { x = W - Math.random() * 50 - 10; y = Math.random() * H; }
+                    ctx.globalAlpha = 0.7 + Math.random() * 0.3;
+                    ctx.fillText(e, x, y);
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            function frameG4(ctx) {
+                ctx.strokeStyle = '#c8917a';
+                ctx.lineWidth = 18;
+                ctx.strokeRect(9, 9, W-18, H-18);
+                ctx.strokeStyle = '#d4a59a';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(24, 24, W-48, H-48);
+                drawBottomBanner(ctx, 'G4 · 2026', 'rgba(201,144,138,0.9)', 'white', 48);
+                drawCornerEmojis(ctx, '✨', 40);
+            }
+
+            function frameIncredibleGifts(ctx) {
+                ctx.fillStyle = 'rgba(138,158,122,0.85)';
+                ctx.fillRect(0, 0, W, 95);
+                ctx.fillRect(0, H-95, W, 95);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 36px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('INCREDIBLE GIFTS', W/2, 50);
+                ctx.font = '24px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('G4 Women\'s Retreat · 2026', W/2, 78);
+                ctx.fillText('"Every good and perfect gift is from above"', W/2, H-55);
+                ctx.font = '20px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('James 1:17', W/2, H-28);
+                drawScatter(ctx, ['🎁','✨','💝','🎀'], 12);
+            }
+
+            function frameOhDeer(ctx) {
+                drawBorder(ctx, '#8B6914', 12);
+                ctx.font = '80px serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('🦌', 100, 90);
+                ctx.fillText('🦌', W-100, 90);
+                ctx.save();
+                ctx.scale(-1, 1);
+                ctx.restore();
+                ctx.fillStyle = 'rgba(139,105,20,0.88)';
+                ctx.fillRect(0, H-100, W, 100);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 44px Playfair Display, Georgia, serif';
+                ctx.fillText('Oh "Deer"!', W/2, H-50);
+                drawScatter(ctx, ['🍂','🌿','🍁'], 8);
+            }
+
+            function frameBestFriends(ctx) {
+                ctx.strokeStyle = '#e8a0b4';
+                ctx.lineWidth = 16;
+                ctx.strokeRect(8, 8, W-16, H-16);
+                drawBottomBanner(ctx, 'Best Friends', 'rgba(232,160,180,0.9)', 'white', 44);
+                drawScatter(ctx, ['💕','💗','💖','💛','💜'], 18);
+            }
+
+            function frameNewFriends(ctx) {
+                ctx.strokeStyle = '#8a9e7a';
+                ctx.lineWidth = 14;
+                ctx.strokeRect(7, 7, W-14, H-14);
+                drawBottomBanner(ctx, 'New Friends', 'rgba(138,158,122,0.9)', 'white', 44);
+                drawScatter(ctx, ['🌟','⭐','💫','✨'], 14);
+            }
+
+            function frameOurTable(ctx) {
+                ctx.fillStyle = 'rgba(74,55,40,0.85)';
+                ctx.fillRect(0, 0, W, 90);
+                ctx.fillRect(0, H-90, W, 90);
+                ctx.strokeStyle = '#d4a59a';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(12, 12, W-24, H-24);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 40px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Our Table', W/2, 55);
+                ctx.font = '22px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('G4 Retreat · 2026', W/2, H-50);
+                drawCornerEmojis(ctx, '🍽️', 38);
+            }
+
+            function frameOceanCity(ctx) {
+                // Top wave bar
+                ctx.fillStyle = 'rgba(70,130,180,0.85)';
+                ctx.fillRect(0, 0, W, 85);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 34px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('OCEAN CITY, MD', W/2, 52);
+                // Bottom sandy bar
+                ctx.fillStyle = 'rgba(210,180,140,0.88)';
+                ctx.fillRect(0, H-85, W, 85);
+                ctx.fillStyle = '#4a3728';
+                ctx.font = 'bold 32px Playfair Display, Georgia, serif';
+                ctx.fillText('G4 Retreat 2026', W/2, H-42);
+                drawScatter(ctx, ['🌊','🐚','☀️','🏖️','🐠'], 14);
+            }
+
+            function frameGirlsTrip(ctx) {
+                ctx.strokeStyle = '#c9908a';
+                ctx.lineWidth = 20;
+                ctx.strokeRect(10, 10, W-20, H-20);
+                ctx.fillStyle = 'rgba(201,144,138,0.9)';
+                ctx.fillRect(0, H-100, W, 100);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 46px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText("Girls' Trip 2026", W/2, H-48);
+                drawScatter(ctx, ['👯‍♀️','💃','🎉','🥂','✈️'], 12);
+            }
+
+            function frameSquadGoals(ctx) {
+                ctx.fillStyle = 'rgba(0,0,0,0.82)';
+                ctx.fillRect(0, 0, W, 80);
+                ctx.fillRect(0, H-80, W, 80);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 42px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('SQUAD GOALS', W/2, 52);
+                ctx.font = '24px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('G4 · Ocean City · 2026', W/2, H-42);
+                drawCornerEmojis(ctx, '💪', 44);
+            }
+
+            function frameBlessedBusy(ctx) {
+                drawBorder(ctx, '#8a9e7a', 14);
+                ctx.fillStyle = 'rgba(138,158,122,0.88)';
+                ctx.fillRect(0, H-95, W, 95);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 40px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Blessed & Busy', W/2, H-48);
+                drawScatter(ctx, ['☕','🙏','✨','💅'], 10);
+            }
+
+            function frameRetreatHair(ctx) {
+                ctx.strokeStyle = '#d4a59a';
+                ctx.lineWidth = 16;
+                ctx.strokeRect(8, 8, W-16, H-16);
+                ctx.fillStyle = 'rgba(212,165,154,0.9)';
+                ctx.fillRect(0, H-95, W, 95);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 36px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText("Retreat Hair, Don't Care", W/2, H-48);
+                drawScatter(ctx, ['💁‍♀️','💇‍♀️','😂','🌴'], 10);
+            }
+
+            function frameBestLife(ctx) {
+                ctx.fillStyle = 'rgba(201,144,138,0.85)';
+                ctx.fillRect(0, 0, W, 85);
+                ctx.fillRect(0, H-85, W, 85);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 38px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Living My Best Life', W/2, 52);
+                ctx.font = '22px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('G4 Retreat · Ocean City 2026', W/2, H-48);
+                drawScatter(ctx, ['🌟','🎊','🥳','💖','🙌'], 14);
+            }
+
+            function framePraySlay(ctx) {
+                ctx.fillStyle = 'rgba(74,55,40,0.88)';
+                ctx.fillRect(0, 0, W, 90);
+                ctx.fillRect(0, H-90, W, 90);
+                ctx.strokeStyle = '#d4a59a';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(10, 10, W-20, H-20);
+                ctx.fillStyle = '#d4a59a';
+                ctx.font = 'bold 42px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Pray. Slay. Repeat.', W/2, 55);
+                ctx.fillStyle = 'white';
+                ctx.font = '22px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('G4 Women · 2026', W/2, H-52);
+                drawCornerEmojis(ctx, '🙏', 40);
+            }
+
+            function frameFearfully(ctx) {
+                ctx.strokeStyle = '#8a9e7a';
+                ctx.lineWidth = 16;
+                ctx.strokeRect(8, 8, W-16, H-16);
+                ctx.strokeStyle = 'rgba(138,158,122,0.4)';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(24, 24, W-48, H-48);
+                ctx.fillStyle = 'rgba(138,158,122,0.88)';
+                ctx.fillRect(0, H-110, W, 110);
+                ctx.fillStyle = 'white';
+                ctx.font = 'italic 28px Cormorant Garamond, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Fearfully & Wonderfully Made', W/2, H-68);
+                ctx.font = '20px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('Psalm 139:14', W/2, H-38);
+                drawScatter(ctx, ['🦋','🌸','🌿','✨'], 10);
+            }
+
+            function frameNoFilter(ctx) {
+                ctx.fillStyle = 'rgba(0,0,0,0.82)';
+                ctx.fillRect(0, H-90, W, 90);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 44px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('#NoFilterNeeded', W/2, H-40);
+                // Top accent line
+                ctx.fillStyle = 'rgba(201,144,138,0.9)';
+                ctx.fillRect(0, 0, W, 8);
+                ctx.fillRect(0, H-90, W, 4);
+                drawScatter(ctx, ['📸','✌️','😎'], 8);
+            }
+
+            // --- Draw frame on the overlay canvas ---
+            function renderFrame(index) {
+                const canvas = document.getElementById('booth-frame-canvas');
+                const wrap = document.getElementById('booth-camera-wrap');
+                canvas.width = W;
+                canvas.height = H;
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, W, H);
+                if (FRAMES[index]) FRAMES[index].draw(ctx);
+            }
+
+            // --- Build frame picker thumbnails ---
+            function buildFramePicker() {
+                const picker = document.getElementById('booth-frame-picker');
+                picker.innerHTML = '';
+                FRAMES.forEach((frame, i) => {
+                    const thumb = document.createElement('div');
+                    thumb.className = 'booth-frame-thumb' + (i === 0 ? ' active' : '');
+                    const c = document.createElement('canvas');
+                    c.width = 240;
+                    c.height = 320;
+                    const ctx = c.getContext('2d');
+                    ctx.fillStyle = '#e8e4df';
+                    ctx.fillRect(0, 0, 240, 320);
+                    // Scale down and draw frame preview
+                    ctx.save();
+                    ctx.scale(240/W, 320/H);
+                    frame.draw(ctx);
+                    ctx.restore();
+                    thumb.appendChild(c);
+                    const label = document.createElement('div');
+                    label.className = 'booth-frame-name';
+                    label.textContent = frame.name.replace('\n', ' ');
+                    thumb.appendChild(label);
+                    thumb.addEventListener('click', () => {
+                        currentFrameIndex = i;
+                        renderFrame(i);
+                        picker.querySelectorAll('.booth-frame-thumb').forEach(t => t.classList.remove('active'));
+                        thumb.classList.add('active');
+                    });
+                    picker.appendChild(thumb);
+                });
+            }
+
+            // --- Camera ---
+            async function startCamera() {
+                try {
+                    if (boothStream) boothStream.getTracks().forEach(t => t.stop());
+                    boothStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: facingMode, width: { ideal: 1080 }, height: { ideal: 1440 } },
+                        audio: false
+                    });
+                    document.getElementById('booth-video').srcObject = boothStream;
+                    document.getElementById('booth-no-camera').style.display = 'none';
+                } catch (e) {
+                    document.getElementById('booth-no-camera').style.display = 'block';
+                }
+            }
+
+            // --- Capture ---
+            function capturePhoto() {
+                const video = document.getElementById('booth-video');
+                const canvas = document.createElement('canvas');
+                canvas.width = W;
+                canvas.height = H;
+                const ctx = canvas.getContext('2d');
+
+                // Mirror if front camera
+                if (facingMode === 'user') {
+                    ctx.translate(W, 0);
+                    ctx.scale(-1, 1);
+                }
+                // Draw video frame, covering the canvas (crop to fit 3:4)
+                const vw = video.videoWidth, vh = video.videoHeight;
+                const targetRatio = W / H;
+                const videoRatio = vw / vh;
+                let sx = 0, sy = 0, sw = vw, sh = vh;
+                if (videoRatio > targetRatio) {
+                    sw = vh * targetRatio;
+                    sx = (vw - sw) / 2;
+                } else {
+                    sh = vw / targetRatio;
+                    sy = (vh - sh) / 2;
+                }
+                ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+
+                // Reset transform for frame
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                // Draw frame on top
+                FRAMES[currentFrameIndex].draw(ctx);
+
+                capturedDataURL = canvas.toDataURL('image/jpeg', 0.85);
+
+                // Flash effect
+                const flash = document.getElementById('booth-flash');
+                flash.style.opacity = '1';
+                setTimeout(() => { flash.style.opacity = '0'; }, 150);
+
+                // Show preview
+                setTimeout(() => {
+                    document.getElementById('booth-preview-img').src = capturedDataURL;
+                    document.getElementById('booth-preview-overlay').style.display = 'flex';
+                }, 250);
+            }
+
+            // --- Save to Moments ---
+            async function saveToMoments() {
+                if (!capturedDataURL || !currentUser) return;
+                const btn = document.getElementById('booth-save-btn');
+                btn.disabled = true;
+                btn.textContent = 'Saving...';
+                try {
+                    await apiPost('/api/moments', {
+                        user_id: currentUser.id,
+                        author_name: currentUser.display_name || currentUser.first_name,
+                        photo_data: capturedDataURL,
+                        caption: '📸 ' + FRAMES[currentFrameIndex].name.replace('\n', ' ') + ' | Photo Booth',
+                        gift_tag: ''
+                    });
+                    showToast('Photo saved to Moments! 📸');
+                    if (typeof launchConfetti === 'function') launchConfetti();
+                } catch (e) {
+                    showToast('Could not save \u2014 try again');
+                }
+                btn.disabled = false;
+                btn.textContent = 'Save & Share';
+                document.getElementById('booth-preview-overlay').style.display = 'none';
+            }
+
+            // --- Download to phone ---
+            function downloadPhoto() {
+                if (!capturedDataURL) return;
+                const link = document.createElement('a');
+                link.download = 'G4-PhotoBooth-' + Date.now() + '.jpg';
+                link.href = capturedDataURL;
+                link.click();
+                showToast('Photo saved to your device!');
+            }
+
+            // --- Init on tab load ---
+            let boothInitialized = false;
+            const origLoadTabData = (typeof loadTabData === 'function') ? loadTabData : null;
+            loadTabData = function(tab) {
+                if (origLoadTabData) origLoadTabData(tab);
+                if (tab === 'photobooth' && !boothInitialized) {
+                    boothInitialized = true;
+                    buildFramePicker();
+                    renderFrame(0);
+                    startCamera();
+                }
+                if (tab === 'photobooth' && boothInitialized) {
+                    // Restart camera if it died
+                    const video = document.getElementById('booth-video');
+                    if (!video.srcObject || video.srcObject.getTracks().every(t => t.readyState === 'ended')) {
+                        startCamera();
+                    }
+                }
+            };
+
+            // Event listeners
+            document.getElementById('booth-snap-btn').addEventListener('click', capturePhoto);
+            document.getElementById('booth-flip-btn').addEventListener('click', () => {
+                facingMode = facingMode === 'user' ? 'environment' : 'user';
+                startCamera();
+            });
+            document.getElementById('booth-retake-btn').addEventListener('click', () => {
+                document.getElementById('booth-preview-overlay').style.display = 'none';
+            });
+            document.getElementById('booth-save-btn').addEventListener('click', saveToMoments);
+            document.getElementById('booth-download-btn').addEventListener('click', downloadPhoto);
+            document.getElementById('booth-preview-close').addEventListener('click', () => {
+                document.getElementById('booth-preview-overlay').style.display = 'none';
+            });
+            document.getElementById('booth-retry-cam').addEventListener('click', startCamera);
+        })();
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { self.skipWaiting(); }); self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => self.clients.claim())); }); self.addEventListener('fetch', event => { event.respondWith(fetch(event.request).catch(() => caches.match(event.request))); });`)).catch(() => {});

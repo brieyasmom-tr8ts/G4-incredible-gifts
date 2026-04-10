@@ -2964,6 +2964,11 @@
 
                         <div id="dashboard-encouragement" style="display:none;margin-bottom:14px;"></div>
                         <div id="dashboard-photo" style="display:none;margin-bottom:14px;"></div>
+
+                        <!-- Rotating feed -->
+                        <div id="dashboard-feed" style="display:none;margin-bottom:14px;position:relative;min-height:100px;">
+                            <div id="dashboard-feed-card" style="transition:opacity 0.5s ease;"></div>
+                        </div>
                     </div>
 
                     <!-- Suggestions & Feedback Box -->
@@ -7507,6 +7512,89 @@
                         '<div style="font-size:0.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">Latest Moment</div>' +
                         (p.caption ? '<div style="font-size:0.92rem;color:var(--dark-text);">' + escHtml(p.caption) + '</div>' : '') +
                         '<div style="font-size:0.82rem;color:var(--light-text);">\u2014 ' + escHtml(p.author_name || 'Anonymous') + '</div></div></div>';
+                }
+
+                // Build rotating feed from all content
+                const feedItems = [];
+
+                // Add recent photos
+                var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
+                photosWithData.slice(0, 5).forEach(function(p) {
+                    feedItems.push({
+                        type: 'moment',
+                        html: '<div style="border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
+                            '<img src="' + p.photo_data + '" alt="" style="width:100%;display:block;max-height:220px;object-fit:cover;">' +
+                            '<div style="padding:10px 14px;background:white;">' +
+                            '<div style="font-size:0.72rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">📸 Latest Moment</div>' +
+                            (p.caption ? '<div style="font-size:0.92rem;color:var(--dark-text);">' + escHtml(p.caption) + '</div>' : '') +
+                            '<div style="font-size:0.82rem;color:var(--light-text);">\u2014 ' + escHtml(p.author_name || 'Anonymous') + '</div></div></div>'
+                    });
+                });
+
+                // Add encouragements
+                encouragements.slice(0, 3).forEach(function(e) {
+                    feedItems.push({
+                        type: 'encouragement',
+                        html: '<div style="padding:16px 18px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="switchToTab(\'uplift\')">' +
+                            '<div style="font-size:0.72rem;font-weight:600;color:var(--sage);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">🙏 Encouragement</div>' +
+                            '<div style="font-family:Cormorant Garamond,serif;font-style:italic;font-size:1.05rem;color:var(--dark-text);line-height:1.6;">\u201c' + escHtml(e.message) + '\u201d</div>' +
+                            '<div style="font-size:0.85rem;color:var(--light-text);margin-top:8px;">\u2014 ' + escHtml(e.author_name || 'Anonymous') +
+                            (e.tagged_name ? ' to ' + escHtml(e.tagged_name) : '') + '</div></div>'
+                    });
+                });
+
+                // Add gratitude entries
+                try {
+                    const gratData = await fetch(API_URL + '/api/gratitude').then(r => r.ok ? r.json() : []).catch(() => []);
+                    if (Array.isArray(gratData) && gratData.length) {
+                        var gratSlice = gratData.slice(0, 4);
+                        var gratWords = gratSlice.map(function(g) { return escHtml(g.text); }).join(' \u00b7 ');
+                        feedItems.push({
+                            type: 'gratitude',
+                            html: '<div style="padding:16px 18px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);cursor:pointer;text-align:center;" onclick="switchToTab(\'gratitude\')">' +
+                                '<div style="font-size:0.72rem;font-weight:600;color:var(--sage);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">🙌 Gratitude Wall</div>' +
+                                '<div style="font-family:Cormorant Garamond,serif;font-size:1.1rem;color:var(--dark-text);line-height:1.6;">' + gratWords + '</div>' +
+                                '<div style="font-size:0.82rem;color:var(--accent);margin-top:8px;">' + gratData.length + ' grateful hearts \u2014 add yours!</div></div>'
+                        });
+                    }
+                } catch(e) {}
+
+                // Add WYR results
+                try {
+                    const wyrData = await fetch(API_URL + '/api/games/wyr/active').then(r => r.ok ? r.json() : null).catch(() => null);
+                    if (wyrData && wyrData.active && wyrData.total_votes > 0) {
+                        var pctA = Math.round((wyrData.votes_a / wyrData.total_votes) * 100);
+                        var pctB = 100 - pctA;
+                        feedItems.push({
+                            type: 'wyr',
+                            html: '<div style="padding:16px 18px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="switchToTab(\'polls\')">' +
+                                '<div style="font-size:0.72rem;font-weight:600;color:var(--blush);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">💬 Would You Rather</div>' +
+                                '<div style="display:flex;gap:8px;margin-bottom:8px;">' +
+                                '<div style="flex:1;padding:10px;background:rgba(138,158,122,0.1);border-radius:8px;text-align:center;font-size:0.88rem;color:var(--dark-text);">' + escHtml(wyrData.option_a) + '<div style="font-weight:700;color:var(--sage);font-size:1.1rem;margin-top:4px;">' + pctA + '%</div></div>' +
+                                '<div style="flex:1;padding:10px;background:rgba(201,144,138,0.1);border-radius:8px;text-align:center;font-size:0.88rem;color:var(--dark-text);">' + escHtml(wyrData.option_b) + '<div style="font-weight:700;color:var(--blush);font-size:1.1rem;margin-top:4px;">' + pctB + '%</div></div></div>' +
+                                '<div style="font-size:0.82rem;color:var(--light-text);text-align:center;">' + wyrData.total_votes + ' votes \u2014 tap to play!</div></div>'
+                        });
+                    }
+                } catch(e) {}
+
+                // Start rotating feed
+                var feedEl = document.getElementById('dashboard-feed');
+                var feedCard = document.getElementById('dashboard-feed-card');
+                if (feedItems.length > 0) {
+                    feedEl.style.display = 'block';
+                    var feedIndex = 0;
+                    function showFeedItem() {
+                        feedCard.style.opacity = '0';
+                        setTimeout(function() {
+                            feedCard.innerHTML = feedItems[feedIndex].html;
+                            feedCard.style.opacity = '1';
+                            feedIndex = (feedIndex + 1) % feedItems.length;
+                        }, 400);
+                    }
+                    showFeedItem();
+                    if (feedItems.length > 1) {
+                        setInterval(showFeedItem, 6000);
+                    }
                 }
 
             } catch (e) {

@@ -9597,6 +9597,22 @@
             document.getElementById('booth-retry-cam').addEventListener('click', startCamera);
         })();
 
+        // Auto-refresh when app comes back to foreground
+        (function() {
+            let lastActive = Date.now();
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    const away = Date.now() - lastActive;
+                    // If away for more than 2 minutes, reload for fresh content
+                    if (away > 120000) {
+                        window.location.reload();
+                    }
+                } else {
+                    lastActive = Date.now();
+                }
+            });
+        })();
+
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { self.skipWaiting(); }); self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => self.clients.claim())); }); self.addEventListener('fetch', event => { event.respondWith(fetch(event.request).catch(() => caches.match(event.request))); });`)).catch(() => {});
         }

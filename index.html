@@ -2962,11 +2962,11 @@
                             <button onclick="switchToTab('photobooth')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">🖼️ Photo Booth</button>
                         </div>
 
-                        <div id="dashboard-encouragement" style="display:none;margin-bottom:14px;"></div>
-                        <div id="dashboard-photo" style="display:none;margin-bottom:14px;"></div>
+                        <div id="dashboard-encouragement" style="display:none;"></div>
+                        <div id="dashboard-photo" style="display:none;"></div>
 
                         <!-- Rotating feed -->
-                        <div id="dashboard-feed" style="display:none;margin-bottom:14px;position:relative;min-height:100px;">
+                        <div id="dashboard-feed" style="display:none;margin:0 16px 14px;position:relative;min-height:100px;max-width:500px;margin-left:auto;margin-right:auto;">
                             <div id="dashboard-feed-card" style="transition:opacity 0.5s ease;"></div>
                         </div>
                     </div>
@@ -7485,34 +7485,7 @@
                     }).join('');
                 }
 
-                // Latest encouragement
                 var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
-                var encEl = document.getElementById('dashboard-encouragement');
-                if (encEl && encouragements.length) {
-                    var latest = encouragements[0];
-                    encEl.style.display = 'block';
-                    encEl.innerHTML =
-                        '<div style="padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);">' +
-                        '<div style="font-size:0.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Latest Encouragement</div>' +
-                        '<div style="font-family:Cormorant Garamond,serif;font-style:italic;font-size:1rem;color:var(--dark-text);line-height:1.5;">\u201c' + escHtml(latest.message) + '\u201d</div>' +
-                        '<div style="font-size:0.85rem;color:var(--light-text);margin-top:6px;">\u2014 ' + escHtml(latest.author_name || 'Anonymous') +
-                        (latest.tagged_name ? ' to ' + escHtml(latest.tagged_name) : '') + '</div></div>';
-                }
-
-                // Latest photo moment
-                var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
-                var photoEl = document.getElementById('dashboard-photo');
-                if (photoEl && photosWithData.length) {
-                    var p = photosWithData[0];
-                    photoEl.style.display = 'block';
-                    photoEl.innerHTML =
-                        '<div style="border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);">' +
-                        '<img src="' + p.photo_data + '" alt="" style="width:100%;display:block;max-height:200px;object-fit:contain;">' +
-                        '<div style="padding:10px 14px;background:white;">' +
-                        '<div style="font-size:0.75rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">Latest Moment</div>' +
-                        (p.caption ? '<div style="font-size:0.92rem;color:var(--dark-text);">' + escHtml(p.caption) + '</div>' : '') +
-                        '<div style="font-size:0.82rem;color:var(--light-text);">\u2014 ' + escHtml(p.author_name || 'Anonymous') + '</div></div></div>';
-                }
 
                 // Build rotating feed from all content
                 const feedItems = [];

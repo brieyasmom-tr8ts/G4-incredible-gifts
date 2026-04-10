@@ -9084,7 +9084,9 @@
                     document.body.appendChild(o);
                 });
             });
-        }(promptId, submissionId, btn) {
+        }
+
+        async function huntVote(promptId, submissionId, btn) {
             if (!currentUser) return;
             const phase = getHuntPhase();
             if (phase !== 'vote') {

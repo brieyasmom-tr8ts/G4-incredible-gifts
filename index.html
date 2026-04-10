@@ -7871,16 +7871,22 @@
                 checklist.querySelectorAll('input[type=checkbox]').forEach(cb => cb.disabled = true);
 
                 try {
-                    await apiPost('/api/games/packing', {
+                    const result = await apiPost('/api/games/packing', {
                         user_id: currentUser.id,
                         author_name: currentUser.display_name || currentUser.first_name,
                         score: score,
                         answers: JSON.stringify(answers)
                     });
+                    if (result && result.error) {
+                        showToast('Error saving: ' + result.error);
+                    } else {
+                        showToast('Score saved!');
+                    }
                     localStorage.setItem('g4packing_' + currentUser.id, '1');
-                    // Cache answers locally so the modal can pre-fill on replay
                     localStorage.setItem('g4packing_answers_' + currentUser.id, JSON.stringify(answers));
-                } catch (e) { /* ok */ }
+                } catch (e) {
+                    showToast('Could not save score — check connection');
+                }
             };
 
             document.getElementById('packing-done').onclick = closeModal;

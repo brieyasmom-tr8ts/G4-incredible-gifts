@@ -2943,49 +2943,55 @@
                     <!-- Weather forecast for Ocean City -->
                     <div id="weather-forecast" style="display:none;margin:8px 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(138,158,122,0.08) 0%,rgba(201,144,138,0.06) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.12);"></div>
 
-                    <!-- Retreat Day Dashboard (replaces prep section during retreat) -->
-                    <div id="retreat-dashboard" style="display:none;padding:0 16px 24px;">
-                        <div style="text-align:center;padding:16px 0 14px;">
-                            <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.1rem;color:var(--light-text);line-height:1.6;padding:0 20px;">"Every good and perfect gift is from above, coming down from the Father of the heavenly lights."</div>
-                            <div style="font-family:'Playfair Display',serif;font-size:0.88rem;color:var(--accent);margin-top:4px;font-weight:600;">James 1:17</div>
-                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:8px;font-weight:500;" id="dashboard-date"></div>
+                    <!-- Retreat Day Dashboard -->
+                    <div id="retreat-dashboard" style="display:none;padding:0 0 24px;">
+                        <!-- Verse card -->
+                        <div style="margin:0 16px 16px;padding:20px 24px;background:white;border-radius:16px;box-shadow:0 2px 16px rgba(74,55,40,0.05);text-align:center;">
+                            <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:var(--taupe);line-height:1.6;">"Every good and perfect gift is from above."</div>
+                            <div style="font-family:'Playfair Display',serif;font-size:0.82rem;color:var(--blush);margin-top:4px;font-weight:600;">James 1:17</div>
+                            <div style="width:40px;height:1px;background:var(--warm-grey);margin:10px auto 0;opacity:0.4;"></div>
+                            <div style="font-size:0.82rem;color:var(--light-text);margin-top:8px;font-weight:500;" id="dashboard-date"></div>
                         </div>
 
-                        <div id="dashboard-news" style="display:none;margin-bottom:14px;"></div>
+                        <div id="dashboard-news" style="display:none;margin:0 16px 14px;"></div>
 
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
-                            <button onclick="switchToTab('moments')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">📸 Share a Moment</button>
-                            <button onclick="switchToTab('uplift')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">🙏 Encouragement</button>
-                            <button onclick="switchToTab('polls')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">💬 Polls &amp; WYR</button>
-                            <button onclick="showPackingModal({manual:true})" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">🧳 Packing Points</button>
-                            <button onclick="switchToTab('gratitude')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">🙌 Gratitude Wall</button>
-                            <button onclick="switchToTab('photobooth')" style="padding:14px 10px;background:white;border:1px solid rgba(200,185,176,0.25);border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:var(--shadow-sm);transition:all 0.2s;">🖼️ Photo Booth</button>
+                        <!-- Rotating feed -->
+                        <div id="dashboard-feed" style="display:none;margin:0 16px 16px;position:relative;min-height:80px;">
+                            <div id="dashboard-feed-card" style="transition:opacity 0.5s ease;"></div>
                         </div>
 
                         <div id="dashboard-encouragement" style="display:none;"></div>
                         <div id="dashboard-photo" style="display:none;"></div>
 
-                        <!-- Rotating feed -->
-                        <div id="dashboard-feed" style="display:none;margin:0 16px 14px;position:relative;min-height:100px;max-width:500px;margin-left:auto;margin-right:auto;">
-                            <div id="dashboard-feed-card" style="transition:opacity 0.5s ease;"></div>
+                        <!-- Quick actions — horizontal scroll -->
+                        <div style="margin-bottom:16px;">
+                            <div style="display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;-webkit-overflow-scrolling:touch;">
+                                <button onclick="switchToTab('moments')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">📸</span>Moments</button>
+                                <button onclick="switchToTab('uplift')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">🙏</span>Uplift</button>
+                                <button onclick="switchToTab('polls')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">💬</span>Polls</button>
+                                <button onclick="switchToTab('gratitude')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">🙌</span>Grateful</button>
+                                <button onclick="switchToTab('photobooth')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">🖼️</span>Booth</button>
+                                <button onclick="showPackingModal({manual:true})" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">🧳</span>Packing</button>
+                                <button onclick="switchToTab('sendlove')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">💌</span>Marnie</button>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Suggestions & Feedback Box -->
-                    <div id="suggestions-box" style="margin:8px 16px 24px;padding:20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);border:1px solid rgba(139,134,128,0.08);">
-                        <div style="text-align:center;margin-bottom:14px;">
-                            <div style="font-size:1.4rem;margin-bottom:4px;">💌</div>
-                            <div style="font-family:Playfair Display,serif;font-size:1.05rem;font-weight:600;color:var(--dark-text);">Suggestions & Feedback</div>
-                            <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;margin-top:2px;">Have a thought, idea, or need? Let the team know!</div>
+                        <!-- Suggestions — compact -->
+                        <div id="suggestions-box" style="margin:0 16px 16px;padding:16px;background:white;border-radius:16px;box-shadow:0 2px 12px rgba(74,55,40,0.04);">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                                <span style="font-size:1.2rem;">💡</span>
+                                <div>
+                                    <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:600;color:var(--dark-text);">Suggestions</div>
+                                    <div style="font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--light-text);font-style:italic;">Ideas, feedback, or needs</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <input type="text" id="suggestion-text" placeholder="Share a thought..." style="flex:1;padding:10px 14px;border:1px solid rgba(139,134,128,0.2);border-radius:12px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:#fafaf8;outline:none;" onfocus="this.style.borderColor='var(--blush)'" onblur="this.style.borderColor='rgba(139,134,128,0.2)'">
+                                <button id="suggestion-submit-btn" style="padding:10px 18px;background:linear-gradient(135deg,var(--sage),var(--blush));color:white;border:none;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;cursor:pointer;white-space:nowrap;">Send</button>
+                            </div>
+                            <div style="display:none;" id="suggestion-tags"></div>
+                            <div id="suggestion-thanks" style="display:none;text-align:center;padding:8px 0 0;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--sage);font-style:italic;"></div>
                         </div>
-                        <textarea id="suggestion-text" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:#fafaf8;resize:vertical;min-height:80px;box-sizing:border-box;transition:border-color 0.2s;" placeholder="Share a suggestion, request, or feedback..."></textarea>
-                        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;" id="suggestion-tags">
-                            <button class="suggestion-tag" data-tag="suggestion" style="padding:6px 14px;border:1.5px solid var(--sage);border-radius:20px;background:rgba(138,158,122,0.08);font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--sage);cursor:pointer;transition:all 0.2s;font-weight:600;">Suggestion</button>
-                            <button class="suggestion-tag" data-tag="feedback" style="padding:6px 14px;border:1.5px solid var(--blush);border-radius:20px;background:rgba(201,144,138,0.08);font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--blush);cursor:pointer;transition:all 0.2s;font-weight:600;">Feedback</button>
-                            <button class="suggestion-tag" data-tag="need" style="padding:6px 14px;border:1.5px solid var(--taupe);border-radius:20px;background:rgba(139,134,128,0.08);font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--taupe);cursor:pointer;transition:all 0.2s;font-weight:600;">Need Something</button>
-                        </div>
-                        <button id="suggestion-submit-btn" style="display:block;width:100%;margin-top:14px;padding:12px;background:linear-gradient(135deg,var(--sage),var(--blush));color:white;border:none;border-radius:10px;font-family:Cormorant Garamond,serif;font-size:0.95rem;font-weight:600;cursor:pointer;letter-spacing:0.02em;transition:opacity 0.2s,transform 0.15s;">Send</button>
-                        <div id="suggestion-thanks" style="display:none;text-align:center;padding:12px 0 0;font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--sage);font-style:italic;"></div>
                     </div>
 
                 </div>

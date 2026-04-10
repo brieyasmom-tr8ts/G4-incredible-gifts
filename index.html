@@ -7906,6 +7906,13 @@
         setTimeout(async () => {
             if (!currentUser) return;
 
+            // Fetch game settings once for all popup checks
+            try {
+                if (!gameSettings || Object.keys(gameSettings).length === 0) {
+                    gameSettings = await apiGet('/api/games/settings').catch(() => ({})) || {};
+                }
+            } catch (e) { /* silently fail */ }
+
             // Priority order: Packing first, then Secret Sister & Hunt, announcements, polls, games
 
             // 1. Packing Points (show first!)

@@ -6465,14 +6465,20 @@
                     img.alt = moment.caption || 'Retreat moment';
                     img.loading = 'lazy';
                     img.style.cursor = 'pointer';
-                    img.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        const photoOverlay = document.createElement('div');
-                        photoOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
-                        photoOverlay.innerHTML = '<button style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.8rem;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">\u2715</button>' +
-                            '<img src="' + moment.photo_data + '" style="max-width:92vw;max-height:85vh;object-fit:contain;border-radius:12px;">';
-                        photoOverlay.addEventListener('click', function() { photoOverlay.remove(); });
-                        document.body.appendChild(photoOverlay);
+                    img.addEventListener('click', function() {
+                        var src = this.src;
+                        var o = document.createElement('div');
+                        o.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+                        var i = document.createElement('img');
+                        i.src = src;
+                        i.style.cssText = 'max-width:92vw;max-height:85vh;object-fit:contain;border-radius:12px;';
+                        var b = document.createElement('button');
+                        b.textContent = '\u2715';
+                        b.style.cssText = 'position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.8rem;width:44px;height:44px;border-radius:50%;cursor:pointer;';
+                        o.appendChild(b);
+                        o.appendChild(i);
+                        o.addEventListener('click', function() { o.remove(); });
+                        document.body.appendChild(o);
                     });
 
                     const info = document.createElement('div');
@@ -9062,14 +9068,20 @@
             // Make hunt photos expandable on tap
             list.querySelectorAll('.hunt-gallery-card img').forEach(function(img) {
                 img.style.cursor = 'pointer';
-                img.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const photoOverlay = document.createElement('div');
-                    photoOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
-                    photoOverlay.innerHTML = '<button style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.8rem;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">\u2715</button>' +
-                        '<img src="' + img.src + '" style="max-width:92vw;max-height:85vh;object-fit:contain;border-radius:12px;">';
-                    photoOverlay.addEventListener('click', function() { photoOverlay.remove(); });
-                    document.body.appendChild(photoOverlay);
+                img.addEventListener('click', function() {
+                    var src = this.src;
+                    var o = document.createElement('div');
+                    o.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+                    var i = document.createElement('img');
+                    i.src = src;
+                    i.style.cssText = 'max-width:92vw;max-height:85vh;object-fit:contain;border-radius:12px;';
+                    var b = document.createElement('button');
+                    b.textContent = '\u2715';
+                    b.style.cssText = 'position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.8rem;width:44px;height:44px;border-radius:50%;cursor:pointer;';
+                    o.appendChild(b);
+                    o.appendChild(i);
+                    o.addEventListener('click', function() { o.remove(); });
+                    document.body.appendChild(o);
                 });
             });
         }(promptId, submissionId, btn) {

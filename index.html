@@ -7612,7 +7612,10 @@
                 const [news, messages, moments] = await Promise.all([
                     fetch(API_URL + '/api/news').then(r => r.ok ? r.json() : []).catch(() => []),
                     fetch(API_URL + '/api/messages').then(r => r.ok ? r.json() : []).catch(() => []),
-                    fetch(API_URL + '/api/moments/latest').then(r => r.ok ? r.json() : []).catch(() => [])
+                    fetch(API_URL + '/api/moments/latest').then(function(r) {
+                        if (r.ok) return r.json();
+                        return fetch(API_URL + '/api/moments').then(function(r2) { return r2.ok ? r2.json() : []; });
+                    }).catch(() => [])
                 ]);
 
                 // News / reminders
@@ -7630,7 +7633,7 @@
 
                 // Slideshow — metadata loaded, photos served as image URLs
                 var feedEl = document.getElementById('dashboard-feed');
-                var momentsList = (moments || []).filter(function(m) { return m.id; });
+                var momentsList = (moments || []).filter(function(m) { return m.id && (m.photo_data || m.image_url); });
                 if (feedEl && momentsList.length && !window._feedSlideshowTimer) {
                     window._feedSlideList = momentsList;
                     if (!window._feedSlideIdx) window._feedSlideIdx = 0;

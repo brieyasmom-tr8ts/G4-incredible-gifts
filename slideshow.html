@@ -295,6 +295,11 @@
 
             const data = mode === 'winners' ? await loadWinners() : await loadAll();
             slides = data || [];
+            // Shuffle so photos aren't grouped by person
+            for (let i = slides.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [slides[i], slides[j]] = [slides[j], slides[i]];
+            }
 
             if (slides.length === 0) {
                 document.getElementById('loading').textContent = 'No photos yet!';

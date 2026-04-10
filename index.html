@@ -8964,264 +8964,261 @@
             ];
 
             // --- Frame drawing functions ---
-            function drawBorder(ctx, color, width) {
-                ctx.strokeStyle = color;
-                ctx.lineWidth = width;
-                const r = 20;
-                ctx.strokeRect(width/2, width/2, W - width, H - width);
-            }
-
-            function drawBottomBanner(ctx, text, bg, fg, size) {
-                const bh = 100;
-                ctx.fillStyle = bg;
-                ctx.fillRect(0, H - bh, W, bh);
-                ctx.fillStyle = fg;
-                ctx.font = `bold ${size || 42}px Playfair Display, Georgia, serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(text, W/2, H - bh/2);
-            }
-
-            function drawTopBanner(ctx, text, bg, fg, size) {
-                const bh = 90;
-                ctx.fillStyle = bg;
-                ctx.fillRect(0, 0, W, bh);
-                ctx.fillStyle = fg;
-                ctx.font = `bold ${size || 38}px Playfair Display, Georgia, serif`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(text, W/2, bh/2);
-            }
-
-            function drawCornerEmojis(ctx, emoji, size) {
-                ctx.font = `${size || 50}px serif`;
-                ctx.textAlign = 'center';
-                ctx.fillText(emoji, 50, 55);
-                ctx.fillText(emoji, W-50, 55);
-                ctx.fillText(emoji, 50, H-35);
-                ctx.fillText(emoji, W-50, H-35);
-            }
-
-            function drawScatter(ctx, emojis, count) {
-                ctx.font = '36px serif';
-                ctx.textAlign = 'center';
-                for (let i = 0; i < count; i++) {
-                    const e = emojis[i % emojis.length];
-                    const edge = Math.floor(Math.random() * 4);
-                    let x, y;
-                    if (edge === 0) { x = Math.random() * W; y = Math.random() * 70 + 10; }
-                    else if (edge === 1) { x = Math.random() * W; y = H - Math.random() * 70 - 10; }
-                    else if (edge === 2) { x = Math.random() * 50 + 10; y = Math.random() * H; }
-                    else { x = W - Math.random() * 50 - 10; y = Math.random() * H; }
-                    ctx.globalAlpha = 0.7 + Math.random() * 0.3;
-                    ctx.fillText(e, x, y);
-                }
-                ctx.globalAlpha = 1;
-            }
+            const B = 36; // standard border width
 
             function frameG4(ctx) {
-                ctx.strokeStyle = '#c8917a';
-                ctx.lineWidth = 18;
-                ctx.strokeRect(9, 9, W-18, H-18);
+                // Wide blush border with inner gold line
+                ctx.fillStyle = '#c9908a';
+                ctx.fillRect(0, 0, W, B); ctx.fillRect(0, H-B, W, B);
+                ctx.fillRect(0, 0, B, H); ctx.fillRect(W-B, 0, B, H);
                 ctx.strokeStyle = '#d4a59a';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(24, 24, W-48, H-48);
-                drawBottomBanner(ctx, 'G4 · 2026', 'rgba(201,144,138,0.9)', 'white', 48);
-                drawCornerEmojis(ctx, '✨', 40);
+                ctx.lineWidth = 2;
+                ctx.strokeRect(B+6, B+6, W-B*2-12, H-B*2-12);
+                // Bottom banner
+                ctx.fillStyle = 'rgba(201,144,138,0.92)';
+                ctx.fillRect(B, H-B-110, W-B*2, 110);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 52px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('G4 \u00b7 2026', W/2, H-B-48);
             }
 
             function frameIncredibleGifts(ctx) {
-                ctx.fillStyle = 'rgba(138,158,122,0.85)';
-                ctx.fillRect(0, 0, W, 95);
-                ctx.fillRect(0, H-95, W, 95);
+                // Wide sage border
+                ctx.fillStyle = '#8a9e7a';
+                ctx.fillRect(0, 0, W, B+8); ctx.fillRect(0, H-B-8, W, B+8);
+                ctx.fillRect(0, 0, B+8, H); ctx.fillRect(W-B-8, 0, B+8, H);
+                // Top text
                 ctx.fillStyle = 'white';
-                ctx.font = 'bold 36px Playfair Display, Georgia, serif';
+                ctx.font = 'bold 30px Playfair Display, Georgia, serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('INCREDIBLE GIFTS', W/2, 50);
-                ctx.font = '24px Cormorant Garamond, Georgia, serif';
-                ctx.fillText('G4 Women\'s Retreat · 2026', W/2, 78);
-                ctx.fillText('"Every good and perfect gift is from above"', W/2, H-55);
-                ctx.font = '20px Cormorant Garamond, Georgia, serif';
-                ctx.fillText('James 1:17', W/2, H-28);
-                drawScatter(ctx, ['🎁','✨','💝','🎀'], 12);
+                ctx.fillText('INCREDIBLE GIFTS', W/2, 32);
+                // Bottom text
+                ctx.font = '22px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('G4 Women\u2019s Retreat \u00b7 2026', W/2, H-18);
             }
 
             function frameOhDeer(ctx) {
-                drawBorder(ctx, '#8B6914', 12);
-                ctx.font = '80px serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('🦌', 100, 90);
-                ctx.fillText('🦌', W-100, 90);
-                ctx.save();
-                ctx.scale(-1, 1);
-                ctx.restore();
-                ctx.fillStyle = 'rgba(139,105,20,0.88)';
-                ctx.fillRect(0, H-100, W, 100);
+                // Warm brown border
+                ctx.fillStyle = '#8B7355';
+                ctx.fillRect(0, 0, W, B); ctx.fillRect(0, H-B, W, B);
+                ctx.fillRect(0, 0, B, H); ctx.fillRect(W-B, 0, B, H);
+                ctx.strokeStyle = '#a08060';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(B+5, B+5, W-B*2-10, H-B*2-10);
+                // Bottom banner
+                ctx.fillStyle = 'rgba(139,115,85,0.92)';
+                ctx.fillRect(B, H-B-100, W-B*2, 100);
                 ctx.fillStyle = 'white';
-                ctx.font = 'bold 44px Playfair Display, Georgia, serif';
-                ctx.fillText('Oh "Deer"!', W/2, H-50);
-                drawScatter(ctx, ['🍂','🌿','🍁'], 8);
+                ctx.font = 'bold 48px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Oh "Deer"!', W/2, H-B-42);
             }
 
             function frameBestFriends(ctx) {
-                ctx.strokeStyle = '#e8a0b4';
-                ctx.lineWidth = 16;
-                ctx.strokeRect(8, 8, W-16, H-16);
-                drawBottomBanner(ctx, 'Best Friends', 'rgba(232,160,180,0.9)', 'white', 44);
-                drawScatter(ctx, ['💕','💗','💖','💛','💜'], 18);
+                // Wide pink border
+                ctx.fillStyle = '#e8a0b4';
+                ctx.fillRect(0, 0, W, B+4); ctx.fillRect(0, H-B-4, W, B+4);
+                ctx.fillRect(0, 0, B+4, H); ctx.fillRect(W-B-4, 0, B+4, H);
+                ctx.strokeStyle = '#d48ea3';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(B+10, B+10, W-B*2-20, H-B*2-20);
+                // Bottom banner
+                ctx.fillStyle = 'rgba(232,160,180,0.92)';
+                ctx.fillRect(B+4, H-B-104, W-B*2-8, 100);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 48px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Best Friends', W/2, H-B-46);
             }
 
             function frameNewFriends(ctx) {
-                ctx.strokeStyle = '#8a9e7a';
-                ctx.lineWidth = 14;
-                ctx.strokeRect(7, 7, W-14, H-14);
-                drawBottomBanner(ctx, 'New Friends', 'rgba(138,158,122,0.9)', 'white', 44);
-                drawScatter(ctx, ['🌟','⭐','💫','✨'], 14);
+                // Sage green border
+                ctx.fillStyle = '#8a9e7a';
+                ctx.fillRect(0, 0, W, B); ctx.fillRect(0, H-B, W, B);
+                ctx.fillRect(0, 0, B, H); ctx.fillRect(W-B, 0, B, H);
+                ctx.strokeStyle = '#a3b592';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(B+5, B+5, W-B*2-10, H-B*2-10);
+                // Bottom banner
+                ctx.fillStyle = 'rgba(138,158,122,0.92)';
+                ctx.fillRect(B, H-B-100, W-B*2, 100);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 48px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('New Friends', W/2, H-B-42);
             }
 
             function frameOurTable(ctx) {
-                ctx.fillStyle = 'rgba(74,55,40,0.85)';
-                ctx.fillRect(0, 0, W, 90);
-                ctx.fillRect(0, H-90, W, 90);
+                // Dark warm border
+                ctx.fillStyle = '#4a3728';
+                ctx.fillRect(0, 0, W, B+6); ctx.fillRect(0, H-B-6, W, B+6);
+                ctx.fillRect(0, 0, B+6, H); ctx.fillRect(W-B-6, 0, B+6, H);
                 ctx.strokeStyle = '#d4a59a';
                 ctx.lineWidth = 3;
-                ctx.strokeRect(12, 12, W-24, H-24);
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 40px Playfair Display, Georgia, serif';
+                ctx.strokeRect(B+12, B+12, W-B*2-24, H-B*2-24);
+                // Top text
+                ctx.fillStyle = '#d4a59a';
+                ctx.font = 'bold 36px Playfair Display, Georgia, serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('Our Table', W/2, 55);
+                ctx.fillText('Our Table', W/2, 32);
+                // Bottom text
+                ctx.fillStyle = '#d4a59a';
                 ctx.font = '22px Cormorant Garamond, Georgia, serif';
-                ctx.fillText('G4 Retreat · 2026', W/2, H-50);
-                drawCornerEmojis(ctx, '🍽️', 38);
+                ctx.fillText('G4 Retreat \u00b7 2026', W/2, H-18);
             }
 
             function frameOceanCity(ctx) {
-                // Top wave bar
-                ctx.fillStyle = 'rgba(70,130,180,0.85)';
-                ctx.fillRect(0, 0, W, 85);
+                // Ocean blue top, sandy bottom
+                ctx.fillStyle = '#4682B4';
+                ctx.fillRect(0, 0, W, B+14);
+                ctx.fillStyle = '#D2B48C';
+                ctx.fillRect(0, H-B-14, W, B+14);
+                ctx.fillStyle = '#4682B4';
+                ctx.fillRect(0, 0, B, H);
+                ctx.fillStyle = '#D2B48C';
+                ctx.fillRect(W-B, 0, B, H);
+                // Top text
                 ctx.fillStyle = 'white';
                 ctx.font = 'bold 34px Playfair Display, Georgia, serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('OCEAN CITY, MD', W/2, 52);
-                // Bottom sandy bar
-                ctx.fillStyle = 'rgba(210,180,140,0.88)';
-                ctx.fillRect(0, H-85, W, 85);
+                ctx.fillText('OCEAN CITY, MD', W/2, 36);
+                // Bottom text
                 ctx.fillStyle = '#4a3728';
-                ctx.font = 'bold 32px Playfair Display, Georgia, serif';
-                ctx.fillText('G4 Retreat 2026', W/2, H-42);
-                drawScatter(ctx, ['🌊','🐚','☀️','🏖️','🐠'], 14);
+                ctx.font = 'bold 30px Playfair Display, Georgia, serif';
+                ctx.fillText('G4 Retreat 2026', W/2, H-20);
             }
 
             function frameGirlsTrip(ctx) {
-                ctx.strokeStyle = '#c9908a';
-                ctx.lineWidth = 20;
-                ctx.strokeRect(10, 10, W-20, H-20);
-                ctx.fillStyle = 'rgba(201,144,138,0.9)';
-                ctx.fillRect(0, H-100, W, 100);
+                // Wide blush border
+                ctx.fillStyle = '#c9908a';
+                ctx.fillRect(0, 0, W, B+8); ctx.fillRect(0, H-B-8, W, B+8);
+                ctx.fillRect(0, 0, B+8, H); ctx.fillRect(W-B-8, 0, B+8, H);
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(B+14, B+14, W-B*2-28, H-B*2-28);
+                // Bottom banner
+                ctx.fillStyle = 'rgba(201,144,138,0.94)';
+                ctx.fillRect(B+8, H-B-108, W-B*2-16, 100);
                 ctx.fillStyle = 'white';
                 ctx.font = 'bold 46px Playfair Display, Georgia, serif';
                 ctx.textAlign = 'center';
-                ctx.fillText("Girls' Trip 2026", W/2, H-48);
-                drawScatter(ctx, ['👯‍♀️','💃','🎉','🥂','✈️'], 12);
+                ctx.fillText("Girls' Trip 2026", W/2, H-B-50);
             }
 
             function frameSquadGoals(ctx) {
-                ctx.fillStyle = 'rgba(0,0,0,0.82)';
-                ctx.fillRect(0, 0, W, 80);
-                ctx.fillRect(0, H-80, W, 80);
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 42px Playfair Display, Georgia, serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('SQUAD GOALS', W/2, 52);
-                ctx.font = '24px Cormorant Garamond, Georgia, serif';
-                ctx.fillText('G4 · Ocean City · 2026', W/2, H-42);
-                drawCornerEmojis(ctx, '💪', 44);
-            }
-
-            function frameBlessedBusy(ctx) {
-                drawBorder(ctx, '#8a9e7a', 14);
-                ctx.fillStyle = 'rgba(138,158,122,0.88)';
-                ctx.fillRect(0, H-95, W, 95);
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 40px Playfair Display, Georgia, serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Blessed & Busy', W/2, H-48);
-                drawScatter(ctx, ['☕','🙏','✨','💅'], 10);
-            }
-
-            function frameRetreatHair(ctx) {
-                ctx.strokeStyle = '#d4a59a';
-                ctx.lineWidth = 16;
-                ctx.strokeRect(8, 8, W-16, H-16);
-                ctx.fillStyle = 'rgba(212,165,154,0.9)';
-                ctx.fillRect(0, H-95, W, 95);
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 36px Playfair Display, Georgia, serif';
-                ctx.textAlign = 'center';
-                ctx.fillText("Retreat Hair, Don't Care", W/2, H-48);
-                drawScatter(ctx, ['💁‍♀️','💇‍♀️','😂','🌴'], 10);
-            }
-
-            function frameBestLife(ctx) {
-                ctx.fillStyle = 'rgba(201,144,138,0.85)';
-                ctx.fillRect(0, 0, W, 85);
-                ctx.fillRect(0, H-85, W, 85);
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 38px Playfair Display, Georgia, serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Living My Best Life', W/2, 52);
-                ctx.font = '22px Cormorant Garamond, Georgia, serif';
-                ctx.fillText('G4 Retreat · Ocean City 2026', W/2, H-48);
-                drawScatter(ctx, ['🌟','🎊','🥳','💖','🙌'], 14);
-            }
-
-            function framePraySlay(ctx) {
-                ctx.fillStyle = 'rgba(74,55,40,0.88)';
-                ctx.fillRect(0, 0, W, 90);
-                ctx.fillRect(0, H-90, W, 90);
-                ctx.strokeStyle = '#d4a59a';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(10, 10, W-20, H-20);
-                ctx.fillStyle = '#d4a59a';
-                ctx.font = 'bold 42px Playfair Display, Georgia, serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Pray. Slay. Repeat.', W/2, 55);
-                ctx.fillStyle = 'white';
-                ctx.font = '22px Cormorant Garamond, Georgia, serif';
-                ctx.fillText('G4 Women · 2026', W/2, H-52);
-                drawCornerEmojis(ctx, '🙏', 40);
-            }
-
-            function frameFearfully(ctx) {
-                ctx.strokeStyle = '#8a9e7a';
-                ctx.lineWidth = 16;
-                ctx.strokeRect(8, 8, W-16, H-16);
-                ctx.strokeStyle = 'rgba(138,158,122,0.4)';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(24, 24, W-48, H-48);
-                ctx.fillStyle = 'rgba(138,158,122,0.88)';
-                ctx.fillRect(0, H-110, W, 110);
-                ctx.fillStyle = 'white';
-                ctx.font = 'italic 28px Cormorant Garamond, Georgia, serif';
-                ctx.textAlign = 'center';
-                ctx.fillText('Fearfully & Wonderfully Made', W/2, H-68);
-                ctx.font = '20px Cormorant Garamond, Georgia, serif';
-                ctx.fillText('Psalm 139:14', W/2, H-38);
-                drawScatter(ctx, ['🦋','🌸','🌿','✨'], 10);
-            }
-
-            function frameNoFilter(ctx) {
-                ctx.fillStyle = 'rgba(0,0,0,0.82)';
-                ctx.fillRect(0, H-90, W, 90);
+                // Bold black border
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(0, 0, W, B+10); ctx.fillRect(0, H-B-10, W, B+10);
+                ctx.fillRect(0, 0, B+10, H); ctx.fillRect(W-B-10, 0, B+10, H);
+                // Top text
                 ctx.fillStyle = 'white';
                 ctx.font = 'bold 44px Playfair Display, Georgia, serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('#NoFilterNeeded', W/2, H-40);
-                // Top accent line
-                ctx.fillStyle = 'rgba(201,144,138,0.9)';
-                ctx.fillRect(0, 0, W, 8);
-                ctx.fillRect(0, H-90, W, 4);
-                drawScatter(ctx, ['📸','✌️','😎'], 8);
+                ctx.fillText('SQUAD GOALS', W/2, 36);
+                // Bottom text
+                ctx.font = '24px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('G4 \u00b7 Ocean City \u00b7 2026', W/2, H-18);
+            }
+
+            function frameBlessedBusy(ctx) {
+                // Sage border
+                ctx.fillStyle = '#8a9e7a';
+                ctx.fillRect(0, 0, W, B+4); ctx.fillRect(0, H-B-4, W, B+4);
+                ctx.fillRect(0, 0, B+4, H); ctx.fillRect(W-B-4, 0, B+4, H);
+                // Bottom banner
+                ctx.fillStyle = 'rgba(138,158,122,0.92)';
+                ctx.fillRect(B+4, H-B-104, W-B*2-8, 100);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 46px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Blessed & Busy', W/2, H-B-46);
+            }
+
+            function frameRetreatHair(ctx) {
+                // Blush border
+                ctx.fillStyle = '#d4a59a';
+                ctx.fillRect(0, 0, W, B+4); ctx.fillRect(0, H-B-4, W, B+4);
+                ctx.fillRect(0, 0, B+4, H); ctx.fillRect(W-B-4, 0, B+4, H);
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(B+10, B+10, W-B*2-20, H-B*2-20);
+                // Bottom banner
+                ctx.fillStyle = 'rgba(212,165,154,0.94)';
+                ctx.fillRect(B+4, H-B-104, W-B*2-8, 100);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 38px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText("Retreat Hair, Don\u2019t Care", W/2, H-B-46);
+            }
+
+            function frameBestLife(ctx) {
+                // Blush top and bottom bars
+                ctx.fillStyle = '#c9908a';
+                ctx.fillRect(0, 0, W, B+10); ctx.fillRect(0, H-B-10, W, B+10);
+                ctx.fillRect(0, 0, B, H); ctx.fillRect(W-B, 0, B, H);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 38px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Living My Best Life', W/2, 34);
+                ctx.font = '22px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('G4 Retreat \u00b7 Ocean City 2026', W/2, H-18);
+            }
+
+            function framePraySlay(ctx) {
+                // Dark elegant border with blush accent
+                ctx.fillStyle = '#4a3728';
+                ctx.fillRect(0, 0, W, B+8); ctx.fillRect(0, H-B-8, W, B+8);
+                ctx.fillRect(0, 0, B+8, H); ctx.fillRect(W-B-8, 0, B+8, H);
+                ctx.strokeStyle = '#d4a59a';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(B+14, B+14, W-B*2-28, H-B*2-28);
+                // Top text
+                ctx.fillStyle = '#d4a59a';
+                ctx.font = 'bold 44px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Pray. Slay. Repeat.', W/2, 34);
+                // Bottom text
+                ctx.fillStyle = 'white';
+                ctx.font = '22px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('G4 Women \u00b7 2026', W/2, H-20);
+            }
+
+            function frameFearfully(ctx) {
+                // Sage double border
+                ctx.fillStyle = '#8a9e7a';
+                ctx.fillRect(0, 0, W, B+6); ctx.fillRect(0, H-B-6, W, B+6);
+                ctx.fillRect(0, 0, B+6, H); ctx.fillRect(W-B-6, 0, B+6, H);
+                ctx.strokeStyle = 'rgba(138,158,122,0.4)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(B+12, B+12, W-B*2-24, H-B*2-24);
+                // Bottom banner inside border
+                ctx.fillStyle = 'rgba(138,158,122,0.92)';
+                ctx.fillRect(B+6, H-B-116, W-B*2-12, 110);
+                ctx.fillStyle = 'white';
+                ctx.font = 'italic 30px Cormorant Garamond, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Fearfully & Wonderfully Made', W/2, H-B-72);
+                ctx.font = '22px Cormorant Garamond, Georgia, serif';
+                ctx.fillText('Psalm 139:14', W/2, H-B-38);
+            }
+
+            function frameNoFilter(ctx) {
+                // Sleek black border
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(0, 0, W, B); ctx.fillRect(0, H-B, W, B);
+                ctx.fillRect(0, 0, B, H); ctx.fillRect(W-B, 0, B, H);
+                // Blush accent line inside
+                ctx.fillStyle = '#c9908a';
+                ctx.fillRect(B, B, W-B*2, 4);
+                ctx.fillRect(B, H-B-4, W-B*2, 4);
+                // Bottom banner
+                ctx.fillStyle = 'rgba(0,0,0,0.88)';
+                ctx.fillRect(B, H-B-95, W-B*2, 95);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 44px Playfair Display, Georgia, serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('#NoFilterNeeded', W/2, H-B-40);
             }
 
             // --- Draw frame on the overlay canvas ---
@@ -9273,7 +9270,7 @@
                 try {
                     if (boothStream) boothStream.getTracks().forEach(t => t.stop());
                     boothStream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: facingMode, width: { ideal: 1080 }, height: { ideal: 1440 } },
+                        video: { facingMode: facingMode, width: { ideal: 720 }, height: { ideal: 960 } },
                         audio: false
                     });
                     document.getElementById('booth-video').srcObject = boothStream;

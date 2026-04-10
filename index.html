@@ -3318,8 +3318,8 @@
                     </div>
 
                     <!-- Camera View -->
-                    <div id="booth-camera-wrap" style="position:relative;width:100%;max-width:400px;margin:0 auto;aspect-ratio:9/16;background:#1a1a1a;border-radius:16px;overflow:hidden;">
-                        <video id="booth-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+                    <div id="booth-camera-wrap" style="position:relative;width:100%;max-width:400px;margin:0 auto;background:#1a1a1a;border-radius:16px;overflow:hidden;">
+                        <video id="booth-video" autoplay playsinline muted style="width:100%;display:block;transform:scaleX(-1);"></video>
                         <canvas id="booth-frame-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
                         <div id="booth-flash" style="position:absolute;top:0;left:0;width:100%;height:100%;background:white;opacity:0;pointer-events:none;transition:opacity 0.15s;border-radius:16px;"></div>
                         <div id="booth-no-camera" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:white;font-family:Cormorant Garamond,serif;">
@@ -9126,7 +9126,7 @@
 
         // ===== PHOTO BOOTH =====
         (function() {
-            const W = 1080, H = 1920; // Canvas resolution (9:16 phone ratio)
+            let W = 1080, H = 1440; // Canvas resolution — updated on camera start
             let boothStream = null;
             let facingMode = 'user';
             let currentFrameIndex = 0;
@@ -9480,11 +9480,22 @@
                 try {
                     if (boothStream) boothStream.getTracks().forEach(t => t.stop());
                     boothStream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: facingMode, width: { ideal: 1080 }, height: { ideal: 1920 } },
+                        video: { facingMode: facingMode },
                         audio: false
                     });
-                    document.getElementById('booth-video').srcObject = boothStream;
+                    const video = document.getElementById('booth-video');
+                    video.srcObject = boothStream;
                     document.getElementById('booth-no-camera').style.display = 'none';
+                    // Once camera is ready, match canvas to actual camera ratio
+                    video.addEventListener('loadedmetadata', () => {
+                        const vw = video.videoWidth;
+                        const vh = video.videoHeight;
+                        if (vw && vh) {
+                            W = vw;
+                            H = vh;
+                            renderFrame(currentFrameIndex);
+                        }
+                    }, { once: true });
                 } catch (e) {
                     document.getElementById('booth-no-camera').style.display = 'block';
                 }
@@ -9493,6 +9504,9 @@
             // --- Capture ---
             function capturePhoto() {
                 const video = document.getElementById('booth-video');
+                // Use actual camera dimensions
+                W = video.videoWidth || W;
+                H = video.videoHeight || H;
                 const canvas = document.createElement('canvas');
                 canvas.width = W;
                 canvas.height = H;
@@ -9503,19 +9517,8 @@
                     ctx.translate(W, 0);
                     ctx.scale(-1, 1);
                 }
-                // Draw video frame, covering the canvas (crop to fit 3:4)
-                const vw = video.videoWidth, vh = video.videoHeight;
-                const targetRatio = W / H;
-                const videoRatio = vw / vh;
-                let sx = 0, sy = 0, sw = vw, sh = vh;
-                if (videoRatio > targetRatio) {
-                    sw = vh * targetRatio;
-                    sx = (vw - sw) / 2;
-                } else {
-                    sh = vw / targetRatio;
-                    sy = (vh - sh) / 2;
-                }
-                ctx.drawImage(video, sx, sy, sw, sh, 0, 0, W, H);
+                // Draw full video frame — no cropping
+                ctx.drawImage(video, 0, 0, W, H);
 
                 // Reset transform for frame
                 ctx.setTransform(1, 0, 0, 1, 0, 0);

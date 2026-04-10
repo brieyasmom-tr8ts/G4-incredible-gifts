@@ -9221,22 +9221,26 @@
                 textWithShadow(ctx, 'James 1:17', W/2, H-30, 'rgba(0,0,0,0.3)');
             }
 
-            // 3. Oh Deer — Diagonal ribbon
+            // 3. Oh Deer — Full diagonal sash
             function frameOhDeer(ctx) {
                 ctx.save();
-                ctx.translate(W-240, 130);
-                ctx.rotate(-0.35);
-                ctx.fillStyle = 'rgba(139,105,20,0.85)';
-                ctx.fillRect(-420, -44, 840, 88);
+                ctx.translate(W/2, H/2 - 100);
+                ctx.rotate(-0.32);
+                ctx.fillStyle = 'rgba(139,105,20,0.88)';
+                ctx.fillRect(-W, -55, W*2, 110);
+                // Edge lines
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.fillRect(-W, -55, W*2, 3);
+                ctx.fillRect(-W, 52, W*2, 3);
                 ctx.fillStyle = 'white';
-                ctx.font = 'bold 56px Playfair Display, Georgia, serif';
+                ctx.font = 'bold 80px Playfair Display, Georgia, serif';
                 ctx.textAlign = 'center';
-                ctx.fillText('Oh "Deer"!', 0, 18);
+                ctx.fillText('Oh "Deer"!', 0, 28);
                 ctx.restore();
-                gradientFade(ctx, H-220, 220, 'rgba(74,55,40,0.6)', 'up');
+                gradientFade(ctx, H-200, 200, 'rgba(74,55,40,0.6)', 'up');
                 ctx.textAlign = 'center';
-                ctx.font = 'bold 48px Cormorant Garamond, Georgia, serif';
-                textWithShadow(ctx, 'G4 Retreat \u00b7 2026', W/2, H-65, 'rgba(0,0,0,0.3)');
+                ctx.font = 'bold 52px Cormorant Garamond, Georgia, serif';
+                textWithShadow(ctx, 'G4 Retreat \u00b7 2026', W/2, H-60, 'rgba(0,0,0,0.3)');
             }
 
             // 4. Best Friends — Soft pink

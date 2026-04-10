@@ -2944,7 +2944,7 @@
                     <div id="weather-forecast" style="display:none;margin:8px 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(138,158,122,0.08) 0%,rgba(201,144,138,0.06) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.12);"></div>
 
                     <!-- Retreat Day Dashboard -->
-                    <div id="retreat-dashboard" style="display:none;padding:0 16px 24px;">
+                    <div id="retreat-dashboard" style="display:none;padding:0 16px 8px;">
                         <div style="text-align:center;padding:10px 0 16px;">
                             <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1rem;color:var(--taupe);line-height:1.6;">"Every good and perfect gift is from above."</div>
                             <div style="font-family:'Playfair Display',serif;font-size:0.8rem;color:var(--blush);margin-top:2px;font-weight:600;">James 1:17</div>
@@ -7629,19 +7629,20 @@
 
                 var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
 
-                // Load moments separately (large payload) so page renders fast
-                fetch(API_URL + '/api/moments').then(r => r.ok ? r.json() : []).catch(() => []).then(function(moments) {
-                    var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
-                    var feedEl = document.getElementById('dashboard-feed');
-                    if (!feedEl) return;
+                // Load moments separately so page renders fast
+                (async function() {
+                    try {
+                        var res = await fetch(API_URL + '/api/moments');
+                        var moments = res.ok ? await res.json() : [];
+                        var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
+                        var feedEl = document.getElementById('dashboard-feed');
+                        if (!feedEl || !photosWithData.length) return;
 
-                if (photosWithData.length) {
-                    // Only rebuild slideshow if photo count changed
-                    var newCount = photosWithData.length;
-                    if (window._feedSlidePhotos && window._feedSlidePhotos.length === newCount && window._feedSlideshowTimer) {
-                        // Just update the photo data in case new ones replaced old
-                        window._feedSlidePhotos = photosWithData;
-                    } else {
+                        var newCount = photosWithData.length;
+                        if (window._feedSlidePhotos && window._feedSlidePhotos.length === newCount && window._feedSlideshowTimer) {
+                            window._feedSlidePhotos = photosWithData;
+                            return;
+                        }
                         window._feedSlidePhotos = photosWithData;
                         feedEl.style.display = 'block';
                         feedEl.innerHTML = '<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
@@ -7677,9 +7678,8 @@
                         showFeedSlide();
                         if (window._feedSlideshowTimer) clearInterval(window._feedSlideshowTimer);
                         if (photosWithData.length > 1) window._feedSlideshowTimer = setInterval(showFeedSlide, 5000);
-                    }
-                }
-                }); // end moments .then()
+                    } catch(e) {}
+                })();
 
             } catch (e) {
                 console.error('Dashboard load error:', e);

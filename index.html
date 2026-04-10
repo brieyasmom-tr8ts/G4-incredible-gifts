@@ -7612,7 +7612,7 @@
                 const [news, messages, moments] = await Promise.all([
                     fetch(API_URL + '/api/news').then(r => r.ok ? r.json() : []).catch(() => []),
                     fetch(API_URL + '/api/messages').then(r => r.ok ? r.json() : []).catch(() => []),
-                    fetch(API_URL + '/api/moments/latest').then(r => r.ok ? r.json() : []).catch(() => [])
+                    fetch(API_URL + '/api/moments').then(r => r.ok ? r.json() : []).catch(() => [])
                 ]);
 
                 // News / reminders

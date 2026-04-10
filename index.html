@@ -5376,6 +5376,39 @@
         function buildSchedule() {
             const container = document.getElementById('schedule-container');
             container.innerHTML = '';
+
+            // Map day index to date for time comparison
+            const dayDates = ['2026-04-09', '2026-04-10', '2026-04-11'];
+            const now = new Date();
+
+            function parseEndTime(dayIdx, timeStr) {
+                // Extract end time from "7:15 PM – 10:00 PM" or "3:00 PM"
+                var t = timeStr.split('–').pop().split('\u2013').pop().trim();
+                if (!t) t = timeStr.trim();
+                var match = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if (!match) return null;
+                var h = parseInt(match[1]);
+                var m = parseInt(match[2]);
+                var ampm = match[3].toUpperCase();
+                if (ampm === 'PM' && h !== 12) h += 12;
+                if (ampm === 'AM' && h === 12) h = 0;
+                return new Date(dayDates[dayIdx] + 'T' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':00-04:00');
+            }
+
+            function parseStartTime(dayIdx, timeStr) {
+                var t = timeStr.split('–')[0].split('\u2013')[0].trim();
+                var match = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if (!match) return null;
+                var h = parseInt(match[1]);
+                var m = parseInt(match[2]);
+                var ampm = match[3].toUpperCase();
+                if (ampm === 'PM' && h !== 12) h += 12;
+                if (ampm === 'AM' && h === 12) h = 0;
+                return new Date(dayDates[dayIdx] + 'T' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':00-04:00');
+            }
+
+            let foundCurrent = false;
+
             scheduleData.forEach((day, dayIndex) => {
                 const daySection = document.createElement('div');
                 daySection.className = 'day-section';
@@ -5390,6 +5423,28 @@
                 day.sessions.forEach((session, sessionIndex) => {
                     const card = document.createElement('div');
                     card.className = 'card';
+
+                    // Determine past / current / future
+                    var startTime = parseStartTime(dayIndex, session.time);
+                    var endTime = parseEndTime(dayIndex, session.time);
+                    var isPast = endTime && now > endTime;
+                    var isCurrent = startTime && endTime && now >= startTime && now <= endTime;
+                    var isUpNext = !foundCurrent && !isPast && !isCurrent && startTime && now < startTime;
+
+                    if (isCurrent) foundCurrent = true;
+                    if (isUpNext) foundCurrent = true; // only mark first future as "up next"
+
+                    if (isPast) {
+                        card.style.opacity = '0.5';
+                    }
+                    if (isCurrent) {
+                        card.style.border = '2px solid var(--blush)';
+                        card.style.boxShadow = '0 2px 16px rgba(201,144,138,0.2)';
+                    }
+                    if (isUpNext) {
+                        card.style.border = '2px solid var(--sage)';
+                        card.style.boxShadow = '0 2px 16px rgba(138,158,122,0.15)';
+                    }
                     const cardHeader = document.createElement('div');
                     cardHeader.className = 'card-header';
                     const cardLeft = document.createElement('div');
@@ -5402,6 +5457,23 @@
                     time.textContent = session.time;
                     cardLeft.appendChild(title);
                     cardLeft.appendChild(time);
+                    // Status badge
+                    if (isPast) {
+                        const badge = document.createElement('div');
+                        badge.style.cssText = 'font-size:0.7rem;color:var(--light-text);font-family:Cormorant Garamond,serif;margin-top:2px;';
+                        badge.textContent = 'Completed';
+                        cardLeft.appendChild(badge);
+                    } else if (isCurrent) {
+                        const badge = document.createElement('div');
+                        badge.style.cssText = 'font-size:0.7rem;color:var(--blush);font-weight:600;font-family:Cormorant Garamond,serif;margin-top:2px;';
+                        badge.textContent = 'Happening Now';
+                        cardLeft.appendChild(badge);
+                    } else if (isUpNext) {
+                        const badge = document.createElement('div');
+                        badge.style.cssText = 'font-size:0.7rem;color:var(--sage);font-weight:600;font-family:Cormorant Garamond,serif;margin-top:2px;';
+                        badge.textContent = 'Up Next';
+                        cardLeft.appendChild(badge);
+                    }
                     cardHeader.appendChild(cardLeft);
                     if (session.movement) {
                         const badge = document.createElement('span');
@@ -5747,6 +5819,14 @@
                             cardContents.forEach(c => c.classList.toggle('expanded'));
                         }
                     });
+                    // Auto-expand current or up-next session
+                    if ((isCurrent || isUpNext) && !isPast) {
+                        const cardContents = card.querySelectorAll('.card-content');
+                        if (cardContents.length) {
+                            card.classList.add('expanded');
+                            cardContents.forEach(c => c.classList.add('expanded'));
+                        }
+                    }
                     daySection.appendChild(card);
                 });
                 container.appendChild(daySection);

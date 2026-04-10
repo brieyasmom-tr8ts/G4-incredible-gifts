@@ -776,7 +776,7 @@ export default {
 
       // ===== MOMENTS =====
 
-      // GET /api/moments/latest - just IDs and metadata for slideshow (no photo data)
+      // GET /api/moments/latest - just metadata for slideshow (no photo data)
       if (path === '/api/moments/latest' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
           `SELECT id, author_name, caption, created_at
@@ -785,26 +785,72 @@ export default {
         return json(results, corsHeaders);
       }
 
-      // GET /api/moments/:id/photo - single photo data
+      // GET /api/moments/:id/photo - serve photo (R2 or base64 fallback)
       const momentPhotoMatch = path.match(/^\/api\/moments\/(\d+)\/photo$/);
       if (momentPhotoMatch && request.method === 'GET') {
-        const row = await env.DB.prepare(
-          'SELECT photo_data FROM moments WHERE id = ?'
-        ).bind(parseInt(momentPhotoMatch[1])).first();
-        if (!row || !row.photo_data) return json({ error: 'Not found' }, corsHeaders, 404);
-        return json({ photo_data: row.photo_data }, corsHeaders);
+        const id = parseInt(momentPhotoMatch[1]);
+        const row = await env.DB.prepare('SELECT photo_data, r2_key FROM moments WHERE id = ?').bind(id).first();
+        if (!row) return json({ error: 'Not found' }, corsHeaders, 404);
+
+        // Try R2 first
+        if (row.r2_key && env.VIDEOS) {
+          const obj = await env.VIDEOS.get(row.r2_key);
+          if (obj) {
+            return new Response(obj.body, {
+              headers: { ...corsHeaders, 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=86400' }
+            });
+          }
+        }
+        // Fall back to base64 in DB
+        if (row.photo_data) {
+          return json({ photo_data: row.photo_data }, corsHeaders);
+        }
+        return json({ error: 'Not found' }, corsHeaders, 404);
       }
 
-      // GET /api/moments - get all moments
+      // GET /api/moments/:id/image - redirect-friendly image URL
+      const momentImgMatch = path.match(/^\/api\/moments\/(\d+)\/image$/);
+      if (momentImgMatch && request.method === 'GET') {
+        const id = parseInt(momentImgMatch[1]);
+        const row = await env.DB.prepare('SELECT photo_data, r2_key FROM moments WHERE id = ?').bind(id).first();
+        if (!row) return new Response('Not found', { status: 404, headers: corsHeaders });
+
+        if (row.r2_key && env.VIDEOS) {
+          const obj = await env.VIDEOS.get(row.r2_key);
+          if (obj) {
+            return new Response(obj.body, {
+              headers: { ...corsHeaders, 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=86400' }
+            });
+          }
+        }
+        if (row.photo_data) {
+          // Convert base64 to binary response
+          const base64 = row.photo_data.split(',')[1] || row.photo_data;
+          const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+          return new Response(binary, {
+            headers: { ...corsHeaders, 'Content-Type': 'image/jpeg', 'Cache-Control': 'public, max-age=86400' }
+          });
+        }
+        return new Response('Not found', { status: 404, headers: corsHeaders });
+      }
+
+      // GET /api/moments - get all moments (with image URLs instead of base64)
       if (path === '/api/moments' && request.method === 'GET') {
         const { results } = await env.DB.prepare(
-          `SELECT id, user_id, author_name, photo_data, caption, gift_tag, created_at
+          `SELECT id, user_id, author_name, caption, gift_tag, created_at
            FROM moments ORDER BY created_at DESC LIMIT 200`
         ).all();
-        return json(results, corsHeaders);
+        // Add image URL to each moment
+        const baseUrl = new URL(request.url).origin;
+        const withUrls = results.map(m => ({
+          ...m,
+          image_url: baseUrl + '/api/moments/' + m.id + '/image',
+          photo_data: baseUrl + '/api/moments/' + m.id + '/image'
+        }));
+        return json(withUrls, corsHeaders);
       }
 
-      // POST /api/moments - upload a moment (max 5 per user)
+      // POST /api/moments - upload a moment (save to R2)
       if (path === '/api/moments' && request.method === 'POST') {
         const { user_id, author_name, photo_data, caption, gift_tag } = await request.json();
 
@@ -816,7 +862,6 @@ export default {
           return json({ error: 'Please keep captions kind and uplifting.' }, corsHeaders, 400);
         }
 
-        // Check upload limit
         const count = await env.DB.prepare(
           'SELECT COUNT(*) as cnt FROM moments WHERE user_id = ?'
         ).bind(user_id).first();
@@ -825,14 +870,30 @@ export default {
           return json({ error: 'You can share up to 20 moments. Delete one to add more.' }, corsHeaders, 400);
         }
 
-        // Limit photo size (~2MB base64)
-        if (photo_data.length > 2800000) {
-          return json({ error: 'Photo is too large. Please choose a smaller image.' }, corsHeaders, 400);
+        if (photo_data.length > 5000000) {
+          return json({ error: 'Photo is too large.' }, corsHeaders, 400);
         }
 
+        // Add r2_key column if missing
+        try { await env.DB.prepare("ALTER TABLE moments ADD COLUMN r2_key TEXT DEFAULT ''").run(); } catch(e) {}
+
+        // Save to R2 if available
+        let r2Key = '';
+        if (env.VIDEOS) {
+          r2Key = 'moments/' + user_id + '-' + Date.now() + '.jpg';
+          try {
+            const base64 = photo_data.split(',')[1] || photo_data;
+            const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+            await env.VIDEOS.put(r2Key, binary, { httpMetadata: { contentType: 'image/jpeg' } });
+          } catch(e) {
+            r2Key = '';
+          }
+        }
+
+        // Save to DB — store r2_key, and photo_data as fallback only if R2 failed
         const result = await env.DB.prepare(
-          'INSERT INTO moments (user_id, author_name, photo_data, caption, gift_tag) VALUES (?, ?, ?, ?, ?)'
-        ).bind(user_id, author_name, photo_data, caption || '', gift_tag || '').run();
+          'INSERT INTO moments (user_id, author_name, photo_data, caption, gift_tag, r2_key) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(user_id, author_name, r2Key ? '' : photo_data, caption || '', gift_tag || '', r2Key).run();
 
         return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
       }

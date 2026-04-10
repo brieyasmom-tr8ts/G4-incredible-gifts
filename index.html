@@ -7628,12 +7628,11 @@
 
                 var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
 
-                // Slideshow — metadata loaded above, fetch photos one at a time
+                // Slideshow — metadata loaded, photos served as image URLs
                 var feedEl = document.getElementById('dashboard-feed');
                 var momentsList = (moments || []).filter(function(m) { return m.id; });
                 if (feedEl && momentsList.length && !window._feedSlideshowTimer) {
                     window._feedSlideList = momentsList;
-                    window._feedSlideCache = window._feedSlideCache || {};
                     if (!window._feedSlideIdx) window._feedSlideIdx = 0;
                     feedEl.style.display = 'block';
                     feedEl.innerHTML = '<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
@@ -7645,27 +7644,14 @@
                         '<div id="feed-slideshow-count" style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--light-text);"></div>' +
                         '</div></div>';
 
-                    async function showFeedSlide() {
+                    function showFeedSlide() {
                         var list = window._feedSlideList;
                         if (!list || !list.length) return;
                         if (window._feedSlideIdx >= list.length) window._feedSlideIdx = 0;
                         var m = list[window._feedSlideIdx];
                         var img = document.getElementById('feed-slideshow-img');
                         if (!img) return;
-                        // Fetch single photo if not cached
-                        if (!window._feedSlideCache[m.id]) {
-                            try {
-                                var photoData = m.photo_data;
-                                if (!photoData) {
-                                    var r = await fetch(API_URL + '/api/moments/' + m.id + '/photo');
-                                    var d = await r.json();
-                                    if (d && d.photo_data) photoData = d.photo_data;
-                                }
-                                if (photoData) window._feedSlideCache[m.id] = photoData;
-                            } catch(e) {}
-                        }
-                        var src = window._feedSlideCache[m.id];
-                        if (!src) { window._feedSlideIdx = (window._feedSlideIdx + 1) % list.length; return; }
+                        var src = m.image_url || m.photo_data || (API_URL + '/api/moments/' + m.id + '/image');
                         img.style.opacity = '0';
                         setTimeout(function() {
                             img.src = src;

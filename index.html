@@ -3304,9 +3304,9 @@
 
             <!-- PHOTO BOOTH TAB -->
             <div id="photobooth-tab" class="tab-content">
-                <div style="display:flex;flex-direction:column;height:calc(100vh - 130px);padding:0;overflow:hidden;">
-                    <!-- Camera — takes up available space -->
-                    <div style="flex:1;position:relative;background:#0a0a0a;min-height:0;overflow:hidden;">
+                <div style="display:flex;flex-direction:column;height:calc(100vh - 200px);padding:0;overflow:hidden;">
+                    <!-- Camera -->
+                    <div style="flex:1;position:relative;background:#0a0a0a;min-height:0;overflow:hidden;max-height:calc(100vh - 360px);">
                         <div id="booth-camera-wrap" style="position:absolute;top:0;left:0;right:0;bottom:0;">
                             <video id="booth-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
                             <canvas id="booth-frame-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>

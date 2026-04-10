@@ -2944,53 +2944,42 @@
                     <div id="weather-forecast" style="display:none;margin:8px 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(138,158,122,0.08) 0%,rgba(201,144,138,0.06) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.12);"></div>
 
                     <!-- Retreat Day Dashboard -->
-                    <div id="retreat-dashboard" style="display:none;padding:0 0 24px;">
-                        <!-- Verse card -->
-                        <div style="margin:0 16px 16px;padding:20px 24px;background:white;border-radius:16px;box-shadow:0 2px 16px rgba(74,55,40,0.05);text-align:center;">
-                            <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05rem;color:var(--taupe);line-height:1.6;">"Every good and perfect gift is from above."</div>
-                            <div style="font-family:'Playfair Display',serif;font-size:0.82rem;color:var(--blush);margin-top:4px;font-weight:600;">James 1:17</div>
-                            <div style="width:40px;height:1px;background:var(--warm-grey);margin:10px auto 0;opacity:0.4;"></div>
-                            <div style="font-size:0.82rem;color:var(--light-text);margin-top:8px;font-weight:500;" id="dashboard-date"></div>
+                    <div id="retreat-dashboard" style="display:none;padding:0 16px 24px;">
+                        <div style="text-align:center;padding:10px 0 16px;">
+                            <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1rem;color:var(--taupe);line-height:1.6;">"Every good and perfect gift is from above."</div>
+                            <div style="font-family:'Playfair Display',serif;font-size:0.8rem;color:var(--blush);margin-top:2px;font-weight:600;">James 1:17</div>
+                            <div style="font-size:0.82rem;color:var(--light-text);margin-top:6px;" id="dashboard-date"></div>
                         </div>
 
-                        <div id="dashboard-news" style="display:none;margin:0 16px 14px;"></div>
+                        <div id="dashboard-news" style="display:none;margin-bottom:14px;"></div>
 
-                        <!-- Rotating feed -->
-                        <div id="dashboard-feed" style="display:none;margin:0 16px 16px;position:relative;min-height:80px;">
+                        <!-- Rotating feed — small contained card -->
+                        <div id="dashboard-feed" style="display:none;margin-bottom:16px;">
                             <div id="dashboard-feed-card" style="transition:opacity 0.5s ease;"></div>
                         </div>
 
                         <div id="dashboard-encouragement" style="display:none;"></div>
                         <div id="dashboard-photo" style="display:none;"></div>
 
-                        <!-- Quick actions — horizontal scroll -->
-                        <div style="margin-bottom:16px;">
-                            <div style="display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;-webkit-overflow-scrolling:touch;">
-                                <button onclick="switchToTab('moments')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">📸</span>Moments</button>
-                                <button onclick="switchToTab('uplift')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">🙏</span>Uplift</button>
-                                <button onclick="switchToTab('polls')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">💬</span>Polls</button>
-                                <button onclick="switchToTab('gratitude')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">🙌</span>Grateful</button>
-                                <button onclick="switchToTab('photobooth')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">🖼️</span>Booth</button>
-                                <button onclick="showPackingModal({manual:true})" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">🧳</span>Packing</button>
-                                <button onclick="switchToTab('sendlove')" style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px;width:72px;padding:14px 8px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:16px;font-family:'Cormorant Garamond',serif;font-size:0.72rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 2px 8px rgba(74,55,40,0.04);transition:all 0.2s;"><span style="font-size:1.4rem;">💌</span>Marnie</button>
-                            </div>
+                        <!-- Clean text buttons — 2 column grid -->
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+                            <button onclick="switchToTab('moments')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--blush);margin-right:2px;">Share</span> a Moment</button>
+                            <button onclick="switchToTab('uplift')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--sage);margin-right:2px;">Send</span> Encouragement</button>
+                            <button onclick="switchToTab('gratitude')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--sage);margin-right:2px;">Gratitude</span> Wall</button>
+                            <button onclick="switchToTab('photobooth')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--blush);margin-right:2px;">Photo</span> Booth</button>
+                            <button onclick="switchToTab('polls')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--blush);margin-right:2px;">Polls</span> &amp; WYR</button>
+                            <button onclick="switchToTab('sendlove')" style="padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;"><span style="color:var(--sage);margin-right:2px;">Love for</span> Marnie</button>
                         </div>
 
-                        <!-- Suggestions — compact -->
-                        <div id="suggestions-box" style="margin:0 16px 16px;padding:16px;background:white;border-radius:16px;box-shadow:0 2px 12px rgba(74,55,40,0.04);">
-                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-                                <span style="font-size:1.2rem;">💡</span>
-                                <div>
-                                    <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:600;color:var(--dark-text);">Suggestions</div>
-                                    <div style="font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--light-text);font-style:italic;">Ideas, feedback, or needs</div>
-                                </div>
-                            </div>
+                        <!-- Suggestions — minimal -->
+                        <div id="suggestions-box" style="padding:14px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);">
+                            <div style="font-family:Playfair Display,serif;font-size:0.85rem;font-weight:600;color:var(--dark-text);margin-bottom:8px;">Suggestions & Feedback</div>
                             <div style="display:flex;gap:8px;">
-                                <input type="text" id="suggestion-text" placeholder="Share a thought..." style="flex:1;padding:10px 14px;border:1px solid rgba(139,134,128,0.2);border-radius:12px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:#fafaf8;outline:none;" onfocus="this.style.borderColor='var(--blush)'" onblur="this.style.borderColor='rgba(139,134,128,0.2)'">
-                                <button id="suggestion-submit-btn" style="padding:10px 18px;background:linear-gradient(135deg,var(--sage),var(--blush));color:white;border:none;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;cursor:pointer;white-space:nowrap;">Send</button>
+                                <input type="text" id="suggestion-text" placeholder="Share a thought..." style="flex:1;padding:10px 14px;border:1px solid rgba(139,134,128,0.18);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:#fafaf8;outline:none;" onfocus="this.style.borderColor='var(--blush)'" onblur="this.style.borderColor='rgba(139,134,128,0.18)'">
+                                <button id="suggestion-submit-btn" style="padding:10px 16px;background:var(--blush);color:white;border:none;border-radius:10px;font-family:Cormorant Garamond,serif;font-size:0.88rem;font-weight:600;cursor:pointer;">Send</button>
                             </div>
                             <div style="display:none;" id="suggestion-tags"></div>
-                            <div id="suggestion-thanks" style="display:none;text-align:center;padding:8px 0 0;font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--sage);font-style:italic;"></div>
+                            <div id="suggestion-thanks" style="display:none;text-align:center;padding:6px 0 0;font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--sage);font-style:italic;"></div>
                         </div>
                     </div>
 
@@ -7501,12 +7490,12 @@
                 photosWithData.slice(0, 5).forEach(function(p) {
                     feedItems.push({
                         type: 'moment',
-                        html: '<div style="border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
-                            '<img src="' + p.photo_data + '" alt="" style="width:100%;display:block;max-height:220px;object-fit:cover;">' +
-                            '<div style="padding:10px 14px;background:white;">' +
-                            '<div style="font-size:0.72rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px;">📸 Latest Moment</div>' +
-                            (p.caption ? '<div style="font-size:0.92rem;color:var(--dark-text);">' + escHtml(p.caption) + '</div>' : '') +
-                            '<div style="font-size:0.82rem;color:var(--light-text);">\u2014 ' + escHtml(p.author_name || 'Anonymous') + '</div></div></div>'
+                        html: '<div style="display:flex;gap:12px;align-items:center;padding:14px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'moments\')">' +
+                            '<img src="' + p.photo_data + '" alt="" style="width:80px;height:80px;border-radius:10px;object-fit:cover;flex-shrink:0;">' +
+                            '<div style="flex:1;min-width:0;">' +
+                            '<div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:600;color:var(--blush);margin-bottom:4px;">Latest Moment</div>' +
+                            (p.caption ? '<div style="font-family:Cormorant Garamond,serif;font-size:0.92rem;color:var(--dark-text);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(p.caption) + '</div>' : '') +
+                            '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);">' + escHtml(p.author_name || 'Anonymous') + '</div></div></div>'
                     });
                 });
 
@@ -7514,31 +7503,31 @@
                 encouragements.slice(0, 3).forEach(function(e) {
                     feedItems.push({
                         type: 'encouragement',
-                        html: '<div style="padding:16px 18px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="switchToTab(\'uplift\')">' +
-                            '<div style="font-size:0.72rem;font-weight:600;color:var(--sage);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">🙏 Encouragement</div>' +
-                            '<div style="font-family:Cormorant Garamond,serif;font-style:italic;font-size:1.05rem;color:var(--dark-text);line-height:1.6;">\u201c' + escHtml(e.message) + '\u201d</div>' +
-                            '<div style="font-size:0.85rem;color:var(--light-text);margin-top:8px;">\u2014 ' + escHtml(e.author_name || 'Anonymous') +
+                        html: '<div style="padding:14px 16px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'uplift\')">' +
+                            '<div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:600;color:var(--sage);margin-bottom:6px;">Encouragement</div>' +
+                            '<div style="font-family:Cormorant Garamond,serif;font-style:italic;font-size:1rem;color:var(--dark-text);line-height:1.5;">\u201c' + escHtml(e.message) + '\u201d</div>' +
+                            '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);margin-top:6px;">\u2014 ' + escHtml(e.author_name || 'Anonymous') +
                             (e.tagged_name ? ' to ' + escHtml(e.tagged_name) : '') + '</div></div>'
                     });
                 });
 
-                // Add gratitude entries
+                // Add gratitude
                 try {
                     const gratData = await fetch(API_URL + '/api/gratitude').then(r => r.ok ? r.json() : []).catch(() => []);
                     if (Array.isArray(gratData) && gratData.length) {
-                        var gratSlice = gratData.slice(0, 4);
-                        var gratWords = gratSlice.map(function(g) { return escHtml(g.text); }).join(' \u00b7 ');
+                        var gratSlice = gratData.slice(0, 5);
+                        var gratWords = gratSlice.map(function(g) { return escHtml(g.text); }).join('  \u00b7  ');
                         feedItems.push({
                             type: 'gratitude',
-                            html: '<div style="padding:16px 18px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);cursor:pointer;text-align:center;" onclick="switchToTab(\'gratitude\')">' +
-                                '<div style="font-size:0.72rem;font-weight:600;color:var(--sage);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">🙌 Gratitude Wall</div>' +
-                                '<div style="font-family:Cormorant Garamond,serif;font-size:1.1rem;color:var(--dark-text);line-height:1.6;">' + gratWords + '</div>' +
-                                '<div style="font-size:0.82rem;color:var(--accent);margin-top:8px;">' + gratData.length + ' grateful hearts \u2014 add yours!</div></div>'
+                            html: '<div style="padding:14px 16px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;text-align:center;" onclick="switchToTab(\'gratitude\')">' +
+                                '<div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:600;color:var(--sage);margin-bottom:6px;">Gratitude Wall</div>' +
+                                '<div style="font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--dark-text);line-height:1.5;">' + gratWords + '</div>' +
+                                '<div style="font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--blush);margin-top:6px;">' + gratData.length + ' grateful hearts</div></div>'
                         });
                     }
                 } catch(e) {}
 
-                // Add WYR results
+                // Add WYR
                 try {
                     const wyrData = await fetch(API_URL + '/api/games/wyr/active').then(r => r.ok ? r.json() : null).catch(() => null);
                     if (wyrData && wyrData.active && wyrData.total_votes > 0) {
@@ -7546,12 +7535,12 @@
                         var pctB = 100 - pctA;
                         feedItems.push({
                             type: 'wyr',
-                            html: '<div style="padding:16px 18px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);cursor:pointer;" onclick="switchToTab(\'polls\')">' +
-                                '<div style="font-size:0.72rem;font-weight:600;color:var(--blush);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">💬 Would You Rather</div>' +
-                                '<div style="display:flex;gap:8px;margin-bottom:8px;">' +
-                                '<div style="flex:1;padding:10px;background:rgba(138,158,122,0.1);border-radius:8px;text-align:center;font-size:0.88rem;color:var(--dark-text);">' + escHtml(wyrData.option_a) + '<div style="font-weight:700;color:var(--sage);font-size:1.1rem;margin-top:4px;">' + pctA + '%</div></div>' +
-                                '<div style="flex:1;padding:10px;background:rgba(201,144,138,0.1);border-radius:8px;text-align:center;font-size:0.88rem;color:var(--dark-text);">' + escHtml(wyrData.option_b) + '<div style="font-weight:700;color:var(--blush);font-size:1.1rem;margin-top:4px;">' + pctB + '%</div></div></div>' +
-                                '<div style="font-size:0.82rem;color:var(--light-text);text-align:center;">' + wyrData.total_votes + ' votes \u2014 tap to play!</div></div>'
+                            html: '<div style="padding:14px 16px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);cursor:pointer;" onclick="switchToTab(\'polls\')">' +
+                                '<div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:600;color:var(--blush);margin-bottom:8px;">Would You Rather</div>' +
+                                '<div style="display:flex;gap:8px;">' +
+                                '<div style="flex:1;padding:10px;background:rgba(138,158,122,0.08);border-radius:10px;text-align:center;"><div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--dark-text);line-height:1.3;">' + escHtml(wyrData.option_a) + '</div><div style="font-family:Playfair Display,serif;font-weight:700;color:var(--sage);font-size:1.1rem;margin-top:4px;">' + pctA + '%</div></div>' +
+                                '<div style="flex:1;padding:10px;background:rgba(201,144,138,0.08);border-radius:10px;text-align:center;"><div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--dark-text);line-height:1.3;">' + escHtml(wyrData.option_b) + '</div><div style="font-family:Playfair Display,serif;font-weight:700;color:var(--blush);font-size:1.1rem;margin-top:4px;">' + pctB + '%</div></div></div>' +
+                                '<div style="font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--light-text);text-align:center;margin-top:6px;">' + wyrData.total_votes + ' votes</div></div>'
                         });
                     }
                 } catch(e) {}

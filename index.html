@@ -3306,7 +3306,7 @@
             <div id="photobooth-tab" class="tab-content">
                 <div style="padding:0;overflow:hidden;">
                     <!-- Camera -->
-                    <div style="position:relative;background:#0a0a0a;height:55vh;overflow:hidden;">
+                    <div style="position:relative;background:#0a0a0a;height:65vh;overflow:hidden;">
                         <div id="booth-camera-wrap" style="position:absolute;top:0;left:0;right:0;bottom:0;">
                             <video id="booth-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
                             <canvas id="booth-frame-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></canvas>
@@ -5189,6 +5189,16 @@
             document.querySelector('.content-area').scrollTop = 0;
             animateCards(activeTab);
             localStorage.setItem('g4_active_tab', tabName);
+            // Hide header on immersive tabs (photo booth)
+            const header = document.querySelector('.header');
+            const banner = document.getElementById('welcome-banner');
+            if (tabName === 'photobooth') {
+                if (header) header.style.display = 'none';
+                if (banner) banner.style.display = 'none';
+            } else {
+                if (header) header.style.display = '';
+                if (banner && banner.textContent) banner.style.display = '';
+            }
             if (typeof loadTabData === 'function') loadTabData(tabName);
         }
 

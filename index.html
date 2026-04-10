@@ -2962,15 +2962,14 @@
                         <!-- Quick action buttons — controlled by admin nav toggles -->
                         <div id="dashboard-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
 
-                        <!-- Suggestions — minimal -->
-                        <div id="suggestions-box" style="padding:14px;background:white;border-radius:14px;box-shadow:0 1px 6px rgba(74,55,40,0.04);border:1px solid rgba(200,185,176,0.12);">
-                            <div style="font-family:Playfair Display,serif;font-size:0.85rem;font-weight:600;color:var(--dark-text);margin-bottom:8px;">Suggestions & Feedback</div>
-                            <div style="display:flex;gap:8px;">
-                                <input type="text" id="suggestion-text" placeholder="Share a thought..." style="flex:1;padding:10px 14px;border:1px solid rgba(139,134,128,0.18);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:#fafaf8;outline:none;" onfocus="this.style.borderColor='var(--blush)'" onblur="this.style.borderColor='rgba(139,134,128,0.18)'">
-                                <button id="suggestion-submit-btn" style="padding:10px 16px;background:var(--blush);color:white;border:none;border-radius:10px;font-family:Cormorant Garamond,serif;font-size:0.88rem;font-weight:600;cursor:pointer;">Send</button>
+                        <!-- Suggestions — small, bottom -->
+                        <div id="suggestions-box" style="margin-top:10px;padding:10px 14px;background:rgba(255,255,255,0.6);border-radius:12px;border:1px solid rgba(200,185,176,0.1);">
+                            <div style="display:flex;gap:8px;align-items:center;">
+                                <input type="text" id="suggestion-text" placeholder="Suggestion or feedback..." style="flex:1;padding:8px 12px;border:1px solid rgba(139,134,128,0.15);border-radius:8px;font-family:Georgia,serif;font-size:14px;color:var(--dark-text);background:white;outline:none;" onfocus="this.style.borderColor='var(--blush)'" onblur="this.style.borderColor='rgba(139,134,128,0.15)'">
+                                <button id="suggestion-submit-btn" style="padding:8px 14px;background:var(--taupe);color:white;border:none;border-radius:8px;font-family:Cormorant Garamond,serif;font-size:0.8rem;font-weight:600;cursor:pointer;">Send</button>
                             </div>
                             <div style="display:none;" id="suggestion-tags"></div>
-                            <div id="suggestion-thanks" style="display:none;text-align:center;padding:6px 0 0;font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--sage);font-style:italic;"></div>
+                            <div id="suggestion-thanks" style="display:none;text-align:center;padding:4px 0 0;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--sage);font-style:italic;"></div>
                         </div>
                     </div>
 
@@ -7612,10 +7611,9 @@
 
             // Fetch live content
             try {
-                const [news, messages, moments] = await Promise.all([
+                const [news, messages] = await Promise.all([
                     fetch(API_URL + '/api/news').then(r => r.ok ? r.json() : []).catch(() => []),
-                    fetch(API_URL + '/api/messages').then(r => r.ok ? r.json() : []).catch(() => []),
-                    fetch(API_URL + '/api/moments').then(r => r.ok ? r.json() : []).catch(() => [])
+                    fetch(API_URL + '/api/messages').then(r => r.ok ? r.json() : []).catch(() => [])
                 ]);
 
                 // News / reminders
@@ -7631,9 +7629,9 @@
 
                 var encouragements = (messages || []).filter(function(m) { return m.type === 'encouragement'; });
 
-                // Build slideshow feed — one photo at a time, shrunk to fit
-                var feedEl = document.getElementById('dashboard-feed');
-                var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
+                // Load moments separately (large payload) so page renders fast
+                fetch(API_URL + '/api/moments').then(r => r.ok ? r.json() : []).catch(() => []).then(function(moments) {
+                    var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
 
                 if (photosWithData.length) {
                     // Only rebuild slideshow if photo count changed
@@ -7679,6 +7677,7 @@
                         if (photosWithData.length > 1) window._feedSlideshowTimer = setInterval(showFeedSlide, 5000);
                     }
                 }
+                }); // end moments .then()
 
             } catch (e) {
                 console.error('Dashboard load error:', e);

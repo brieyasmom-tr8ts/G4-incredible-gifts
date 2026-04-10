@@ -6464,6 +6464,16 @@
                     img.src = moment.photo_data;
                     img.alt = moment.caption || 'Retreat moment';
                     img.loading = 'lazy';
+                    img.style.cursor = 'pointer';
+                    img.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const photoOverlay = document.createElement('div');
+                        photoOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+                        photoOverlay.innerHTML = '<button style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.8rem;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">\u2715</button>' +
+                            '<img src="' + moment.photo_data + '" style="max-width:92vw;max-height:85vh;object-fit:contain;border-radius:12px;">';
+                        photoOverlay.addEventListener('click', function() { photoOverlay.remove(); });
+                        document.body.appendChild(photoOverlay);
+                    });
 
                     const info = document.createElement('div');
                     info.className = 'moment-card-info';
@@ -9048,9 +9058,21 @@
                 html = '<div style="text-align:center;padding:40px 20px;"><div style="font-size:2rem;margin-bottom:8px;">📷</div><div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--light-text);">No photos yet! Be the first to submit one.</div></div>';
             }
             list.innerHTML = html;
-        }
 
-        async function huntVote(promptId, submissionId, btn) {
+            // Make hunt photos expandable on tap
+            list.querySelectorAll('.hunt-gallery-card img').forEach(function(img) {
+                img.style.cursor = 'pointer';
+                img.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const photoOverlay = document.createElement('div');
+                    photoOverlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
+                    photoOverlay.innerHTML = '<button style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.8rem;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;">\u2715</button>' +
+                        '<img src="' + img.src + '" style="max-width:92vw;max-height:85vh;object-fit:contain;border-radius:12px;">';
+                    photoOverlay.addEventListener('click', function() { photoOverlay.remove(); });
+                    document.body.appendChild(photoOverlay);
+                });
+            });
+        }(promptId, submissionId, btn) {
             if (!currentUser) return;
             const phase = getHuntPhase();
             if (phase !== 'vote') {

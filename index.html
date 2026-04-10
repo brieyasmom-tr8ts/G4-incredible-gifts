@@ -7632,6 +7632,8 @@
                 // Load moments separately (large payload) so page renders fast
                 fetch(API_URL + '/api/moments').then(r => r.ok ? r.json() : []).catch(() => []).then(function(moments) {
                     var photosWithData = (moments || []).filter(function(m) { return m.photo_data; });
+                    var feedEl = document.getElementById('dashboard-feed');
+                    if (!feedEl) return;
 
                 if (photosWithData.length) {
                     // Only rebuild slideshow if photo count changed

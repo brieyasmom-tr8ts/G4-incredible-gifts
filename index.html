@@ -1802,6 +1802,55 @@
             transform: scale(0.9);
         }
 
+        .gratitude-page {
+            padding: 4px 0 0;
+        }
+
+        .gratitude-word {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-family: Cormorant Garamond, serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            opacity: 0;
+            animation: gratFadeIn 0.6s ease forwards;
+            line-height: 1.3;
+        }
+
+        .gratitude-word:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes gratFadeIn {
+            from { opacity: 0; transform: scale(0.7) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .gratitude-tooltip {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(74,55,40,0.92);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-family: Cormorant Garamond, serif;
+            font-size: 0.88rem;
+            z-index: 9999;
+            pointer-events: none;
+            animation: gratTooltip 2s ease forwards;
+        }
+
+        @keyframes gratTooltip {
+            0% { opacity: 0; transform: translateX(-50%) translateY(5px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
         .day-section {
             margin: 20px 0;
         }
@@ -3235,6 +3284,28 @@
                         </button>
                         <div id="video-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- GRATITUDE WALL TAB -->
+            <div id="gratitude-tab" class="tab-content">
+                <div class="gratitude-page">
+                    <div style="text-align:center;padding:12px 16px 6px;">
+                        <div style="font-family:Playfair Display,serif;font-size:1.4rem;font-weight:700;color:var(--dark-text);">Gratitude Wall</div>
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;">What are you thankful for today?</div>
+                    </div>
+
+                    <!-- Input -->
+                    <div style="padding:8px 16px 14px;">
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input type="text" id="gratitude-input" maxlength="60" placeholder="Type something you're grateful for..." style="flex:1;padding:12px 16px;border:1px solid var(--warm-grey);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--dark-text);background:white;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor='var(--blush)'" onblur="this.style.borderColor='var(--warm-grey)'">
+                            <button id="gratitude-send-btn" style="padding:12px 20px;background:linear-gradient(135deg,var(--sage),var(--blush));color:white;border:none;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:0.95rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:opacity 0.2s;">Send</button>
+                        </div>
+                        <div id="gratitude-count" style="text-align:center;font-family:Cormorant Garamond,serif;font-size:0.78rem;color:var(--light-text);margin-top:6px;font-style:italic;"></div>
+                    </div>
+
+                    <!-- Word Cloud -->
+                    <div id="gratitude-cloud" style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px 10px;padding:10px 16px 100px;min-height:300px;"></div>
                 </div>
             </div>
 
@@ -5141,6 +5212,7 @@
             { key: 'nav_polls', tab: 'polls', icon: '\ud83d\udcac', label: 'Polls', badge: 'badge-sharing' },
             { key: 'nav_journey', tab: 'journey', icon: '\ud83c\udf81', label: 'Journey' },
             { key: 'nav_journal', tab: 'journal', icon: '\u2728', label: 'Journal' },
+            { key: 'nav_gratitude', tab: 'gratitude', icon: '💛', label: 'Grateful' },
             { key: 'nav_photobooth', tab: 'photobooth', icon: '🖼️', label: 'Booth' },
             { key: 'nav_hunt', tab: 'hunt', icon: '\ud83d\udcf7', label: 'Hunt' },
             { key: 'nav_meme', tab: 'meme', icon: '\ud83d\ude02', label: 'Meme', action: 'meme' },
@@ -5217,14 +5289,14 @@
             } catch(e) {
                 console.error('Failed to load nav settings:', e);
                 // Fallback: show default nav
-                navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1' };
+                navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1', nav_gratitude: '1' };
                 buildNav();
             }
         }
 
         function initTabs() {
             // Build default nav first (will be updated when settings load)
-            navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1' };
+            navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1', nav_gratitude: '1' };
             buildNav();
         }
 
@@ -8936,6 +9008,121 @@
                 if (btn.dataset.tab === 'hunt') loadHuntTab();
             });
         });
+
+        // ===== GRATITUDE WALL =====
+        (function() {
+            const CLOUD_COLORS = [
+                { bg: 'rgba(138,158,122,0.15)', fg: '#6b7f5e' },  // sage
+                { bg: 'rgba(201,144,138,0.15)', fg: '#b07068' },  // blush
+                { bg: 'rgba(74,55,40,0.10)', fg: '#6b5240' },     // taupe
+                { bg: 'rgba(212,165,154,0.15)', fg: '#a07568' },   // rose
+                { bg: 'rgba(180,155,100,0.12)', fg: '#8a7540' },   // gold
+                { bg: 'rgba(138,158,122,0.20)', fg: '#4a5e3e' },   // deep sage
+                { bg: 'rgba(201,144,138,0.20)', fg: '#8a4a42' },   // deep blush
+            ];
+            const SIZES = [
+                { font: '1.5rem', pad: '8px 18px' },
+                { font: '1.15rem', pad: '7px 16px' },
+                { font: '1rem', pad: '6px 14px' },
+                { font: '0.88rem', pad: '5px 12px' },
+                { font: '1.3rem', pad: '7px 16px' },
+                { font: '0.95rem', pad: '6px 13px' },
+            ];
+
+            let gratitudeEntries = [];
+            let gratitudeLoaded = false;
+
+            function renderCloud() {
+                const cloud = document.getElementById('gratitude-cloud');
+                cloud.innerHTML = '';
+                if (gratitudeEntries.length === 0) {
+                    cloud.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--light-text);font-family:Cormorant Garamond,serif;font-size:1rem;font-style:italic;">Be the first to share what you\u2019re grateful for!</div>';
+                    return;
+                }
+                const countEl = document.getElementById('gratitude-count');
+                countEl.textContent = gratitudeEntries.length + (gratitudeEntries.length === 1 ? ' grateful heart' : ' grateful hearts');
+
+                gratitudeEntries.forEach((entry, i) => {
+                    const span = document.createElement('span');
+                    span.className = 'gratitude-word';
+                    span.textContent = entry.text;
+                    const color = CLOUD_COLORS[(i * 3 + entry.text.length) % CLOUD_COLORS.length];
+                    const size = SIZES[(i * 7 + entry.text.length * 3) % SIZES.length];
+                    span.style.background = color.bg;
+                    span.style.color = color.fg;
+                    span.style.fontSize = size.font;
+                    span.style.padding = size.pad;
+                    // Gentle rotation
+                    const rotation = ((i * 13 + entry.text.length * 7) % 11) - 5;
+                    span.style.transform = 'rotate(' + rotation + 'deg)';
+                    span.style.animationDelay = (i * 0.06) + 's';
+                    span.addEventListener('click', () => {
+                        showGratTooltip(entry.name + ' \u00b7 ' + new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                    });
+                    cloud.appendChild(span);
+                });
+            }
+
+            function showGratTooltip(text) {
+                const existing = document.querySelector('.gratitude-tooltip');
+                if (existing) existing.remove();
+                const tip = document.createElement('div');
+                tip.className = 'gratitude-tooltip';
+                tip.textContent = text;
+                document.body.appendChild(tip);
+                setTimeout(() => tip.remove(), 2200);
+            }
+
+            async function loadGratitude() {
+                try {
+                    const data = await apiGet('/api/gratitude');
+                    if (Array.isArray(data)) {
+                        gratitudeEntries = data;
+                        renderCloud();
+                    }
+                } catch(e) { /* silently fail */ }
+            }
+
+            async function submitGratitude() {
+                const input = document.getElementById('gratitude-input');
+                const text = input.value.trim();
+                if (!text) return;
+                if (!currentUser) { showToast('Please set up your profile first'); return; }
+
+                const btn = document.getElementById('gratitude-send-btn');
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+
+                try {
+                    await apiPost('/api/gratitude', {
+                        user_id: currentUser.id,
+                        name: currentUser.display_name || currentUser.first_name,
+                        text: text
+                    });
+                    input.value = '';
+                    await loadGratitude();
+                    showToast('Added to the wall!');
+                } catch(e) {
+                    showToast('Could not save \u2014 try again');
+                }
+                btn.disabled = false;
+                btn.textContent = 'Send';
+            }
+
+            document.getElementById('gratitude-send-btn').addEventListener('click', submitGratitude);
+            document.getElementById('gratitude-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); submitGratitude(); }
+            });
+
+            // Load when tab is opened
+            const origLoadTab2 = (typeof loadTabData === 'function') ? loadTabData : null;
+            loadTabData = function(tab) {
+                if (origLoadTab2) origLoadTab2(tab);
+                if (tab === 'gratitude') {
+                    loadGratitude();
+                }
+            };
+        })();
 
         // ===== PHOTO BOOTH =====
         (function() {

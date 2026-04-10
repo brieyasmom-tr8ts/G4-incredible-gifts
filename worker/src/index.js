@@ -1480,6 +1480,41 @@ export default {
         return json(results, corsHeaders);
       }
 
+      // ===== GRATITUDE WALL =====
+
+      // POST /api/gratitude - add a gratitude entry
+      if (path === '/api/gratitude' && request.method === 'POST') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS gratitude (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', text TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) { /* exists */ }
+
+        const body = await request.json();
+        if (!body.text || !body.text.trim()) {
+          return json({ error: 'Text is required' }, corsHeaders, 400);
+        }
+        if (body.text.trim().length > 60) {
+          return json({ error: 'Keep it short — 60 characters max' }, corsHeaders, 400);
+        }
+
+        await env.DB.prepare(
+          'INSERT INTO gratitude (user_id, name, text) VALUES (?, ?, ?)'
+        ).bind(
+          body.user_id || null,
+          body.name || 'Anonymous',
+          body.text.trim()
+        ).run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/gratitude - get all entries
+      if (path === '/api/gratitude' && request.method === 'GET') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS gratitude (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', text TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) { /* exists */ }
+
+        const { results } = await env.DB.prepare(
+          'SELECT id, user_id, name, text, created_at FROM gratitude ORDER BY created_at ASC'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
       // ===== SUGGESTIONS =====
 
       // POST /api/suggestions - submit a suggestion or feedback note

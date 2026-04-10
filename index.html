@@ -3777,11 +3777,30 @@
 
 
 
+        // Cookie helpers (shared between Safari and home screen apps)
+        function setCookie(name, value, days) {
+            const d = new Date();
+            d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + d.toUTCString() + ';path=/;SameSite=Lax';
+        }
+        function getCookie(name) {
+            const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+            return match ? decodeURIComponent(match[2]) : null;
+        }
+        function saveUser(user) {
+            const json = JSON.stringify(user);
+            localStorage.setItem('g4user', json);
+            setCookie('g4user', json, 30);
+        }
+
         // ===== User Setup =====
         function initSetup() {
-            const saved = localStorage.getItem('g4user');
+            const saved = localStorage.getItem('g4user') || getCookie('g4user');
             if (saved) {
                 currentUser = JSON.parse(saved);
+                // Sync both storage methods
+                localStorage.setItem('g4user', saved);
+                setCookie('g4user', saved, 30);
                 showWelcome();
                 document.getElementById('prayer-compose').style.display = 'block';
                 document.getElementById('moments-upload').style.display = 'block';
@@ -3824,7 +3843,7 @@
                     }
 
                     currentUser = result;
-                    localStorage.setItem('g4user', JSON.stringify(currentUser));
+                    saveUser(currentUser);
                     document.getElementById('setup-modal').style.display = 'none';
                     showWelcome();
                     document.getElementById('prayer-compose').style.display = 'block';
@@ -3869,7 +3888,7 @@
                 if (data && !data.error) {
                     const fields = ['photo_data', 'email', 'phone', 'birthday', 'show_email', 'show_phone', 'show_birthday', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
                     fields.forEach(f => { if (data[f] !== undefined) currentUser[f] = data[f]; });
-                    localStorage.setItem('g4user', JSON.stringify(currentUser));
+                    saveUser(currentUser);
                     showWelcome();
                     checkProfileNudge();
                 }
@@ -4218,7 +4237,7 @@
                 if (serverData && !serverData.error) {
                     const fields = ['show_email', 'show_phone', 'show_birthday', 'show_about', 'email', 'phone', 'birthday', 'photo_data', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
                     fields.forEach(f => { if (serverData[f] !== undefined) currentUser[f] = serverData[f]; });
-                    localStorage.setItem('g4user', JSON.stringify(currentUser));
+                    saveUser(currentUser);
                 }
             } catch(e) { /* use cached data if offline */ }
 
@@ -4359,7 +4378,7 @@
                     show_about: sheet.querySelector('#toggle-about').classList.contains('on') ? 1 : 0,
                 };
                 Object.assign(currentUser, toggleData);
-                localStorage.setItem('g4user', JSON.stringify(currentUser));
+                saveUser(currentUser);
                 fetch(API_URL + '/api/users/' + currentUser.id + '/profile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -4445,7 +4464,7 @@
                     }
                     // Update local cache
                     Object.assign(currentUser, profileData);
-                    localStorage.setItem('g4user', JSON.stringify(currentUser));
+                    saveUser(currentUser);
                     showWelcome();
                     showToast('Profile saved!');
                     overlay.remove();

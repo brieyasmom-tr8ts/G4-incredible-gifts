@@ -7405,6 +7405,9 @@
             });
         })();
 
+        // Declare gameSettings before loadDashboard uses it (avoid TDZ)
+        let gameSettings = {};
+
         // Show prep section before retreat, dashboard during retreat
         (function() {
             const now = new Date();
@@ -7747,7 +7750,6 @@
             return { emoji: '🎒', label: 'Light Traveler!' };
         }
 
-        let gameSettings = {};
         const _testParam = new URLSearchParams(window.location.search).get('test') || '';
         let _testCleared = false;
 

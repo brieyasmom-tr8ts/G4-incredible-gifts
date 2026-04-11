@@ -1583,6 +1583,19 @@ export default {
         return json(results, corsHeaders);
       }
 
+      // GET /api/feedback/mine?user_id=X - has THIS user submitted feedback?
+      // Used by the client to reconcile its localStorage "already sent" flag
+      // with what the server actually has, so women who hit a silent save
+      // failure automatically get the form back on their next page load.
+      if (path === '/api/feedback/mine' && request.method === 'GET') {
+        const userId = parseInt(url.searchParams.get('user_id') || '0', 10);
+        if (!userId) return json({ submitted: false }, corsHeaders);
+        const row = await env.DB.prepare(
+          'SELECT id FROM feedback WHERE user_id = ? LIMIT 1'
+        ).bind(userId).first();
+        return json({ submitted: !!row }, corsHeaders);
+      }
+
       // ===== LOVE MESSAGES (MARNIE) =====
 
       // POST /api/lovemessages

@@ -9793,6 +9793,31 @@
             });
         }
 
+        // Reconcile the local "feedback sent" flag with what the server actually
+        // has. Fixes a class of lost submissions where a prior silent save error
+        // marked the flag as sent but the row never hit the database. If the
+        // server has no record for this user, we clear the flag so the form
+        // reappears on the next check.
+        async function reconcileFeedbackSentFlag() {
+            if (!currentUser || !currentUser.id) return;
+            if (!localStorage.getItem('g4feedback_sent')) return;
+            try {
+                const resp = await fetch(API_URL + '/api/feedback/mine?user_id=' + currentUser.id);
+                if (!resp.ok) return; // fail open — keep the flag if we can't verify
+                const data = await resp.json();
+                if (data && data.submitted === false) {
+                    // Server has no record of this user's feedback. Clear the
+                    // flag so she sees the form and can resubmit.
+                    localStorage.removeItem('g4feedback_sent');
+                    // Make sure the form card is visible and the UI state reflects
+                    // the reconciled truth.
+                    const wrap = document.getElementById('feedback-form-wrap');
+                    if (wrap) wrap.style.display = '';
+                    if (typeof updateFeedbackUIState === 'function') updateFeedbackUIState();
+                }
+            } catch(e) { /* fail open */ }
+        }
+
         function initFeedbackForm() {
             // Wire banner button (always works, even after submit the button is gone)
             const bannerBtn = document.getElementById('feedback-banner-btn');
@@ -9802,6 +9827,12 @@
             }
 
             updateFeedbackUIState();
+
+            // Kick off a background check: does the server actually have a
+            // record of this user's feedback? If not, clear the flag so the
+            // form reappears. This auto-recovers anyone who hit the silent
+            // save bug without them needing to know anything.
+            reconcileFeedbackSentFlag();
 
             // Check if already submitted — hide the entire form card so the
             // home page returns to normal once she's taken the survey.

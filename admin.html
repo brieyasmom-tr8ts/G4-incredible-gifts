@@ -607,8 +607,7 @@
             <button class="nav-tab" data-section="users"><span class="nav-icon">👥</span> Users <span class="badge" id="count-users">0</span></button>
             <button class="nav-tab" data-section="churches"><span class="nav-icon">⛪</span> Churches</button>
             <button class="nav-tab" data-section="news"><span class="nav-icon">📰</span> News / Reminders</button>
-            <button class="nav-tab" data-section="navmenu"><span class="nav-icon">🧭</span> Nav Menu</button>
-            <button class="nav-tab" data-section="homebuttons"><span class="nav-icon">🏠</span> Home Buttons</button>
+            <button class="nav-tab" data-section="visibility"><span class="nav-icon">🧭</span> Visibility</button>
             <button class="nav-tab" data-section="videos"><span class="nav-icon">🎬</span> Videos <span class="badge" id="count-videos">0</span></button>
             <button class="nav-tab" data-section="moments"><span class="nav-icon">📸</span> Moments <span class="badge" id="count-moments">0</span></button>
             <button class="nav-tab" data-section="prayers"><span class="nav-icon">🙏</span> Prayer Wall <span class="badge" id="count-prayers">0</span></button>
@@ -742,22 +741,13 @@
             </div>
         </div>
 
-        <!-- Nav Menu -->
-        <div class="section" id="section-navmenu">
+        <!-- Visibility (unified nav + home page) -->
+        <div class="section" id="section-visibility">
             <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
-                <div style="font-family:Playfair Display,serif;font-size:1.2rem;font-weight:700;margin-bottom:0.25rem;">Bottom Nav Menu</div>
-                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;">Toggle which buttons appear on everyone's phones. Home is always visible. Max 6 items recommended.</div>
-                <div id="nav-toggles-list" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
-                <div style="margin-top:1rem;font-size:0.85rem;color:var(--light-text);">Active: <strong id="nav-active-count">0</strong> items (Home + toggled)</div>
-            </div>
-        </div>
-
-        <!-- Home Page Buttons -->
-        <div class="section" id="section-homebuttons">
-            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
-                <div style="font-family:Playfair Display,serif;font-size:1.2rem;font-weight:700;margin-bottom:0.25rem;">Home Page Buttons</div>
-                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;">Toggle which quick-action buttons show on the home screen. Separate from bottom nav.</div>
-                <div id="home-toggles-list" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
+                <div style="font-family:Playfair Display,serif;font-size:1.2rem;font-weight:700;margin-bottom:0.25rem;">Where to Show Each Feature</div>
+                <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">Each feature can appear in the bottom navigation, as a quick-action on the home page, or both. Toggle either one independently.</div>
+                <div style="margin-bottom:1rem;font-size:0.85rem;color:var(--light-text);">Active in nav: <strong id="nav-active-count">0</strong> items (Home is always visible)</div>
+                <div id="visibility-toggles-list" style="display:flex;flex-direction:column;gap:0.6rem;"></div>
             </div>
         </div>
 
@@ -1165,7 +1155,7 @@ function closeModal() { document.getElementById('modal').classList.remove('show'
 // --- Sidebar ---
 const SECTION_TITLES = {
     stats: 'Stats', users: 'Users', churches: 'Churches', news: 'News / Reminders',
-    navmenu: 'Nav Menu', homebuttons: 'Home Buttons', videos: 'Videos',
+    visibility: 'Visibility', videos: 'Videos',
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
     topics: 'Theme Suggestions', stories: 'Stories',
     polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme'
@@ -2841,90 +2831,113 @@ function clearHuntData() {
 }
 
 // --- Nav Menu Toggles ---
-const NAV_ITEMS = [
-    { key: 'nav_schedule', label: 'Schedule', icon: '&#x1f4c6;', desc: 'Retreat schedule' },
-    { key: 'nav_moments', label: 'Moments', icon: '&#x1f4f8;', desc: 'Photo sharing wall' },
-    { key: 'nav_connect', label: 'Connect', icon: '&#x1f49b;', desc: 'People directory & profiles' },
-    { key: 'nav_uplift', label: 'Uplift', icon: '&#x1f64f;', desc: 'Prayer wall & encouragement' },
-    { key: 'nav_polls', label: 'Polls', icon: '&#x1f4ac;', desc: 'Live polls & responses' },
-    { key: 'nav_journey', label: 'Journey', icon: '&#x1f381;', desc: 'Gift reflections' },
-    { key: 'nav_journal', label: 'Journal', icon: '&#x2728;', desc: 'Personal journal' },
-    { key: 'nav_gratitude', label: 'Gratitude Wall', icon: '&#x1f49b;', desc: 'Word cloud gratitude wall' },
-    { key: 'nav_photobooth', label: 'Photo Booth', icon: '&#x1f5bc;&#xfe0f;', desc: 'Photo booth with fun frames' },
-    { key: 'nav_sendlove', label: 'Send Love (Marnie)', icon: '&#x1f48c;', desc: 'Messages & videos for Marnie' },
-    { key: 'nav_hunt', label: 'Scavenger Hunt', icon: '&#x1f4f7;', desc: 'Photo scavenger hunt with voting' },
-    { key: 'nav_meme', label: 'Meme', icon: '&#x1f602;', desc: 'What Do You Meme? game' },
-    { key: 'nav_quiz', label: 'Quiz', icon: '&#x1f9e0;', desc: 'Know Your Sisters daily quiz' },
-    { key: 'nav_survey', label: 'Survey', icon: '&#x1f4dd;', desc: 'Retreat feedback form' },
-    { key: 'nav_secretsister', label: 'Secret Sister', icon: '&#x1f48c;', desc: 'Anonymous encouragement notes' },
-    { key: 'nav_topics', label: 'Suggest Theme', icon: '&#x1f4a1;', desc: 'Collect topic ideas for next year' },
-    { key: 'nav_stories', label: 'Stories', icon: '&#x2728;', desc: 'Testimonies of what God is doing' }
+// Unified feature list. Each row can have a nav_key (bottom nav tab),
+// a home_key (home page quick action / card), or both. Rows where one
+// is null render a grey "—" placeholder in that column.
+const FEATURE_ITEMS = [
+    { label: 'Schedule',            icon: '&#x1f4c6;',           desc: 'Retreat schedule',                 nav_key: 'nav_schedule',    home_key: 'home_schedule' },
+    { label: 'Moments',             icon: '&#x1f4f8;',           desc: 'Photo sharing wall',               nav_key: 'nav_moments',     home_key: 'home_moments' },
+    { label: 'Connect',             icon: '&#x1f49b;',           desc: 'People directory & profiles',      nav_key: 'nav_connect',     home_key: 'home_connect' },
+    { label: 'Uplift',              icon: '&#x1f64f;',           desc: 'Prayer wall & encouragement',      nav_key: 'nav_uplift',      home_key: 'home_uplift' },
+    { label: 'Polls',               icon: '&#x1f4ac;',           desc: 'Live polls & responses',           nav_key: 'nav_polls',       home_key: 'home_polls' },
+    { label: 'Journey',             icon: '&#x1f381;',           desc: 'Gift reflections',                 nav_key: 'nav_journey',     home_key: null },
+    { label: 'Journal',             icon: '&#x2728;',            desc: 'Personal journal',                 nav_key: 'nav_journal',     home_key: 'home_journal' },
+    { label: 'Gratitude Wall',      icon: '&#x1f49b;',           desc: 'Word cloud gratitude wall',        nav_key: 'nav_gratitude',   home_key: 'home_gratitude' },
+    { label: 'Photo Booth',         icon: '&#x1f5bc;&#xfe0f;',   desc: 'Photo booth with fun frames',      nav_key: 'nav_photobooth',  home_key: 'home_photobooth' },
+    { label: 'Send Love (Marnie)',  icon: '&#x1f48c;',           desc: 'Messages & videos for Marnie',     nav_key: 'nav_sendlove',    home_key: 'home_sendlove' },
+    { label: 'Scavenger Hunt',      icon: '&#x1f4f7;',           desc: 'Photo scavenger hunt with voting', nav_key: 'nav_hunt',        home_key: 'home_hunt' },
+    { label: 'Meme',                icon: '&#x1f602;',           desc: 'What Do You Meme? game',           nav_key: 'nav_meme',        home_key: null },
+    { label: 'Quiz',                icon: '&#x1f9e0;',           desc: 'Know Your Sisters daily quiz',     nav_key: 'nav_quiz',        home_key: null },
+    { label: 'Survey',              icon: '&#x1f4dd;',           desc: 'Retreat feedback form',            nav_key: 'nav_survey',      home_key: null },
+    { label: 'Secret Sister',       icon: '&#x1f48c;',           desc: 'Anonymous encouragement notes',    nav_key: 'nav_secretsister', home_key: null },
+    { label: 'Packing Points',      icon: '&#x1f9f3;',           desc: 'Packing scores game (home-only modal)', nav_key: null,        home_key: 'home_packing' },
+    { label: 'View Schedule',       icon: '&#x1f5d3;&#xfe0f;',   desc: 'Shortcut to schedule on home',     nav_key: null,              home_key: 'home_schedule' },
+    { label: 'Suggest Theme',       icon: '&#x1f4a1;',           desc: 'Collect topic ideas for next year', nav_key: 'nav_topics',     home_key: 'home_topics' },
+    { label: 'Stories',             icon: '&#x2728;',            desc: 'Testimonies of what God is doing', nav_key: 'nav_stories',     home_key: 'home_stories' },
+    { label: 'Celebrations Card',   icon: '&#x1f382;',           desc: 'Show upcoming birthdays + anniversaries on home', nav_key: null, home_key: 'home_celebrations' },
 ];
 
-function renderNavToggles() {
-    const list = document.getElementById('nav-toggles-list');
-    list.innerHTML = NAV_ITEMS.map(item => {
-        const isOn = gameSettings[item.key] === '1';
-        return `
-        <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;background:${isOn ? 'rgba(138,158,122,0.08)' : 'rgba(200,185,176,0.04)'};border-radius:10px;border:1px solid ${isOn ? 'var(--sage)' : 'rgba(200,185,176,0.2)'}; transition:all 0.2s;">
-            <span style="font-size:1.5rem;width:32px;text-align:center;">${item.icon}</span>
-            <div style="flex:1;">
-                <div style="font-weight:600;font-size:0.95rem;">${item.label}</div>
-                <div style="font-size:0.8rem;color:var(--light-text);">${item.desc}</div>
-            </div>
-            <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
-                <input type="checkbox" ${isOn ? 'checked' : ''} style="opacity:0;width:0;height:0;" onchange="toggleNavItem('${item.key}', this.checked)">
-                <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
-            </label>
-        </div>`;
-    }).join('');
-    const activeCount = 1 + NAV_ITEMS.filter(i => gameSettings[i.key] === '1').length;
-    document.getElementById('nav-active-count').textContent = activeCount;
-}
+// "View Schedule" home key is a duplicate of Schedule's home_schedule key;
+// the deduping is deliberate — we list packing + schedule shortcut rows
+// above so admins see the home-only entries visually.
+// Filter out the duplicate row for Schedule if needed:
+const FEATURE_ITEMS_DEDUPED = FEATURE_ITEMS.filter((item, idx, arr) => {
+    // Drop the duplicate "View Schedule" row because Schedule already handles home_schedule
+    if (item.label === 'View Schedule') return false;
+    return true;
+});
 
-const HOME_BUTTON_ITEMS = [
-    { key: 'home_moments', label: 'Share a Moment' },
-    { key: 'home_uplift', label: 'Send Encouragement' },
-    { key: 'home_gratitude', label: 'Gratitude Wall' },
-    { key: 'home_photobooth', label: 'Photo Booth' },
-    { key: 'home_polls', label: 'Polls & WYR' },
-    { key: 'home_sendlove', label: 'Love for Marnie' },
-    { key: 'home_journal', label: 'My Journal' },
-    { key: 'home_hunt', label: 'Scavenger Hunt' },
-    { key: 'home_packing', label: 'Packing Points' },
-    { key: 'home_connect', label: 'Connect Directory' },
-    { key: 'home_schedule', label: 'View Schedule' },
-    { key: 'home_topics', label: 'Suggest Theme' },
-    { key: 'home_stories', label: 'Stories' },
-    { key: 'home_celebrations', label: 'Celebrations Card (birthdays + anniversaries)' },
-];
-
-function renderHomeToggles() {
-    const list = document.getElementById('home-toggles-list');
+function renderVisibilityToggles() {
+    const list = document.getElementById('visibility-toggles-list');
     if (!list) return;
-    list.innerHTML = HOME_BUTTON_ITEMS.map(item => {
-        const isOn = gameSettings[item.key] === '1';
+    // Header row
+    let html = `
+        <div style="display:grid;grid-template-columns:1fr 80px 80px;gap:10px;padding:8px 12px;font-size:0.72rem;font-weight:700;color:var(--light-text);text-transform:uppercase;letter-spacing:0.5px;">
+            <div>Feature</div>
+            <div style="text-align:center;">In nav</div>
+            <div style="text-align:center;">On home</div>
+        </div>
+    `;
+    html += FEATURE_ITEMS_DEDUPED.map(item => {
+        const navOn = item.nav_key ? gameSettings[item.nav_key] === '1' : false;
+        const homeOn = item.home_key ? gameSettings[item.home_key] === '1' : false;
+        const hasAny = navOn || homeOn;
+        const bg = hasAny ? 'rgba(138,158,122,0.06)' : 'rgba(200,185,176,0.04)';
+        const border = hasAny ? 'rgba(138,158,122,0.25)' : 'rgba(200,185,176,0.2)';
+        const navCell = item.nav_key
+            ? `<label style="position:relative;display:inline-block;width:48px;height:26px;">
+                    <input type="checkbox" ${navOn ? 'checked' : ''} style="opacity:0;width:0;height:0;" onchange="toggleVisibilityKey('${item.nav_key}', this.checked)">
+                    <span style="position:absolute;cursor:pointer;inset:0;background:${navOn ? 'var(--sage)' : 'var(--warm-grey)'};border-radius:26px;transition:0.25s;"></span>
+                    <span style="position:absolute;top:3px;left:${navOn ? '25px' : '3px'};width:20px;height:20px;background:white;border-radius:50%;transition:0.25s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </label>`
+            : '<span style="color:#ccc;font-size:1.2rem;font-weight:600;">&mdash;</span>';
+        const homeCell = item.home_key
+            ? `<label style="position:relative;display:inline-block;width:48px;height:26px;">
+                    <input type="checkbox" ${homeOn ? 'checked' : ''} style="opacity:0;width:0;height:0;" onchange="toggleVisibilityKey('${item.home_key}', this.checked)">
+                    <span style="position:absolute;cursor:pointer;inset:0;background:${homeOn ? 'var(--blush)' : 'var(--warm-grey)'};border-radius:26px;transition:0.25s;"></span>
+                    <span style="position:absolute;top:3px;left:${homeOn ? '25px' : '3px'};width:20px;height:20px;background:white;border-radius:50%;transition:0.25s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
+                </label>`
+            : '<span style="color:#ccc;font-size:1.2rem;font-weight:600;">&mdash;</span>';
         return `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 1rem;background:${isOn ? 'rgba(201,144,138,0.08)' : 'rgba(200,185,176,0.04)'};border-radius:10px;border:1px solid ${isOn ? 'var(--blush)' : 'rgba(200,185,176,0.2)'};transition:all 0.2s;">
-            <div style="font-weight:600;font-size:0.92rem;">${item.label}</div>
-            <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
-                <input type="checkbox" ${isOn ? 'checked' : ''} style="opacity:0;width:0;height:0;" onchange="toggleNavItem('${item.key}', this.checked)">
-                <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
-            </label>
-        </div>`;
+            <div style="display:grid;grid-template-columns:1fr 80px 80px;gap:10px;align-items:center;padding:10px 12px;background:${bg};border-radius:10px;border:1px solid ${border};">
+                <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                    <span style="font-size:1.3rem;width:28px;text-align:center;flex-shrink:0;">${item.icon}</span>
+                    <div style="min-width:0;">
+                        <div style="font-weight:600;font-size:0.92rem;">${item.label}</div>
+                        <div style="font-size:0.76rem;color:var(--light-text);line-height:1.3;">${item.desc}</div>
+                    </div>
+                </div>
+                <div style="text-align:center;">${navCell}</div>
+                <div style="text-align:center;">${homeCell}</div>
+            </div>
+        `;
     }).join('');
+    list.innerHTML = html;
+    // Active count (nav items turned on, plus Home which is always visible)
+    const activeNav = 1 + FEATURE_ITEMS_DEDUPED.filter(i => i.nav_key && gameSettings[i.nav_key] === '1').length;
+    const activeCountEl = document.getElementById('nav-active-count');
+    if (activeCountEl) activeCountEl.textContent = activeNav;
 }
 
-async function toggleNavItem(key, on) {
+// Generic toggle that works for any nav_* or home_* key
+async function toggleVisibilityKey(key, on) {
     try {
         await apiFetch('/api/games/settings', {
             method: 'POST',
             body: { key, value: on ? '1' : '0' }
         });
         gameSettings[key] = on ? '1' : '0';
-        renderNavToggles();
-        renderHomeToggles();
+        renderVisibilityToggles();
     } catch(e) { showToast('Error: ' + e.message); }
+}
+
+// Legacy stubs so older call sites don't break
+function renderNavToggles() { renderVisibilityToggles(); }
+function renderHomeToggles() { renderVisibilityToggles(); }
+
+// Legacy alias — all visibility toggles go through the unified handler now
+async function toggleNavItem(key, on) {
+    return toggleVisibilityKey(key, on);
 }
 
 // --- Meme ---

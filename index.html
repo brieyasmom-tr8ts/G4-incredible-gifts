@@ -2124,6 +2124,275 @@
             margin-top: 12px;
         }
 
+        /* ===== Devotions Hub ===== */
+        .devotion-card {
+            background: white;
+            border-radius: 14px;
+            margin: 12px 16px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid rgba(139, 134, 128, 0.08);
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .devotion-card.current {
+            border: 1.5px solid rgba(201, 144, 138, 0.35);
+            box-shadow: 0 4px 16px rgba(201, 144, 138, 0.15);
+        }
+        .devotion-card.locked {
+            opacity: 0.55;
+            background: rgba(255,255,255,0.6);
+            cursor: not-allowed;
+        }
+        .devotion-header {
+            padding: 16px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .devotion-header.locked-header { cursor: not-allowed; }
+        .devotion-week-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--sage);
+            color: white;
+            min-width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 0.78rem;
+            flex-shrink: 0;
+        }
+        .devotion-card.current .devotion-week-badge { background: var(--accent); }
+        .devotion-card.locked .devotion-week-badge { background: var(--warm-grey); }
+        .devotion-header-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .devotion-gift-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin-bottom: 2px;
+        }
+        .devotion-week-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            color: var(--light-text);
+            font-style: italic;
+        }
+        .devotion-status-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            color: var(--sage);
+        }
+        .devotion-body {
+            padding: 0 20px 24px;
+            border-top: 1px solid rgba(139, 134, 128, 0.08);
+            display: none;
+        }
+        .devotion-card.expanded .devotion-body { display: block; }
+        .devotion-letter {
+            margin-top: 18px;
+            padding: 18px 20px;
+            background: linear-gradient(135deg, rgba(201,144,138,0.08), rgba(212,165,154,0.06));
+            border-left: 3px solid var(--accent);
+            border-radius: 10px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            line-height: 1.65;
+            color: var(--dark-text);
+            white-space: pre-line;
+        }
+        .devotion-letter-greeting {
+            font-style: italic;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--accent);
+        }
+        .devotion-letter-signature {
+            margin-top: 10px;
+            font-style: italic;
+            color: var(--accent);
+            text-align: right;
+        }
+        .devotion-verse {
+            margin: 18px 0 6px;
+            padding: 16px 18px;
+            background: rgba(138,158,122,0.06);
+            border-radius: 10px;
+            text-align: center;
+        }
+        .devotion-verse-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.02rem;
+            font-style: italic;
+            color: var(--dark-text);
+            line-height: 1.55;
+            margin-bottom: 8px;
+        }
+        .devotion-verse-ref {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            color: var(--sage);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .devotion-section-label {
+            display: block;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--taupe);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 20px 0 8px;
+        }
+        .devotion-teaching {
+            font-family: Georgia, serif;
+            font-size: 0.97rem;
+            line-height: 1.65;
+            color: var(--dark-text);
+        }
+        .devotion-prompt {
+            margin-top: 14px;
+            padding: 14px 16px;
+            background: rgba(255,255,255,0.6);
+            border: 1px solid rgba(139,134,128,0.15);
+            border-radius: 10px;
+        }
+        .devotion-prompt-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 4px;
+        }
+        .devotion-prompt-question {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            color: var(--dark-text);
+            line-height: 1.5;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+        .devotion-prompt textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--warm-grey);
+            border-radius: 8px;
+            font-family: Georgia, serif;
+            font-size: 15px;
+            color: var(--dark-text);
+            resize: vertical;
+            min-height: 60px;
+            background: white;
+        }
+        .devotion-prompt-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            gap: 10px;
+        }
+        .devotion-prompt-saved {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.82rem;
+            font-style: italic;
+            color: var(--sage);
+        }
+        .devotion-prompt-save-btn {
+            padding: 6px 14px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .devotion-prompt-save-btn:disabled {
+            background: var(--warm-grey);
+            cursor: not-allowed;
+        }
+        .devotion-action {
+            margin-top: 14px;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, rgba(138,158,122,0.10), rgba(138,158,122,0.05));
+            border-left: 3px solid var(--sage);
+            border-radius: 10px;
+            font-family: Georgia, serif;
+            font-size: 0.95rem;
+            line-height: 1.55;
+            color: var(--dark-text);
+        }
+        .devotion-timeline {
+            margin-top: 18px;
+            padding: 14px 16px;
+            background: rgba(139,134,128,0.05);
+            border-radius: 10px;
+        }
+        .devotion-timeline-empty {
+            font-family: 'Cormorant Garamond', serif;
+            font-style: italic;
+            color: var(--light-text);
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 6px 0;
+        }
+        .devotion-timeline-entry {
+            padding: 10px 0;
+            border-bottom: 1px dashed rgba(139,134,128,0.2);
+        }
+        .devotion-timeline-entry:last-child { border-bottom: none; }
+        .devotion-timeline-date {
+            font-size: 0.75rem;
+            color: var(--light-text);
+            margin-bottom: 4px;
+        }
+        .devotion-timeline-text {
+            font-family: Georgia, serif;
+            font-size: 0.92rem;
+            color: var(--dark-text);
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        .devotion-hub-intro {
+            margin: 16px 16px 8px;
+            padding: 18px 20px;
+            background: linear-gradient(135deg, rgba(138,158,122,0.10), rgba(201,144,138,0.08));
+            border-radius: 14px;
+            text-align: center;
+        }
+        .devotion-hub-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin-bottom: 4px;
+        }
+        .devotion-hub-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
+            color: var(--light-text);
+            font-style: italic;
+            line-height: 1.4;
+        }
+        .devotion-section-divider {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.85rem;
+            color: var(--taupe);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-align: center;
+            margin: 22px 16px 6px;
+        }
+
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -6467,34 +6736,284 @@
                 locked.className = 'continue-locked';
                 locked.innerHTML = `<div class="locked-icon">🔒</div><p class="locked-message">This unlocks when the retreat ends.</p><p style="font-size: 0.85rem; color: var(--light-text);">Keep listening to what God is doing this weekend.</p>`;
                 container.appendChild(locked);
-                homeLink.style.display = 'none';
+                if (homeLink) homeLink.style.display = 'none';
                 return;
             }
-            homeLink.style.display = 'block';
-            homeLink.innerHTML = '<div style="margin:12px 16px;padding:16px 20px;background:linear-gradient(135deg,rgba(138,158,122,0.12) 0%,rgba(201,144,138,0.10) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.2);text-align:center;cursor:pointer;"><div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--dark-text);margin-bottom:4px;">Continue the Journey</div><div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;">12 weeks to keep growing in your gifts</div></div>';
-            homeLink.addEventListener('click', () => {
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-                document.getElementById('continue-tab').classList.add('active');
-                document.querySelector('.content-area').scrollTop = 0;
-            });
-            weeks12.forEach(week => {
+            if (homeLink) {
+                homeLink.style.display = 'block';
+                homeLink.innerHTML = '<div style="margin:12px 16px;padding:16px 20px;background:linear-gradient(135deg,rgba(138,158,122,0.12) 0%,rgba(201,144,138,0.10) 100%);border-radius:12px;border:1px solid rgba(138,158,122,0.2);text-align:center;cursor:pointer;"><div style="font-family:Playfair Display,serif;font-size:1rem;color:var(--dark-text);margin-bottom:4px;">Continue the Journey</div><div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;">15 weeks of devotions to keep growing in your gifts</div></div>';
+                if (!homeLink.dataset.wired) {
+                    homeLink.dataset.wired = '1';
+                    homeLink.addEventListener('click', () => {
+                        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                        document.getElementById('continue-tab').classList.add('active');
+                        document.querySelector('.content-area').scrollTop = 0;
+                    });
+                }
+            }
+
+            // Hub intro card
+            const intro = document.createElement('div');
+            intro.className = 'devotion-hub-intro';
+            intro.innerHTML = `
+                <div class="devotion-hub-title">Continue the Journey</div>
+                <div class="devotion-hub-subtitle">15 weeks of devotions, written for where you are.<br>One gift each week. Reflect, journal, grow.</div>
+            `;
+            container.appendChild(intro);
+
+            const currentWeek = getCurrentDevotionWeek();
+            const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+
+            // Helper to create a card for one devotion
+            function makeDevotionCard(devotion, state) {
+                // state: 'past' | 'current' | 'locked'
                 const card = document.createElement('div');
-                card.className = 'week-card';
-                const weekNum = document.createElement('div');
-                weekNum.className = 'week-number';
-                weekNum.textContent = 'W' + week.week;
-                const title = document.createElement('div');
-                title.className = 'week-title';
-                title.textContent = week.title;
-                const content = document.createElement('div');
-                content.className = 'week-content';
-                content.innerHTML = `<strong>Reflect:</strong>${week.question}<br><br><strong>Action:</strong>${week.action}`;
-                card.appendChild(weekNum);
-                card.appendChild(title);
-                card.appendChild(content);
-                container.appendChild(card);
+                card.className = 'devotion-card ' + state;
+                card.dataset.giftKey = devotion.gift_key;
+
+                const header = document.createElement('div');
+                header.className = 'devotion-header' + (state === 'locked' ? ' locked-header' : '');
+                const badge = document.createElement('div');
+                badge.className = 'devotion-week-badge';
+                badge.textContent = 'W' + devotion.week;
+                const headerText = document.createElement('div');
+                headerText.className = 'devotion-header-text';
+                const giftName = document.createElement('div');
+                giftName.className = 'devotion-gift-name';
+                giftName.textContent = devotion.gift;
+                const weekLabel = document.createElement('div');
+                weekLabel.className = 'devotion-week-label';
+                if (state === 'locked') {
+                    const weeksFromNow = devotion.week - currentWeek;
+                    weekLabel.textContent = 'Unlocks in ' + weeksFromNow + (weeksFromNow === 1 ? ' week' : ' weeks');
+                } else if (state === 'current') {
+                    weekLabel.textContent = 'This week';
+                } else {
+                    weekLabel.textContent = 'Week ' + devotion.week;
+                }
+                headerText.appendChild(giftName);
+                headerText.appendChild(weekLabel);
+                header.appendChild(badge);
+                header.appendChild(headerText);
+
+                // Status icon: checkmark if she's journaled for it
+                const reflectionsCount = getGrowthTimeline(devotion.gift_key).length;
+                if (reflectionsCount > 0) {
+                    const icon = document.createElement('div');
+                    icon.className = 'devotion-status-icon';
+                    icon.textContent = '\u2713';
+                    icon.title = reflectionsCount + ' reflection' + (reflectionsCount === 1 ? '' : 's') + ' saved';
+                    header.appendChild(icon);
+                }
+
+                card.appendChild(header);
+
+                // Body (only past + current have content)
+                if (state !== 'locked') {
+                    const body = document.createElement('div');
+                    body.className = 'devotion-body';
+                    body.appendChild(renderDevotionBody(devotion));
+                    card.appendChild(body);
+                    if (state === 'current') {
+                        card.classList.add('expanded');
+                    }
+                    header.addEventListener('click', () => {
+                        card.classList.toggle('expanded');
+                    });
+                }
+                return card;
+            }
+
+            // Section 1: This week (current devotion)
+            const currentDevotion = getDevotionByWeek(currentWeek);
+            if (currentDevotion) {
+                const divider = document.createElement('div');
+                divider.className = 'devotion-section-divider';
+                divider.textContent = 'This Week';
+                container.appendChild(divider);
+                container.appendChild(makeDevotionCard(currentDevotion, 'current'));
+            }
+
+            // Section 2: Past weeks (clickable, flip back allowed)
+            const pastDevotions = DEVOTIONS.filter(d => d.week < currentWeek);
+            if (pastDevotions.length) {
+                const divider = document.createElement('div');
+                divider.className = 'devotion-section-divider';
+                divider.textContent = 'Past Weeks';
+                container.appendChild(divider);
+                pastDevotions.slice().reverse().forEach(d => {
+                    container.appendChild(makeDevotionCard(d, 'past'));
+                });
+            }
+
+            // Section 3: Upcoming (locked, no flip-ahead)
+            const upcomingDevotions = DEVOTIONS.filter(d => d.week > currentWeek);
+            if (upcomingDevotions.length) {
+                const divider = document.createElement('div');
+                divider.className = 'devotion-section-divider';
+                divider.textContent = 'Coming Up';
+                container.appendChild(divider);
+                upcomingDevotions.forEach(d => {
+                    container.appendChild(makeDevotionCard(d, 'locked'));
+                });
+            }
+        }
+
+        // Render the body of a devotion (letter, verse, teaching, prompts, action, timeline)
+        function renderDevotionBody(devotion) {
+            const wrap = document.createElement('div');
+
+            // Personalized letter
+            const letter = document.createElement('div');
+            letter.className = 'devotion-letter';
+            const greeting = document.createElement('div');
+            greeting.className = 'devotion-letter-greeting';
+            greeting.textContent = 'Daughter,';
+            const letterBody = document.createElement('div');
+            letterBody.textContent = getPersonalizedLetter(devotion);
+            const signature = document.createElement('div');
+            signature.className = 'devotion-letter-signature';
+            signature.textContent = '\u2014 Your Father';
+            letter.appendChild(greeting);
+            letter.appendChild(letterBody);
+            letter.appendChild(signature);
+            wrap.appendChild(letter);
+
+            // Verse
+            const verse = document.createElement('div');
+            verse.className = 'devotion-verse';
+            const verseText = document.createElement('div');
+            verseText.className = 'devotion-verse-text';
+            verseText.textContent = '\u201C' + devotion.verse.text + '\u201D';
+            const verseRef = document.createElement('div');
+            verseRef.className = 'devotion-verse-ref';
+            verseRef.textContent = devotion.verse.ref;
+            verse.appendChild(verseText);
+            verse.appendChild(verseRef);
+            wrap.appendChild(verse);
+
+            // Teaching
+            const teachingLabel = document.createElement('div');
+            teachingLabel.className = 'devotion-section-label';
+            teachingLabel.textContent = 'Teaching';
+            wrap.appendChild(teachingLabel);
+            const teaching = document.createElement('div');
+            teaching.className = 'devotion-teaching';
+            teaching.textContent = devotion.teaching;
+            wrap.appendChild(teaching);
+
+            // Prompts
+            const promptsLabel = document.createElement('div');
+            promptsLabel.className = 'devotion-section-label';
+            promptsLabel.textContent = 'Reflect & Journal';
+            wrap.appendChild(promptsLabel);
+            devotion.prompts.forEach(prompt => {
+                wrap.appendChild(renderDevotionPrompt(devotion, prompt));
             });
+
+            // Action step
+            const actionLabel = document.createElement('div');
+            actionLabel.className = 'devotion-section-label';
+            actionLabel.textContent = 'This week, try this';
+            wrap.appendChild(actionLabel);
+            const action = document.createElement('div');
+            action.className = 'devotion-action';
+            action.textContent = devotion.action;
+            wrap.appendChild(action);
+
+            // Growth timeline
+            const timelineLabel = document.createElement('div');
+            timelineLabel.className = 'devotion-section-label';
+            timelineLabel.textContent = 'Your Reflections on ' + devotion.gift;
+            wrap.appendChild(timelineLabel);
+            wrap.appendChild(renderGrowthTimeline(devotion));
+
+            return wrap;
+        }
+
+        function renderDevotionPrompt(devotion, prompt) {
+            const wrap = document.createElement('div');
+            wrap.className = 'devotion-prompt';
+            const label = document.createElement('div');
+            label.className = 'devotion-prompt-label';
+            label.textContent = prompt.label;
+            const question = document.createElement('div');
+            question.className = 'devotion-prompt-question';
+            question.textContent = prompt.question;
+            const textarea = document.createElement('textarea');
+            textarea.placeholder = 'Write what comes to mind...';
+            const actions = document.createElement('div');
+            actions.className = 'devotion-prompt-actions';
+            const status = document.createElement('div');
+            status.className = 'devotion-prompt-saved';
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'devotion-prompt-save-btn';
+            saveBtn.textContent = 'Save reflection';
+            saveBtn.addEventListener('click', () => {
+                const text = textarea.value.trim();
+                if (!text) {
+                    showToast('Write something first');
+                    return;
+                }
+                const ok = saveDevotionReflection(devotion, prompt.key, text);
+                if (ok) {
+                    textarea.value = '';
+                    status.textContent = 'Saved to journal \u2713';
+                    showToast('Reflection saved \u2728');
+                    setTimeout(() => { status.textContent = ''; }, 4000);
+                    // Refresh the timeline at the bottom of this devotion card
+                    const card = wrap.closest('.devotion-card');
+                    if (card) {
+                        // Find this devotion's timeline and re-render it
+                        const labels = card.querySelectorAll('.devotion-section-label');
+                        labels.forEach(l => {
+                            if (l.textContent && l.textContent.indexOf('Your Reflections on') === 0) {
+                                const old = l.nextElementSibling;
+                                if (old && old.classList.contains('devotion-timeline')) {
+                                    old.replaceWith(renderGrowthTimeline(devotion));
+                                }
+                            }
+                        });
+                    }
+                    if (typeof buildJournal === 'function') buildJournal();
+                }
+            });
+            actions.appendChild(status);
+            actions.appendChild(saveBtn);
+            wrap.appendChild(label);
+            wrap.appendChild(question);
+            wrap.appendChild(textarea);
+            wrap.appendChild(actions);
+            return wrap;
+        }
+
+        function renderGrowthTimeline(devotion) {
+            const wrap = document.createElement('div');
+            wrap.className = 'devotion-timeline';
+            const entries = getGrowthTimeline(devotion.gift_key);
+            if (!entries.length) {
+                const empty = document.createElement('div');
+                empty.className = 'devotion-timeline-empty';
+                empty.textContent = 'Your reflections on ' + devotion.gift + ' will gather here as you write.';
+                wrap.appendChild(empty);
+                return wrap;
+            }
+            entries.forEach(entry => {
+                const item = document.createElement('div');
+                item.className = 'devotion-timeline-entry';
+                const date = document.createElement('div');
+                date.className = 'devotion-timeline-date';
+                const d = new Date(entry.date);
+                date.textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const text = document.createElement('div');
+                text.className = 'devotion-timeline-text';
+                text.textContent = entry.text;
+                item.appendChild(date);
+                item.appendChild(text);
+                wrap.appendChild(item);
+            });
+            return wrap;
         }
 
         function updateStatus() {

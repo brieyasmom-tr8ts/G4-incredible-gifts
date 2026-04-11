@@ -5915,16 +5915,26 @@
             return devotion.letters[variant] || devotion.letters.want;
         }
 
-        // Compute the current devotion week (1..15) based on weeks elapsed since retreat end.
-        // Before the retreat ends, returns 1 so previews work in development.
+        // Devotions begin Monday April 13, 2026 at 5:00 AM EDT and roll over
+        // every Monday at 5 AM thereafter. Returns 0 if devotions haven't started yet,
+        // otherwise the current week (1..15), looping back to 1 after week 15.
+        const DEVOTIONS_START = new Date('2026-04-13T05:00:00-04:00');
+
         function getCurrentDevotionWeek() {
-            const retreatEnd = new Date('2026-04-11T12:00:00-04:00');
             const now = new Date();
+            if (now < DEVOTIONS_START) return 0;
             const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-            if (now < retreatEnd) return 1;
-            const weeksElapsed = Math.floor((now - retreatEnd) / msPerWeek);
-            // 1-indexed; loops back to week 1 after week 15
+            const weeksElapsed = Math.floor((now - DEVOTIONS_START) / msPerWeek);
             return ((weeksElapsed) % 15) + 1;
+        }
+
+        // Returns the start date of the next devotion week (used for "starts in N days" copy).
+        function getNextDevotionStartDate() {
+            const now = new Date();
+            if (now < DEVOTIONS_START) return DEVOTIONS_START;
+            const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+            const weeksElapsed = Math.floor((now - DEVOTIONS_START) / msPerWeek);
+            return new Date(DEVOTIONS_START.getTime() + (weeksElapsed + 1) * msPerWeek);
         }
 
         function getDevotionByWeek(weekNum) {
@@ -6789,6 +6799,23 @@
             container.appendChild(intro);
 
             const currentWeek = getCurrentDevotionWeek();
+
+            // Devotions haven't started yet. Show a "starts Monday" message.
+            if (currentWeek === 0) {
+                const startDate = DEVOTIONS_START;
+                const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+                const waiting = document.createElement('div');
+                waiting.className = 'devotion-hub-intro';
+                waiting.style.marginTop = '8px';
+                waiting.innerHTML = `
+                    <div style="font-size:1.8rem;margin-bottom:8px;">\u23f3</div>
+                    <div class="devotion-hub-title" style="font-size:1.1rem;">Devotions begin ${dateStr}</div>
+                    <div class="devotion-hub-subtitle">Your first gift, Peace, drops Monday at 5 AM.<br>Until then, rest well, sister.</div>
+                `;
+                container.appendChild(waiting);
+                return;
+            }
+
             const msPerWeek = 7 * 24 * 60 * 60 * 1000;
 
             // Helper to create a card for one devotion
@@ -8355,14 +8382,29 @@
             if (!weekCard || !personalCard) return;
             if (typeof DEVOTIONS === 'undefined' || !DEVOTIONS.length) return;
 
-            // This Week's Gift card (everyone gets this)
             const currentWeek = getCurrentDevotionWeek();
+
+            // Devotions haven't started yet. Show a "starts Monday" preview card.
+            if (currentWeek === 0) {
+                const startDate = DEVOTIONS_START;
+                const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+                document.getElementById('devotion-week-card-week').textContent = 'Coming ' + startDate.toLocaleDateString('en-US', { weekday: 'short' }) + ' at 5 AM';
+                document.getElementById('devotion-week-card-gift').textContent = 'Devotions begin ' + dateStr;
+                document.getElementById('devotion-week-card-verse').textContent = 'A new gift each Monday for 15 weeks. Your first one is Peace.';
+                weekCard.style.display = 'block';
+                weekCard.style.cursor = 'default';
+                personalCard.style.display = 'none';
+                return;
+            }
+
+            // This Week's Gift card (everyone gets this)
             const currentDevotion = getDevotionByWeek(currentWeek);
             if (currentDevotion) {
                 document.getElementById('devotion-week-card-week').textContent = 'Week ' + currentDevotion.week + ' of 15';
                 document.getElementById('devotion-week-card-gift').textContent = currentDevotion.gift;
                 document.getElementById('devotion-week-card-verse').textContent = '\u201C' + currentDevotion.verse.text + '\u201D \u2014 ' + currentDevotion.verse.ref;
                 weekCard.style.display = 'block';
+                weekCard.style.cursor = 'pointer';
                 if (!weekCard.dataset.wired) {
                     weekCard.dataset.wired = '1';
                     weekCard.addEventListener('click', () => openDevotionByGiftKey(currentDevotion.gift_key));
@@ -8387,6 +8429,7 @@
         // Show a one-time-per-week reminder when a new devotion drops
         function maybeShowDevotionWeekReminder() {
             const currentWeek = getCurrentDevotionWeek();
+            if (currentWeek === 0) return; // devotions haven't started yet
             const lastSeen = parseInt(localStorage.getItem('g4_last_devotion_week_seen') || '0', 10);
             if (currentWeek !== lastSeen) {
                 const devotion = getDevotionByWeek(currentWeek);

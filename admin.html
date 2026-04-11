@@ -2139,12 +2139,21 @@ function renderStoriesList() {
             ? `<span style="font-size:0.78rem;color:#888;">\u2764\ufe0f ${s.heart_count}</span>`
             : '';
         const buttons = renderStoryAdminButtons(s);
+        // Video preview for video-kind testimonies. Uses ?admin=1 so
+        // pending videos can be watched before approving.
+        const videoBlock = s.kind === 'video' && s.video_key
+            ? `<div style="margin-bottom:12px;"><video controls preload="metadata" style="width:100%;max-width:480px;border-radius:10px;background:black;" src="${API}/api/testimonies/${s.id}/video?admin=1"></video></div>`
+            : '';
+        const textBlock = s.text
+            ? `<div style="font-size:0.95rem;line-height:1.6;color:#333;white-space:pre-wrap;margin-bottom:12px;">${esc(s.text)}</div>`
+            : '';
         return `
             <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,0.08);${s.featured ? 'border-left:4px solid #C9908A;' : ''}">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
                     <div>
                         <strong style="font-size:0.95rem;">${name}</strong>
                         <span style="font-size:0.75rem;color:#999;margin-left:8px;">${date}</span>
+                        ${s.kind === 'video' ? '<span style="font-size:0.7rem;color:#888;margin-left:8px;">\ud83c\udfa5 video</span>' : ''}
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
                         ${heartChip}
@@ -2152,7 +2161,8 @@ function renderStoriesList() {
                         ${statusBadge}
                     </div>
                 </div>
-                <div style="font-size:0.95rem;line-height:1.6;color:#333;white-space:pre-wrap;margin-bottom:12px;">${esc(s.text || '')}</div>
+                ${videoBlock}
+                ${textBlock}
                 <div style="display:flex;gap:6px;flex-wrap:wrap;">
                     ${buttons}
                 </div>

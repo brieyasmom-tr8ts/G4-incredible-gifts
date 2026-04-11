@@ -2022,7 +2022,9 @@ export default {
       };
 
       // POST /api/testimonies - submit a new story
-      // body: { user_id, name, anonymous, kind ('text'|'video'), text, video_key, gift_tag }
+      // body: { user_id, name, anonymous, kind ('text'|'video'), text, video_data, gift_tag }
+      // For video kind, video_data is a base64 data URL; the worker decodes
+      // and stores the binary in R2, then keeps the R2 key in D1.
       if (path === '/api/testimonies' && request.method === 'POST') {
         await ensureTestimoniesTable();
         const body = await request.json();
@@ -2031,9 +2033,23 @@ export default {
         if (kind === 'text' && text.length < 10) {
           return json({ error: 'Please write at least a few sentences' }, corsHeaders, 400);
         }
-        if (kind === 'video' && !body.video_key) {
-          return json({ error: 'Video upload required' }, corsHeaders, 400);
+        if (kind === 'video' && !body.video_data) {
+          return json({ error: 'Video recording is required' }, corsHeaders, 400);
         }
+
+        // Upload the video to R2 if we have one
+        let videoKey = '';
+        if (kind === 'video' && body.video_data && env.VIDEOS) {
+          videoKey = 'testimony-' + Date.now() + '-' + (body.user_id || 0);
+          try {
+            const base64 = body.video_data.split(',')[1] || body.video_data;
+            const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+            await env.VIDEOS.put(videoKey, binary, { httpMetadata: { contentType: 'video/mp4' } });
+          } catch(e) {
+            return json({ error: 'Video upload failed' }, corsHeaders, 500);
+          }
+        }
+
         await env.DB.prepare(
           `INSERT INTO testimonies (user_id, name, anonymous, kind, text, video_key, gift_tag, status)
            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`
@@ -2043,10 +2059,33 @@ export default {
           body.anonymous ? 1 : 0,
           kind,
           text,
-          body.video_key || '',
+          videoKey,
           body.gift_tag || ''
         ).run();
         return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/testimonies/:id/video - stream a testimony video from R2
+      // Admin preview: ?admin=1 bypasses the approval check so admins can
+      // watch pending videos before deciding to approve or reject.
+      const testimonyVideoMatch = path.match(/^\/api\/testimonies\/(\d+)\/video$/);
+      if (testimonyVideoMatch && request.method === 'GET') {
+        await ensureTestimoniesTable();
+        const tid = parseInt(testimonyVideoMatch[1]);
+        const isAdmin = url.searchParams.get('admin') === '1';
+        const row = await env.DB.prepare('SELECT video_key, status FROM testimonies WHERE id = ?').bind(tid).first();
+        if (!row || !row.video_key || !env.VIDEOS) {
+          return json({ error: 'Video not found' }, corsHeaders, 404);
+        }
+        // Public access: only approved/featured. Admin access: any status.
+        if (!isAdmin && row.status !== 'approved' && row.status !== 'featured') {
+          return json({ error: 'Not available' }, corsHeaders, 404);
+        }
+        const obj = await env.VIDEOS.get(row.video_key);
+        if (!obj) return json({ error: 'Video not found' }, corsHeaders, 404);
+        return new Response(obj.body, {
+          headers: { ...corsHeaders, 'Content-Type': 'video/mp4', 'Cache-Control': 'public, max-age=86400' }
+        });
       }
 
       // GET /api/testimonies - public feed of approved + featured stories
@@ -2138,6 +2177,13 @@ export default {
       if (tPatchMatch && request.method === 'DELETE') {
         await ensureTestimoniesTable();
         const tid = parseInt(tPatchMatch[1]);
+        // Clean up R2 video if present
+        try {
+          const row = await env.DB.prepare('SELECT video_key FROM testimonies WHERE id = ?').bind(tid).first();
+          if (row && row.video_key && env.VIDEOS) {
+            await env.VIDEOS.delete(row.video_key);
+          }
+        } catch(e) { /* ignore cleanup failures */ }
         await env.DB.prepare('DELETE FROM testimony_hearts WHERE testimony_id = ?').bind(tid).run();
         await env.DB.prepare('DELETE FROM testimonies WHERE id = ?').bind(tid).run();
         return json({ success: true }, corsHeaders);

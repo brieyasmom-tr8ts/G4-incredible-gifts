@@ -4063,9 +4063,36 @@
                 <div id="story-submit-card" style="margin:14px 16px;padding:20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);">
                     <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:600;color:var(--dark-text);margin-bottom:12px;">Share your story</div>
 
-                    <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Your story</label>
-                    <textarea id="story-text" placeholder="What has God been doing in your life? Be as honest as you want — your sisters need to hear it." maxlength="2000" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:120px;background:white;"></textarea>
-                    <div id="story-text-counter" style="text-align:right;font-size:0.72rem;color:var(--light-text);margin-top:4px;font-family:Cormorant Garamond,serif;font-style:italic;">0 / 2000</div>
+                    <!-- Kind selector: Write or Record video -->
+                    <div style="display:flex;gap:8px;margin-bottom:14px;">
+                        <button id="story-kind-text" class="story-kind-btn" data-kind="text" style="flex:1;padding:10px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:600;cursor:pointer;">&#9997;&#65039; Write</button>
+                        <button id="story-kind-video" class="story-kind-btn" data-kind="video" style="flex:1;padding:10px;background:white;color:var(--taupe);border:1.5px solid var(--warm-grey);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:600;cursor:pointer;">&#127909; Record Video</button>
+                    </div>
+
+                    <!-- Text mode -->
+                    <div id="story-mode-text">
+                        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Your story</label>
+                        <textarea id="story-text" placeholder="What has God been doing in your life? Be as honest as you want — your sisters need to hear it." maxlength="2000" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:120px;background:white;"></textarea>
+                        <div id="story-text-counter" style="text-align:right;font-size:0.72rem;color:var(--light-text);margin-top:4px;font-family:Cormorant Garamond,serif;font-style:italic;">0 / 2000</div>
+                    </div>
+
+                    <!-- Video mode -->
+                    <div id="story-mode-video" style="display:none;">
+                        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:8px;">Your video story <span style="font-weight:400;font-style:italic;">(up to 3 minutes)</span></label>
+                        <div id="story-video-empty" style="padding:24px 16px;background:rgba(138,158,122,0.05);border:1px dashed rgba(138,158,122,0.3);border-radius:10px;text-align:center;">
+                            <div style="font-size:2rem;margin-bottom:6px;">&#127909;</div>
+                            <div style="font-family:'Cormorant Garamond',serif;font-size:0.92rem;color:var(--light-text);font-style:italic;margin-bottom:12px;">Tap to record a video of your story. You can re-record as many times as you want before sending.</div>
+                            <input type="file" accept="video/*" capture="user" id="story-video-input" style="display:none;">
+                            <button type="button" id="story-video-record-btn" style="padding:10px 22px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;">Record video</button>
+                        </div>
+                        <div id="story-video-preview" style="display:none;">
+                            <video id="story-video-player" controls playsinline style="width:100%;border-radius:10px;background:black;margin-bottom:8px;"></video>
+                            <div style="display:flex;gap:8px;">
+                                <button type="button" id="story-video-retake-btn" style="flex:1;padding:8px;background:white;color:var(--taupe);border:1.5px solid var(--warm-grey);border-radius:8px;font-family:'Cormorant Garamond',serif;font-size:0.85rem;font-weight:600;cursor:pointer;">Re-record</button>
+                                <div id="story-video-size" style="flex:1;text-align:right;font-family:'Cormorant Garamond',serif;font-size:0.8rem;font-style:italic;color:var(--light-text);align-self:center;"></div>
+                            </div>
+                        </div>
+                    </div>
 
                     <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin:14px 0 6px;">Tag a gift <span style="font-weight:400;font-style:italic;">(optional)</span></label>
                     <select id="story-gift-tag" style="width:100%;padding:11px 12px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:white;">
@@ -9639,6 +9666,82 @@
             }
         }
 
+        // Holds the recorded video for the Stories submit form, if any.
+        // Populated from the file input after the woman records a clip.
+        // Cleared after a successful submit or on re-record.
+        let _storyVideoDataUrl = null;
+        let _storyKind = 'text'; // 'text' | 'video'
+
+        function setStoryKind(kind) {
+            _storyKind = kind === 'video' ? 'video' : 'text';
+            const textBtn = document.getElementById('story-kind-text');
+            const videoBtn = document.getElementById('story-kind-video');
+            const textMode = document.getElementById('story-mode-text');
+            const videoMode = document.getElementById('story-mode-video');
+            if (!textBtn || !videoBtn || !textMode || !videoMode) return;
+            if (_storyKind === 'video') {
+                videoBtn.style.background = 'var(--accent)';
+                videoBtn.style.color = 'white';
+                videoBtn.style.borderColor = 'var(--accent)';
+                textBtn.style.background = 'white';
+                textBtn.style.color = 'var(--taupe)';
+                textBtn.style.border = '1.5px solid var(--warm-grey)';
+                videoMode.style.display = 'block';
+                textMode.style.display = 'none';
+            } else {
+                textBtn.style.background = 'var(--accent)';
+                textBtn.style.color = 'white';
+                textBtn.style.borderColor = 'var(--accent)';
+                videoBtn.style.background = 'white';
+                videoBtn.style.color = 'var(--taupe)';
+                videoBtn.style.border = '1.5px solid var(--warm-grey)';
+                textMode.style.display = 'block';
+                videoMode.style.display = 'none';
+            }
+        }
+
+        // Turn a File into a base64 data URL. Used for the video upload path.
+        function fileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('Could not read the video file'));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Probe the duration of a video file by loading metadata in a
+        // throwaway <video> element. Returns seconds, or -1 if unknown.
+        function getVideoDurationFromFile(file) {
+            return new Promise((resolve) => {
+                const url = URL.createObjectURL(file);
+                const v = document.createElement('video');
+                v.preload = 'metadata';
+                v.onloadedmetadata = () => {
+                    const d = v.duration;
+                    URL.revokeObjectURL(url);
+                    resolve(Number.isFinite(d) ? d : -1);
+                };
+                v.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    resolve(-1);
+                };
+                v.src = url;
+            });
+        }
+
+        function resetStoryVideoState() {
+            _storyVideoDataUrl = null;
+            const input = document.getElementById('story-video-input');
+            if (input) input.value = '';
+            const preview = document.getElementById('story-video-preview');
+            const empty = document.getElementById('story-video-empty');
+            const player = document.getElementById('story-video-player');
+            if (preview) preview.style.display = 'none';
+            if (empty) empty.style.display = 'block';
+            if (player) { player.src = ''; player.removeAttribute('src'); player.load(); }
+        }
+
         function initStoriesTab() {
             populateStoryGiftDropdown();
 
@@ -9649,6 +9752,83 @@
                 ta.dataset.wired = '1';
                 ta.addEventListener('input', () => {
                     counter.textContent = (ta.value.length) + ' / 2000';
+                });
+            }
+
+            // Kind selector (Write / Record Video)
+            const textKindBtn = document.getElementById('story-kind-text');
+            const videoKindBtn = document.getElementById('story-kind-video');
+            if (textKindBtn && !textKindBtn.dataset.wired) {
+                textKindBtn.dataset.wired = '1';
+                textKindBtn.addEventListener('click', () => setStoryKind('text'));
+            }
+            if (videoKindBtn && !videoKindBtn.dataset.wired) {
+                videoKindBtn.dataset.wired = '1';
+                videoKindBtn.addEventListener('click', () => setStoryKind('video'));
+            }
+
+            // Video record flow
+            const videoRecordBtn = document.getElementById('story-video-record-btn');
+            const videoInput = document.getElementById('story-video-input');
+            const videoPreview = document.getElementById('story-video-preview');
+            const videoEmpty = document.getElementById('story-video-empty');
+            const videoPlayer = document.getElementById('story-video-player');
+            const videoSize = document.getElementById('story-video-size');
+            const videoRetakeBtn = document.getElementById('story-video-retake-btn');
+
+            if (videoRecordBtn && !videoRecordBtn.dataset.wired) {
+                videoRecordBtn.dataset.wired = '1';
+                videoRecordBtn.addEventListener('click', () => {
+                    if (videoInput) videoInput.click();
+                });
+            }
+            if (videoRetakeBtn && !videoRetakeBtn.dataset.wired) {
+                videoRetakeBtn.dataset.wired = '1';
+                videoRetakeBtn.addEventListener('click', () => {
+                    resetStoryVideoState();
+                    if (videoInput) videoInput.click();
+                });
+            }
+            if (videoInput && !videoInput.dataset.wired) {
+                videoInput.dataset.wired = '1';
+                videoInput.addEventListener('change', async (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+
+                    // Duration check: 3 minute cap
+                    const duration = await getVideoDurationFromFile(file);
+                    if (duration > 185) {
+                        // Give a tiny buffer over 180s so phones don't trip near the edge
+                        showToast('Video is too long — please keep it under 3 minutes');
+                        if (videoInput) videoInput.value = '';
+                        return;
+                    }
+
+                    // Size check: base64 expands ~33% so cap the raw file at ~30MB
+                    // to keep the final payload under 40MB. Above that, ask her to re-record.
+                    if (file.size > 30 * 1024 * 1024) {
+                        showToast('That video is very large. Please record a shorter one.');
+                        if (videoInput) videoInput.value = '';
+                        return;
+                    }
+
+                    try {
+                        const dataUrl = await fileToDataUrl(file);
+                        _storyVideoDataUrl = dataUrl;
+                        if (videoPlayer) {
+                            videoPlayer.src = dataUrl;
+                            videoPlayer.load();
+                        }
+                        if (videoSize) {
+                            const mb = (file.size / (1024 * 1024)).toFixed(1);
+                            const secs = duration > 0 ? Math.round(duration) + 's · ' : '';
+                            videoSize.textContent = secs + mb + ' MB';
+                        }
+                        if (videoEmpty) videoEmpty.style.display = 'none';
+                        if (videoPreview) videoPreview.style.display = 'block';
+                    } catch(err) {
+                        showToast('Could not load video: ' + (err.message || 'try again'));
+                    }
                 });
             }
 
@@ -9667,28 +9847,50 @@
             if (btn && !btn.dataset.wired) {
                 btn.dataset.wired = '1';
                 btn.addEventListener('click', async () => {
-                    const text = (document.getElementById('story-text').value || '').trim();
-                    if (text.length < 10) {
-                        showToast('Tell us a little more — at least a few sentences');
-                        return;
-                    }
                     const giftTag = document.getElementById('story-gift-tag').value || '';
                     const anonymous = document.getElementById('story-anon-toggle').classList.contains('on') ? 1 : 0;
+
+                    // Build payload based on kind
+                    const payload = {
+                        user_id: currentUser ? currentUser.id : null,
+                        name: currentUser ? (currentUser.display_name || currentUser.first_name || 'A G4 sister') : 'A G4 sister',
+                        anonymous: anonymous,
+                        kind: _storyKind,
+                        gift_tag: giftTag
+                    };
+
+                    if (_storyKind === 'text') {
+                        const text = (document.getElementById('story-text').value || '').trim();
+                        if (text.length < 10) {
+                            showToast('Tell us a little more — at least a few sentences');
+                            return;
+                        }
+                        payload.text = text;
+                    } else {
+                        if (!_storyVideoDataUrl) {
+                            showToast('Record a video first');
+                            return;
+                        }
+                        payload.video_data = _storyVideoDataUrl;
+                        // Allow an optional text blurb alongside the video if she typed one
+                        const extraText = (document.getElementById('story-text').value || '').trim();
+                        if (extraText) payload.text = extraText;
+                    }
+
                     btn.disabled = true;
-                    btn.textContent = 'Sending...';
+                    btn.textContent = _storyKind === 'video' ? 'Uploading...' : 'Sending...';
                     try {
-                        await apiPost('/api/testimonies', {
-                            user_id: currentUser ? currentUser.id : null,
-                            name: currentUser ? (currentUser.display_name || currentUser.first_name || 'A G4 sister') : 'A G4 sister',
-                            anonymous: anonymous,
-                            kind: 'text',
-                            text: text,
-                            gift_tag: giftTag
-                        });
+                        const result = await apiPost('/api/testimonies', payload);
+                        if (result && result.error) throw new Error(result.error);
+
+                        // Reset form state
                         document.getElementById('story-text').value = '';
                         document.getElementById('story-gift-tag').value = '';
                         document.getElementById('story-anon-toggle').classList.remove('on');
                         if (counter) counter.textContent = '0 / 2000';
+                        resetStoryVideoState();
+                        setStoryKind('text');
+
                         showToast('Your story is in. We\'ll review and post it soon \u2728');
                         launchConfetti();
                     } catch (e) {
@@ -9699,6 +9901,9 @@
                     }
                 });
             }
+
+            // Start in text mode by default
+            setStoryKind('text');
 
             // Load the feed
             loadStoryFeed();
@@ -9772,6 +9977,18 @@
             const cardStyle = isFeatured
                 ? 'margin:14px 16px;padding:22px 22px;background:linear-gradient(135deg,rgba(201,144,138,0.10),rgba(255,255,255,0.7));border-radius:14px;border:1.5px solid rgba(201,144,138,0.30);box-shadow:0 4px 16px rgba(201,144,138,0.12);'
                 : 'margin:0 0 14px;padding:18px 20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);';
+
+            // Video player if this is a video testimony. The video is streamed
+            // from the worker (/api/testimonies/:id/video) which checks that the
+            // testimony is approved/featured before serving.
+            const videoHtml = story.kind === 'video' && story.video_key
+                ? `<video controls playsinline preload="metadata" style="width:100%;border-radius:10px;background:black;margin-bottom:${story.text ? '10' : '14'}px;" src="${API_URL}/api/testimonies/${story.id}/video"></video>`
+                : '';
+            // Text blurb: always shown if present (video stories can have both)
+            const textHtml = story.text
+                ? `<div style="font-family:Georgia,serif;font-size:1rem;line-height:1.6;color:var(--dark-text);white-space:pre-wrap;margin-bottom:14px;">${esc(story.text)}</div>`
+                : '';
+
             return `
                 <div style="${cardStyle}" data-story-id="${story.id}">
                     ${featuredBadge}
@@ -9782,7 +9999,8 @@
                         </div>
                         ${giftPill}
                     </div>
-                    <div style="font-family:Georgia,serif;font-size:1rem;line-height:1.6;color:var(--dark-text);white-space:pre-wrap;margin-bottom:14px;">${esc(story.text || '')}</div>
+                    ${videoHtml}
+                    ${textHtml}
                     <div style="display:flex;justify-content:flex-end;align-items:center;">
                         <button data-heart-story="${story.id}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:${hearted ? 'rgba(201,144,138,0.12)' : 'white'};color:${hearted ? 'var(--accent)' : 'var(--taupe)'};border:1.5px solid ${hearted ? 'var(--accent)' : 'var(--warm-grey)'};border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:var(--transition);">
                             <span style="font-size:0.95rem;">${hearted ? '\u2764\ufe0f' : '\ud83e\udd0d'}</span>

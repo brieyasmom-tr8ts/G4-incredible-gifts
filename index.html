@@ -4633,6 +4633,8 @@
                 if (typeof initCelebrationScrapbookModal === 'function') initCelebrationScrapbookModal();
                 loadMyCelebrationStatus();
             }
+            // Show the Journey nav badge if she has any unanswered gifts
+            if (typeof updateJourneyBadge === 'function') updateJourneyBadge();
         }
 
         // Load user photo from server if we don't have it cached
@@ -5559,6 +5561,26 @@
             if (badge) badge.style.display = 'none';
         }
 
+        // Show a dot on the Journey nav tab if she has any unanswered gifts.
+        // Called from showWelcome() and after any Journey response is saved.
+        function updateJourneyBadge() {
+            const badge = document.getElementById('badge-journey');
+            if (!badge) return;
+            if (typeof giftsData === 'undefined' || !Array.isArray(giftsData)) return;
+            if (!appState || !appState.journeyResponses) return;
+            const unanswered = giftsData.some(g => !appState.journeyResponses[g]);
+            if (unanswered) {
+                badge.style.display = 'flex';
+                badge.textContent = '';
+                badge.style.minWidth = '10px';
+                badge.style.width = '10px';
+                badge.style.height = '10px';
+                badge.style.padding = '0';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
         function updateQuizBadge() {
             const badge = document.getElementById('badge-quiz');
             if (!badge) return;
@@ -6412,7 +6434,7 @@
             { key: 'nav_connect', tab: 'connect', icon: '\ud83d\udc9b', label: 'Connect', badge: 'badge-connect' },
             { key: 'nav_uplift', tab: 'uplift', icon: '\ud83d\ude4f', label: 'Uplift', badge: 'badge-uplift' },
             { key: 'nav_polls', tab: 'polls', icon: '\ud83d\udcac', label: 'Polls', badge: 'badge-sharing' },
-            { key: 'nav_journey', tab: 'journey', icon: '\ud83c\udf81', label: 'Journey' },
+            { key: 'nav_journey', tab: 'journey', icon: '\ud83c\udf81', label: 'Journey', badge: 'badge-journey' },
             { key: 'nav_journal', tab: 'journal', icon: '\u2728', label: 'Journal' },
             { key: 'nav_gratitude', tab: 'gratitude', icon: '🙌', label: 'Grateful' },
             { key: 'nav_photobooth', tab: 'photobooth', icon: '🖼️', label: 'Booth' },
@@ -7018,6 +7040,7 @@
                         buildGifts();
                         updateJourneyResult();
                         submitJourneyResponse(gift, option);
+                        if (typeof updateJourneyBadge === 'function') updateJourneyBadge();
                     });
                     optionsDiv.appendChild(btn);
                 });
@@ -7290,6 +7313,14 @@
         function renderDevotionBody(devotion) {
             const wrap = document.createElement('div');
 
+            // If she hasn't answered this gift in My Journey yet, show an
+            // inline prompt at the top. One tap personalizes the letter.
+            const journeyGift = deriveJourneyKeyForDevotion(devotion.gift_key);
+            const hasAnswer = journeyGift && appState.journeyResponses[journeyGift];
+            if (journeyGift && !hasAnswer) {
+                wrap.appendChild(renderDevotionJourneyPrompt(devotion, journeyGift, wrap));
+            }
+
             // Personalized letter
             const letter = document.createElement('div');
             letter.className = 'devotion-letter';
@@ -7356,6 +7387,61 @@
             wrap.appendChild(renderGrowthTimeline(devotion));
 
             return wrap;
+        }
+
+        // Inline Journey prompt shown at the top of a devotion when she
+        // hasn't answered that gift in My Journey yet. One tap saves the
+        // response, re-renders the body, and the prompt disappears.
+        function renderDevotionJourneyPrompt(devotion, journeyGift, bodyWrap) {
+            const block = document.createElement('div');
+            block.style.cssText = 'margin:18px 0 6px;padding:16px 18px;background:linear-gradient(135deg,rgba(138,158,122,0.10),rgba(201,144,138,0.06));border:1px solid rgba(138,158,122,0.25);border-radius:12px;';
+            const label = document.createElement('div');
+            label.style.cssText = "font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;";
+            label.textContent = 'Make this personal';
+            const question = document.createElement('div');
+            question.style.cssText = "font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--dark-text);font-style:italic;margin-bottom:12px;";
+            question.textContent = 'Where are you with ' + journeyGift + '?';
+
+            const optionsGrid = document.createElement('div');
+            optionsGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;';
+
+            // Use the existing 4 options from giftOptions so we stay in sync.
+            const options = (typeof giftOptions !== 'undefined' && Array.isArray(giftOptions))
+                ? giftOptions
+                : ['I\'ve experienced this', 'I\'m walking in this', 'I want this', 'I\'m struggling here'];
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.textContent = opt;
+                btn.style.cssText = "padding:10px 12px;background:white;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--dark-text);cursor:pointer;text-align:center;line-height:1.3;transition:var(--transition);";
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    // Save locally first so the re-render picks it up immediately
+                    appState.journeyResponses[journeyGift] = opt;
+                    saveState();
+                    // Persist to server in the background
+                    if (typeof submitJourneyResponse === 'function') {
+                        submitJourneyResponse(journeyGift, opt);
+                    }
+                    // Update the Journey nav badge in case she just finished the last one
+                    if (typeof updateJourneyBadge === 'function') updateJourneyBadge();
+                    // Re-render the whole devotion body inline so the letter
+                    // swaps to her personalized variant. Find the closest body
+                    // and swap its contents.
+                    const body = bodyWrap.closest('.devotion-body') || bodyWrap.parentElement;
+                    if (body) {
+                        body.innerHTML = '';
+                        body.appendChild(renderDevotionBody(devotion));
+                    }
+                    showToast('Thank you \u2014 this is now personal to you');
+                });
+                optionsGrid.appendChild(btn);
+            });
+
+            block.appendChild(label);
+            block.appendChild(question);
+            block.appendChild(optionsGrid);
+            return block;
         }
 
         function renderDevotionPrompt(devotion, prompt) {

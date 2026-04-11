@@ -5976,6 +5976,10 @@
         ];
 
         const giftsData = ['Eternal Life', 'Identity', 'Love', 'Peace', 'Joy', 'Freedom', 'Rest', 'Wisdom', 'Courage', 'Strength', 'Faith', 'Purpose', 'Holy Spirit', 'New Heart', 'Grace', 'Hope', 'Provision', 'Healing', 'Good Gifts', 'Comfort'];
+        // Gifts added post-retreat for devotion personalization. These get a
+        // visual "New" badge in the Journey tab so returning women know to
+        // answer them even though they didn't exist at the retreat.
+        const JOURNEY_NEW_GIFTS = new Set(['Holy Spirit', 'New Heart', 'Grace', 'Hope', 'Provision', 'Healing', 'Good Gifts', 'Comfort']);
         const giftOptions = ['I\'ve experienced this', 'I\'m walking in this', 'I want this', 'I\'m struggling here'];
 
         // ===== 15-Week Devotions =====
@@ -6998,15 +7002,51 @@
         function buildGifts() {
             const container = document.getElementById('gifts-container');
             container.innerHTML = '';
+
+            // Progress pill at the top: "14 of 20 gifts answered"
+            const answeredCount = giftsData.filter(g => appState.journeyResponses[g]).length;
+            const totalCount = giftsData.length;
+            const progressWrap = document.createElement('div');
+            progressWrap.style.cssText = 'margin:0 16px 16px;padding:14px 18px;background:linear-gradient(135deg,rgba(138,158,122,0.10),rgba(201,144,138,0.08));border-radius:14px;border:1px solid rgba(138,158,122,0.22);';
+            const progressTop = document.createElement('div');
+            progressTop.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;';
+            const progressLabel = document.createElement('div');
+            progressLabel.style.cssText = "font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);";
+            progressLabel.textContent = answeredCount + ' of ' + totalCount + ' gifts answered';
+            const progressPercent = document.createElement('div');
+            progressPercent.style.cssText = "font-family:'Cormorant Garamond',serif;font-size:0.85rem;font-style:italic;color:var(--sage);";
+            progressPercent.textContent = Math.round((answeredCount / totalCount) * 100) + '%';
+            progressTop.appendChild(progressLabel);
+            progressTop.appendChild(progressPercent);
+            const progressBar = document.createElement('div');
+            progressBar.style.cssText = 'width:100%;height:6px;background:rgba(139,134,128,0.15);border-radius:3px;overflow:hidden;';
+            const progressFill = document.createElement('div');
+            progressFill.style.cssText = 'height:100%;width:' + Math.round((answeredCount / totalCount) * 100) + '%;background:linear-gradient(90deg,var(--sage),var(--blush));border-radius:3px;transition:width 0.6s ease;';
+            progressBar.appendChild(progressFill);
+            progressWrap.appendChild(progressTop);
+            progressWrap.appendChild(progressBar);
+            container.appendChild(progressWrap);
+
             const grid = document.createElement('div');
             grid.className = 'gifts-grid';
             giftsData.forEach(gift => {
                 const card = document.createElement('div');
                 card.className = 'gift-card';
+                card.dataset.gift = gift;
                 if (appState.journeyResponses[gift]) card.classList.add('selected');
                 const name = document.createElement('div');
                 name.className = 'gift-name';
                 name.textContent = gift;
+
+                // Add a "New" badge on the 8 post-retreat gifts so returning women
+                // know which ones were added later and are worth coming back to.
+                if (JOURNEY_NEW_GIFTS.has(gift) && !appState.journeyResponses[gift]) {
+                    const badge = document.createElement('span');
+                    badge.textContent = 'NEW';
+                    badge.style.cssText = 'display:inline-block;margin-left:8px;padding:2px 8px;background:var(--blush);color:white;border-radius:10px;font-family:\'Playfair Display\',serif;font-size:0.62rem;font-weight:700;letter-spacing:0.8px;vertical-align:middle;';
+                    name.appendChild(badge);
+                }
+
                 card.appendChild(name);
                 const optionsDiv = document.createElement('div');
                 optionsDiv.className = 'gift-options';
@@ -7017,12 +7057,21 @@
                     btn.textContent = option;
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
+                        const wasComplete = giftsData.every(g => appState.journeyResponses[g]);
                         appState.journeyResponses[gift] = option;
                         saveState();
                         buildGifts();
                         updateJourneyResult();
                         submitJourneyResponse(gift, option);
                         if (typeof updateJourneyBadge === 'function') updateJourneyBadge();
+                        // Completion celebration: if this click just filled in the last gift,
+                        // fire confetti and a warm toast. Only fires on the exact transition
+                        // so re-answering after completion doesn't re-trigger.
+                        const isNowComplete = giftsData.every(g => appState.journeyResponses[g]);
+                        if (!wasComplete && isNowComplete) {
+                            if (typeof launchConfetti === 'function') launchConfetti();
+                            showToast('All ' + totalCount + ' gifts answered \u2728 Your devotions are now fully personal.');
+                        }
                     });
                     optionsDiv.appendChild(btn);
                 });
@@ -7030,6 +7079,17 @@
                 grid.appendChild(card);
             });
             container.appendChild(grid);
+        }
+
+        // Scroll the Journey tab to the first unanswered gift. Used when a
+        // woman taps into Journey from the nav badge or the inline prompt.
+        function scrollToFirstUnansweredGift() {
+            const firstUnanswered = giftsData.find(g => !appState.journeyResponses[g]);
+            if (!firstUnanswered) return;
+            setTimeout(() => {
+                const card = document.querySelector('.gift-card[data-gift="' + firstUnanswered.replace(/"/g, '\\"') + '"]');
+                if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 150);
         }
 
         function updateJourneyResult() {
@@ -8787,7 +8847,7 @@
             if (tab === 'connect') { loadPeople(); markConnectSeen(); }
             if (tab === 'uplift') { loadPrayerWall(); markUpliftSeen(); }
             if (tab === 'polls') { loadSharingFeed(); markPollsSeen(); }
-            if (tab === 'journey') loadNotAloneInsights();
+            if (tab === 'journey') { loadNotAloneInsights(); scrollToFirstUnansweredGift(); }
             if (tab === 'moments') { loadMoments(); markMomentsSeen(); }
             if (tab === 'hunt') loadHuntTab();
             if (tab === 'quiz') { loadQuizTab(); clearBadge('badge-quiz'); }

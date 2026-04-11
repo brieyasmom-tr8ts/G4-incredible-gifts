@@ -2789,6 +2789,20 @@
                         <div style="font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--light-text);font-style:italic;line-height:1.6;padding:0 12px;">What a weekend. What a God. Thank you for showing up, being open, and letting Him move. You are seen, you are loved, and you are carrying something incredible home with you.</div>
                     </div>
 
+                    <!-- Feedback Survey Banner (hides when submitted) -->
+                    <div id="feedback-banner" style="display:none;margin:14px 16px 8px;padding:16px 18px;background:linear-gradient(135deg,rgba(201,144,138,0.14),rgba(212,165,154,0.10));border-radius:14px;border:1px solid rgba(201,144,138,0.25);box-shadow:var(--shadow-sm);">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <span style="font-size:1.3rem;">&#128221;</span>
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;color:var(--dark-text);margin-bottom:2px;">Share Your Feedback</div>
+                                <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);line-height:1.3;">Help us make next year even better &mdash; takes 2 minutes</div>
+                            </div>
+                            <button id="feedback-banner-btn" style="padding:8px 14px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;cursor:pointer;white-space:nowrap;">Take it</button>
+                        </div>
+                    </div>
+
                     <!-- Moments Slideshow -->
                     <div id="post-retreat-slideshow" style="margin:16px;border-radius:14px;overflow:hidden;position:relative;aspect-ratio:4/3;background:var(--warm-grey);box-shadow:var(--shadow-md);">
                         <img id="slideshow-img" style="width:100%;height:100%;object-fit:cover;transition:opacity 0.6s ease;" alt="Retreat moment">
@@ -2824,11 +2838,60 @@
                             <div id="feedback-ratings" style="display:flex;flex-direction:column;gap:12px;">
                                 <div class="fb-rating-row" data-key="overall"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Overall experience</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
                                 <div class="fb-rating-row" data-key="hotel"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Hotel & food</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
-                                <div class="fb-rating-row" data-key="sessions"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Sessions & teaching</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
                                 <div class="fb-rating-row" data-key="worship"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Worship</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
                                 <div class="fb-rating-row" data-key="games"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Games & activities</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
                                 <div class="fb-rating-row" data-key="party"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Party night</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
                                 <div class="fb-rating-row" data-key="value"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Value for the cost</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                            </div>
+                        </div>
+
+                        <!-- Teaching: per-speaker ratings + comments -->
+                        <div style="margin-bottom:20px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:10px;">Teaching <span style="font-weight:400;font-style:italic;">(rate each speaker & share your takeaways)</span></label>
+                            <div id="feedback-speakers" style="display:flex;flex-direction:column;gap:12px;">
+                                <div style="padding:12px;border:1px solid rgba(139,134,128,0.18);border-radius:10px;background:rgba(255,255,255,0.5);">
+                                    <div class="fb-rating-row" data-key="speaker_mandy">
+                                        <div style="font-family:Playfair Display,serif;font-size:0.98rem;color:var(--dark-text);margin-bottom:4px;">Mandy</div>
+                                        <div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;margin-bottom:8px;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div>
+                                    </div>
+                                    <textarea id="feedback-speaker-mandy-comment" style="width:100%;padding:10px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:15px;color:var(--dark-text);resize:vertical;min-height:50px;" placeholder="What resonated from Mandy's message..."></textarea>
+                                </div>
+                                <div style="padding:12px;border:1px solid rgba(139,134,128,0.18);border-radius:10px;background:rgba(255,255,255,0.5);">
+                                    <div class="fb-rating-row" data-key="speaker_jeanette">
+                                        <div style="font-family:Playfair Display,serif;font-size:0.98rem;color:var(--dark-text);margin-bottom:4px;">Jeanette</div>
+                                        <div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;margin-bottom:8px;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div>
+                                    </div>
+                                    <textarea id="feedback-speaker-jeanette-comment" style="width:100%;padding:10px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:15px;color:var(--dark-text);resize:vertical;min-height:50px;" placeholder="What resonated from Jeanette's message..."></textarea>
+                                </div>
+                                <div style="padding:12px;border:1px solid rgba(139,134,128,0.18);border-radius:10px;background:rgba(255,255,255,0.5);">
+                                    <div class="fb-rating-row" data-key="speaker_sandy">
+                                        <div style="font-family:Playfair Display,serif;font-size:0.98rem;color:var(--dark-text);margin-bottom:4px;">Sandy</div>
+                                        <div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;margin-bottom:8px;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div>
+                                    </div>
+                                    <textarea id="feedback-speaker-sandy-comment" style="width:100%;padding:10px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:15px;color:var(--dark-text);resize:vertical;min-height:50px;" placeholder="What resonated from Sandy's message..."></textarea>
+                                </div>
+                                <div style="padding:12px;border:1px solid rgba(139,134,128,0.18);border-radius:10px;background:rgba(255,255,255,0.5);">
+                                    <div class="fb-rating-row" data-key="speaker_leigh">
+                                        <div style="font-family:Playfair Display,serif;font-size:0.98rem;color:var(--dark-text);margin-bottom:4px;">Leigh</div>
+                                        <div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;margin-bottom:8px;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div>
+                                    </div>
+                                    <textarea id="feedback-speaker-leigh-comment" style="width:100%;padding:10px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:15px;color:var(--dark-text);resize:vertical;min-height:50px;" placeholder="What resonated from Leigh's message..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- The app feedback -->
+                        <div style="margin-bottom:20px;">
+                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:10px;">The app <span style="font-weight:400;font-style:italic;">(rate your experience with this app)</span></label>
+                            <div style="padding:12px;border:1px solid rgba(139,134,128,0.18);border-radius:10px;background:rgba(255,255,255,0.5);">
+                                <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
+                                    <div class="fb-rating-row" data-key="app_ease"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Ease of use</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                    <div class="fb-rating-row" data-key="app_fun"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Fun factor</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                    <div class="fb-rating-row" data-key="app_design"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Design & look</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                    <div class="fb-rating-row" data-key="app_useful"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Usefulness during the retreat</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                    <div class="fb-rating-row" data-key="app_connect"><div style="font-size:0.88rem;color:var(--dark-text);margin-bottom:4px;">Helped me connect with others</div><div class="fb-stars" style="display:flex;gap:6px;font-size:1.5rem;cursor:pointer;"><span data-v="1">\u2606</span><span data-v="2">\u2606</span><span data-v="3">\u2606</span><span data-v="4">\u2606</span><span data-v="5">\u2606</span></div></div>
+                                </div>
+                                <textarea id="feedback-app-comment" style="width:100%;padding:10px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:15px;color:var(--dark-text);resize:vertical;min-height:50px;" placeholder="What worked, what didn't, what you wish it did..."></textarea>
                             </div>
                         </div>
 
@@ -5298,8 +5361,13 @@
             // Home always first
             let html = '<button class="nav-btn" data-tab="home"><span class="nav-icon">\ud83c\udfe0</span><span>Home</span></button>';
 
+            // Force-show the Survey nav button after the retreat has ended until feedback is submitted
+            const postRetreat = new Date() >= new Date('2026-04-11T12:00:00-04:00');
+            const forceSurvey = postRetreat && !localStorage.getItem('g4feedback_sent');
+
             ALL_NAV_ITEMS.forEach(item => {
-                if (navSettings[item.key] !== '1') return;
+                const enabled = navSettings[item.key] === '1' || (item.key === 'nav_survey' && forceSurvey);
+                if (!enabled) return;
                 const actionAttr = item.action ? `data-action="${item.action}"` : '';
                 const badgeHtml = item.badge ? `<span class="nav-badge" id="${item.badge}" style="display:none;"></span>` : '';
                 html += `<button class="nav-btn" data-tab="${item.tab}" ${actionAttr}><span class="nav-icon">${item.icon}</span><span>${item.label}</span>${badgeHtml}</button>`;
@@ -5329,8 +5397,8 @@
                     if (action === 'survey') {
                         switchToTab('home');
                         setTimeout(() => {
-                            const feedbackEl = document.getElementById('feedback-stars');
-                            if (feedbackEl) feedbackEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            const feedbackEl = document.getElementById('feedback-form-wrap');
+                            if (feedbackEl) feedbackEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }, 200);
                         return;
                     }
@@ -7349,6 +7417,15 @@
                     document.getElementById('continue-tab').classList.add('active');
                     document.querySelector('.content-area').scrollTop = 0;
                 });
+
+                // Remind on every login/page load until they take the survey
+                if (!localStorage.getItem('g4feedback_sent')) {
+                    setTimeout(() => {
+                        if (!localStorage.getItem('g4feedback_sent')) {
+                            showToast('Please take a moment to share your feedback \ud83d\udcdd');
+                        }
+                    }, 2500);
+                }
             }
         }
 
@@ -7388,7 +7465,29 @@
         const feedbackRatings = {};
         const feedbackChoices = {};
 
+        function scrollToFeedbackForm() {
+            const el = document.getElementById('feedback-form-wrap');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function updateFeedbackUIState() {
+            const submitted = !!localStorage.getItem('g4feedback_sent');
+            const banner = document.getElementById('feedback-banner');
+            if (banner) banner.style.display = submitted ? 'none' : 'block';
+            // buildNav auto-shows the Survey button post-retreat until submitted
+            if (typeof buildNav === 'function' && navBuilt) buildNav();
+        }
+
         function initFeedbackForm() {
+            // Wire banner button (always works, even after submit the button is gone)
+            const bannerBtn = document.getElementById('feedback-banner-btn');
+            if (bannerBtn && !bannerBtn.dataset.wired) {
+                bannerBtn.dataset.wired = '1';
+                bannerBtn.addEventListener('click', scrollToFeedbackForm);
+            }
+
+            updateFeedbackUIState();
+
             // Check if already submitted
             if (localStorage.getItem('g4feedback_sent')) {
                 document.getElementById('feedback-submit-btn').style.display = 'none';
@@ -7440,6 +7539,21 @@
                 btn.disabled = true;
                 btn.textContent = 'Sending...';
 
+                const speakers = {
+                    mandy: { rating: feedbackRatings.speaker_mandy || 0, comment: document.getElementById('feedback-speaker-mandy-comment').value.trim() },
+                    jeanette: { rating: feedbackRatings.speaker_jeanette || 0, comment: document.getElementById('feedback-speaker-jeanette-comment').value.trim() },
+                    sandy: { rating: feedbackRatings.speaker_sandy || 0, comment: document.getElementById('feedback-speaker-sandy-comment').value.trim() },
+                    leigh: { rating: feedbackRatings.speaker_leigh || 0, comment: document.getElementById('feedback-speaker-leigh-comment').value.trim() }
+                };
+                const appFeedback = {
+                    ease: feedbackRatings.app_ease || 0,
+                    fun: feedbackRatings.app_fun || 0,
+                    design: feedbackRatings.app_design || 0,
+                    useful: feedbackRatings.app_useful || 0,
+                    connect: feedbackRatings.app_connect || 0,
+                    comment: document.getElementById('feedback-app-comment').value.trim()
+                };
+
                 const feedbackData = {
                     user_id: currentUser ? currentUser.id : null,
                     name: currentUser ? (currentUser.display_name || currentUser.first_name) : 'Anonymous',
@@ -7451,6 +7565,8 @@
                     come_again: feedbackChoices['feedback-again'] || '',
                     invite_friend: feedbackChoices['feedback-invite'] || '',
                     final_thoughts: document.getElementById('feedback-final').value.trim(),
+                    speakers: JSON.stringify(speakers),
+                    app_feedback: JSON.stringify(appFeedback),
                     rating: feedbackRatings.overall || 0
                 };
 
@@ -7463,6 +7579,7 @@
                 localStorage.setItem('g4feedback_sent', '1');
                 btn.style.display = 'none';
                 document.getElementById('feedback-thanks').style.display = 'block';
+                updateFeedbackUIState();
                 showToast('Thank you for your feedback!');
                 launchConfetti();
             });

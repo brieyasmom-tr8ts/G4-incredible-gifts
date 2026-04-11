@@ -6587,6 +6587,14 @@
                     if (document.getElementById('retreat-dashboard') && document.getElementById('retreat-dashboard').style.display !== 'none') {
                         loadDashboard();
                     }
+                    // Re-render the post-retreat quick-action buttons now that
+                    // we have real settings. Previously, checkPostRetreat ran
+                    // before this fetch resolved and rendered the grid using
+                    // an empty gameSettings, so every admin-toggled value was
+                    // missing until this function caught up.
+                    if (typeof renderHomeButtonsInto === 'function' && document.getElementById('post-retreat-buttons')) {
+                        renderHomeButtonsInto('post-retreat-buttons');
+                    }
                 }
             } catch(e) {
                 console.error('Failed to load nav settings:', e);

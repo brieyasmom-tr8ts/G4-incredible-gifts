@@ -1855,37 +1855,68 @@ export default {
       // ===== LOVE MESSAGES (MARNIE) =====
 
       // POST /api/lovemessages
+      // Accepts either:
+      //   - application/json with { user_id, name, message, video_data? }
+      //     (legacy path, used for text-only submissions)
+      //   - multipart/form-data with user_id, name, message, and a file
+      //     field named "video" (used when a video is attached so we can
+      //     stream the binary directly instead of JSON-wrapping it)
       if (path === '/api/lovemessages' && request.method === 'POST') {
         try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS love_messages (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', message TEXT DEFAULT '', video_data TEXT DEFAULT '', has_video INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) {}
 
-        const body = await request.json();
-        if (!body.message && !body.video_data) {
-          return json({ error: 'Please include a message or video' }, corsHeaders, 400);
-        }
+        const contentType = request.headers.get('content-type') || '';
+        let user_id = null, name = 'Anonymous', message = '', videoKey = '', hasVideo = 0;
 
-        const hasVideo = body.video_data && body.video_data.length > 0 ? 1 : 0;
-
-        // Store video in R2 if available, keep message in D1
-        let videoKey = '';
-        if (hasVideo && env.VIDEOS) {
-          videoKey = 'love-' + Date.now() + '-' + (body.user_id || 0);
-          try {
-            // Convert base64 data URL to binary
-            const base64 = body.video_data.split(',')[1] || body.video_data;
-            const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-            await env.VIDEOS.put(videoKey, binary, { httpMetadata: { contentType: 'video/mp4' } });
-          } catch(e) {
-            // Fallback: skip video if R2 fails
-            videoKey = '';
+        if (contentType.indexOf('multipart/form-data') !== -1) {
+          // FormData path: stream the video file directly to R2
+          const formData = await request.formData();
+          user_id = formData.get('user_id');
+          name = (formData.get('name') || 'Anonymous').toString();
+          message = (formData.get('message') || '').toString();
+          const file = formData.get('video');
+          if (file && typeof file === 'object' && file.size > 0 && env.VIDEOS) {
+            videoKey = 'love-' + Date.now() + '-' + (user_id || 0);
+            try {
+              const arrayBuffer = await file.arrayBuffer();
+              await env.VIDEOS.put(videoKey, arrayBuffer, {
+                httpMetadata: { contentType: file.type || 'video/mp4' }
+              });
+              hasVideo = 1;
+            } catch(e) {
+              return json({ error: 'Video upload failed: ' + (e.message || 'unknown') }, corsHeaders, 500);
+            }
+          }
+          if (!message && !hasVideo) {
+            return json({ error: 'Please include a message or video' }, corsHeaders, 400);
+          }
+        } else {
+          // Legacy JSON path (text-only or small base64 video)
+          const body = await request.json();
+          user_id = body.user_id || null;
+          name = body.name || 'Anonymous';
+          message = body.message || '';
+          if (!message && !body.video_data) {
+            return json({ error: 'Please include a message or video' }, corsHeaders, 400);
+          }
+          if (body.video_data && body.video_data.length > 0 && env.VIDEOS) {
+            videoKey = 'love-' + Date.now() + '-' + (user_id || 0);
+            try {
+              const base64 = body.video_data.split(',')[1] || body.video_data;
+              const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+              await env.VIDEOS.put(videoKey, binary, { httpMetadata: { contentType: 'video/mp4' } });
+              hasVideo = 1;
+            } catch(e) {
+              videoKey = '';
+            }
           }
         }
 
         await env.DB.prepare(
           'INSERT INTO love_messages (user_id, name, message, video_data, has_video) VALUES (?, ?, ?, ?, ?)'
         ).bind(
-          body.user_id || null,
-          body.name || 'Anonymous',
-          (body.message || '').trim(),
+          user_id || null,
+          name || 'Anonymous',
+          (message || '').trim(),
           videoKey,
           hasVideo
         ).run();

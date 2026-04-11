@@ -12602,24 +12602,37 @@
                 document.getElementById('love-video-input').click();
             });
 
+            // We keep the raw File object instead of base64 so we can
+            // upload as multipart/form-data. Base64 wrapping in a JSON body
+            // was choking the Worker for videos above ~10-15 MB.
+            let loveVideoFile = null;
             document.getElementById('love-video-input').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
-                if (file.size > 50 * 1024 * 1024) {
-                    showToast('Video is too large — keep it under 50MB');
+                if (file.size > 80 * 1024 * 1024) {
+                    showToast('Video is too large — keep it under 80MB');
                     return;
                 }
-                const reader = new FileReader();
-                reader.onload = () => {
-                    loveVideoData = reader.result;
-                    document.getElementById('love-video-player').src = loveVideoData;
-                    document.getElementById('love-video-preview').style.display = 'block';
-                };
-                reader.readAsDataURL(file);
+                loveVideoFile = file;
+                // Local preview via object URL (instant, no base64 conversion)
+                const previewUrl = URL.createObjectURL(file);
+                const player = document.getElementById('love-video-player');
+                player.src = previewUrl;
+                document.getElementById('love-video-preview').style.display = 'block';
+                // Keep loveVideoData as a truthy marker for the existing
+                // "has a video?" check in the send handler.
+                loveVideoData = previewUrl;
             });
 
             document.getElementById('love-video-remove').addEventListener('click', () => {
+                loveVideoFile = null;
                 loveVideoData = null;
+                const player = document.getElementById('love-video-player');
+                if (player && player.src) {
+                    try { URL.revokeObjectURL(player.src); } catch(e) {}
+                    player.removeAttribute('src');
+                    player.load();
+                }
                 document.getElementById('love-video-preview').style.display = 'none';
                 document.getElementById('love-video-input').value = '';
             });
@@ -12637,18 +12650,43 @@
                 btn.textContent = 'Sending...';
 
                 try {
-                    const payload = {
-                        user_id: currentUser.id,
-                        name: currentUser.display_name || currentUser.first_name,
-                        message: text,
-                        video_data: loveVideoData || ''
-                    };
-                    const result = await apiPost('/api/lovemessages', payload);
+                    let result;
+                    const senderName = currentUser.display_name || currentUser.first_name || 'Anonymous';
+                    if (loveVideoFile) {
+                        // Video path: send as multipart form-data so the file
+                        // streams as binary (no base64 bloat, no JSON parser).
+                        const fd = new FormData();
+                        fd.append('user_id', String(currentUser.id));
+                        fd.append('name', senderName);
+                        fd.append('message', text);
+                        fd.append('video', loveVideoFile, loveVideoFile.name || 'video.mp4');
+                        btn.textContent = 'Uploading...';
+                        const resp = await fetch(API_URL + '/api/lovemessages', {
+                            method: 'POST',
+                            body: fd
+                        });
+                        result = await resp.json().catch(() => ({}));
+                        if (!resp.ok && !result.error) result.error = 'upload failed (' + resp.status + ')';
+                    } else {
+                        // Text-only: plain JSON
+                        result = await apiPost('/api/lovemessages', {
+                            user_id: currentUser.id,
+                            name: senderName,
+                            message: text
+                        });
+                    }
                     if (result && result.error) {
-                        showToast(result.error);
+                        showToast('Could not send: ' + result.error);
                     } else {
                         document.getElementById('love-message-text').value = '';
+                        loveVideoFile = null;
                         loveVideoData = null;
+                        const player = document.getElementById('love-video-player');
+                        if (player && player.src) {
+                            try { URL.revokeObjectURL(player.src); } catch(e) {}
+                            player.removeAttribute('src');
+                            player.load();
+                        }
                         document.getElementById('love-video-preview').style.display = 'none';
                         document.getElementById('love-video-input').value = '';
                         const msg = document.getElementById('love-sent-msg');
@@ -12660,7 +12698,7 @@
                         loadLoveMessages();
                     }
                 } catch (e) {
-                    showToast('Could not send — try again');
+                    showToast('Could not send: ' + (e && e.message ? e.message : 'try again'));
                 }
                 btn.disabled = false;
                 btn.textContent = 'Send Love to Marnie';

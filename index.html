@@ -10181,10 +10181,13 @@
             }
         }
 
-        // Holds the recorded video for the Stories submit form, if any.
-        // Populated from the file input after the woman records a clip.
-        // Cleared after a successful submit or on re-record.
-        let _storyVideoDataUrl = null;
+        // Holds the recorded/picked video File for the Stories submit form.
+        // Kept as a raw File so we can upload as multipart/form-data — no
+        // base64 bloat or in-memory string conversion for large files.
+        // _storyVideoPreviewUrl is an object URL used only for the preview
+        // player, revoked when replaced.
+        let _storyVideoFile = null;
+        let _storyVideoPreviewUrl = null;
         let _storyKind = 'text'; // 'text' | 'video'
 
         function setStoryKind(kind) {
@@ -10215,16 +10218,6 @@
             }
         }
 
-        // Turn a File into a base64 data URL. Used for the video upload path.
-        function fileToDataUrl(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(new Error('Could not read the video file'));
-                reader.readAsDataURL(file);
-            });
-        }
-
         // Probe the duration of a video file by loading metadata in a
         // throwaway <video> element. Returns seconds, or -1 if unknown.
         function getVideoDurationFromFile(file) {
@@ -10246,7 +10239,11 @@
         }
 
         function resetStoryVideoState() {
-            _storyVideoDataUrl = null;
+            _storyVideoFile = null;
+            if (_storyVideoPreviewUrl) {
+                try { URL.revokeObjectURL(_storyVideoPreviewUrl); } catch(e) {}
+                _storyVideoPreviewUrl = null;
+            }
             const input = document.getElementById('story-video-input');
             if (input) input.value = '';
             const preview = document.getElementById('story-video-preview');
@@ -10254,7 +10251,7 @@
             const player = document.getElementById('story-video-player');
             if (preview) preview.style.display = 'none';
             if (empty) empty.style.display = 'block';
-            if (player) { player.src = ''; player.removeAttribute('src'); player.load(); }
+            if (player) { player.removeAttribute('src'); player.load(); }
         }
 
         function initStoriesTab() {
@@ -10319,19 +10316,24 @@
                         return;
                     }
 
-                    // Size check: base64 expands ~33% so cap the raw file at ~30MB
-                    // to keep the final payload under 40MB. Above that, ask her to re-record.
-                    if (file.size > 30 * 1024 * 1024) {
-                        showToast('That video is very large. Please record a shorter one.');
+                    // Size check: 80 MB raw, same cap as Marnie. FormData
+                    // streams the file directly so we don't need to leave
+                    // headroom for base64 expansion.
+                    if (file.size > 80 * 1024 * 1024) {
+                        showToast('Video is too large — keep it under 80MB');
                         if (videoInput) videoInput.value = '';
                         return;
                     }
 
                     try {
-                        const dataUrl = await fileToDataUrl(file);
-                        _storyVideoDataUrl = dataUrl;
+                        // Release any previous preview URL before creating a new one
+                        if (_storyVideoPreviewUrl) {
+                            try { URL.revokeObjectURL(_storyVideoPreviewUrl); } catch(e) {}
+                        }
+                        _storyVideoFile = file;
+                        _storyVideoPreviewUrl = URL.createObjectURL(file);
                         if (videoPlayer) {
-                            videoPlayer.src = dataUrl;
+                            videoPlayer.src = _storyVideoPreviewUrl;
                             videoPlayer.load();
                         }
                         if (videoSize) {
@@ -10365,37 +10367,52 @@
                     const giftTag = document.getElementById('story-gift-tag').value || '';
                     const anonymous = document.getElementById('story-anon-toggle').classList.contains('on') ? 1 : 0;
 
-                    // Build payload based on kind
-                    const payload = {
-                        user_id: currentUser ? currentUser.id : null,
-                        name: currentUser ? (currentUser.display_name || currentUser.first_name || 'A G4 sister') : 'A G4 sister',
-                        anonymous: anonymous,
-                        kind: _storyKind,
-                        gift_tag: giftTag
-                    };
+                    const senderName = currentUser ? (currentUser.display_name || currentUser.first_name || 'A G4 sister') : 'A G4 sister';
+                    const senderId = currentUser ? currentUser.id : null;
 
+                    // Text-only early validation
                     if (_storyKind === 'text') {
                         const text = (document.getElementById('story-text').value || '').trim();
                         if (text.length < 10) {
                             showToast('Tell us a little more — at least a few sentences');
                             return;
                         }
-                        payload.text = text;
                     } else {
-                        if (!_storyVideoDataUrl) {
-                            showToast('Record a video first');
+                        if (!_storyVideoFile) {
+                            showToast('Record or pick a video first');
                             return;
                         }
-                        payload.video_data = _storyVideoDataUrl;
-                        // Allow an optional text blurb alongside the video if she typed one
-                        const extraText = (document.getElementById('story-text').value || '').trim();
-                        if (extraText) payload.text = extraText;
                     }
 
                     btn.disabled = true;
                     btn.textContent = _storyKind === 'video' ? 'Uploading...' : 'Sending...';
                     try {
-                        const result = await apiPost('/api/testimonies', payload);
+                        let result;
+                        if (_storyKind === 'video') {
+                            // FormData path: stream the video as binary
+                            const fd = new FormData();
+                            if (senderId != null) fd.append('user_id', String(senderId));
+                            fd.append('name', senderName);
+                            fd.append('anonymous', anonymous ? '1' : '');
+                            fd.append('kind', 'video');
+                            fd.append('gift_tag', giftTag);
+                            const extraText = (document.getElementById('story-text').value || '').trim();
+                            if (extraText) fd.append('text', extraText);
+                            fd.append('video', _storyVideoFile, _storyVideoFile.name || 'story-video.mp4');
+                            const resp = await fetch(API_URL + '/api/testimonies', { method: 'POST', body: fd });
+                            result = await resp.json().catch(() => ({}));
+                            if (!resp.ok && !result.error) result.error = 'upload failed (' + resp.status + ')';
+                        } else {
+                            // Text-only: plain JSON
+                            result = await apiPost('/api/testimonies', {
+                                user_id: senderId,
+                                name: senderName,
+                                anonymous: anonymous,
+                                kind: 'text',
+                                text: (document.getElementById('story-text').value || '').trim(),
+                                gift_tag: giftTag
+                            });
+                        }
                         if (result && result.error) throw new Error(result.error);
 
                         // Reset form state

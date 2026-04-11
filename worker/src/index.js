@@ -2309,45 +2309,85 @@ export default {
       };
 
       // POST /api/testimonies - submit a new story
-      // body: { user_id, name, anonymous, kind ('text'|'video'), text, video_data, gift_tag }
-      // For video kind, video_data is a base64 data URL; the worker decodes
-      // and stores the binary in R2, then keeps the R2 key in D1.
+      // Accepts either:
+      //   - application/json for text-only submissions (or small base64 video
+      //     from older cached clients): { user_id, name, anonymous, kind,
+      //     text, video_data, gift_tag }
+      //   - multipart/form-data for video submissions so the file streams as
+      //     binary instead of being base64-wrapped in JSON. Fields:
+      //       user_id, name, anonymous, kind, text, gift_tag, video (file)
       if (path === '/api/testimonies' && request.method === 'POST') {
         await ensureTestimoniesTable();
-        const body = await request.json();
-        const text = (body.text || '').trim();
-        const kind = body.kind === 'video' ? 'video' : 'text';
-        if (kind === 'text' && text.length < 10) {
-          return json({ error: 'Please write at least a few sentences' }, corsHeaders, 400);
-        }
-        if (kind === 'video' && !body.video_data) {
-          return json({ error: 'Video recording is required' }, corsHeaders, 400);
+        const contentType = request.headers.get('content-type') || '';
+
+        let user_id = null, name = 'A G4 sister', anonymous = 0, kind = 'text';
+        let text = '', gift_tag = '', videoKey = '';
+
+        if (contentType.indexOf('multipart/form-data') !== -1) {
+          const formData = await request.formData();
+          user_id = formData.get('user_id');
+          name = (formData.get('name') || 'A G4 sister').toString();
+          anonymous = formData.get('anonymous') ? 1 : 0;
+          kind = (formData.get('kind') || 'text').toString() === 'video' ? 'video' : 'text';
+          text = (formData.get('text') || '').toString().trim();
+          gift_tag = (formData.get('gift_tag') || '').toString();
+          const file = formData.get('video');
+          if (kind === 'video') {
+            if (!file || typeof file !== 'object' || file.size <= 0) {
+              return json({ error: 'Video recording is required' }, corsHeaders, 400);
+            }
+            if (!env.VIDEOS) {
+              return json({ error: 'Video storage not configured' }, corsHeaders, 500);
+            }
+            videoKey = 'testimony-' + Date.now() + '-' + (user_id || 0);
+            try {
+              const arrayBuffer = await file.arrayBuffer();
+              await env.VIDEOS.put(videoKey, arrayBuffer, {
+                httpMetadata: { contentType: file.type || 'video/mp4' }
+              });
+            } catch(e) {
+              return json({ error: 'Video upload failed: ' + (e.message || 'unknown') }, corsHeaders, 500);
+            }
+          }
+        } else {
+          // Legacy JSON path (text-only or small base64 video)
+          const body = await request.json();
+          user_id = body.user_id;
+          name = body.name || 'A G4 sister';
+          anonymous = body.anonymous ? 1 : 0;
+          kind = body.kind === 'video' ? 'video' : 'text';
+          text = (body.text || '').trim();
+          gift_tag = body.gift_tag || '';
+          if (kind === 'video' && !body.video_data) {
+            return json({ error: 'Video recording is required' }, corsHeaders, 400);
+          }
+          if (kind === 'video' && body.video_data && env.VIDEOS) {
+            videoKey = 'testimony-' + Date.now() + '-' + (user_id || 0);
+            try {
+              const base64 = body.video_data.split(',')[1] || body.video_data;
+              const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+              await env.VIDEOS.put(videoKey, binary, { httpMetadata: { contentType: 'video/mp4' } });
+            } catch(e) {
+              return json({ error: 'Video upload failed' }, corsHeaders, 500);
+            }
+          }
         }
 
-        // Upload the video to R2 if we have one
-        let videoKey = '';
-        if (kind === 'video' && body.video_data && env.VIDEOS) {
-          videoKey = 'testimony-' + Date.now() + '-' + (body.user_id || 0);
-          try {
-            const base64 = body.video_data.split(',')[1] || body.video_data;
-            const binary = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-            await env.VIDEOS.put(videoKey, binary, { httpMetadata: { contentType: 'video/mp4' } });
-          } catch(e) {
-            return json({ error: 'Video upload failed' }, corsHeaders, 500);
-          }
+        if (kind === 'text' && text.length < 10) {
+          return json({ error: 'Please write at least a few sentences' }, corsHeaders, 400);
         }
 
         await env.DB.prepare(
           `INSERT INTO testimonies (user_id, name, anonymous, kind, text, video_key, gift_tag, status)
            VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`
         ).bind(
-          body.user_id || null,
-          body.name || 'A G4 sister',
-          body.anonymous ? 1 : 0,
+          user_id || null,
+          name || 'A G4 sister',
+          anonymous,
           kind,
           text,
           videoKey,
-          body.gift_tag || ''
+          gift_tag || ''
         ).run();
         return json({ success: true }, corsHeaders);
       }

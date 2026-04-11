@@ -3727,6 +3727,10 @@
                         <button class="save-btn" id="save-journal-btn">Save</button>
                         <button class="summarize-btn" id="summarize-btn" style="display:none;">Summarize</button>
                     </div>
+                    <div id="journal-entries-header" style="display:none;align-items:center;justify-content:space-between;margin:16px 16px 6px;">
+                        <div style="font-family:'Playfair Display',serif;font-size:0.82rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:1px;">Your reflections</div>
+                        <button id="journal-download-btn" style="padding:6px 12px;background:white;color:var(--accent);border:1.5px solid var(--accent);border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.78rem;font-weight:600;cursor:pointer;">&#x2b07;&#xfe0f; Download</button>
+                    </div>
                     <div class="journal-entries" id="journal-entries"></div>
                 </div>
             </div>
@@ -6453,15 +6457,20 @@
         // Save a devotion reflection as a tagged journal entry.
         function saveDevotionReflection(devotion, promptKey, text) {
             if (!text || !text.trim()) return false;
+            const trimmed = text.trim();
             appState.journalEntries.unshift({
                 date: new Date().toISOString(),
-                text: text.trim(),
+                text: trimmed,
                 gift: devotion.gift_key,
                 gift_label: devotion.gift,
                 week: devotion.week,
                 prompt_key: promptKey
             });
             saveState();
+            // Privacy-safe usage ping — no content, just metadata
+            if (typeof pingJournalActivity === 'function') {
+                pingJournalActivity(trimmed.length, devotion.gift_key);
+            }
             return true;
         }
 
@@ -7249,7 +7258,10 @@
 
         function buildJournal() {
             const entriesDiv = document.getElementById('journal-entries');
+            const headerEl = document.getElementById('journal-entries-header');
             entriesDiv.innerHTML = '';
+            // Only show the "Your reflections" header + download button if she has entries
+            if (headerEl) headerEl.style.display = appState.journalEntries.length ? 'flex' : 'none';
             if (appState.journalEntries.length === 0) {
                 entriesDiv.innerHTML = '<div style="text-align:center;padding:24px 16px;color:var(--light-text);font-family:Cormorant Garamond,serif;font-size:1rem;font-style:italic;">Your reflections will appear here as you write.</div>';
                 return;
@@ -7310,6 +7322,78 @@
             });
         }
 
+        // Privacy-safe journal activity ping. Never sends the entry content.
+        // Only user_id, name, optional gift_tag, and char_count so admin can
+        // see adoption stats without reading anyone's private writing.
+        function pingJournalActivity(charCount, giftTag) {
+            try {
+                if (!currentUser) return;
+                fetch(API_URL + '/api/journal/activity', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentUser.id,
+                        name: currentUser.display_name || currentUser.first_name || '',
+                        gift_tag: giftTag || '',
+                        char_count: charCount || 0
+                    })
+                }).catch(() => {});
+            } catch(e) {}
+        }
+
+        // Download all her journal entries as a plain text file. Stays
+        // entirely client-side — pulls from localStorage, builds a nicely
+        // formatted .txt, and triggers a browser download. Useful if she's
+        // getting a new phone or clearing her browser data.
+        function downloadMyJournal() {
+            const entries = (appState && appState.journalEntries) ? appState.journalEntries.slice() : [];
+            if (!entries.length) {
+                showToast('No journal entries yet');
+                return;
+            }
+            // Sort oldest-first so reading it feels chronological
+            entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const now = new Date();
+            const userName = currentUser ? (currentUser.display_name || currentUser.first_name || 'My') : 'My';
+            const lines = [];
+            lines.push(userName + '\'s G4 Journal');
+            lines.push('Exported ' + now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+            lines.push('');
+            lines.push('This is a private copy of every reflection you\'ve saved in the G4 app.');
+            lines.push('Keep it somewhere safe. You can paste it into Google Docs, print it, or');
+            lines.push('email it to yourself so you never lose it.');
+            lines.push('');
+            lines.push('========================================');
+            lines.push('');
+            entries.forEach(entry => {
+                const d = new Date(entry.date);
+                const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+                const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                let header = dateStr + ' at ' + timeStr;
+                if (entry.gift_label) header += ' \u00b7 ' + entry.gift_label;
+                if (entry.prompt_key) {
+                    const promptLabels = { 'look-back': 'Look Back', 'look-in': 'Look In', 'look-forward': 'Look Forward' };
+                    header += ' \u00b7 ' + (promptLabels[entry.prompt_key] || entry.prompt_key);
+                }
+                lines.push(header);
+                lines.push('-'.repeat(40));
+                lines.push(entry.text || '');
+                lines.push('');
+                lines.push('');
+            });
+            const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const safeName = userName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+            a.download = 'g4-journal-' + safeName + '-' + now.toISOString().slice(0, 10) + '.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Downloaded ' + entries.length + ' entries \u2728');
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const saveBtn = document.getElementById('save-journal-btn');
             const textarea = document.getElementById('journal-textarea');
@@ -7325,8 +7409,13 @@
                     buildJournal();
                     showToast('Journal entry saved \u2728');
                     launchConfetti();
+                    // Privacy-safe usage ping
+                    pingJournalActivity(text.length, '');
                 }
             });
+            // Download button for journal export
+            const downloadBtn = document.getElementById('journal-download-btn');
+            if (downloadBtn) downloadBtn.addEventListener('click', downloadMyJournal);
         });
 
         function buildContinue() {

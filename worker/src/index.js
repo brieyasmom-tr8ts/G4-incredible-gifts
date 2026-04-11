@@ -1617,16 +1617,34 @@ export default {
         return json(results, corsHeaders);
       }
 
-      // GET /api/feedback/mine?user_id=X - has THIS user submitted feedback?
+      // GET /api/feedback/mine?user_id=X&name=Name - has THIS user submitted?
       // Used by the client to reconcile its localStorage "already sent" flag
       // with what the server actually has, so women who hit a silent save
       // failure automatically get the form back on their next page load.
+      // Matches by user_id OR by name so we find the row even if user_id
+      // drifted (e.g. re-signup, legacy null user_id from early rows).
       if (path === '/api/feedback/mine' && request.method === 'GET') {
         const userId = parseInt(url.searchParams.get('user_id') || '0', 10);
-        if (!userId) return json({ submitted: false }, corsHeaders);
-        const row = await env.DB.prepare(
-          'SELECT id FROM feedback WHERE user_id = ? LIMIT 1'
-        ).bind(userId).first();
+        const name = (url.searchParams.get('name') || '').trim();
+        if (!userId && !name) return json({ submitted: false }, corsHeaders);
+        let row = null;
+        try {
+          if (userId) {
+            row = await env.DB.prepare(
+              'SELECT id FROM feedback WHERE user_id = ? LIMIT 1'
+            ).bind(userId).first();
+          }
+          if (!row && name) {
+            row = await env.DB.prepare(
+              'SELECT id FROM feedback WHERE name = ? LIMIT 1'
+            ).bind(name).first();
+          }
+        } catch(e) {
+          // If the query errors (e.g. schema drift), fail CLOSED so we
+          // don't auto-clear the local flag. Better to leave the form
+          // hidden than to nag someone who already submitted.
+          return json({ submitted: true, error: 'lookup_failed' }, corsHeaders);
+        }
         return json({ submitted: !!row }, corsHeaders);
       }
 

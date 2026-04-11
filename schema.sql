@@ -254,3 +254,15 @@ CREATE TABLE testimony_hearts (
   UNIQUE(testimony_id, user_id),
   FOREIGN KEY (testimony_id) REFERENCES testimonies(id)
 );
+
+-- Journal usage tracking — metadata only, never content. Each row is
+-- a "she saved an entry" marker so admin can see adoption without
+-- ever reading what women wrote in their private journals.
+CREATE TABLE journal_activity (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  name TEXT DEFAULT '',
+  gift_tag TEXT DEFAULT '',
+  char_count INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);

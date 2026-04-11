@@ -153,8 +153,8 @@ export default {
             env.DB.prepare("SELECT COUNT(*) as c FROM messages WHERE type='encouragement'").first('c').catch(() => 0),
             env.DB.prepare('SELECT COUNT(*) as c FROM moments').first('c').catch(() => 0),
             env.DB.prepare('SELECT COUNT(DISTINCT user_id) as c FROM moments').first('c').catch(() => 0),
-            env.DB.prepare('SELECT COUNT(*) as c FROM journal_entries').first('c').catch(() => 0),
-            env.DB.prepare('SELECT COUNT(DISTINCT user_id) as c FROM journal_entries').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(*) as c FROM journal_activity').first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(DISTINCT user_id) as c FROM journal_activity').first('c').catch(() => 0),
             env.DB.prepare('SELECT COUNT(*) as c FROM hunt_submissions').first('c').catch(() => 0),
             env.DB.prepare('SELECT COUNT(*) as c FROM hunt_votes').first('c').catch(() => 0),
             env.DB.prepare('SELECT COUNT(DISTINCT user_id) as c FROM hunt_submissions').first('c').catch(() => 0),
@@ -524,7 +524,7 @@ export default {
 
       // DELETE /api/admin/reset - clear all test data
       if (path === '/api/admin/reset' && request.method === 'DELETE') {
-        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'testimony_hearts', 'testimonies', 'users'];
+        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'testimony_hearts', 'testimonies', 'journal_activity', 'users'];
         for (const t of tables) {
           try { await env.DB.prepare(`DELETE FROM ${t}`).run(); } catch(e) { /* table may not exist */ }
         }
@@ -1646,6 +1646,78 @@ export default {
           return json({ submitted: true, error: 'lookup_failed' }, corsHeaders);
         }
         return json({ submitted: !!row }, corsHeaders);
+      }
+
+      // ===== JOURNAL ACTIVITY (privacy-safe usage tracking) =====
+      // The journal itself lives in each woman's localStorage — the server
+      // never sees entry content. This endpoint only logs METADATA each
+      // time she saves something: user id, optional gift tag, character
+      // count, timestamp. Admin stats roll up these rows to show adoption
+      // without reading a single word of what she wrote.
+      const ensureJournalActivityTable = async () => {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS journal_activity (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            name TEXT DEFAULT '',
+            gift_tag TEXT DEFAULT '',
+            char_count INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch(e) { /* exists */ }
+      };
+
+      // POST /api/journal/activity - fire and forget from the client after
+      // she saves an entry locally. No content is sent or stored.
+      if (path === '/api/journal/activity' && request.method === 'POST') {
+        await ensureJournalActivityTable();
+        const body = await request.json();
+        await env.DB.prepare(
+          'INSERT INTO journal_activity (user_id, name, gift_tag, char_count) VALUES (?, ?, ?, ?)'
+        ).bind(
+          body.user_id ? parseInt(body.user_id) : null,
+          (body.name || '').slice(0, 100),
+          (body.gift_tag || '').slice(0, 50),
+          parseInt(body.char_count || 0) || 0
+        ).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/journal/activity/stats - admin roll-up of journal usage
+      if (path === '/api/journal/activity/stats' && request.method === 'GET') {
+        await ensureJournalActivityTable();
+        try {
+          const [totalRow, uniqueRow] = await Promise.all([
+            env.DB.prepare('SELECT COUNT(*) as c FROM journal_activity').first(),
+            env.DB.prepare('SELECT COUNT(DISTINCT user_id) as c FROM journal_activity WHERE user_id IS NOT NULL').first()
+          ]);
+          const total = (totalRow && totalRow.c) || 0;
+          const uniqueUsers = (uniqueRow && uniqueRow.c) || 0;
+          // Top gift tags (which devotions are generating reflections)
+          const { results: topGifts } = await env.DB.prepare(
+            `SELECT gift_tag, COUNT(*) as c FROM journal_activity
+             WHERE gift_tag IS NOT NULL AND gift_tag != ''
+             GROUP BY gift_tag ORDER BY c DESC LIMIT 20`
+          ).all();
+          // Most recent entry
+          const latestRow = await env.DB.prepare(
+            'SELECT created_at FROM journal_activity ORDER BY created_at DESC LIMIT 1'
+          ).first();
+          // First entry (to show span)
+          const firstRow = await env.DB.prepare(
+            'SELECT created_at FROM journal_activity ORDER BY created_at ASC LIMIT 1'
+          ).first();
+          return json({
+            total,
+            uniqueUsers,
+            avgPerUser: uniqueUsers ? Math.round((total / uniqueUsers) * 10) / 10 : 0,
+            topGifts: topGifts || [],
+            firstEntry: firstRow ? firstRow.created_at : null,
+            latestEntry: latestRow ? latestRow.created_at : null
+          }, corsHeaders);
+        } catch(e) {
+          return json({ total: 0, uniqueUsers: 0, avgPerUser: 0, topGifts: [], error: e.message }, corsHeaders);
+        }
       }
 
       // ===== LOVE MESSAGES (MARNIE) =====

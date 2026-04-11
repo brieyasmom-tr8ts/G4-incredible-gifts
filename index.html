@@ -4093,10 +4093,10 @@
                 <div id="story-submit-card" style="margin:14px 16px;padding:20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);">
                     <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:600;color:var(--dark-text);margin-bottom:12px;">Share your story</div>
 
-                    <!-- Kind selector: Write or Record video -->
+                    <!-- Kind selector: Write or Share a Video -->
                     <div style="display:flex;gap:8px;margin-bottom:14px;">
                         <button id="story-kind-text" class="story-kind-btn" data-kind="text" style="flex:1;padding:10px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:600;cursor:pointer;">&#9997;&#65039; Write</button>
-                        <button id="story-kind-video" class="story-kind-btn" data-kind="video" style="flex:1;padding:10px;background:white;color:var(--taupe);border:1.5px solid var(--warm-grey);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:600;cursor:pointer;">&#127909; Record Video</button>
+                        <button id="story-kind-video" class="story-kind-btn" data-kind="video" style="flex:1;padding:10px;background:white;color:var(--taupe);border:1.5px solid var(--warm-grey);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:600;cursor:pointer;">&#127909; Video</button>
                     </div>
 
                     <!-- Text mode -->
@@ -4111,14 +4111,14 @@
                         <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:8px;">Your video story <span style="font-weight:400;font-style:italic;">(up to 3 minutes)</span></label>
                         <div id="story-video-empty" style="padding:24px 16px;background:rgba(138,158,122,0.05);border:1px dashed rgba(138,158,122,0.3);border-radius:10px;text-align:center;">
                             <div style="font-size:2rem;margin-bottom:6px;">&#127909;</div>
-                            <div style="font-family:'Cormorant Garamond',serif;font-size:0.92rem;color:var(--light-text);font-style:italic;margin-bottom:12px;">Tap to record a video of your story. You can re-record as many times as you want before sending.</div>
-                            <input type="file" accept="video/*" capture="user" id="story-video-input" style="display:none;">
-                            <button type="button" id="story-video-record-btn" style="padding:10px 22px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;">Record video</button>
+                            <div style="font-family:'Cormorant Garamond',serif;font-size:0.92rem;color:var(--light-text);font-style:italic;margin-bottom:12px;">Record a video of your story or choose one from your camera roll. You can pick a different one any time before sending.</div>
+                            <input type="file" accept="video/*" id="story-video-input" style="display:none;">
+                            <button type="button" id="story-video-record-btn" style="padding:10px 22px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;">Record or Choose Video</button>
                         </div>
                         <div id="story-video-preview" style="display:none;">
                             <video id="story-video-player" controls playsinline style="width:100%;border-radius:10px;background:black;margin-bottom:8px;"></video>
                             <div style="display:flex;gap:8px;">
-                                <button type="button" id="story-video-retake-btn" style="flex:1;padding:8px;background:white;color:var(--taupe);border:1.5px solid var(--warm-grey);border-radius:8px;font-family:'Cormorant Garamond',serif;font-size:0.85rem;font-weight:600;cursor:pointer;">Re-record</button>
+                                <button type="button" id="story-video-retake-btn" style="flex:1;padding:8px;background:white;color:var(--taupe);border:1.5px solid var(--warm-grey);border-radius:8px;font-family:'Cormorant Garamond',serif;font-size:0.85rem;font-weight:600;cursor:pointer;">Pick a different video</button>
                                 <div id="story-video-size" style="flex:1;text-align:right;font-family:'Cormorant Garamond',serif;font-size:0.8rem;font-style:italic;color:var(--light-text);align-self:center;"></div>
                             </div>
                         </div>

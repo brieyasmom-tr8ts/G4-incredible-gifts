@@ -9009,31 +9009,37 @@
             const heartCount = messages.length;
             const noteMessages = messages.filter(m => m.message_text && m.message_text.trim());
 
-            const notesHtml = noteMessages.length
-                ? noteMessages.map(m => {
-                    const fromName = m.sender_anonymous ? 'A G4 sister \ud83d\udc9b' : esc(m.sender_name || 'A G4 sister');
-                    return `
-                        <div class="celebration-note">
-                            <div class="celebration-note-text">${esc(m.message_text)}</div>
-                            <div class="celebration-note-from">\u2014 ${fromName}</div>
-                        </div>
-                    `;
-                }).join('')
-                : '<div class="celebration-empty">Notes from your sisters will appear here as they arrive today.</div>';
+            // Only show the counter pill once there's at least one heart.
+            const counterHtml = heartCount > 0
+                ? `<div class="celebration-hero-counter">
+                        <span class="celebration-hero-counter-num">${heartCount}</span>
+                        <span class="celebration-hero-counter-label">${heartCount === 1 ? 'heart from your sisters' : 'hearts from your sisters'}</span>
+                    </div>`
+                : '';
+
+            // Only render the "What your sisters are saying" section if there are notes.
+            const notesSectionHtml = noteMessages.length
+                ? `<div class="celebration-notes-section">
+                        <div class="celebration-notes-label">What your sisters are saying</div>
+                        ${noteMessages.map(m => {
+                            const fromName = m.sender_anonymous ? 'A G4 sister \ud83d\udc9b' : esc(m.sender_name || 'A G4 sister');
+                            return `
+                                <div class="celebration-note">
+                                    <div class="celebration-note-text">${esc(m.message_text)}</div>
+                                    <div class="celebration-note-from">\u2014 ${fromName}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>`
+                : '';
 
             heroEl.innerHTML = `
                 <div class="celebration-hero">
                     <div class="celebration-hero-icon">${icon}</div>
                     <div class="celebration-hero-title">${esc(title)}</div>
                     <div class="celebration-hero-subtitle">${esc(subtitle)}</div>
-                    <div class="celebration-hero-counter">
-                        <span class="celebration-hero-counter-num">${heartCount}</span>
-                        <span class="celebration-hero-counter-label">${heartCount === 1 ? 'heart from your sisters' : 'hearts from your sisters'}</span>
-                    </div>
-                    <div class="celebration-notes-section">
-                        <div class="celebration-notes-label">What your sisters are saying</div>
-                        ${notesHtml}
-                    </div>
+                    ${counterHtml}
+                    ${notesSectionHtml}
                 </div>
             `;
             heroEl.style.display = 'block';
@@ -9066,9 +9072,12 @@
                 ? 'Look back at your birthday'
                 : 'Look back at your anniversary';
             const dayWord = lookback.daysSince === 1 ? 'yesterday' : (lookback.daysSince + ' days ago');
-            const subtitle = count
+            const subtitle = count > 0
                 ? `${count} ${count === 1 ? 'message' : 'messages'} from your sisters \u2014 ${dayWord}`
                 : `From ${dayWord}`;
+            // If there are no messages at all from the recent celebration,
+            // don't show the look-back card. Nothing to look back at yet.
+            if (count === 0) { el.style.display = 'none'; return; }
 
             el.innerHTML = `
                 <div class="celebration-lookback" data-occasion="${lookback.occasion}" data-date="${lookback.occasion_date}">

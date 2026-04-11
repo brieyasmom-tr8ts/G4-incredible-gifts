@@ -8254,7 +8254,9 @@
         async function loadMoments() {
             const grid = document.getElementById('moments-grid');
             try {
-                const moments = await apiGet('/api/moments');
+                // Pass user_id so reaction buttons reflect what she's already tapped
+                const uid = currentUser ? currentUser.id : 0;
+                const moments = await apiGet('/api/moments' + (uid ? '?user_id=' + uid : ''));
                 if (!moments || !Array.isArray(moments)) {
                     grid.innerHTML = '<div class="moments-empty">The moments gallery is getting set up — check back soon!</div>';
                     return;
@@ -8286,21 +8288,8 @@
                     img.alt = moment.caption || 'Retreat moment';
                     img.loading = 'lazy';
                     img.style.cursor = 'pointer';
-                    img.addEventListener('click', function() {
-                        var src = this.src;
-                        var o = document.createElement('div');
-                        o.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
-                        var i = document.createElement('img');
-                        i.src = src;
-                        i.style.cssText = 'max-width:92vw;max-height:85vh;object-fit:contain;border-radius:12px;';
-                        var b = document.createElement('button');
-                        b.textContent = '\u2715';
-                        b.style.cssText = 'position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.8rem;width:44px;height:44px;border-radius:50%;cursor:pointer;';
-                        o.appendChild(b);
-                        o.appendChild(i);
-                        o.addEventListener('click', function() { o.remove(); });
-                        document.body.appendChild(o);
-                    });
+                    // Tap the image uses the same overlay as the card tap
+                    // (which has reactions + comments). No duplicate lightbox.
 
                     const info = document.createElement('div');
                     info.className = 'moment-card-info';
@@ -8328,6 +8317,21 @@
                     }
 
                     info.appendChild(meta);
+
+                    // Compact reaction + comment counts on the card
+                    const rx = moment.reactions || {};
+                    const rxTotal = (rx.heart || 0) + (rx.laugh || 0) + (rx.thumbs || 0);
+                    const cmTotal = moment.comment_count || 0;
+                    if (rxTotal || cmTotal) {
+                        const counts = document.createElement('div');
+                        counts.style.cssText = "display:flex;gap:10px;margin-top:6px;font-family:'Cormorant Garamond',serif;font-size:0.78rem;color:var(--light-text);";
+                        if (rx.heart) counts.innerHTML += '<span>\u2764\ufe0f ' + rx.heart + '</span>';
+                        if (rx.laugh) counts.innerHTML += '<span>\ud83d\ude02 ' + rx.laugh + '</span>';
+                        if (rx.thumbs) counts.innerHTML += '<span>\ud83d\udc4d ' + rx.thumbs + '</span>';
+                        if (cmTotal) counts.innerHTML += '<span>\ud83d\udcac ' + cmTotal + '</span>';
+                        info.appendChild(counts);
+                    }
+
                     card.appendChild(img);
                     card.appendChild(info);
 
@@ -8342,9 +8346,236 @@
             }
         }
 
+        // The 3 supported reaction emojis. Keep keys short so they serialize
+        // cleanly in the DB, and map to the actual emoji characters only in
+        // the UI layer.
+        const MOMENT_REACTIONS = [
+            { key: 'heart', char: '\u2764\ufe0f', label: 'Heart' },
+            { key: 'laugh', char: '\ud83d\ude02', label: 'Laugh' },
+            { key: 'thumbs', char: '\ud83d\udc4d', label: 'Thumbs up' },
+        ];
+
+        async function toggleMomentReaction(momentId, emojiKey) {
+            if (!currentUser) {
+                showToast('Set up your profile first');
+                return null;
+            }
+            try {
+                const resp = await fetch(API_URL + '/api/moments/' + momentId + '/react', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id, emoji: emojiKey })
+                });
+                if (!resp.ok) throw new Error('failed');
+                return resp.json();
+            } catch(e) {
+                showToast('Could not save reaction');
+                return null;
+            }
+        }
+
+        async function loadMomentComments(momentId) {
+            try {
+                const resp = await fetch(API_URL + '/api/moments/' + momentId + '/comments');
+                if (!resp.ok) return [];
+                return resp.json();
+            } catch(e) { return []; }
+        }
+
+        async function postMomentComment(momentId, text) {
+            if (!currentUser) {
+                showToast('Set up your profile first');
+                return false;
+            }
+            const trimmed = (text || '').trim();
+            if (!trimmed) return false;
+            if (trimmed.length > 300) {
+                showToast('Keep it under 300 characters');
+                return false;
+            }
+            try {
+                const resp = await fetch(API_URL + '/api/moments/' + momentId + '/comments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentUser.id,
+                        name: currentUser.display_name || currentUser.first_name || 'A G4 sister',
+                        text: trimmed
+                    })
+                });
+                if (!resp.ok) throw new Error('failed');
+                return true;
+            } catch(e) {
+                showToast('Could not post comment');
+                return false;
+            }
+        }
+
+        async function deleteMomentComment(momentId, commentId) {
+            if (!currentUser) return false;
+            try {
+                const resp = await fetch(API_URL + '/api/moments/' + momentId + '/comments/' + commentId, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: currentUser.id })
+                });
+                return resp.ok;
+            } catch(e) { return false; }
+        }
+
+        // Build the reaction bar + comments section inside the moment overlay.
+        // Shared between the moments tab overlay and the home slideshow overlay.
+        function buildMomentInteractionBlock(moment) {
+            const wrap = document.createElement('div');
+            wrap.className = 'moment-overlay-interactions';
+            wrap.style.cssText = 'width:100%;max-width:92vw;margin:14px auto 0;padding:12px 16px;background:rgba(255,255,255,0.95);border-radius:14px;box-sizing:border-box;';
+
+            // Reaction bar
+            const reactionBar = document.createElement('div');
+            reactionBar.style.cssText = 'display:flex;gap:10px;justify-content:center;margin-bottom:12px;flex-wrap:wrap;';
+            const counts = moment.reactions || {};
+            const mine = moment.my_reactions || {};
+            MOMENT_REACTIONS.forEach(r => {
+                const btn = document.createElement('button');
+                const isActive = !!mine[r.key];
+                btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:20px;border:1.5px solid ' + (isActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)') + ';background:' + (isActive ? 'rgba(201,144,138,0.10)' : 'white') + ';color:var(--dark-text);font-family:Cormorant Garamond,serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:var(--transition);min-height:38px;';
+                btn.setAttribute('aria-label', r.label);
+                btn.innerHTML = '<span style="font-size:1.1rem;">' + r.char + '</span><span data-count>' + (counts[r.key] || 0) + '</span>';
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    const result = await toggleMomentReaction(moment.id, r.key);
+                    if (!result) return;
+                    const countEl = btn.querySelector('[data-count]');
+                    let c = parseInt(countEl.textContent || '0', 10);
+                    if (result.reacted) {
+                        c += 1;
+                        btn.style.background = 'rgba(201,144,138,0.10)';
+                        btn.style.borderColor = 'var(--accent)';
+                        // Update the moment object so a later re-render is consistent
+                        if (!moment.reactions) moment.reactions = {};
+                        moment.reactions[r.key] = c;
+                        if (!moment.my_reactions) moment.my_reactions = {};
+                        moment.my_reactions[r.key] = 1;
+                    } else {
+                        c = Math.max(0, c - 1);
+                        btn.style.background = 'white';
+                        btn.style.borderColor = 'rgba(139,134,128,0.25)';
+                        if (moment.reactions) moment.reactions[r.key] = c;
+                        if (moment.my_reactions) delete moment.my_reactions[r.key];
+                    }
+                    countEl.textContent = String(c);
+                });
+                reactionBar.appendChild(btn);
+            });
+            wrap.appendChild(reactionBar);
+
+            // Comments section
+            const commentsSection = document.createElement('div');
+            commentsSection.style.cssText = 'border-top:1px dashed rgba(139,134,128,0.25);padding-top:10px;';
+            const commentsLabel = document.createElement('div');
+            commentsLabel.style.cssText = "font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;";
+            commentsLabel.textContent = 'Comments';
+            commentsSection.appendChild(commentsLabel);
+
+            const commentsList = document.createElement('div');
+            commentsList.style.cssText = 'max-height:220px;overflow-y:auto;margin-bottom:8px;';
+            commentsList.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;text-align:center;padding:6px 0;">Loading...</div>';
+            commentsSection.appendChild(commentsList);
+
+            const commentForm = document.createElement('div');
+            commentForm.style.cssText = 'display:flex;gap:6px;align-items:flex-start;';
+            const commentInput = document.createElement('textarea');
+            commentInput.placeholder = 'Add a comment...';
+            commentInput.maxLength = 300;
+            commentInput.style.cssText = 'flex:1;padding:8px 10px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:15px;color:var(--dark-text);background:white;resize:none;min-height:38px;max-height:80px;';
+            commentInput.rows = 1;
+            const commentSendBtn = document.createElement('button');
+            commentSendBtn.textContent = 'Post';
+            commentSendBtn.style.cssText = "padding:8px 14px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;cursor:pointer;flex-shrink:0;";
+            commentForm.appendChild(commentInput);
+            commentForm.appendChild(commentSendBtn);
+            commentsSection.appendChild(commentForm);
+            wrap.appendChild(commentsSection);
+
+            // Render helper for a single comment row
+            const renderComment = (c) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'padding:8px 0;border-bottom:1px solid rgba(139,134,128,0.12);';
+                row.dataset.commentId = c.id;
+                const header = document.createElement('div');
+                header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;';
+                const name = document.createElement('span');
+                name.style.cssText = "font-family:'Cormorant Garamond',serif;font-size:0.82rem;font-weight:600;color:var(--accent);";
+                name.textContent = c.name || 'A G4 sister';
+                const actions = document.createElement('span');
+                actions.style.cssText = 'display:flex;gap:8px;align-items:center;';
+                const when = document.createElement('span');
+                when.style.cssText = 'font-size:0.72rem;color:var(--light-text);';
+                when.textContent = c.created_at ? new Date(c.created_at + (/\sZ$/.test(c.created_at) ? '' : 'Z')).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                actions.appendChild(when);
+                if (currentUser && c.user_id === currentUser.id) {
+                    const del = document.createElement('button');
+                    del.textContent = 'Delete';
+                    del.style.cssText = 'background:none;border:none;color:var(--taupe);font-size:0.72rem;cursor:pointer;text-decoration:underline;';
+                    del.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (!confirm('Delete this comment?')) return;
+                        const ok = await deleteMomentComment(moment.id, c.id);
+                        if (ok) row.remove();
+                    });
+                    actions.appendChild(del);
+                }
+                header.appendChild(name);
+                header.appendChild(actions);
+                const textEl = document.createElement('div');
+                textEl.style.cssText = 'font-family:Georgia,serif;font-size:0.92rem;color:var(--dark-text);line-height:1.4;white-space:pre-wrap;';
+                textEl.textContent = c.text || '';
+                row.appendChild(header);
+                row.appendChild(textEl);
+                return row;
+            };
+
+            // Load comments async
+            loadMomentComments(moment.id).then(comments => {
+                commentsList.innerHTML = '';
+                if (!comments.length) {
+                    commentsList.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;text-align:center;padding:6px 0;">Be the first to say something.</div>';
+                    return;
+                }
+                comments.forEach(c => commentsList.appendChild(renderComment(c)));
+            });
+
+            commentSendBtn.addEventListener('click', async () => {
+                const text = commentInput.value;
+                if (!text.trim()) return;
+                commentSendBtn.disabled = true;
+                const ok = await postMomentComment(moment.id, text);
+                commentSendBtn.disabled = false;
+                if (ok) {
+                    commentInput.value = '';
+                    // Reload comments inline
+                    const fresh = await loadMomentComments(moment.id);
+                    commentsList.innerHTML = '';
+                    if (!fresh.length) {
+                        commentsList.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);font-style:italic;text-align:center;padding:6px 0;">Be the first to say something.</div>';
+                    } else {
+                        fresh.forEach(c => commentsList.appendChild(renderComment(c)));
+                    }
+                    showToast('Comment posted');
+                }
+            });
+
+            // Stop clicks on the block from propagating up to the overlay's
+            // close-on-background-click handler.
+            wrap.addEventListener('click', (e) => e.stopPropagation());
+            return wrap;
+        }
+
         function openMomentOverlay(moment) {
             const overlay = document.createElement('div');
             overlay.className = 'moment-overlay';
+            // Scroll if the content is taller than the viewport (phones)
+            overlay.style.overflowY = 'auto';
 
             const closeBtn = document.createElement('button');
             closeBtn.className = 'moment-overlay-close';
@@ -8371,6 +8602,9 @@
             if (moment.gift_tag) metaText += ' \u00b7 ' + moment.gift_tag;
             meta.textContent = metaText;
             overlay.appendChild(meta);
+
+            // Reactions + comments block
+            overlay.appendChild(buildMomentInteractionBlock(moment));
 
             // Delete button for own moments
             if (currentUser && moment.user_id === currentUser.id) {
@@ -9678,7 +9912,10 @@
 
         async function initSlideshow() {
             try {
-                const moments = await apiGet('/api/moments');
+                // Include user_id so the backend can tell us which reactions
+                // she's already given (so buttons render in the "active" state).
+                const uid = currentUser ? currentUser.id : 0;
+                const moments = await apiGet('/api/moments' + (uid ? '?user_id=' + uid : ''));
                 if (!moments || !Array.isArray(moments) || moments.length === 0) {
                     document.getElementById('post-retreat-slideshow').style.display = 'none';
                     return;
@@ -9689,6 +9926,17 @@
                     slideshowIndex = (slideshowIndex + 1) % slideshowMoments.length;
                     showSlide(slideshowIndex);
                 }, 4000);
+                // Make the slideshow image tappable — opens the full overlay
+                // with reactions and comments for whichever photo is showing.
+                const slideshowContainer = document.getElementById('post-retreat-slideshow');
+                if (slideshowContainer && !slideshowContainer.dataset.tapWired) {
+                    slideshowContainer.dataset.tapWired = '1';
+                    slideshowContainer.style.cursor = 'pointer';
+                    slideshowContainer.addEventListener('click', () => {
+                        const m = slideshowMoments[slideshowIndex];
+                        if (m) openMomentOverlay(m);
+                    });
+                }
             } catch (e) {
                 document.getElementById('post-retreat-slideshow').style.display = 'none';
             }

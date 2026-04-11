@@ -266,3 +266,26 @@ CREATE TABLE journal_activity (
   char_count INTEGER DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now'))
 );
+
+-- Reactions on moments photos (heart, laugh, thumbs). One of each
+-- emoji per user per moment (UNIQUE prevents spam).
+CREATE TABLE moment_reactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  moment_id INTEGER NOT NULL,
+  user_id INTEGER,
+  emoji TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(moment_id, user_id, emoji),
+  FOREIGN KEY (moment_id) REFERENCES moments(id)
+);
+
+-- Comments on moments photos. No threading — flat list.
+CREATE TABLE moment_comments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  moment_id INTEGER NOT NULL,
+  user_id INTEGER,
+  name TEXT DEFAULT 'A G4 sister',
+  text TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (moment_id) REFERENCES moments(id)
+);

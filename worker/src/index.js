@@ -524,7 +524,7 @@ export default {
 
       // DELETE /api/admin/reset - clear all test data
       if (path === '/api/admin/reset' && request.method === 'DELETE') {
-        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'testimony_hearts', 'testimonies', 'journal_activity', 'users'];
+        const tables = ['messages', 'moments', 'moment_reactions', 'moment_comments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'testimony_hearts', 'testimonies', 'journal_activity', 'users'];
         for (const t of tables) {
           try { await env.DB.prepare(`DELETE FROM ${t}`).run(); } catch(e) { /* table may not exist */ }
         }
@@ -844,8 +844,33 @@ export default {
         return new Response('Not found', { status: 404, headers: corsHeaders });
       }
 
+      // Helper: ensure reactions + comments tables exist for moments.
+      const ensureMomentInteractionTables = async () => {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS moment_reactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            moment_id INTEGER NOT NULL,
+            user_id INTEGER,
+            emoji TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(moment_id, user_id, emoji)
+          )`).run();
+        } catch(e) { /* exists */ }
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS moment_comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            moment_id INTEGER NOT NULL,
+            user_id INTEGER,
+            name TEXT DEFAULT 'A G4 sister',
+            text TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch(e) { /* exists */ }
+      };
+
       // GET /api/moments - get all moments
       if (path === '/api/moments' && request.method === 'GET') {
+        await ensureMomentInteractionTables();
         let results;
         try {
           ({ results } = await env.DB.prepare(
@@ -858,14 +883,121 @@ export default {
              FROM moments ORDER BY created_at DESC LIMIT 200`
           ).all());
         }
+        // Aggregate reaction counts per emoji per moment
+        const reactionCounts = {};
+        try {
+          const { results: rx } = await env.DB.prepare(
+            'SELECT moment_id, emoji, COUNT(*) as c FROM moment_reactions GROUP BY moment_id, emoji'
+          ).all();
+          (rx || []).forEach(r => {
+            if (!reactionCounts[r.moment_id]) reactionCounts[r.moment_id] = {};
+            reactionCounts[r.moment_id][r.emoji] = r.c;
+          });
+        } catch(e) {}
+        // Comment counts per moment
+        const commentCounts = {};
+        try {
+          const { results: cc } = await env.DB.prepare(
+            'SELECT moment_id, COUNT(*) as c FROM moment_comments GROUP BY moment_id'
+          ).all();
+          (cc || []).forEach(r => { commentCounts[r.moment_id] = r.c; });
+        } catch(e) {}
+        // Which emojis the requesting user has already tapped, per moment
+        const myReactions = {};
+        const requesterId = parseInt(url.searchParams.get('user_id') || '0', 10);
+        if (requesterId) {
+          try {
+            const { results: mine } = await env.DB.prepare(
+              'SELECT moment_id, emoji FROM moment_reactions WHERE user_id = ?'
+            ).bind(requesterId).all();
+            (mine || []).forEach(r => {
+              if (!myReactions[r.moment_id]) myReactions[r.moment_id] = {};
+              myReactions[r.moment_id][r.emoji] = 1;
+            });
+          } catch(e) {}
+        }
         // For R2 photos, provide image URL instead of empty photo_data
         const baseUrl = new URL(request.url).origin;
         const withUrls = results.map(m => ({
           ...m,
           photo_data: m.photo_data || (m.r2_key ? baseUrl + '/api/moments/' + m.id + '/image' : ''),
-          image_url: baseUrl + '/api/moments/' + m.id + '/image'
+          image_url: baseUrl + '/api/moments/' + m.id + '/image',
+          reactions: reactionCounts[m.id] || {},
+          comment_count: commentCounts[m.id] || 0,
+          my_reactions: myReactions[m.id] || {}
         }));
         return json(withUrls, corsHeaders);
+      }
+
+      // POST /api/moments/:id/react - toggle a reaction emoji on a moment
+      const momentReactMatch = path.match(/^\/api\/moments\/(\d+)\/react$/);
+      if (momentReactMatch && request.method === 'POST') {
+        await ensureMomentInteractionTables();
+        const momentId = parseInt(momentReactMatch[1]);
+        const { user_id, emoji } = await request.json();
+        if (!user_id || !emoji) return json({ error: 'user_id and emoji required' }, corsHeaders, 400);
+        // Whitelist to the 3 supported emojis so the client can't stuff arbitrary data
+        const allowed = ['heart', 'laugh', 'thumbs'];
+        if (allowed.indexOf(emoji) === -1) return json({ error: 'unknown emoji' }, corsHeaders, 400);
+        const existing = await env.DB.prepare(
+          'SELECT id FROM moment_reactions WHERE moment_id = ? AND user_id = ? AND emoji = ?'
+        ).bind(momentId, parseInt(user_id), emoji).first();
+        if (existing) {
+          await env.DB.prepare('DELETE FROM moment_reactions WHERE id = ?').bind(existing.id).run();
+          return json({ reacted: false }, corsHeaders);
+        }
+        await env.DB.prepare(
+          'INSERT INTO moment_reactions (moment_id, user_id, emoji) VALUES (?, ?, ?)'
+        ).bind(momentId, parseInt(user_id), emoji).run();
+        return json({ reacted: true }, corsHeaders);
+      }
+
+      // GET /api/moments/:id/comments - list comments for a moment
+      const momentCommentsGetMatch = path.match(/^\/api\/moments\/(\d+)\/comments$/);
+      if (momentCommentsGetMatch && request.method === 'GET') {
+        await ensureMomentInteractionTables();
+        const momentId = parseInt(momentCommentsGetMatch[1]);
+        const { results } = await env.DB.prepare(
+          'SELECT id, user_id, name, text, created_at FROM moment_comments WHERE moment_id = ? ORDER BY created_at ASC'
+        ).bind(momentId).all();
+        return json(results || [], corsHeaders);
+      }
+
+      // POST /api/moments/:id/comments - add a comment
+      if (momentCommentsGetMatch && request.method === 'POST') {
+        await ensureMomentInteractionTables();
+        const momentId = parseInt(momentCommentsGetMatch[1]);
+        const body = await request.json();
+        const text = (body.text || '').trim();
+        if (!text) return json({ error: 'text required' }, corsHeaders, 400);
+        if (text.length > 300) return json({ error: 'comment too long' }, corsHeaders, 400);
+        await env.DB.prepare(
+          'INSERT INTO moment_comments (moment_id, user_id, name, text) VALUES (?, ?, ?, ?)'
+        ).bind(
+          momentId,
+          body.user_id ? parseInt(body.user_id) : null,
+          (body.name || 'A G4 sister').slice(0, 80),
+          text
+        ).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/moments/:moment_id/comments/:comment_id - delete a comment
+      // Body: { user_id } — must be the author OR admin (-1)
+      const momentCommentDeleteMatch = path.match(/^\/api\/moments\/(\d+)\/comments\/(\d+)$/);
+      if (momentCommentDeleteMatch && request.method === 'DELETE') {
+        await ensureMomentInteractionTables();
+        const commentId = parseInt(momentCommentDeleteMatch[2]);
+        const body = await request.json().catch(() => ({}));
+        const requesterId = parseInt(body.user_id || 0);
+        const row = await env.DB.prepare('SELECT user_id FROM moment_comments WHERE id = ?').bind(commentId).first();
+        if (!row) return json({ error: 'not found' }, corsHeaders, 404);
+        // Author or admin (-1) can delete
+        if (requesterId !== -1 && row.user_id !== requesterId) {
+          return json({ error: 'not allowed' }, corsHeaders, 403);
+        }
+        await env.DB.prepare('DELETE FROM moment_comments WHERE id = ?').bind(commentId).run();
+        return json({ success: true }, corsHeaders);
       }
 
       // POST /api/moments - upload a moment (save to R2)

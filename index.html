@@ -9500,6 +9500,21 @@
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
+        // Escape hatch: ?resetfeedback=1 clears the "already sent" flag so
+        // she can re-submit if a previous save silently failed. Intended
+        // primarily for testing / recovering a lost submission.
+        (function checkFeedbackResetParam() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('resetfeedback') === '1') {
+                    localStorage.removeItem('g4feedback_sent');
+                    // Clean the query string so a refresh doesn't re-reset
+                    const clean = window.location.pathname + window.location.hash;
+                    history.replaceState(null, '', clean);
+                }
+            } catch(e) {}
+        })();
+
         // Deep link support: if the URL hash is #survey or #feedback, jump to
         // the feedback form automatically so email CTAs can link straight in.
         function handleSurveyDeepLink() {
@@ -9872,9 +9887,17 @@
                 };
 
                 try {
-                    await apiPost('/api/feedback', feedbackData);
+                    const result = await apiPost('/api/feedback', feedbackData);
+                    if (result && result.error) {
+                        throw new Error(result.error);
+                    }
                 } catch (e) {
-                    // Save locally even if API fails
+                    // Do NOT mark as sent. Tell her clearly and let her retry.
+                    console.error('Feedback save failed:', e);
+                    showToast('Could not send your feedback: ' + (e && e.message ? e.message : 'please try again'));
+                    btn.disabled = false;
+                    btn.textContent = 'Send Feedback';
+                    return;
                 }
 
                 localStorage.setItem('g4feedback_sent', '1');

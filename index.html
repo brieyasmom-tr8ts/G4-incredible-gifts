@@ -3407,6 +3407,9 @@
                         </div>
                     </div>
 
+                    <!-- Quick action buttons — controlled by admin home_* toggles -->
+                    <div id="post-retreat-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 16px;"></div>
+
                     <!-- Moments Slideshow -->
                     <div id="post-retreat-slideshow" style="margin:16px;border-radius:14px;overflow:hidden;position:relative;aspect-ratio:4/3;background:var(--warm-grey);box-shadow:var(--shadow-md);">
                         <img id="slideshow-img" style="width:100%;height:100%;object-fit:cover;transition:opacity 0.6s ease;" alt="Retreat moment">
@@ -8922,9 +8925,11 @@
                     btn.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         const data = JSON.parse(btn.dataset.heart);
-                        await sendCelebrationHeart(data);
-                        btn.innerHTML = '\u2764\ufe0f Sent';
-                        btn.disabled = true;
+                        const result = await sendCelebrationHeart(data);
+                        // On success or duplicate, refresh the card so the row
+                        // flips to the "Sent" chip state. Only bail on true errors.
+                        if (result === false) return;
+                        loadCelebrationsHomeCard();
                     });
                 });
             } catch (e) {
@@ -8951,6 +8956,17 @@
                 is_today: isToday
             }).replace(/"/g, '&quot;');
             const bg = isToday ? 'background:linear-gradient(135deg,rgba(201,144,138,0.10),rgba(212,165,154,0.06));' : '';
+            // If she's already celebrated this one, show a soft "Sent ✓"
+            // chip instead of the action buttons. One celebration per sister
+            // per year (per occasion_date).
+            const actionsHtml = item.already_sent
+                ? `<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(138,158,122,0.10);color:var(--sage);border:1px solid rgba(138,158,122,0.25);border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.82rem;font-weight:600;white-space:nowrap;">
+                        <span>\u2713</span><span>Sent</span>
+                    </div>`
+                : `<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+                        <button data-heart-btn data-heart="${data}" style="padding:6px 12px;background:white;color:var(--accent);border:1.5px solid var(--accent);border-radius:8px;font-size:0.78rem;font-family:'Cormorant Garamond',serif;font-weight:600;cursor:pointer;">\u2764\ufe0f Heart</button>
+                        <button data-celebrate-btn data-celebrate="${data}" style="padding:6px 12px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:0.78rem;font-family:'Cormorant Garamond',serif;font-weight:600;cursor:pointer;">Add note</button>
+                    </div>`;
             return `
                 <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-top:1px solid rgba(139,134,128,0.08);${bg}">
                     ${photo}
@@ -8958,10 +8974,7 @@
                         <div style="font-family:'Playfair Display',serif;font-size:0.98rem;font-weight:700;color:var(--dark-text);">${esc(fullName)} ${cakeIcon}</div>
                         <div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:${isToday ? 'var(--accent)' : 'var(--light-text)'};font-style:italic;">${timeLabel}</div>
                     </div>
-                    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-                        <button data-heart-btn data-heart="${data}" style="padding:6px 12px;background:white;color:var(--accent);border:1.5px solid var(--accent);border-radius:8px;font-size:0.78rem;font-family:'Cormorant Garamond',serif;font-weight:600;cursor:pointer;">\u2764\ufe0f Heart</button>
-                        <button data-celebrate-btn data-celebrate="${data}" style="padding:6px 12px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:0.78rem;font-family:'Cormorant Garamond',serif;font-weight:600;cursor:pointer;">Add note</button>
-                    </div>
+                    ${actionsHtml}
                 </div>
             `;
         }
@@ -8986,6 +8999,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                // 409 = server rejected as duplicate. Treat gracefully: tell
+                // her she already celebrated this one, don't show an error.
+                if (resp.status === 409) {
+                    showToast('You already celebrated this one \u2713');
+                    return 'already_sent';
+                }
                 if (!resp.ok) throw new Error('send failed');
                 showToast('Sent with love \u2764\ufe0f');
                 return true;
@@ -9420,6 +9439,9 @@
                 initCelebrationScrapbookModal();
                 loadCelebrationsHomeCard();
                 loadMyCelebrationStatus();
+                // Quick-action buttons on post-retreat home, controlled by the
+                // same home_* admin toggles as the pre-retreat dashboard
+                renderHomeButtonsInto('post-retreat-buttons');
                 // Honor ?/#survey URL deep links from email CTAs
                 handleSurveyDeepLink();
 
@@ -9967,6 +9989,43 @@
             }
         })();
 
+        // Module-level constants so both the pre-retreat dashboard AND the
+        // post-retreat home can render the same set of admin-toggled buttons.
+        const HOME_BUTTONS_ALL = [
+            { key: 'home_moments', action: "switchToTab('moments')", label: '<span style="color:var(--blush);">Share</span> a Moment' },
+            { key: 'home_uplift', action: "switchToTab('uplift')", label: '<span style="color:var(--sage);">Send</span> Encouragement' },
+            { key: 'home_gratitude', action: "switchToTab('gratitude')", label: '<span style="color:var(--sage);">Gratitude</span> Wall' },
+            { key: 'home_photobooth', action: "switchToTab('photobooth')", label: '<span style="color:var(--blush);">Photo</span> Booth' },
+            { key: 'home_polls', action: "switchToTab('polls')", label: '<span style="color:var(--blush);">Polls</span> &amp; WYR' },
+            { key: 'home_sendlove', action: "switchToTab('sendlove')", label: '<span style="color:var(--sage);">Love for</span> Marnie' },
+            { key: 'home_journal', action: "switchToTab('journal')", label: '<span style="color:var(--sage);">My</span> Journal' },
+            { key: 'home_hunt', action: "switchToTab('hunt')", label: '<span style="color:var(--blush);">Scavenger</span> Hunt' },
+            { key: 'home_packing', action: "showPackingModal({manual:true})", label: '<span style="color:var(--blush);">Packing</span> Points' },
+            { key: 'home_connect', action: "switchToTab('connect')", label: '<span style="color:var(--sage);">Connect</span> Directory' },
+            { key: 'home_schedule', action: "switchToTab('schedule')", label: '<span style="color:var(--blush);">View</span> Schedule' },
+            { key: 'home_topics', action: "switchToTab('topics')", label: '<span style="color:var(--blush);">Suggest</span> a Theme' },
+            { key: 'home_stories', action: "switchToTab('stories')", label: '<span style="color:var(--sage);">Read</span> Stories' },
+        ];
+        const DEFAULT_HOME_BUTTONS = ['home_moments','home_uplift','home_gratitude','home_photobooth','home_polls','home_sendlove'];
+
+        function renderHomeButtonsInto(containerId) {
+            const btnContainer = document.getElementById(containerId);
+            if (!btnContainer) return;
+            const btnStyle = 'padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;';
+            const s = gameSettings || {};
+            const visible = HOME_BUTTONS_ALL.filter(b => {
+                if (s[b.key] === '1') return true;
+                if (s[b.key] === '0') return false;
+                return DEFAULT_HOME_BUTTONS.indexOf(b.key) !== -1;
+            });
+            btnContainer.innerHTML = visible
+                .map(b => '<button onclick="' + b.action + '" style="' + btnStyle + '">' + b.label + '</button>')
+                .join('');
+            // Hide the container entirely if nothing's visible so we don't
+            // leave an empty grid on the page.
+            btnContainer.style.display = visible.length ? 'grid' : 'none';
+        }
+
         async function loadDashboard() {
             const dash = document.getElementById('retreat-dashboard');
             if (!dash) return;
@@ -9981,40 +10040,7 @@
                 } catch(e) {}
             }
 
-            // Build home buttons from nav settings
-            const btnStyle = 'padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;';
-            const HOME_BUTTONS = [
-                { key: 'home_moments', action: "switchToTab('moments')", label: '<span style="color:var(--blush);">Share</span> a Moment' },
-                { key: 'home_uplift', action: "switchToTab('uplift')", label: '<span style="color:var(--sage);">Send</span> Encouragement' },
-                { key: 'home_gratitude', action: "switchToTab('gratitude')", label: '<span style="color:var(--sage);">Gratitude</span> Wall' },
-                { key: 'home_photobooth', action: "switchToTab('photobooth')", label: '<span style="color:var(--blush);">Photo</span> Booth' },
-                { key: 'home_polls', action: "switchToTab('polls')", label: '<span style="color:var(--blush);">Polls</span> &amp; WYR' },
-                { key: 'home_sendlove', action: "switchToTab('sendlove')", label: '<span style="color:var(--sage);">Love for</span> Marnie' },
-                { key: 'home_journal', action: "switchToTab('journal')", label: '<span style="color:var(--sage);">My</span> Journal' },
-                { key: 'home_hunt', action: "switchToTab('hunt')", label: '<span style="color:var(--blush);">Scavenger</span> Hunt' },
-                { key: 'home_packing', action: "showPackingModal({manual:true})", label: '<span style="color:var(--blush);">Packing</span> Points' },
-                { key: 'home_connect', action: "switchToTab('connect')", label: '<span style="color:var(--sage);">Connect</span> Directory' },
-                { key: 'home_schedule', action: "switchToTab('schedule')", label: '<span style="color:var(--blush);">View</span> Schedule' },
-                { key: 'home_topics', action: "switchToTab('topics')", label: '<span style="color:var(--blush);">Suggest</span> a Theme' },
-                { key: 'home_stories', action: "switchToTab('stories')", label: '<span style="color:var(--sage);">Read</span> Stories' },
-            ];
-            const btnContainer = document.getElementById('dashboard-buttons');
-            if (btnContainer) {
-                const s = gameSettings || {};
-                // Default set: buttons that show when the admin has not set an
-                // explicit preference. Any home_* key explicitly set to '1'
-                // always shows; any explicitly set to '0' always hides; keys
-                // with no value fall back to this default set.
-                const DEFAULT_HOME_BUTTONS = ['home_moments','home_uplift','home_gratitude','home_photobooth','home_polls','home_sendlove'];
-                const visible = HOME_BUTTONS.filter(b => {
-                    if (s[b.key] === '1') return true;
-                    if (s[b.key] === '0') return false;
-                    return DEFAULT_HOME_BUTTONS.indexOf(b.key) !== -1;
-                });
-                btnContainer.innerHTML = visible
-                    .map(b => '<button onclick="' + b.action + '" style="' + btnStyle + '">' + b.label + '</button>')
-                    .join('');
-            }
+            renderHomeButtonsInto('dashboard-buttons');
 
             // Date line
             const dateEl = document.getElementById('dashboard-date');

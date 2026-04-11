@@ -1857,6 +1857,20 @@ export default {
           if (u.show_anniversary) pushIfWithinWindow(u, 'anniversary', u.anniversary);
         }
         upcoming.sort((a, b) => a.days_away - b.days_away);
+
+        // Flag each upcoming celebration the requester has already sent to,
+        // so the client can show "Sent" instead of the action buttons.
+        if (requesterId && upcoming.length) {
+          const { results: sent } = await env.DB.prepare(
+            `SELECT recipient_user_id, occasion_date FROM celebration_messages
+             WHERE sender_user_id = ?`
+          ).bind(requesterId).all();
+          const sentSet = new Set((sent || []).map(s => s.recipient_user_id + '|' + s.occasion_date));
+          upcoming.forEach(u => {
+            u.already_sent = sentSet.has(u.user_id + '|' + u.occasion_date) ? 1 : 0;
+          });
+        }
+
         return json(upcoming, corsHeaders);
       }
 
@@ -1872,6 +1886,25 @@ export default {
         if (body.occasion !== 'birthday' && body.occasion !== 'anniversary') {
           return json({ error: 'Invalid occasion' }, corsHeaders, 400);
         }
+
+        // Dedupe: one heart/note per sender per recipient per occasion_date.
+        // A woman should only be able to celebrate each sister's birthday /
+        // anniversary once per year. Subsequent attempts are rejected.
+        if (body.sender_user_id) {
+          const existing = await env.DB.prepare(
+            `SELECT id FROM celebration_messages
+             WHERE sender_user_id = ? AND recipient_user_id = ? AND occasion_date = ?
+             LIMIT 1`
+          ).bind(
+            parseInt(body.sender_user_id),
+            parseInt(body.recipient_user_id),
+            body.occasion_date
+          ).first();
+          if (existing) {
+            return json({ error: 'already_sent', message: 'You\'ve already celebrated this one' }, corsHeaders, 409);
+          }
+        }
+
         await env.DB.prepare(
           `INSERT INTO celebration_messages
             (recipient_user_id, sender_user_id, sender_name, sender_anonymous, occasion, occasion_date, message_text, has_heart)

@@ -6544,11 +6544,9 @@
             let html = '<button class="nav-btn" data-tab="home"><span class="nav-icon">\ud83c\udfe0</span><span>Home</span></button>';
 
             // Force-show the Survey nav button after the retreat has ended until feedback is submitted
-            const postRetreat = new Date() >= new Date('2026-04-11T12:00:00-04:00');
-            const forceSurvey = postRetreat && !localStorage.getItem('g4feedback_sent');
-
             // Defaults: show these nav items when the admin has not set an
             // explicit preference. Mirrors the home button default logic.
+            // Admin toggles are authoritative — no more force-show overrides.
             const DEFAULT_NAV_ON = ['nav_moments','nav_connect','nav_journey','nav_journal','nav_photobooth','nav_gratitude','nav_sendlove'];
             const navKeyEnabled = (key) => {
                 if (navSettings[key] === '1') return true;
@@ -6557,7 +6555,7 @@
             };
 
             ALL_NAV_ITEMS.forEach(item => {
-                const enabled = navKeyEnabled(item.key) || (item.key === 'nav_survey' && forceSurvey);
+                const enabled = navKeyEnabled(item.key);
                 if (!enabled) return;
                 const actionAttr = item.action ? `data-action="${item.action}"` : '';
                 const badgeHtml = item.badge ? `<span class="nav-badge" id="${item.badge}" style="display:none;"></span>` : '';
@@ -10119,31 +10117,43 @@
         // marked the flag as sent but the row never hit the database. If the
         // server has no record for this user, we clear the flag so the form
         // reappears on the next check.
+        // Bidirectional reconcile: sync the localStorage feedback flag with
+        // what the server actually has. Runs whether or not the local flag
+        // is set, so submissions sync across devices.
         async function reconcileFeedbackSentFlag() {
             if (!currentUser || !currentUser.id) return;
-            if (!localStorage.getItem('g4feedback_sent')) return;
             try {
-                // Send both user_id AND name so the server finds her row
-                // even if user_id drifted (re-signup, legacy null user_id).
                 const displayName = currentUser.display_name || currentUser.first_name || '';
                 const qs = 'user_id=' + encodeURIComponent(currentUser.id) +
                            '&name=' + encodeURIComponent(displayName);
                 const resp = await fetch(API_URL + '/api/feedback/mine?' + qs);
                 if (!resp.ok) return; // fail open
                 const data = await resp.json();
-                // Only clear the flag on an EXPLICIT "not submitted" response.
-                // Any error field (e.g. lookup_failed) means we can't verify,
-                // so trust the client and leave the form hidden.
-                if (data && data.submitted === false && !data.error) {
+                if (!data || data.error) return; // lookup failed, trust local state
+
+                const localSays = !!localStorage.getItem('g4feedback_sent');
+                const serverSays = !!data.submitted;
+
+                if (serverSays && !localSays) {
+                    // She submitted on another device or the flag got cleared
+                    // locally somehow. Mirror the server state so the form
+                    // hides here too.
+                    localStorage.setItem('g4feedback_sent', '1');
+                    const wrap = document.getElementById('feedback-form-wrap');
+                    if (wrap) wrap.style.display = 'none';
+                    if (typeof updateFeedbackUIState === 'function') updateFeedbackUIState();
+                    if (typeof buildNav === 'function' && navBuilt) buildNav();
+                } else if (!serverSays && localSays) {
+                    // Server has no record (either she hit the old silent
+                    // bug, or admin deleted her row, or she re-submitted on
+                    // another device then deleted). Clear the flag so she
+                    // can re-submit here.
                     localStorage.removeItem('g4feedback_sent');
                     const wrap = document.getElementById('feedback-form-wrap');
                     if (wrap) wrap.style.display = '';
                     if (typeof updateFeedbackUIState === 'function') updateFeedbackUIState();
-                    // Re-run init so the star click handlers and submit
-                    // button are actually wired up. Without this, the form
-                    // would be visible but unresponsive because the original
-                    // init call early-returned before wiring.
                     if (typeof initFeedbackForm === 'function') initFeedbackForm();
+                    if (typeof buildNav === 'function' && navBuilt) buildNav();
                 }
             } catch(e) { /* fail open */ }
         }

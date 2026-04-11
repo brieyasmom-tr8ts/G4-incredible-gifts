@@ -613,6 +613,7 @@
             <button class="nav-tab" data-section="moments"><span class="nav-icon">📸</span> Moments <span class="badge" id="count-moments">0</span></button>
             <button class="nav-tab" data-section="prayers"><span class="nav-icon">🙏</span> Prayer Wall <span class="badge" id="count-prayers">0</span></button>
             <button class="nav-tab" data-section="feedback"><span class="nav-icon">📝</span> Feedback <span class="badge" id="count-feedback">0</span></button>
+            <button class="nav-tab" data-section="topics"><span class="nav-icon">💡</span> Theme Ideas <span class="badge" id="count-topics">0</span></button>
             <button class="nav-tab" data-section="polls"><span class="nav-icon">💬</span> Polls/Q&A <span class="badge" id="count-polls">0</span></button>
             <button class="nav-tab" data-section="games"><span class="nav-icon">🎮</span> Games</button>
             <button class="nav-tab" data-section="quiz"><span class="nav-icon">🧠</span> Quiz</button>
@@ -1031,6 +1032,19 @@
                 <p>No feedback found</p>
             </div>
         </div>
+
+        <!-- Theme Suggestions -->
+        <div class="section" id="section-topics">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;">
+                <div style="font-size:0.85rem;color:#777;">Topic / theme ideas submitted by women for next year. Star the ones you love.</div>
+                <button class="btn btn-primary" id="btn-download-topics-csv" onclick="downloadTopicsCsv()" style="display:none;">&#x2b07;&#xfe0f; Download CSV</button>
+            </div>
+            <div id="topics-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+            <div class="empty-state" id="empty-topics" style="display:none;">
+                <div class="icon">&#128161;</div>
+                <p>No theme suggestions yet</p>
+            </div>
+        </div>
     </div>
     </div>
 </div>
@@ -1133,6 +1147,7 @@ const SECTION_TITLES = {
     stats: 'Stats', users: 'Users', churches: 'Churches', news: 'News / Reminders',
     navmenu: 'Nav Menu', homebuttons: 'Home Buttons', videos: 'Videos',
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
+    topics: 'Theme Suggestions',
     polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme'
 };
 
@@ -1192,6 +1207,7 @@ async function refreshAll() {
         loadMoments(),
         loadPrayers(),
         loadFeedback(),
+        loadTopics(),
         loadGameSettings(),
         loadFunFacts(),
         loadPackingScores(),
@@ -1956,6 +1972,97 @@ function downloadFeedbackCsv() {
     showToast(`Downloaded ${feedbackCache.length} responses`);
 }
 
+// --- Theme Suggestions ---
+let topicsCache = [];
+async function loadTopics() {
+    try {
+        const data = await apiFetch('/api/theme-suggestions');
+        const items = Array.isArray(data) ? data : (data.theme_suggestions || data.data || []);
+        topicsCache = items;
+        document.getElementById('count-topics').textContent = items.length;
+        const downloadBtn = document.getElementById('btn-download-topics-csv');
+        if (downloadBtn) downloadBtn.style.display = items.length ? '' : 'none';
+        const list = document.getElementById('topics-list');
+        const empty = document.getElementById('empty-topics');
+        if (!items.length) {
+            list.innerHTML = '';
+            empty.style.display = '';
+            return;
+        }
+        empty.style.display = 'none';
+        list.innerHTML = items.map(t => {
+            const name = esc(t.name || 'Anonymous');
+            const date = fmtDateTime(t.created_at);
+            const starred = !!t.admin_starred;
+            return `
+                <div style="background:#fff;border-radius:12px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,0.08);${starred ? 'border-left:4px solid #C9908A;' : ''}">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px;">
+                        <div>
+                            <strong style="font-size:0.95rem;">${name}</strong>
+                            <span style="font-size:0.75rem;color:#999;margin-left:8px;">${date}</span>
+                        </div>
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <button class="btn ${starred ? 'btn-primary' : 'btn-outline'}" style="padding:2px 10px;font-size:0.75rem;" onclick="toggleStarTopic(${t.id}, ${starred ? 0 : 1})">${starred ? '\u2605 Starred' : '\u2606 Star'}</button>
+                            <button class="btn btn-danger-outline" style="padding:2px 10px;font-size:0.75rem;" onclick="deleteTopic(${t.id})">Delete</button>
+                        </div>
+                    </div>
+                    <div style="font-size:0.95rem;line-height:1.5;color:#333;white-space:pre-wrap;">${esc(t.suggestion)}</div>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.error('Topics:', e);
+        document.getElementById('topics-list').innerHTML = '';
+        document.getElementById('empty-topics').style.display = '';
+    }
+}
+
+async function toggleStarTopic(id, starred) {
+    try {
+        await apiFetch(`/api/theme-suggestions/${id}`, { method: 'PATCH', body: { admin_starred: starred } });
+        loadTopics();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function deleteTopic(id) {
+    showModal('Delete Suggestion', `Delete suggestion ID ${id}?`, async () => {
+        try {
+            await apiFetch(`/api/theme-suggestions/${id}`, { method: 'DELETE' });
+            showToast('Suggestion deleted');
+            loadTopics();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+function downloadTopicsCsv() {
+    if (!topicsCache.length) {
+        showToast('No suggestions to download');
+        return;
+    }
+    const escapeCsv = (val) => {
+        if (val == null) return '';
+        const s = String(val);
+        if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+    };
+    const cols = ['id', 'date', 'name', 'starred', 'suggestion'];
+    const rows = [cols.join(',')];
+    topicsCache.forEach(t => {
+        rows.push([t.id, t.created_at || '', t.name || '', t.admin_starred ? 'yes' : '', t.suggestion || ''].map(escapeCsv).join(','));
+    });
+    const csv = rows.join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `g4-theme-suggestions-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Downloaded ${topicsCache.length} suggestions`);
+}
+
 // --- Games ---
 let gameSettings = {};
 async function loadGameSettings() {
@@ -2566,7 +2673,8 @@ const NAV_ITEMS = [
     { key: 'nav_meme', label: 'Meme', icon: '&#x1f602;', desc: 'What Do You Meme? game' },
     { key: 'nav_quiz', label: 'Quiz', icon: '&#x1f9e0;', desc: 'Know Your Sisters daily quiz' },
     { key: 'nav_survey', label: 'Survey', icon: '&#x1f4dd;', desc: 'Retreat feedback form' },
-    { key: 'nav_secretsister', label: 'Secret Sister', icon: '&#x1f48c;', desc: 'Anonymous encouragement notes' }
+    { key: 'nav_secretsister', label: 'Secret Sister', icon: '&#x1f48c;', desc: 'Anonymous encouragement notes' },
+    { key: 'nav_topics', label: 'Suggest Theme', icon: '&#x1f4a1;', desc: 'Collect topic ideas for next year' }
 ];
 
 function renderNavToggles() {

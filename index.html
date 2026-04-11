@@ -3743,6 +3743,27 @@
                 <div id="continue-container"></div>
             </div>
 
+            <!-- THEME SUGGESTIONS TAB -->
+            <div id="topics-tab" class="tab-content">
+                <div style="text-align:center;padding:24px 20px 12px;">
+                    <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--dark-text);margin-bottom:6px;">Help Us Plan Next Year</div>
+                    <div style="font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--light-text);font-style:italic;line-height:1.5;padding:0 12px;">What topic or theme would you love to see at next year's retreat? Your ideas shape what God does next.</div>
+                </div>
+
+                <div style="margin:16px;padding:20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);">
+                    <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Your idea</label>
+                    <textarea id="topic-suggestion-text" placeholder="A topic, theme, scripture, speaker style, anything God puts on your heart..." style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:8px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:100px;background:white;"></textarea>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:10px;">
+                        <div id="topic-suggestion-status" style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;font-style:italic;color:var(--sage);"></div>
+                        <button id="topic-suggestion-submit" style="padding:10px 20px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:600;cursor:pointer;white-space:nowrap;">Send to Brie</button>
+                    </div>
+                </div>
+
+                <div style="margin:0 16px;padding:14px 16px;background:rgba(138,158,122,0.06);border-radius:10px;border-left:3px solid var(--sage);">
+                    <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);font-style:italic;line-height:1.5;">Your suggestions go straight to the planning team. You can send as many as you want over the year. Every idea matters.</div>
+                </div>
+            </div>
+
             <!-- Quiz Tab -->
             <div id="quiz-tab" class="tab-content">
                 <div style="padding:8px 16px 24px;">
@@ -6035,7 +6056,8 @@
             { key: 'nav_meme', tab: 'meme', icon: '\ud83d\ude02', label: 'Meme', action: 'meme' },
             { key: 'nav_quiz', tab: 'quiz', icon: '\ud83e\udde0', label: 'Quiz', badge: 'badge-quiz' },
             { key: 'nav_survey', tab: 'home', icon: '\ud83d\udcdd', label: 'Survey', action: 'survey' },
-            { key: 'nav_secretsister', tab: 'home', icon: '\ud83d\udc8c', label: 'Secret Sister', action: 'secretsister' }
+            { key: 'nav_secretsister', tab: 'home', icon: '\ud83d\udc8c', label: 'Secret Sister', action: 'secretsister' },
+            { key: 'nav_topics', tab: 'topics', icon: '\ud83d\udca1', label: 'Suggest Theme' }
         ];
 
         let navSettings = {};
@@ -8350,6 +8372,7 @@
             if (tab === 'moments') { loadMoments(); markMomentsSeen(); }
             if (tab === 'hunt') loadHuntTab();
             if (tab === 'quiz') { loadQuizTab(); clearBadge('badge-quiz'); }
+            if (tab === 'topics') initTopicSuggestionForm();
         }
 
         document.getElementById('bottom-nav').addEventListener('click', (e) => {
@@ -8517,6 +8540,41 @@
             if (banner) banner.style.display = submitted ? 'none' : 'block';
             // buildNav auto-shows the Survey button post-retreat until submitted
             if (typeof buildNav === 'function' && navBuilt) buildNav();
+        }
+
+        // ===== Theme Suggestions (next year planning) =====
+        function initTopicSuggestionForm() {
+            const btn = document.getElementById('topic-suggestion-submit');
+            if (!btn || btn.dataset.wired) return;
+            btn.dataset.wired = '1';
+            const textarea = document.getElementById('topic-suggestion-text');
+            const status = document.getElementById('topic-suggestion-status');
+            btn.addEventListener('click', async () => {
+                const text = textarea.value.trim();
+                if (!text) {
+                    showToast('Write your idea first');
+                    return;
+                }
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+                try {
+                    await apiPost('/api/theme-suggestions', {
+                        user_id: currentUser ? currentUser.id : null,
+                        name: currentUser ? (currentUser.display_name || currentUser.first_name) : 'Anonymous',
+                        suggestion: text
+                    });
+                    textarea.value = '';
+                    status.textContent = 'Sent \u2713 Thank you, sister.';
+                    showToast('Thank you for sharing your heart \u2728');
+                    launchConfetti();
+                    setTimeout(() => { status.textContent = ''; }, 5000);
+                } catch (e) {
+                    showToast('Could not send: ' + (e.message || 'try again'));
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Send to Brie';
+                }
+            });
         }
 
         function initFeedbackForm() {

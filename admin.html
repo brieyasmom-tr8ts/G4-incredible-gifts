@@ -1022,6 +1022,9 @@
 
         <!-- Feedback -->
         <div class="section" id="section-feedback">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+                <button class="btn btn-primary" id="btn-download-feedback-csv" onclick="downloadFeedbackCsv()" style="display:none;">&#x2b07;&#xfe0f; Download CSV</button>
+            </div>
             <div id="feedback-list" style="display:flex;flex-direction:column;gap:16px;"></div>
             <div class="empty-state" id="empty-feedback" style="display:none;">
                 <div class="icon">&#128172;</div>
@@ -1769,7 +1772,7 @@ function renderRatingsBreakdown(ratingsJson) {
     if (!ratingsJson) return '';
     try {
         const r = JSON.parse(ratingsJson);
-        const labels = { overall: 'Overall', hotel: 'Hotel & Food', sessions: 'Sessions', worship: 'Worship', games: 'Games', party: 'Party Night', value: 'Value' };
+        const labels = { overall: 'Overall', hotel: 'Hotel & Food', worship: 'Worship', games: 'Games', party: 'Party Night', value: 'Value' };
         let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin:8px 0;">';
         for (const [key, label] of Object.entries(labels)) {
             if (r[key]) html += `<div style="font-size:0.85rem;"><strong>${label}:</strong> ${renderStars(r[key])}</div>`;
@@ -1779,11 +1782,55 @@ function renderRatingsBreakdown(ratingsJson) {
     } catch(e) { return ''; }
 }
 
+function renderSpeakers(speakersJson) {
+    if (!speakersJson) return '';
+    try {
+        const s = JSON.parse(speakersJson);
+        const order = ['mandy', 'jeanette', 'sandy', 'leigh'];
+        const labels = { mandy: 'Mandy', jeanette: 'Jeanette', sandy: 'Sandy', leigh: 'Leigh' };
+        let body = '';
+        for (const key of order) {
+            const sp = s[key];
+            if (!sp) continue;
+            const rating = parseInt(sp.rating) || 0;
+            const comment = sp.comment || '';
+            if (!rating && !comment) continue;
+            body += `<div style="margin:4px 0;font-size:0.85rem;"><strong>${labels[key]}:</strong> ${rating ? renderStars(rating) : '<em style="color:#aaa;">no rating</em>'}`;
+            if (comment) body += ` &mdash; <span style="color:#555;">${esc(comment)}</span>`;
+            body += '</div>';
+        }
+        if (!body) return '';
+        return '<div style="margin:10px 0;padding:10px 12px;background:rgba(201,144,138,0.05);border-radius:8px;"><div style="font-weight:600;font-size:0.82rem;margin-bottom:6px;color:#7a6f6a;text-transform:uppercase;letter-spacing:0.5px;">Teaching</div>' + body + '</div>';
+    } catch(e) { return ''; }
+}
+
+function renderAppFeedback(appJson) {
+    if (!appJson) return '';
+    try {
+        const a = JSON.parse(appJson);
+        const rows = [];
+        if (a.ease) rows.push(`<strong>Ease of use:</strong> ${renderStars(a.ease)}`);
+        if (a.fun) rows.push(`<strong>Fun:</strong> ${renderStars(a.fun)}`);
+        if (a.design) rows.push(`<strong>Design:</strong> ${renderStars(a.design)}`);
+        if (a.useful) rows.push(`<strong>Usefulness:</strong> ${renderStars(a.useful)}`);
+        if (a.connect) rows.push(`<strong>Connection:</strong> ${renderStars(a.connect)}`);
+        if (!rows.length && !a.comment) return '';
+        let body = '';
+        if (rows.length) body += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;font-size:0.85rem;">${rows.map(r => '<div>' + r + '</div>').join('')}</div>`;
+        if (a.comment) body += `<div style="margin-top:6px;font-size:0.85rem;"><strong>Comment:</strong> ${esc(a.comment)}</div>`;
+        return '<div style="margin:10px 0;padding:10px 12px;background:rgba(138,158,122,0.06);border-radius:8px;"><div style="font-weight:600;font-size:0.82rem;margin-bottom:6px;color:#7a6f6a;text-transform:uppercase;letter-spacing:0.5px;">The App</div>' + body + '</div>';
+    } catch(e) { return ''; }
+}
+
+let feedbackCache = [];
 async function loadFeedback() {
     try {
         const data = await apiFetch('/api/feedback');
         const items = Array.isArray(data) ? data : (data.feedback || data.data || []);
+        feedbackCache = items;
         document.getElementById('count-feedback').textContent = items.length;
+        const downloadBtn = document.getElementById('btn-download-feedback-csv');
+        if (downloadBtn) downloadBtn.style.display = items.length ? '' : 'none';
         const list = document.getElementById('feedback-list');
         const empty = document.getElementById('empty-feedback');
         if (!items.length) {
@@ -1806,6 +1853,12 @@ async function loadFeedback() {
 
             // Ratings breakdown
             if (f.ratings) html += renderRatingsBreakdown(f.ratings);
+
+            // Per-speaker (Teaching)
+            if (f.speakers) html += renderSpeakers(f.speakers);
+
+            // App feedback
+            if (f.app_feedback) html += renderAppFeedback(f.app_feedback);
 
             // Text fields
             if (f.liked_most) html += `<div style="margin:6px 0;font-size:0.9rem;"><strong>Liked most:</strong> ${esc(f.liked_most)}</div>`;
@@ -1841,6 +1894,66 @@ async function deleteFeedback(id) {
             loadFeedback();
         } catch (e) { showToast('Error: ' + e.message); }
     });
+}
+
+function downloadFeedbackCsv() {
+    if (!feedbackCache.length) {
+        showToast('No feedback to download');
+        return;
+    }
+    const cols = [
+        'id', 'date', 'name', 'overall_rating',
+        'rate_overall', 'rate_hotel', 'rate_worship', 'rate_games', 'rate_party', 'rate_value',
+        'mandy_rating', 'mandy_comment',
+        'jeanette_rating', 'jeanette_comment',
+        'sandy_rating', 'sandy_comment',
+        'leigh_rating', 'leigh_comment',
+        'app_ease', 'app_fun', 'app_design', 'app_useful', 'app_connect', 'app_comment',
+        'liked_most', 'liked_least', 'rating_comments', 'more_of',
+        'come_again', 'invite_friend', 'final_thoughts'
+    ];
+    const escapeCsv = (val) => {
+        if (val == null) return '';
+        const s = String(val);
+        if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+    };
+    const rows = [cols.join(',')];
+    feedbackCache.forEach(f => {
+        let ratings = {};
+        try { ratings = JSON.parse(f.ratings || '{}'); } catch(e) {}
+        let speakers = {};
+        try { speakers = JSON.parse(f.speakers || '{}'); } catch(e) {}
+        let app = {};
+        try { app = JSON.parse(f.app_feedback || '{}'); } catch(e) {}
+        const sp = (k) => (speakers[k] || {});
+        const row = [
+            f.id,
+            f.created_at || '',
+            f.name || '',
+            f.rating || '',
+            ratings.overall || '', ratings.hotel || '', ratings.worship || '', ratings.games || '', ratings.party || '', ratings.value || '',
+            sp('mandy').rating || '', sp('mandy').comment || '',
+            sp('jeanette').rating || '', sp('jeanette').comment || '',
+            sp('sandy').rating || '', sp('sandy').comment || '',
+            sp('leigh').rating || '', sp('leigh').comment || '',
+            app.ease || '', app.fun || '', app.design || '', app.useful || '', app.connect || '', app.comment || '',
+            f.liked_most || '', f.liked_least || '', f.rating_comments || '', f.more_of || '',
+            f.come_again || '', f.invite_friend || '', f.final_thoughts || ''
+        ].map(escapeCsv);
+        rows.push(row.join(','));
+    });
+    const csv = rows.join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `g4-feedback-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Downloaded ${feedbackCache.length} responses`);
 }
 
 // --- Games ---

@@ -1534,13 +1534,15 @@ export default {
           ['more_of', 'TEXT DEFAULT ""'],
           ['invite_friend', 'TEXT DEFAULT ""'],
           ['final_thoughts', 'TEXT DEFAULT ""'],
+          ['speakers', 'TEXT DEFAULT ""'],
+          ['app_feedback', 'TEXT DEFAULT ""'],
         ];
         for (const [col, type] of newCols) {
           try { await env.DB.prepare(`ALTER TABLE feedback ADD COLUMN ${col} ${type}`).run(); } catch(e) { /* exists */ }
         }
 
         await env.DB.prepare(
-          'INSERT INTO feedback (user_id, name, rating, favorite, improve, come_again, other, liked_most, liked_least, ratings, rating_comments, more_of, invite_friend, final_thoughts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          'INSERT INTO feedback (user_id, name, rating, favorite, improve, come_again, other, liked_most, liked_least, ratings, rating_comments, more_of, invite_friend, final_thoughts, speakers, app_feedback) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         ).bind(
           body.user_id || null,
           body.name || 'Anonymous',
@@ -1555,7 +1557,9 @@ export default {
           body.rating_comments || '',
           body.more_of || '',
           body.invite_friend || '',
-          body.final_thoughts || ''
+          body.final_thoughts || '',
+          body.speakers || '',
+          body.app_feedback || ''
         ).run();
 
         return json({ success: true }, corsHeaders);

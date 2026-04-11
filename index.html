@@ -6450,8 +6450,17 @@
             const postRetreat = new Date() >= new Date('2026-04-11T12:00:00-04:00');
             const forceSurvey = postRetreat && !localStorage.getItem('g4feedback_sent');
 
+            // Defaults: show these nav items when the admin has not set an
+            // explicit preference. Mirrors the home button default logic.
+            const DEFAULT_NAV_ON = ['nav_moments','nav_connect','nav_journey','nav_journal','nav_photobooth','nav_gratitude','nav_sendlove'];
+            const navKeyEnabled = (key) => {
+                if (navSettings[key] === '1') return true;
+                if (navSettings[key] === '0') return false;
+                return DEFAULT_NAV_ON.indexOf(key) !== -1;
+            };
+
             ALL_NAV_ITEMS.forEach(item => {
-                const enabled = navSettings[item.key] === '1' || (item.key === 'nav_survey' && forceSurvey);
+                const enabled = navKeyEnabled(item.key) || (item.key === 'nav_survey' && forceSurvey);
                 if (!enabled) return;
                 const actionAttr = item.action ? `data-action="${item.action}"` : '';
                 const badgeHtml = item.badge ? `<span class="nav-badge" id="${item.badge}" style="display:none;"></span>` : '';
@@ -9992,9 +10001,16 @@
             const btnContainer = document.getElementById('dashboard-buttons');
             if (btnContainer) {
                 const s = gameSettings || {};
-                // If no home_* keys set yet, show defaults
-                const hasHomeKeys = HOME_BUTTONS.some(b => s[b.key] !== undefined);
-                const visible = HOME_BUTTONS.filter(b => hasHomeKeys ? s[b.key] === '1' : ['home_moments','home_uplift','home_gratitude','home_photobooth','home_polls','home_sendlove'].includes(b.key));
+                // Default set: buttons that show when the admin has not set an
+                // explicit preference. Any home_* key explicitly set to '1'
+                // always shows; any explicitly set to '0' always hides; keys
+                // with no value fall back to this default set.
+                const DEFAULT_HOME_BUTTONS = ['home_moments','home_uplift','home_gratitude','home_photobooth','home_polls','home_sendlove'];
+                const visible = HOME_BUTTONS.filter(b => {
+                    if (s[b.key] === '1') return true;
+                    if (s[b.key] === '0') return false;
+                    return DEFAULT_HOME_BUTTONS.indexOf(b.key) !== -1;
+                });
                 btnContainer.innerHTML = visible
                     .map(b => '<button onclick="' + b.action + '" style="' + btnStyle + '">' + b.label + '</button>')
                     .join('');

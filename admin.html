@@ -2878,8 +2878,18 @@ function renderVisibilityToggles() {
         </div>
     `;
     html += FEATURE_ITEMS_DEDUPED.map(item => {
-        const navOn = item.nav_key ? gameSettings[item.nav_key] === '1' : false;
-        const homeOn = item.home_key ? gameSettings[item.home_key] === '1' : false;
+        // Mirror the frontend defaults: a key that's never been set still
+        // renders as on if it's in the default home set. Same for nav.
+        const DEFAULT_HOME_ON = ['home_moments','home_uplift','home_gratitude','home_photobooth','home_polls','home_sendlove'];
+        const DEFAULT_NAV_ON = ['nav_moments','nav_connect','nav_journey','nav_journal','nav_photobooth','nav_gratitude','nav_sendlove'];
+        const isOn = (key, defaultSet) => {
+            if (!key) return false;
+            if (gameSettings[key] === '1') return true;
+            if (gameSettings[key] === '0') return false;
+            return defaultSet.indexOf(key) !== -1;
+        };
+        const navOn = isOn(item.nav_key, DEFAULT_NAV_ON);
+        const homeOn = isOn(item.home_key, DEFAULT_HOME_ON);
         const hasAny = navOn || homeOn;
         const bg = hasAny ? 'rgba(138,158,122,0.06)' : 'rgba(200,185,176,0.04)';
         const border = hasAny ? 'rgba(138,158,122,0.25)' : 'rgba(200,185,176,0.2)';

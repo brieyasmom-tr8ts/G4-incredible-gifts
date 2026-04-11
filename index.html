@@ -5275,7 +5275,7 @@
             }
         ];
 
-        const giftsData = ['Eternal Life', 'Identity', 'Love', 'Peace', 'Joy', 'Freedom', 'Rest', 'Wisdom', 'Courage', 'Strength', 'Faith', 'Purpose'];
+        const giftsData = ['Eternal Life', 'Identity', 'Love', 'Peace', 'Joy', 'Freedom', 'Rest', 'Wisdom', 'Courage', 'Strength', 'Faith', 'Purpose', 'Holy Spirit', 'New Heart', 'Grace', 'Hope', 'Provision', 'Healing', 'Good Gifts', 'Comfort'];
         const giftOptions = ['I\'ve experienced this', 'I\'m walking in this', 'I want this', 'I\'m struggling here'];
 
         const weeks12 = [
@@ -5292,6 +5292,390 @@
             { week: 11, title: 'The Gift of Faith', question: 'What does it look like to trust God more?', action: 'Pray about one thing and watch God work.' },
             { week: 12, title: 'Living It Out', question: 'How has God changed my understanding of His gifts?', action: 'Share this journey with someone else.' }
         ];
+
+        // ===== 15-Week Devotions =====
+        // Each devotion has 4 personalized "letter from God" variants keyed off the user's
+        // My Journey response for that gift: struggling, want, walking, experienced.
+        const DEVOTIONS = [
+            {
+                week: 1,
+                gift: 'Peace',
+                gift_key: 'peace',
+                verse: { ref: 'John 14:27', text: `Peace I leave with you; My peace I give to you. Not as the world gives do I give to you. Let not your heart be troubled, neither let it be afraid.` },
+                letters: {
+                    struggling: `I see the tightness in your chest. The lists you can't stop running. The nights your mind won't turn off. I know. I'm not asking you to find peace. I'm asking you to let Me give it. The world's peace depends on things going right. Mine doesn't. Lay it down tonight. Just tonight. I'll hold tomorrow when it comes.`,
+                    want: `You're reaching. I see it. The good news is peace was never something you had to earn. I already gave it to you. It's waiting in the room with you right now. You don't have to chase it down the hall. Stop. Breathe. Name what you're afraid of and hand it to Me. That's how it begins.`,
+                    walking: `You're finding your rhythm with Me. I love watching you learn to rest in what I've already given. Keep going. When the wave comes, and it will, don't try to stop it alone. Come back to this verse. Come back to Me. My peace is not a feeling that disappears when the storm comes. It's a Person in the boat with you.`,
+                    experienced: `You remember. You remember the night I met you and quieted the noise. Don't let that memory stay private. There's a woman in your life right now whose chest is tight the way yours used to be. Would you tell her what I did for you? My peace was never meant to be hoarded. Pass it on, and watch it multiply.`
+                },
+                teaching: `Jesus didn't promise to remove the storm. He promised something sturdier. His own peace, given like an inheritance. The world trades peace for conditions: when the kids are asleep, when the check clears, when the diagnosis comes back clean. His peace is unconditional. It doesn't wait for your circumstances to cooperate. It meets you in the middle of the mess and sits down beside you.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `When was a time God gave you peace in a situation that had no business being peaceful? Write the details so you don't forget.` },
+                    { key: 'look-in', label: 'Look in', question: `Where in your life right now is your heart troubled? Name it specifically. Not the whole knotted ball, just one strand.` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to receive peace instead of chasing it? One concrete thing.` }
+                ],
+                action: `Before bed each night this week, put your hand on your chest and say out loud: "Peace I leave with you. Your peace I give to me." Don't analyze it. Just say it and go to sleep.`
+            },
+            {
+                week: 2,
+                gift: 'Wisdom',
+                gift_key: 'wisdom',
+                verse: { ref: 'James 1:5', text: `If any of you lacks wisdom, let him ask of God, who gives generously to all without reproach, and it will be given him.` },
+                letters: {
+                    struggling: `You keep trying to figure it all out in your head. Running the scenarios. Rehearsing the conversations. Stop for a minute. I never asked you to be clever. I asked you to ask Me. That is the whole prayer. "Father, I don't know what to do." Say it out loud. I am already answering.`,
+                    want: `You want to make the right call. I love that about you. Here is the secret you have been waiting for: wisdom is not information. It is relationship. The more time you spend with Me, the more your instincts start to sound like Mine. Come close. The rest follows.`,
+                    walking: `I see you pausing now before you answer. Checking in with Me before you react. That is wisdom growing. Keep the pace slow. The world will rush you. I will not. When you need clarity this week, get quiet before you get busy.`,
+                    experienced: `You have learned to listen for My voice in the noise. Now teach someone else how to hear. There is a younger woman watching the way you walk. She needs to know wisdom is available to her too. Pull her close. Show her how you ask Me.`
+                },
+                teaching: `Wisdom in the Bible is not the same as being smart. It is the ability to see your life through God's eyes and act accordingly. James says something shocking: you do not have to earn it. You ask, and God gives. Generously. Without making you feel small for not knowing. The door to wisdom is already open.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `Name a time God gave you wisdom in a decision that seemed impossible. What did He use to guide you?` },
+                    { key: 'look-in', label: 'Look in', question: `What decision is sitting on your chest right now? Write it plainly. No one is reading.` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to ask God first before you ask anyone else?` }
+                ],
+                action: `Before any conversation that feels heavy, pause for ten seconds and pray, "Father, give me Your words." See what shifts.`
+            },
+            {
+                week: 3,
+                gift: 'Rest',
+                gift_key: 'rest',
+                verse: { ref: 'Matthew 11:28', text: `Come to Me, all you who labor and are heavy laden, and I will give you rest.` },
+                letters: {
+                    struggling: `You are so tired. I see the circles under your eyes. I see the way you push through because you think if you stop the whole thing will fall apart. Here is the truth: I am the one holding it together. Not you. You were never meant to carry this alone. Come to Me. I will take the weight.`,
+                    want: `You want rest. Not just sleep. The kind of rest that reaches into your soul. Good. That hunger is Me drawing you. Come sit. You do not have to earn this. You do not have to finish anything first. Just come, exactly as you are, and let Me be enough.`,
+                    walking: `You are learning to stop. I love this about you. Protect it. The world will always offer you one more thing to do. You are allowed to say no. Rest is not lazy. It is holy. Keep choosing it.`,
+                    experienced: `You know what true rest feels like now. You have tasted the difference between sleeping and being restored. Do not forget that other women are running on empty. Invite one of them into your quiet. Show her it is possible.`
+                },
+                teaching: `The invitation is not to a place. It is to a Person. Jesus does not say "rest when the work is done." He says "come to Me and I will give you rest." Rest is a gift He hands you when you show up. Not because you earned it. Not because you deserved a day off. Because He loves you and your soul was made to lean on His.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `When was the last time you felt truly rested? Not just physically. What did God do for you in that season?` },
+                    { key: 'look-in', label: 'Look in', question: `What are you carrying right now that you were never meant to carry alone?` },
+                    { key: 'look-forward', label: 'Look forward', question: `What is one thing you could put down this week and hand to Him?` }
+                ],
+                action: `Block 30 minutes on your calendar with no agenda. Not scrolling. Not working. Just sitting quietly with Him. See what He does with it.`
+            },
+            {
+                week: 4,
+                gift: 'Strength',
+                gift_key: 'strength',
+                verse: { ref: 'Isaiah 40:29', text: `He gives power to the weak, and to those who have no might He increases strength.` },
+                letters: {
+                    struggling: `You feel like you have nothing left. I know. Here is the secret the world will not tell you: that is exactly where My strength begins. Not when you are at your best. When you are at your end. Let Me in. I will be strong through you.`,
+                    want: `You want to be strong. Not for show. For the things you are walking through. I am so proud of that ask. Strength is not a trait I hand out like prizes. It is a current that flows through people who stay close to Me. Come closer. Feel it rise.`,
+                    walking: `You are learning what it means to lean. I see it. The old you would have white-knuckled this. The new you is asking Me first. Keep going. Every time you lean, the muscle grows.`,
+                    experienced: `You know My strength. You have felt Me carry you through things that should have broken you. Now look around. Who near you is about to give up? Go stand beside her. Tell her what I did. Be My voice in her ear when she cannot hear Me.`
+                },
+                teaching: `Most of us think strength means never getting tired. God turns that upside down. He does not promise you will never feel weak. He promises that when you do, He will be your power source. Your weakness is not a disqualifier. It is an invitation. Every time you say "I can't," God gets to say "but I can."`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `When has God been strong for you in a moment you had nothing left?` },
+                    { key: 'look-in', label: 'Look in', question: `Where are you running on empty right now?` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to stop pretending you are fine?` }
+                ],
+                action: `When you feel the weakness creeping in, instead of pushing through, stop and say out loud: "I am weak. You are strong. Be my strength right now." Repeat as often as you need.`
+            },
+            {
+                week: 5,
+                gift: 'Joy',
+                gift_key: 'joy',
+                verse: { ref: 'John 15:11', text: `These things I have spoken to you, that My joy may be in you, and that your joy may be full.` },
+                letters: {
+                    struggling: `I know joy feels far away right now. The heaviness is real. I am not going to rush you through it. But I want you to know that joy is not the absence of pain. It is My presence in the pain. I am here. Right now. In this. And one day, not yet but one day, you will laugh again, and it will be Mine.`,
+                    want: `You want joy. The real kind. Not the kind that lasts an hour and fades. I am so glad you are asking. Joy does not come from your circumstances. It comes from Me. Spend time with Me this week and watch what begins to bubble up from somewhere deeper than your mood.`,
+                    walking: `You are learning that joy has layers. It can sit right alongside grief. It can show up on a hard day. Keep paying attention to it. Name it when you feel it. Thank Me out loud. Joy grows in soil that knows what to look for.`,
+                    experienced: `You have tasted the joy that does not depend on anything going right. It is the sweetest thing I give. Do not forget to give it away. There is a woman in your world who has forgotten how to smile. Sit with her. Let her borrow your joy until hers comes back.`
+                },
+                teaching: `Jesus wanted His joy, the joy He had with the Father before the world began, to be in His people. Not a watered-down version. His actual joy. Notice the order: His first, then yours full. When you borrow His joy, yours gets bigger. It is not a pie where you have to fight for a slice. It multiplies.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `What is a moment in the past year where unexpected joy surprised you?` },
+                    { key: 'look-in', label: 'Look in', question: `Where has joy gone quiet in your life, and what do you think has crowded it out?` },
+                    { key: 'look-forward', label: 'Look forward', question: `Name one small thing this week that could become a joy practice for you.` }
+                ],
+                action: `Each night, write down three things that made you laugh or smile that day, even if they were tiny. Keep the list by your bed.`
+            },
+            {
+                week: 6,
+                gift: 'The Holy Spirit',
+                gift_key: 'holy-spirit',
+                verse: { ref: 'Luke 11:13', text: `If you then, being evil, know how to give good gifts to your children, how much more will your heavenly Father give the Holy Spirit to those who ask Him!` },
+                letters: {
+                    struggling: `You have been trying to live this Christian life in your own strength. No wonder you are worn out. I never asked you to white-knuckle it. I gave you My Spirit to live inside you and do what you cannot do on your own. Stop striving. Ask Me to fill you fresh this morning. It is that simple.`,
+                    want: `You want more of My Spirit. That is the hunger I love to answer. I am not stingy. I will not make you beg. You are asking for the best thing I have to give and the answer is yes. Quiet your heart. Open your hands. He is already moving in you.`,
+                    walking: `You are learning to listen for His voice. The nudges. The gentle checks in your spirit. Keep paying attention. The Holy Spirit does not shout. He whispers. The more you obey the small promptings, the clearer His voice will become.`,
+                    experienced: `You know what it is to be led by My Spirit. You have seen Him show up in ways you could not have planned. Do not hide those stories. The women around you need to know He is real and accessible. Tell what He has done.`
+                },
+                teaching: `Jesus makes a simple argument. If imperfect parents know how to give good things to their kids, how much more does the perfect Father give the best thing He has. The best thing is not an object. It is not even an answered prayer. It is His own Spirit living inside you. Power. Comfort. Truth. Presence. All of Him, for the asking.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `When has the Holy Spirit led you somewhere you never would have gone on your own?` },
+                    { key: 'look-in', label: 'Look in', question: `Where in your life do you need Him to lead you right now?` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to ask Him first, before you start your day?` }
+                ],
+                action: `Each morning before your feet hit the floor, say: "Holy Spirit, fill me fresh today. Lead me." Notice how the day unfolds when He is the first voice you invite in.`
+            },
+            {
+                week: 7,
+                gift: 'New Heart',
+                gift_key: 'new-heart',
+                verse: { ref: 'Ezekiel 36:26', text: `I will give you a new heart and put a new spirit within you. I will take the heart of stone out of your flesh and give you a heart of flesh.` },
+                letters: {
+                    struggling: `You feel stuck in the same patterns. The same reactions. The same voice in your head telling you nothing is ever going to change. Hear Me: I am in the business of making hearts new. I do not just repair you. I replace. The part of you that keeps breaking? I am already replacing it with something alive.`,
+                    want: `You want to be different. Not just behave better. Actually different on the inside. That is a prayer I love answering. Come to Me and ask for a new heart the way you ask for anything you truly need. I am not going to scold you for asking. I promised this. I meant it.`,
+                    walking: `You are noticing the change already. The old you would have snapped. The new you paused. The old you would have carried shame. The new you came back to Me. Keep watching. I am not done. Every day you stay close, more of the old hardens into new.`,
+                    experienced: `You know what it is to have a heart that used to be stone. You remember who you were. Do not hide that story. There is a woman near you who thinks she is too far gone. Tell her what I did in you. Let your testimony be the door she walks through.`
+                },
+                teaching: `God does not promise you self-improvement. He promises a transplant. Ezekiel was speaking to a broken, wandering people who could not fix themselves no matter how hard they tried. God's answer was not a better program. It was a new heart. That is still His answer. He does not ask you to change yourself. He asks you to let Him do the surgery.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `Where has God already softened something in you that used to feel like stone?` },
+                    { key: 'look-in', label: 'Look in', question: `What in your heart still feels hard or stuck? Name it without judgment.` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to stop trying to fix yourself and let Him do the work instead?` }
+                ],
+                action: `Each day, pray this one sentence: "Father, give me a new heart today." Do not add anything. Just those words. Let Him interpret.`
+            },
+            {
+                week: 8,
+                gift: 'Grace',
+                gift_key: 'grace',
+                verse: { ref: '2 Corinthians 12:9', text: `My grace is sufficient for you, for My strength is made perfect in weakness.` },
+                letters: {
+                    struggling: `You think you have to earn your way back to Me. You think the mess disqualifies you. Stop. My grace is not a reward for the women who have it together. It is a gift I gave before you knew you needed it. It was sufficient yesterday. It is sufficient right now. Stop trying to pay Me back and let Me love you.`,
+                    want: `You want to feel grace, not just read about it. I understand. Grace is not a concept to understand. It is a love you receive. Come sit with Me and let Me tell you what I actually think of you. I promise it is kinder than what you tell yourself.`,
+                    walking: `You are learning to let Me love you without earning it. I see how hard that is for you. Keep going. Every time you receive grace instead of punishing yourself, you are becoming more like Me. That is the whole point.`,
+                    experienced: `You have tasted the scandalous freedom of unearned love. Never forget it. Now extend it. The woman who hurt you. The version of yourself you cannot forgive. The family member you wrote off. Grace is meant to flow through you, not just to you.`
+                },
+                teaching: `Paul had begged God three times to take his weakness away. God said no, and then told him why: grace is enough. Not performance. Not fixing. Grace. And the very place Paul thought disqualified him was the place God wanted to shine through. Your weakness is not a secret God tolerates. It is the window His grace walks through.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `When has God been most gracious to you in a moment you felt least deserving?` },
+                    { key: 'look-in', label: 'Look in', question: `Where are you still trying to earn what He has already given?` },
+                    { key: 'look-forward', label: 'Look forward', question: `Who in your life needs the grace you have received?` }
+                ],
+                action: `Each night, end your day by saying out loud: "His grace was sufficient for me today." Do not rehearse what you did wrong. Just acknowledge that grace covered it.`
+            },
+            {
+                week: 9,
+                gift: 'Hope',
+                gift_key: 'hope',
+                verse: { ref: 'Romans 15:13', text: `May the God of hope fill you with all joy and peace as you trust in Him, that you may abound in hope by the power of the Holy Spirit.` },
+                letters: {
+                    struggling: `I know hope feels dangerous right now. You have been disappointed so many times you started protecting yourself by not hoping at all. I see why. But hope in Me is not the same as wishing on a star. It is trust in a Person who has never once broken a promise. Start small. Hope for today. Just today. I will handle the rest.`,
+                    want: `You want to hope again. That in itself is a holy act. Hope is the thing that says, "I believe You will show up even though I cannot see how." I am not going to disappoint you. Watch. Pay attention. I am already moving in places you cannot see yet.`,
+                    walking: `Your hope is growing roots. I love seeing it. When the winds come, and they will, remember this week. Remember that I am not a distant God with a vague plan. I am a Father who fills His daughter with joy and peace as she trusts Me. Stay in that trust.`,
+                    experienced: `You have seen Me come through. You have the stories to prove it. Do not keep them to yourself. There is a woman in your life who is hopeless right now. She needs to hear you say, "I used to feel like you, and here is what He did." Your story is someone else's permission to hope.`
+                },
+                teaching: `Paul calls Him "the God of hope." Not the God who gives hope like a consolation prize. The God who is hope itself. Notice the mechanism: joy and peace come as you trust, and hope grows out of that soil by the Spirit's power. Hope is not a mood you manufacture. It is what happens in you when you keep trusting Him in the dark.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `What is a prayer God answered that you thought He had forgotten?` },
+                    { key: 'look-in', label: 'Look in', question: `Where have you stopped hoping because you are afraid of being disappointed again?` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to hope for one specific thing, out loud, just between you and Him?` }
+                ],
+                action: `Write one sentence on a sticky note: "God, I am hoping for ____." Put it where you will see it every day. Let it be an act of defiance against despair.`
+            },
+            {
+                week: 10,
+                gift: 'Provision',
+                gift_key: 'provision',
+                verse: { ref: 'Philippians 4:19', text: `And my God shall supply all your need according to His riches in glory by Christ Jesus.` },
+                letters: {
+                    struggling: `I see the math you are doing in your head. The bills. The needs. The way you lie awake running the numbers. I know. I want you to know I am not oblivious. I see every account. Every pressure. You are not forgotten. I am not a distant provider. I am a present Father, and I am already working on what you need.`,
+                    want: `You want to trust Me for provision. That is harder than it sounds, I know. The world has taught you that if you do not grip tightly, you will go without. I am asking you to grip loosely and trust tightly. Test Me. Watch what I do when you release what you are holding.`,
+                    walking: `You are learning to trust Me with what you have and what you do not have. Keep at it. Every time you refuse to panic and come to Me instead, you are building a history with Me that will carry you through bigger storms later. This is practice for the big stuff.`,
+                    experienced: `You have watched Me show up again and again. You have stories of the check that came in the mail. The door that opened. The provision no one could explain. Do not keep those stories in the vault. Someone needs to hear them this week. Your history with Me is medicine for someone else.`
+                },
+                teaching: `Notice Paul does not say God will supply all your wants. He says all your needs. And He does not supply from leftovers. He supplies from His riches in glory. That is a big difference. The God who hung the stars and holds the oceans is not worried about your grocery bill. His resources are not limited. His attention to you is not divided. He knows what you need and He is already arranging it.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `What is a time God provided for you in a way you did not see coming?` },
+                    { key: 'look-in', label: 'Look in', question: `What specific need are you afraid He will not meet?` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to ask Him plainly for what you need, and then stop striving?` }
+                ],
+                action: `Write down one specific need and hand it to Him in prayer. Then each day, instead of worrying about it, say, "It is already being handled." Watch what happens.`
+            },
+            {
+                week: 11,
+                gift: 'Freedom',
+                gift_key: 'freedom',
+                verse: { ref: '2 Corinthians 3:17', text: `Now the Lord is the Spirit; and where the Spirit of the Lord is, there is freedom.` },
+                letters: {
+                    struggling: `You feel chained to something you cannot name. The shame. The pattern. The voice. I know. Hear Me clearly: I did not die to leave you in the cage. Freedom is not something you have to fight your way into. It is the air I already gave you to breathe. Step into it. I am holding the door.`,
+                    want: `You want to be free. Not just a little lighter. Actually free. I love the honesty of that ask. Freedom is not a prize I hand out to the strong. It is a gift I give to the ones who say, "I cannot do this on my own." Say it. I am ready.`,
+                    walking: `You are walking out of things that used to run your life. I see it. Do not underestimate how far you have come. The enemy will whisper that you are still the old version. Do not listen. Where My Spirit is, there is freedom. My Spirit is in you. You are free.`,
+                    experienced: `You know what it is to be set free. You know the before and the after. Now go get someone else. There is a woman still stuck where you used to be. You do not have to have all the answers. You just have to tell her what I did. Your story is her key.`
+                },
+                teaching: `Freedom is not something you earn through good behavior. It is the atmosphere that surrounds God's Spirit. Wherever He is, freedom is. And because His Spirit lives in you, freedom is already your inheritance. You do not have to fight your way toward it. You just have to stop listening to the voices that tell you it is not yours.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `What is one area of your life where God has already set you free?` },
+                    { key: 'look-in', label: 'Look in', question: `Where do you still feel chained, and what are the lies you believe about that chain?` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to walk like the free woman He already says you are?` }
+                ],
+                action: `Name one lie you have been believing about yourself. Write it down. Then write the truth God says instead. Keep the truth somewhere you will read it every day.`
+            },
+            {
+                week: 12,
+                gift: 'Healing',
+                gift_key: 'healing',
+                verse: { ref: 'Psalm 147:3', text: `He heals the brokenhearted and binds up their wounds.` },
+                letters: {
+                    struggling: `The wound is old but it still bleeds. I know. I have been near it the whole time. I am not a God who heals from a distance. I sit with you in the ache. I am not rushing your healing. I am just promising that I am doing it. Stay close. Let Me bind it up.`,
+                    want: `You want to be healed. Not just managed. Actually healed. That is a prayer I love. Healing with Me is rarely instant, but it is always real. I am not asking you to rush it. I am asking you to trust Me with it. Bring Me the tender places.`,
+                    walking: `You are in the middle of the healing. Some days it feels like progress. Some days it feels like you are back at square one. You are not. Healing is not linear. Keep coming to Me. Keep telling Me where it hurts. I am still binding.`,
+                    experienced: `You have been healed in places that once felt unrecoverable. Do not forget what that felt like. There is a woman near you bleeding the way you used to bleed. Sit with her. Do not try to fix her. Just be the proof that healing is possible.`
+                },
+                teaching: `The God who names the stars also tends to your broken heart. That is the scandal of this verse. The same God who holds galaxies in place is not too busy to bind up your specific wound. He is not a distant doctor. He is a present Father with bandages in His hands.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `Where has God already healed something in you that you thought was beyond repair?` },
+                    { key: 'look-in', label: 'Look in', question: `What wound is still bleeding that you have never fully brought to Him?` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to stop managing the pain and let Him actually touch it?` }
+                ],
+                action: `Find a quiet moment this week. Put your hand on the place that hurts and say, "Father, heal me here." Be specific. He is listening.`
+            },
+            {
+                week: 13,
+                gift: 'Eternal Life',
+                gift_key: 'eternal-life',
+                verse: { ref: 'Romans 6:23', text: `For the wages of sin is death, but the gift of God is eternal life in Christ Jesus our Lord.` },
+                letters: {
+                    struggling: `You are tired of the earthly weight. The cycles. The disappointments. The sense that this is all there is. Let Me lift your eyes. This is not all there is. What I have prepared for you is bigger than anything that has ever hurt you. Do not lose sight of forever in the middle of right now.`,
+                    want: `You want assurance. You want to know that what you are putting your hope in is real. Eternal life is not something you have to figure out. It is something I gave you in Jesus. It is already yours. Rest in that, and the uncertainty will loosen its grip.`,
+                    walking: `You are learning to live with eternity in view. That changes everything. The things that used to feel urgent look smaller now. The things that used to feel huge look clearer. Keep that perspective. It is a gift I give to women who keep walking with Me.`,
+                    experienced: `You know what it is to have your feet on earth and your heart already home. Do not hide the confidence I have given you. There are women terrified of what comes next. Tell them what you know. Your certainty is their comfort.`
+                },
+                teaching: `Wages are earned. Gifts are given. Paul says eternal life is not a paycheck for good behavior. It is a gift. You do not work for it. You receive it. It is not just a ticket to heaven later. It is a quality of life that begins the moment you say yes to Jesus. Forever starts now.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `When did you first understand that eternal life was a gift and not something you had to earn?` },
+                    { key: 'look-in', label: 'Look in', question: `What is weighing on you right now that would feel lighter if you remembered it is temporary?` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to live with eternity in view?` }
+                ],
+                action: `Each morning, say out loud: "I am a daughter with forever in me. Nothing today can steal that." Let it reorder your priorities.`
+            },
+            {
+                week: 14,
+                gift: 'Good Gifts',
+                gift_key: 'good-gifts',
+                verse: { ref: 'Matthew 7:11', text: `If you then, being evil, know how to give good gifts to your children, how much more will your Father in heaven give good things to those who ask Him!` },
+                letters: {
+                    struggling: `You have been wondering if I am really for you. If the prayers are getting through. If I actually see you. Let Me settle it. I am not a withholding Father. I am not distant. I am the Father who gives good gifts to His children, and you are My child. What you need, I am bringing. Trust the timing.`,
+                    want: `You want to believe I am a good Father. That alone tells Me where your heart is. Come ask Me for what you need. I am not scared off by your requests. I love being asked. Every good thing in your life came from My hand, and there is more where that came from.`,
+                    walking: `You are starting to trust that I am a good Dad. I see the shift in how you pray. Less bargaining. More asking. Keep coming. Bring Me the small things and the big things. I do not rank them the way you do. Everything you care about matters to Me.`,
+                    experienced: `You have experienced My generosity. You have watched Me show up with things you never even thought to ask for. Remember that when the next hard thing comes. Remember that I am the Father of good gifts, and My track record with you is spotless. Keep telling the stories.`
+                },
+                teaching: `Jesus is making an argument. If imperfect earthly parents know how to give their kids good things, how much more does the perfect Father. God is not a reluctant giver. He is not stingy. He is not rationing His goodness. He is a Dad who delights in His daughters and loves to give good gifts. Your only job is to ask.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `What is a good gift God gave you that you did not expect?` },
+                    { key: 'look-in', label: 'Look in', question: `What have you been afraid to ask Him for because you thought it was too small or too much?` },
+                    { key: 'look-forward', label: 'Look forward', question: `What would it look like this week to ask boldly and trust His timing?` }
+                ],
+                action: `Make a specific ask this week. Write it down. Date it. Then release it to Him and watch how He answers. Sometimes yes, sometimes wait, sometimes something better. Trust all three.`
+            },
+            {
+                week: 15,
+                gift: 'Comfort',
+                gift_key: 'comfort',
+                verse: { ref: '2 Corinthians 1:3-4', text: `Blessed be the God and Father of our Lord Jesus Christ, the Father of mercies and God of all comfort, who comforts us in all our tribulation, that we may be able to comfort those who are in any trouble, with the comfort with which we ourselves are comforted by God.` },
+                letters: {
+                    struggling: `You are hurting. I do not want you to pretend you are fine. Come here. Let Me hold you in this. I am the Father of compassion. The God of all comfort. You do not have to perform for Me. You do not have to explain. Just let Me be with you in it.`,
+                    want: `You want to feel comforted. Not managed, not distracted. Actually held. I understand. Come sit with Me. I do not rush you through the pain. I do not minimize what you are carrying. I am the God of all comfort, and I give it freely to the ones who come.`,
+                    walking: `You are learning to bring Me the sadness instead of hiding it. That is huge. Keep doing it. Every time you let Me comfort you, you become someone who can comfort others. I am building something in you that the world desperately needs.`,
+                    experienced: `You have felt My comfort in the dark places. You know what it is to be held when everything around you was falling apart. Now look around. Who is in that dark place right now? Go to her. You do not need answers. You just need to be the arms I use.`
+                },
+                teaching: `Paul says something quietly radical. God comforts us in our troubles so that we can comfort others in theirs. The comfort is not just for us. It is a baton we pass. Every hard thing God walks you through becomes a language you can speak to another woman going through the same thing. Your pain becomes her permission to survive it.`,
+                prompts: [
+                    { key: 'look-back', label: 'Look back', question: `When has God comforted you in a way no person could?` },
+                    { key: 'look-in', label: 'Look in', question: `What are you grieving right now that you have been trying to handle alone?` },
+                    { key: 'look-forward', label: 'Look forward', question: `Who has God put in your life that you could offer comfort to this week?` }
+                ],
+                action: `Reach out to one woman this week who is hurting. You do not need to fix her. Just be present. Text her. Sit with her. Let the comfort you have received from God flow through you.`
+            }
+        ];
+
+        // Map a Journey gift name (e.g. "Peace") to a devotion gift_key (e.g. "peace").
+        // Some devotion gifts also exist as Journey gifts; this is the bridge.
+        function deriveJourneyKeyForDevotion(devotionGiftKey) {
+            const map = {
+                'peace': 'Peace', 'joy': 'Joy', 'freedom': 'Freedom', 'rest': 'Rest',
+                'wisdom': 'Wisdom', 'strength': 'Strength', 'eternal-life': 'Eternal Life',
+                'holy-spirit': 'Holy Spirit', 'new-heart': 'New Heart', 'grace': 'Grace',
+                'hope': 'Hope', 'provision': 'Provision', 'healing': 'Healing',
+                'good-gifts': 'Good Gifts', 'comfort': 'Comfort'
+            };
+            return map[devotionGiftKey] || null;
+        }
+
+        // Convert one of the 4 Journey response strings to a letter variant key.
+        function classifyJourneyResponse(response) {
+            if (!response) return 'want';
+            const r = response.toLowerCase();
+            if (r.indexOf('struggling') !== -1) return 'struggling';
+            if (r.indexOf('walking') !== -1) return 'walking';
+            if (r.indexOf('experienced') !== -1) return 'experienced';
+            return 'want';
+        }
+
+        // Look up which letter variant a user should see for a given devotion.
+        // Falls back to "want" (warm and inviting) if she hasn't answered Journey for this gift.
+        function getPersonalizedLetterVariant(devotion) {
+            const journeyGift = deriveJourneyKeyForDevotion(devotion.gift_key);
+            const response = journeyGift ? appState.journeyResponses[journeyGift] : null;
+            return classifyJourneyResponse(response);
+        }
+
+        function getPersonalizedLetter(devotion) {
+            const variant = getPersonalizedLetterVariant(devotion);
+            return devotion.letters[variant] || devotion.letters.want;
+        }
+
+        // Compute the current devotion week (1..15) based on weeks elapsed since retreat end.
+        // Before the retreat ends, returns 1 so previews work in development.
+        function getCurrentDevotionWeek() {
+            const retreatEnd = new Date('2026-04-11T12:00:00-04:00');
+            const now = new Date();
+            const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+            if (now < retreatEnd) return 1;
+            const weeksElapsed = Math.floor((now - retreatEnd) / msPerWeek);
+            // 1-indexed; loops back to week 1 after week 15
+            return ((weeksElapsed) % 15) + 1;
+        }
+
+        function getDevotionByWeek(weekNum) {
+            return DEVOTIONS.find(d => d.week === weekNum) || null;
+        }
+
+        function getDevotionByGiftKey(giftKey) {
+            return DEVOTIONS.find(d => d.gift_key === giftKey) || null;
+        }
+
+        // Find the gift the user said she's struggling with most. Used by the
+        // "Your Gift" personal home card. Returns the first matching devotion or null.
+        function getPersonalGiftDevotion() {
+            for (const devotion of DEVOTIONS) {
+                const journeyGift = deriveJourneyKeyForDevotion(devotion.gift_key);
+                if (!journeyGift) continue;
+                const response = appState.journeyResponses[journeyGift];
+                if (response && response.toLowerCase().indexOf('struggling') !== -1) {
+                    return devotion;
+                }
+            }
+            return null;
+        }
+
+        // Save a devotion reflection as a tagged journal entry.
+        function saveDevotionReflection(devotion, promptKey, text) {
+            if (!text || !text.trim()) return false;
+            appState.journalEntries.unshift({
+                date: new Date().toISOString(),
+                text: text.trim(),
+                gift: devotion.gift_key,
+                gift_label: devotion.gift,
+                week: devotion.week,
+                prompt_key: promptKey
+            });
+            saveState();
+            return true;
+        }
+
+        // Get all journal entries that have been tagged with this gift, oldest first.
+        // Used for the per-devotion "growth timeline".
+        function getGrowthTimeline(giftKey) {
+            return appState.journalEntries
+                .filter(e => e.gift === giftKey)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+        }
 
         let appState = { journeyResponses: {}, journalEntries: [] };
 
@@ -5986,7 +6370,7 @@
             setTimeout(() => resultContainer.classList.remove('celebrate'), 700);
             if (responseCount === giftsData.length) {
                 launchConfetti();
-                showToast('All 12 gifts discovered! \ud83c\udf89');
+                showToast('All ' + giftsData.length + ' gifts discovered! \ud83c\udf89');
             }
         }
 

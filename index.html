@@ -2393,6 +2393,272 @@
             margin: 22px 16px 6px;
         }
 
+        /* ===== My Celebration Hero (birthday/anniversary girl) ===== */
+        .celebration-hero {
+            margin: 16px;
+            padding: 28px 24px;
+            background: linear-gradient(135deg, rgba(201,144,138,0.18), rgba(212,165,154,0.12), rgba(255,255,255,0.6));
+            border-radius: 20px;
+            border: 1.5px solid rgba(201,144,138,0.30);
+            box-shadow: 0 6px 24px rgba(201,144,138,0.18);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .celebration-hero-icon {
+            font-size: 3rem;
+            margin-bottom: 8px;
+            display: inline-block;
+            animation: celebration-bob 2.5s ease-in-out infinite;
+        }
+        @keyframes celebration-bob {
+            0%, 100% { transform: translateY(0) rotate(-3deg); }
+            50% { transform: translateY(-6px) rotate(3deg); }
+        }
+        .celebration-hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin-bottom: 6px;
+            line-height: 1.2;
+        }
+        .celebration-hero-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            color: var(--taupe);
+            font-style: italic;
+            line-height: 1.4;
+            margin-bottom: 18px;
+        }
+        .celebration-hero-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            background: white;
+            border-radius: 30px;
+            box-shadow: 0 2px 10px rgba(201,144,138,0.18);
+            margin-bottom: 6px;
+        }
+        .celebration-hero-counter-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .celebration-hero-counter-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
+            color: var(--taupe);
+            font-style: italic;
+        }
+        .celebration-notes-section {
+            margin-top: 22px;
+            padding-top: 18px;
+            border-top: 1px dashed rgba(139,134,128,0.3);
+        }
+        .celebration-notes-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--taupe);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .celebration-note {
+            background: white;
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 10px;
+            text-align: left;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            border-left: 3px solid var(--blush);
+        }
+        .celebration-note-text {
+            font-family: Georgia, serif;
+            font-size: 0.97rem;
+            line-height: 1.55;
+            color: var(--dark-text);
+            white-space: pre-wrap;
+            margin-bottom: 6px;
+        }
+        .celebration-note-from {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            color: var(--accent);
+            font-style: italic;
+        }
+        .celebration-empty {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
+            color: var(--light-text);
+            font-style: italic;
+            padding: 12px 0;
+        }
+
+        /* ===== Look-back card (days 1-3 after celebration) ===== */
+        .celebration-lookback {
+            margin: 12px 16px;
+            padding: 16px 18px;
+            background: linear-gradient(135deg, rgba(201,144,138,0.08), rgba(255,255,255,0.6));
+            border-radius: 14px;
+            border: 1px solid rgba(201,144,138,0.20);
+            cursor: pointer;
+        }
+        .celebration-lookback-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .celebration-lookback-icon {
+            font-size: 1.6rem;
+            flex-shrink: 0;
+        }
+        .celebration-lookback-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .celebration-lookback-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin-bottom: 2px;
+        }
+        .celebration-lookback-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            color: var(--light-text);
+            font-style: italic;
+        }
+        .celebration-lookback-arrow {
+            color: var(--accent);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* ===== My Celebrations archive button ===== */
+        .celebration-archive-btn {
+            margin: 12px 16px;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 12px;
+            border: 1px dashed rgba(139,134,128,0.25);
+            cursor: pointer;
+            text-align: center;
+        }
+        .celebration-archive-btn-label {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem;
+            color: var(--taupe);
+            font-style: italic;
+        }
+        .celebration-archive-btn-stats {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+
+        /* ===== My Celebrations scrapbook modal ===== */
+        .celebration-scrapbook-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1100;
+            background: rgba(60,50,45,0.55);
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        .celebration-scrapbook-content {
+            background: linear-gradient(180deg, rgba(255,250,247,1) 0%, rgba(255,255,255,1) 100%);
+            border-radius: 18px;
+            max-width: 540px;
+            width: 100%;
+            margin: 24px auto;
+            padding: 24px 22px 28px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        }
+        .celebration-scrapbook-header {
+            text-align: center;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px dashed rgba(139,134,128,0.25);
+        }
+        .celebration-scrapbook-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin-bottom: 4px;
+        }
+        .celebration-scrapbook-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
+            color: var(--light-text);
+            font-style: italic;
+        }
+        .celebration-scrapbook-group {
+            margin-bottom: 20px;
+        }
+        .celebration-scrapbook-group-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .celebration-scrapbook-close {
+            margin-top: 8px;
+            width: 100%;
+            padding: 12px;
+            background: white;
+            color: var(--taupe);
+            border: 1.5px solid var(--warm-grey);
+            border-radius: 10px;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ===== Balloons animation ===== */
+        .balloon {
+            position: fixed;
+            bottom: -130px;
+            width: 44px;
+            height: 56px;
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            pointer-events: none;
+            z-index: 9998;
+            box-shadow: inset -8px -10px 0 rgba(0,0,0,0.08);
+            animation: balloon-float linear forwards;
+        }
+        .balloon::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -1px;
+            width: 1.5px;
+            height: 60px;
+            background: rgba(139,134,128,0.4);
+        }
+        @keyframes balloon-float {
+            0% { bottom: -130px; transform: translateX(0) rotate(-2deg); opacity: 0; }
+            10% { opacity: 1; }
+            50% { transform: translateX(20px) rotate(4deg); }
+            90% { opacity: 1; }
+            100% { bottom: 110vh; transform: translateX(-15px) rotate(-3deg); opacity: 0; }
+        }
+
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -3031,6 +3297,18 @@
     <div class="sparkle-container" id="sparkle-container"></div>
     <div id="toast" class="toast"></div>
 
+    <!-- My celebrations scrapbook modal -->
+    <div id="celebration-scrapbook-modal" class="celebration-scrapbook-modal">
+        <div class="celebration-scrapbook-content">
+            <div class="celebration-scrapbook-header">
+                <div class="celebration-scrapbook-title">My Celebrations</div>
+                <div class="celebration-scrapbook-subtitle">Every birthday and anniversary message your G4 sisters have written you.</div>
+            </div>
+            <div id="celebration-scrapbook-body"></div>
+            <button class="celebration-scrapbook-close" id="celebration-scrapbook-close-btn">Close</button>
+        </div>
+    </div>
+
     <!-- Celebration send modal -->
     <div id="celebration-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(60,50,45,0.55);align-items:center;justify-content:center;padding:20px;">
         <div style="background:white;border-radius:18px;max-width:420px;width:100%;padding:24px 22px;box-shadow:0 12px 40px rgba(0,0,0,0.25);">
@@ -3070,6 +3348,15 @@
             <div id="home-tab" class="tab-content active">
                 <!-- Post-retreat home (hidden until retreat ends) -->
                 <div id="post-retreat-home" style="display:none;">
+                    <!-- My celebration hero (only on her birthday/anniversary day) -->
+                    <div id="my-celebration-hero" style="display:none;"></div>
+
+                    <!-- My celebration look-back (1-3 days after her day) -->
+                    <div id="my-celebration-lookback" style="display:none;"></div>
+
+                    <!-- Permanent "My Celebrations" archive button -->
+                    <div id="my-celebrations-archive" style="display:none;"></div>
+
                     <div style="text-align:center;padding:24px 20px 8px;">
                         <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--dark-text);margin-bottom:6px;">Thank You</div>
                         <div style="font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--light-text);font-style:italic;line-height:1.6;padding:0 12px;">What a weekend. What a God. Thank you for showing up, being open, and letting Him move. You are seen, you are loved, and you are carrying something incredible home with you.</div>
@@ -8599,6 +8886,289 @@
             });
         }
 
+        // ===== My Celebration (the birthday girl's experience) =====
+
+        function launchBalloons(count) {
+            const num = count || 14;
+            const colors = ['#C9908A', '#D4A59A', '#8A9E7A', '#E8C5C5', '#A8C8A0', '#F4D7C7', '#C5A8D4', '#D4B89A'];
+            for (let i = 0; i < num; i++) {
+                setTimeout(() => {
+                    const balloon = document.createElement('div');
+                    balloon.className = 'balloon';
+                    balloon.style.left = (Math.random() * 88 + 4) + '%';
+                    balloon.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    balloon.style.animationDuration = (6 + Math.random() * 4) + 's';
+                    document.body.appendChild(balloon);
+                    setTimeout(() => balloon.remove(), 11000);
+                }, i * 180);
+            }
+        }
+
+        function formatOccasionDate(dateStr) {
+            if (!dateStr) return '';
+            const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!m) return dateStr;
+            const d = new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+            return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+
+        // Compute current year occurrence of MM-DD from a stored date string
+        function thisYearOccurrence(dateStr) {
+            if (!dateStr) return null;
+            const m = dateStr.match(/^\d{4}-(\d{2})-(\d{2})$/);
+            if (!m) return null;
+            const now = new Date();
+            return now.getFullYear() + '-' + m[1] + '-' + m[2];
+        }
+
+        // How many days ago was this MM-DD (returns 0 today, 1 yesterday, ..., or null if more than 30 days)
+        function daysSinceOccasion(dateStr) {
+            if (!dateStr) return null;
+            const m = dateStr.match(/^\d{4}-(\d{2})-(\d{2})$/);
+            if (!m) return null;
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            // Find the most recent occurrence (this year if past, last year if future)
+            let target = new Date(now.getFullYear(), parseInt(m[1]) - 1, parseInt(m[2]));
+            if (target > today) {
+                target = new Date(now.getFullYear() - 1, parseInt(m[1]) - 1, parseInt(m[2]));
+            }
+            return Math.round((today - target) / (1000 * 60 * 60 * 24));
+        }
+
+        async function loadMyCelebrationStatus() {
+            if (!currentUser) return;
+            const heroEl = document.getElementById('my-celebration-hero');
+            const lookbackEl = document.getElementById('my-celebration-lookback');
+            const archiveEl = document.getElementById('my-celebrations-archive');
+            if (!heroEl || !lookbackEl || !archiveEl) return;
+
+            heroEl.style.display = 'none';
+            lookbackEl.style.display = 'none';
+            archiveEl.style.display = 'none';
+
+            // Step 1: Server check — is today my birthday or anniversary?
+            let activeOccasions = [];
+            try {
+                const resp = await fetch(API_URL + '/api/celebrations/check-mine?user_id=' + currentUser.id);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    activeOccasions = data.active || [];
+                }
+            } catch(e) { /* ignore */ }
+
+            if (activeOccasions.length > 0) {
+                await showMyCelebrationHero(activeOccasions[0]);
+                return;
+            }
+
+            // Step 2: Look-back — was my birthday or anniversary in the last 1-3 days?
+            let lookbackOccasion = null;
+            const checks = [
+                { occasion: 'birthday', dateStr: currentUser.birthday },
+                { occasion: 'anniversary', dateStr: currentUser.anniversary }
+            ];
+            for (const c of checks) {
+                const days = daysSinceOccasion(c.dateStr);
+                if (days !== null && days >= 1 && days <= 3) {
+                    const occasionDate = thisYearOccurrence(c.dateStr);
+                    if (!lookbackOccasion || days < lookbackOccasion.daysSince) {
+                        lookbackOccasion = { occasion: c.occasion, occasion_date: occasionDate, daysSince: days };
+                    }
+                }
+            }
+            if (lookbackOccasion) {
+                await showMyCelebrationLookback(lookbackOccasion);
+            }
+
+            // Step 3: Archive — show "My Celebrations" link if she has any past messages
+            await loadMyCelebrationsArchive();
+        }
+
+        async function showMyCelebrationHero(active) {
+            const heroEl = document.getElementById('my-celebration-hero');
+            if (!heroEl) return;
+
+            // Fetch all messages for this celebration
+            let messages = [];
+            try {
+                const resp = await fetch(API_URL + '/api/celebrations/mine?user_id=' + currentUser.id + '&occasion_date=' + encodeURIComponent(active.occasion_date));
+                if (resp.ok) messages = await resp.json();
+            } catch(e) {}
+
+            const isBirthday = active.occasion === 'birthday';
+            const icon = isBirthday ? '\ud83c\udf82' : '\ud83d\udc8d';
+            const title = isBirthday
+                ? 'Happy Birthday, ' + (currentUser.first_name || 'sister') + '!'
+                : 'Happy Anniversary, ' + (currentUser.first_name || 'sister') + '!';
+            const subtitle = isBirthday
+                ? 'Your G4 sisters are celebrating you today.'
+                : 'Your G4 sisters are celebrating with you today.';
+            const heartCount = messages.length;
+            const noteMessages = messages.filter(m => m.message_text && m.message_text.trim());
+
+            const notesHtml = noteMessages.length
+                ? noteMessages.map(m => {
+                    const fromName = m.sender_anonymous ? 'A G4 sister \ud83d\udc9b' : esc(m.sender_name || 'A G4 sister');
+                    return `
+                        <div class="celebration-note">
+                            <div class="celebration-note-text">${esc(m.message_text)}</div>
+                            <div class="celebration-note-from">\u2014 ${fromName}</div>
+                        </div>
+                    `;
+                }).join('')
+                : '<div class="celebration-empty">Notes from your sisters will appear here as they arrive today.</div>';
+
+            heroEl.innerHTML = `
+                <div class="celebration-hero">
+                    <div class="celebration-hero-icon">${icon}</div>
+                    <div class="celebration-hero-title">${esc(title)}</div>
+                    <div class="celebration-hero-subtitle">${esc(subtitle)}</div>
+                    <div class="celebration-hero-counter">
+                        <span class="celebration-hero-counter-num">${heartCount}</span>
+                        <span class="celebration-hero-counter-label">${heartCount === 1 ? 'heart from your sisters' : 'hearts from your sisters'}</span>
+                    </div>
+                    <div class="celebration-notes-section">
+                        <div class="celebration-notes-label">What your sisters are saying</div>
+                        ${notesHtml}
+                    </div>
+                </div>
+            `;
+            heroEl.style.display = 'block';
+
+            // Launch balloons on first open of the day
+            const seenKey = 'g4_celebration_seen_' + currentUser.id + '_' + active.occasion_date;
+            if (!localStorage.getItem(seenKey)) {
+                setTimeout(() => launchBalloons(16), 600);
+                localStorage.setItem(seenKey, '1');
+            }
+        }
+
+        async function showMyCelebrationLookback(lookback) {
+            const el = document.getElementById('my-celebration-lookback');
+            if (!el) return;
+
+            // Get the count of messages from her recent celebration
+            let count = 0;
+            try {
+                const resp = await fetch(API_URL + '/api/celebrations/mine?user_id=' + currentUser.id + '&occasion_date=' + encodeURIComponent(lookback.occasion_date));
+                if (resp.ok) {
+                    const messages = await resp.json();
+                    count = messages.length;
+                }
+            } catch(e) {}
+
+            const isBirthday = lookback.occasion === 'birthday';
+            const icon = isBirthday ? '\ud83c\udf82' : '\ud83d\udc8d';
+            const title = isBirthday
+                ? 'Look back at your birthday'
+                : 'Look back at your anniversary';
+            const dayWord = lookback.daysSince === 1 ? 'yesterday' : (lookback.daysSince + ' days ago');
+            const subtitle = count
+                ? `${count} ${count === 1 ? 'message' : 'messages'} from your sisters \u2014 ${dayWord}`
+                : `From ${dayWord}`;
+
+            el.innerHTML = `
+                <div class="celebration-lookback" data-occasion="${lookback.occasion}" data-date="${lookback.occasion_date}">
+                    <div class="celebration-lookback-header">
+                        <div class="celebration-lookback-icon">${icon}</div>
+                        <div class="celebration-lookback-text">
+                            <div class="celebration-lookback-title">${title}</div>
+                            <div class="celebration-lookback-subtitle">${subtitle}</div>
+                        </div>
+                        <div class="celebration-lookback-arrow">\u2192</div>
+                    </div>
+                </div>
+            `;
+            el.style.display = 'block';
+            const card = el.querySelector('.celebration-lookback');
+            if (card) card.addEventListener('click', () => openCelebrationsScrapbook());
+        }
+
+        async function loadMyCelebrationsArchive() {
+            const el = document.getElementById('my-celebrations-archive');
+            if (!el) return;
+            try {
+                const resp = await fetch(API_URL + '/api/celebrations/mine?user_id=' + currentUser.id);
+                if (!resp.ok) return;
+                const messages = await resp.json();
+                if (!Array.isArray(messages) || !messages.length) return;
+                // Group by occasion_date to get a count of distinct celebrations
+                const dates = new Set(messages.map(m => m.occasion_date));
+                const heartTotal = messages.length;
+                el.innerHTML = `
+                    <div class="celebration-archive-btn">
+                        <div class="celebration-archive-btn-label">\ud83d\udcd6 My Celebrations Scrapbook</div>
+                        <div class="celebration-archive-btn-stats">${dates.size} ${dates.size === 1 ? 'celebration' : 'celebrations'} \u00b7 ${heartTotal} hearts received</div>
+                    </div>
+                `;
+                el.style.display = 'block';
+                const btn = el.querySelector('.celebration-archive-btn');
+                if (btn) btn.addEventListener('click', () => openCelebrationsScrapbook());
+            } catch(e) {}
+        }
+
+        async function openCelebrationsScrapbook() {
+            const modal = document.getElementById('celebration-scrapbook-modal');
+            const body = document.getElementById('celebration-scrapbook-body');
+            if (!modal || !body) return;
+            body.innerHTML = '<div class="celebration-empty" style="text-align:center;">Loading...</div>';
+            modal.style.display = 'flex';
+
+            try {
+                const resp = await fetch(API_URL + '/api/celebrations/mine?user_id=' + currentUser.id);
+                if (!resp.ok) throw new Error('failed');
+                const messages = await resp.json();
+                if (!Array.isArray(messages) || !messages.length) {
+                    body.innerHTML = '<div class="celebration-empty" style="text-align:center;">Your celebration messages will gather here as your G4 sisters send them.</div>';
+                    return;
+                }
+                // Group by occasion_date
+                const groups = {};
+                for (const m of messages) {
+                    if (!groups[m.occasion_date]) groups[m.occasion_date] = { occasion: m.occasion, date: m.occasion_date, items: [] };
+                    groups[m.occasion_date].items.push(m);
+                }
+                // Sort groups by date desc
+                const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+                let html = '';
+                for (const key of sortedKeys) {
+                    const g = groups[key];
+                    const label = (g.occasion === 'birthday' ? 'Birthday \u2014 ' : 'Anniversary \u2014 ') + formatOccasionDate(g.date);
+                    const itemsHtml = g.items.map(m => {
+                        const fromName = m.sender_anonymous ? 'A G4 sister \ud83d\udc9b' : esc(m.sender_name || 'A G4 sister');
+                        const text = m.message_text && m.message_text.trim()
+                            ? `<div class="celebration-note-text">${esc(m.message_text)}</div>`
+                            : '<div class="celebration-note-text" style="font-style:italic;color:#aaa;">\u2764\ufe0f a heart, no note</div>';
+                        return `
+                            <div class="celebration-note">
+                                ${text}
+                                <div class="celebration-note-from">\u2014 ${fromName}</div>
+                            </div>
+                        `;
+                    }).join('');
+                    html += `
+                        <div class="celebration-scrapbook-group">
+                            <div class="celebration-scrapbook-group-label">${label} \u00b7 ${g.items.length} ${g.items.length === 1 ? 'heart' : 'hearts'}</div>
+                            ${itemsHtml}
+                        </div>
+                    `;
+                }
+                body.innerHTML = html;
+            } catch(e) {
+                body.innerHTML = '<div class="celebration-empty" style="text-align:center;">Could not load. Try again later.</div>';
+            }
+        }
+
+        function initCelebrationScrapbookModal() {
+            const modal = document.getElementById('celebration-scrapbook-modal');
+            if (!modal || modal.dataset.wired) return;
+            modal.dataset.wired = '1';
+            const closeBtn = document.getElementById('celebration-scrapbook-close-btn');
+            if (closeBtn) closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+        }
+
         function buildDevotionHomeCards() {
             const weekCard = document.getElementById('devotion-week-card');
             const personalCard = document.getElementById('devotion-personal-card');
@@ -8676,7 +9246,9 @@
                 buildDevotionHomeCards();
                 maybeShowDevotionWeekReminder();
                 initCelebrationModal();
+                initCelebrationScrapbookModal();
                 loadCelebrationsHomeCard();
+                loadMyCelebrationStatus();
                 document.getElementById('post-retreat-continue').addEventListener('click', () => {
                     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));

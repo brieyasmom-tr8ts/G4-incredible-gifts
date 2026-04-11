@@ -8468,29 +8468,38 @@
                 btn.style.cssText = 'display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:20px;border:1.5px solid ' + (isActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)') + ';background:' + (isActive ? 'rgba(201,144,138,0.10)' : 'white') + ';color:var(--dark-text);font-family:-apple-system,system-ui,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:var(--transition);min-height:38px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;';
                 btn.setAttribute('aria-label', r.label);
                 btn.innerHTML = '<span style="font-size:1.15rem;line-height:1;">' + r.char + '</span><span data-count style="font-variant-numeric:tabular-nums;">' + (counts[r.key] || 0) + '</span>';
+                // Optimistic UI: flip the visual state immediately on tap so
+                // a slow server response never looks like "nothing happened".
+                // Busy guard protects against a fast second tap racing itself.
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    const result = await toggleMomentReaction(moment.id, r.key);
-                    if (!result) return;
+                    if (btn.dataset.busy === '1') return;
+                    btn.dataset.busy = '1';
                     const countEl = btn.querySelector('[data-count]');
+                    const wasActive = !!(moment.my_reactions && moment.my_reactions[r.key]);
+                    const nowActive = !wasActive;
                     let c = parseInt(countEl.textContent || '0', 10);
-                    if (result.reacted) {
-                        c += 1;
-                        btn.style.background = 'rgba(201,144,138,0.10)';
-                        btn.style.borderColor = 'var(--accent)';
-                        // Update the moment object so a later re-render is consistent
-                        if (!moment.reactions) moment.reactions = {};
-                        moment.reactions[r.key] = c;
-                        if (!moment.my_reactions) moment.my_reactions = {};
-                        moment.my_reactions[r.key] = 1;
-                    } else {
-                        c = Math.max(0, c - 1);
-                        btn.style.background = 'white';
-                        btn.style.borderColor = 'rgba(139,134,128,0.25)';
-                        if (moment.reactions) moment.reactions[r.key] = c;
-                        if (moment.my_reactions) delete moment.my_reactions[r.key];
-                    }
+                    c = nowActive ? c + 1 : Math.max(0, c - 1);
                     countEl.textContent = String(c);
+                    btn.style.background = nowActive ? 'rgba(201,144,138,0.10)' : 'white';
+                    btn.style.borderColor = nowActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)';
+                    if (!moment.reactions) moment.reactions = {};
+                    moment.reactions[r.key] = c;
+                    if (!moment.my_reactions) moment.my_reactions = {};
+                    if (nowActive) moment.my_reactions[r.key] = 1;
+                    else delete moment.my_reactions[r.key];
+                    const result = await toggleMomentReaction(moment.id, r.key);
+                    btn.dataset.busy = '';
+                    if (!result) {
+                        // Server said no — revert the optimistic flip
+                        c = nowActive ? Math.max(0, c - 1) : c + 1;
+                        countEl.textContent = String(c);
+                        btn.style.background = wasActive ? 'rgba(201,144,138,0.10)' : 'white';
+                        btn.style.borderColor = wasActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)';
+                        moment.reactions[r.key] = c;
+                        if (wasActive) moment.my_reactions[r.key] = 1;
+                        else delete moment.my_reactions[r.key];
+                    }
                 });
                 reactionBar.appendChild(btn);
             });
@@ -10070,29 +10079,42 @@
                 btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:18px;border:1.5px solid ' + (isActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)') + ';background:' + (isActive ? 'rgba(201,144,138,0.12)' : 'white') + ';color:var(--dark-text);font-family:-apple-system,system-ui,sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;';
                 btn.setAttribute('aria-label', r.label);
                 btn.innerHTML = '<span style="font-size:1.05rem;line-height:1;">' + r.char + '</span><span data-count style="font-variant-numeric:tabular-nums;">' + (counts[r.key] || 0) + '</span>';
+                // Optimistic UI: flip the visual state IMMEDIATELY on tap so
+                // the woman sees instant feedback. Reconcile with the server
+                // response afterwards; revert only if the server rejects.
+                // Busy guard prevents a fast double-tap from racing itself.
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
+                    if (btn.dataset.busy === '1') return;
+                    btn.dataset.busy = '1';
                     pauseSlideshowAuto();
-                    const result = await toggleMomentReaction(moment.id, r.key);
-                    if (!result) return;
                     const countEl = btn.querySelector('[data-count]');
+                    const wasActive = !!(moment.my_reactions && moment.my_reactions[r.key]);
+                    const nowActive = !wasActive;
                     let c = parseInt(countEl.textContent || '0', 10);
-                    if (result.reacted) {
-                        c += 1;
-                        btn.style.background = 'rgba(201,144,138,0.12)';
-                        btn.style.borderColor = 'var(--accent)';
-                        if (!moment.reactions) moment.reactions = {};
-                        moment.reactions[r.key] = c;
-                        if (!moment.my_reactions) moment.my_reactions = {};
-                        moment.my_reactions[r.key] = 1;
-                    } else {
-                        c = Math.max(0, c - 1);
-                        btn.style.background = 'white';
-                        btn.style.borderColor = 'rgba(139,134,128,0.25)';
-                        if (moment.reactions) moment.reactions[r.key] = c;
-                        if (moment.my_reactions) delete moment.my_reactions[r.key];
-                    }
+                    c = nowActive ? c + 1 : Math.max(0, c - 1);
+                    // Flip the button appearance + local moment cache right away
                     countEl.textContent = String(c);
+                    btn.style.background = nowActive ? 'rgba(201,144,138,0.12)' : 'white';
+                    btn.style.borderColor = nowActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)';
+                    if (!moment.reactions) moment.reactions = {};
+                    moment.reactions[r.key] = c;
+                    if (!moment.my_reactions) moment.my_reactions = {};
+                    if (nowActive) moment.my_reactions[r.key] = 1;
+                    else delete moment.my_reactions[r.key];
+                    // Now reconcile with the server
+                    const result = await toggleMomentReaction(moment.id, r.key);
+                    btn.dataset.busy = '';
+                    if (!result) {
+                        // Server said no — revert the optimistic flip
+                        c = nowActive ? Math.max(0, c - 1) : c + 1;
+                        countEl.textContent = String(c);
+                        btn.style.background = wasActive ? 'rgba(201,144,138,0.12)' : 'white';
+                        btn.style.borderColor = wasActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)';
+                        moment.reactions[r.key] = c;
+                        if (wasActive) moment.my_reactions[r.key] = 1;
+                        else delete moment.my_reactions[r.key];
+                    }
                 });
                 bar.appendChild(btn);
             });

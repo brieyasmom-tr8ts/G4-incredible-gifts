@@ -9293,11 +9293,14 @@
             const caption = document.getElementById('slideshow-caption');
             const moment = slideshowMoments[index];
             img.style.opacity = '0';
+            // Wait for the fade-out to fully complete before swapping the src.
+            // The CSS transition is 0.6s; if we swap earlier the old image is
+            // still partially visible and a portrait can ghost over a landscape.
             setTimeout(() => {
                 img.src = moment.photo_data;
                 caption.textContent = moment.caption || '';
                 img.style.opacity = '1';
-            }, 300);
+            }, 650);
         }
 
         const feedbackRatings = {};
@@ -9645,6 +9648,9 @@
                         var src = (m.photo_data && m.photo_data.startsWith('data:')) ? m.photo_data : (m.image_url || m.photo_data || (API_URL + '/api/moments/' + m.id + '/image'));
                         if (!src) { window._feedSlideIdx = (window._feedSlideIdx + 1) % list.length; return; }
                         img.style.opacity = '0';
+                        // Wait for the 0.5s fade-out to fully complete before
+                        // swapping the src so portrait images do not ghost over
+                        // the previous landscape (or vice versa) during the cross.
                         setTimeout(function() {
                             img.src = src;
                             img.style.opacity = '1';
@@ -9655,7 +9661,7 @@
                             if (nameEl) nameEl.textContent = m.author_name ? '\u2014 ' + m.author_name : '';
                             if (countEl) countEl.textContent = (window._feedSlideIdx + 1) + ' / ' + list.length;
                             window._feedSlideIdx = (window._feedSlideIdx + 1) % list.length;
-                        }, 300);
+                        }, 550);
                     }
                     showFeedSlide();
                     window._feedSlideshowTimer = setInterval(showFeedSlide, 5000);

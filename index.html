@@ -2665,14 +2665,17 @@
             left: 0;
             right: 0;
             width: 100%;
-            background: rgba(255,255,255,0.97);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            /* Solid white so the safe-area padding area doesn't show the
+               cream body background through it. */
+            background: #ffffff;
             border-top: 1px solid rgba(139, 134, 128, 0.1);
             display: flex;
             align-items: stretch;
             padding: 0;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
+            /* Just enough to clear iPhone's home indicator. The full
+               safe-area-inset-bottom (~34 px on notched phones) leaves
+               too much visual dead space below the buttons. */
+            padding-bottom: max(6px, calc(env(safe-area-inset-bottom, 0px) * 0.5));
             padding-left: env(safe-area-inset-left, 0px);
             padding-right: env(safe-area-inset-right, 0px);
             box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);

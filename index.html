@@ -3346,17 +3346,13 @@
         <div class="content-area">
             <!-- HOME TAB -->
             <div id="home-tab" class="tab-content active">
+                <!-- Celebration cards (always visible regardless of retreat status) -->
+                <div id="my-celebration-hero" style="display:none;"></div>
+                <div id="my-celebration-lookback" style="display:none;"></div>
+                <div id="my-celebrations-archive" style="display:none;"></div>
+
                 <!-- Post-retreat home (hidden until retreat ends) -->
                 <div id="post-retreat-home" style="display:none;">
-                    <!-- My celebration hero (only on her birthday/anniversary day) -->
-                    <div id="my-celebration-hero" style="display:none;"></div>
-
-                    <!-- My celebration look-back (1-3 days after her day) -->
-                    <div id="my-celebration-lookback" style="display:none;"></div>
-
-                    <!-- Permanent "My Celebrations" archive button -->
-                    <div id="my-celebrations-archive" style="display:none;"></div>
-
                     <div style="text-align:center;padding:24px 20px 8px;">
                         <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--dark-text);margin-bottom:6px;">Thank You</div>
                         <div style="font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--light-text);font-style:italic;line-height:1.6;padding:0 12px;">What a weekend. What a God. Thank you for showing up, being open, and letting Him move. You are seen, you are loved, and you are carrying something incredible home with you.</div>
@@ -4596,6 +4592,12 @@
             profileBtn.style.display = 'block';
             profileBtn.onclick = openProfile;
             checkProfileNudge();
+            // Celebration cards work regardless of post-retreat status now that
+            // they live outside post-retreat-home. Run on every login.
+            if (typeof loadMyCelebrationStatus === 'function') {
+                if (typeof initCelebrationScrapbookModal === 'function') initCelebrationScrapbookModal();
+                loadMyCelebrationStatus();
+            }
         }
 
         // Load user photo from server if we don't have it cached
@@ -5021,7 +5023,7 @@
 
                 <div class="profile-field">
                     <label>Birthday</label>
-                    <input type="date" id="profile-birthday" value="${currentUser.birthday || ''}">
+                    <input type="date" id="profile-birthday" value="${currentUser.birthday || ''}" min="1900-01-01" max="2030-12-31" placeholder="YYYY-MM-DD">
                     <div class="profile-toggle-row" style="margin-top:6px;">
                         <span class="profile-toggle-label">Let G4 sisters celebrate me</span>
                         <button class="profile-toggle ${currentUser.show_birthday ? 'on' : ''}" id="toggle-birthday"></button>
@@ -5030,7 +5032,7 @@
 
                 <div class="profile-field">
                     <label>Wedding Anniversary <span style="font-weight:400;font-style:italic;color:var(--light-text);">(optional)</span></label>
-                    <input type="date" id="profile-anniversary" value="${currentUser.anniversary || ''}">
+                    <input type="date" id="profile-anniversary" value="${currentUser.anniversary || ''}" min="1900-01-01" max="2030-12-31" placeholder="YYYY-MM-DD">
                     <div class="profile-toggle-row" style="margin-top:6px;">
                         <span class="profile-toggle-label">Let G4 sisters celebrate it</span>
                         <button class="profile-toggle ${currentUser.show_anniversary ? 'on' : ''}" id="toggle-anniversary"></button>
@@ -8947,27 +8949,27 @@
             lookbackEl.style.display = 'none';
             archiveEl.style.display = 'none';
 
-            // Step 1: Server check — is today my birthday or anniversary?
-            let activeOccasions = [];
-            try {
-                const resp = await fetch(API_URL + '/api/celebrations/check-mine?user_id=' + currentUser.id);
-                if (resp.ok) {
-                    const data = await resp.json();
-                    activeOccasions = data.active || [];
+            // Step 1: Client-side check using LOCAL date — is today my birthday/anniversary?
+            const checks = [
+                { occasion: 'birthday', dateStr: currentUser.birthday },
+                { occasion: 'anniversary', dateStr: currentUser.anniversary }
+            ];
+            let activeOccasion = null;
+            for (const c of checks) {
+                const days = daysSinceOccasion(c.dateStr);
+                if (days === 0) {
+                    activeOccasion = { occasion: c.occasion, occasion_date: thisYearOccurrence(c.dateStr) };
+                    break;
                 }
-            } catch(e) { /* ignore */ }
+            }
 
-            if (activeOccasions.length > 0) {
-                await showMyCelebrationHero(activeOccasions[0]);
+            if (activeOccasion) {
+                await showMyCelebrationHero(activeOccasion);
                 return;
             }
 
             // Step 2: Look-back — was my birthday or anniversary in the last 1-3 days?
             let lookbackOccasion = null;
-            const checks = [
-                { occasion: 'birthday', dateStr: currentUser.birthday },
-                { occasion: 'anniversary', dateStr: currentUser.anniversary }
-            ];
             for (const c of checks) {
                 const days = daysSinceOccasion(c.dateStr);
                 if (days !== null && days >= 1 && days <= 3) {
@@ -9087,12 +9089,12 @@
 
         async function loadMyCelebrationsArchive() {
             const el = document.getElementById('my-celebrations-archive');
-            if (!el) return;
+            if (!el) return false;
             try {
                 const resp = await fetch(API_URL + '/api/celebrations/mine?user_id=' + currentUser.id);
-                if (!resp.ok) return;
+                if (!resp.ok) return false;
                 const messages = await resp.json();
-                if (!Array.isArray(messages) || !messages.length) return;
+                if (!Array.isArray(messages) || !messages.length) return false;
                 // Group by occasion_date to get a count of distinct celebrations
                 const dates = new Set(messages.map(m => m.occasion_date));
                 const heartTotal = messages.length;
@@ -9105,7 +9107,8 @@
                 el.style.display = 'block';
                 const btn = el.querySelector('.celebration-archive-btn');
                 if (btn) btn.addEventListener('click', () => openCelebrationsScrapbook());
-            } catch(e) {}
+                return true;
+            } catch(e) { return false; }
         }
 
         async function openCelebrationsScrapbook() {

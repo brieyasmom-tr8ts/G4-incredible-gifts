@@ -2664,31 +2664,48 @@
             bottom: 0;
             left: 0;
             right: 0;
+            width: 100%;
             background: rgba(255,255,255,0.97);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-top: 1px solid rgba(139, 134, 128, 0.1);
             display: flex;
-            justify-content: space-around;
+            align-items: stretch;
+            padding: 0;
             padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
             box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.04);
             z-index: 100;
+            box-sizing: border-box;
         }
 
         .nav-btn {
-            flex: 1;
+            flex: 1 1 0;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 2px;
+            gap: 3px;
             cursor: pointer;
             border: none;
             background: none;
-            padding: 8px 4px 4px;
+            padding: 10px 2px 8px;
             color: var(--light-text);
-            font-size: 0.65rem;
+            font-size: 0.7rem;
+            font-family: -apple-system, system-ui, 'Cormorant Garamond', serif;
+            font-weight: 600;
+            text-align: center;
             transition: var(--transition);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        .nav-btn > span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
         }
 
         .nav-btn.active {
@@ -8443,10 +8460,11 @@
             const mine = moment.my_reactions || {};
             MOMENT_REACTIONS.forEach(r => {
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 const isActive = !!mine[r.key];
-                btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:20px;border:1.5px solid ' + (isActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)') + ';background:' + (isActive ? 'rgba(201,144,138,0.10)' : 'white') + ';color:var(--dark-text);font-family:Cormorant Garamond,serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:var(--transition);min-height:38px;';
+                btn.style.cssText = 'display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:20px;border:1.5px solid ' + (isActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)') + ';background:' + (isActive ? 'rgba(201,144,138,0.10)' : 'white') + ';color:var(--dark-text);font-family:-apple-system,system-ui,sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;transition:var(--transition);min-height:38px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;';
                 btn.setAttribute('aria-label', r.label);
-                btn.innerHTML = '<span style="font-size:1.1rem;">' + r.char + '</span><span data-count>' + (counts[r.key] || 0) + '</span>';
+                btn.innerHTML = '<span style="font-size:1.15rem;line-height:1;">' + r.char + '</span><span data-count style="font-variant-numeric:tabular-nums;">' + (counts[r.key] || 0) + '</span>';
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const result = await toggleMomentReaction(moment.id, r.key);
@@ -10044,10 +10062,11 @@
 
             MOMENT_REACTIONS.forEach(r => {
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 const isActive = !!mine[r.key];
-                btn.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:18px;border:1.5px solid ' + (isActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)') + ';background:' + (isActive ? 'rgba(201,144,138,0.12)' : 'white') + ';color:var(--dark-text);font-family:Cormorant Garamond,serif;font-size:0.88rem;font-weight:600;cursor:pointer;';
+                btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:18px;border:1.5px solid ' + (isActive ? 'var(--accent)' : 'rgba(139,134,128,0.25)') + ';background:' + (isActive ? 'rgba(201,144,138,0.12)' : 'white') + ';color:var(--dark-text);font-family:-apple-system,system-ui,sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;';
                 btn.setAttribute('aria-label', r.label);
-                btn.innerHTML = '<span style="font-size:1rem;">' + r.char + '</span><span data-count>' + (counts[r.key] || 0) + '</span>';
+                btn.innerHTML = '<span style="font-size:1.05rem;line-height:1;">' + r.char + '</span><span data-count style="font-variant-numeric:tabular-nums;">' + (counts[r.key] || 0) + '</span>';
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     pauseSlideshowAuto();
@@ -10077,10 +10096,11 @@
 
             // Comment count chip — tap to open the overlay for reading/posting
             const cBtn = document.createElement('button');
+            cBtn.type = 'button';
             const cCount = moment.comment_count || 0;
-            cBtn.style.cssText = 'display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:18px;border:1.5px solid rgba(139,134,128,0.25);background:white;color:var(--dark-text);font-family:Cormorant Garamond,serif;font-size:0.88rem;font-weight:600;cursor:pointer;';
+            cBtn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:18px;border:1.5px solid rgba(139,134,128,0.25);background:white;color:var(--dark-text);font-family:-apple-system,system-ui,sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;';
             cBtn.setAttribute('aria-label', 'Comments');
-            cBtn.innerHTML = '<span style="font-size:1rem;">\ud83d\udcac</span><span>' + cCount + '</span>';
+            cBtn.innerHTML = '<span style="font-size:1.05rem;line-height:1;">\ud83d\udcac</span><span style="font-variant-numeric:tabular-nums;">' + cCount + '</span>';
             cBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 pauseSlideshowAuto();

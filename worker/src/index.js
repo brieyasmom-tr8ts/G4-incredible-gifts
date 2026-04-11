@@ -524,7 +524,7 @@ export default {
 
       // DELETE /api/admin/reset - clear all test data
       if (path === '/api/admin/reset' && request.method === 'DELETE') {
-        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'users'];
+        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'testimony_hearts', 'testimonies', 'users'];
         for (const t of tables) {
           try { await env.DB.prepare(`DELETE FROM ${t}`).run(); } catch(e) { /* table may not exist */ }
         }
@@ -1942,6 +1942,159 @@ export default {
           'SELECT * FROM celebration_messages ORDER BY created_at DESC LIMIT 500'
         ).all();
         return json(results, corsHeaders);
+      }
+
+      // ===== TESTIMONIES (Stories of what God's doing) =====
+      const ensureTestimoniesTable = async () => {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS testimonies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            name TEXT DEFAULT 'Anonymous',
+            anonymous INTEGER DEFAULT 0,
+            kind TEXT DEFAULT 'text',
+            text TEXT DEFAULT '',
+            video_key TEXT DEFAULT '',
+            gift_tag TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            featured INTEGER DEFAULT 0,
+            heart_count INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id)
+          )`).run();
+        } catch(e) { /* exists */ }
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS testimony_hearts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            testimony_id INTEGER NOT NULL,
+            user_id INTEGER,
+            created_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(testimony_id, user_id),
+            FOREIGN KEY (testimony_id) REFERENCES testimonies(id)
+          )`).run();
+        } catch(e) { /* exists */ }
+      };
+
+      // POST /api/testimonies - submit a new story
+      // body: { user_id, name, anonymous, kind ('text'|'video'), text, video_key, gift_tag }
+      if (path === '/api/testimonies' && request.method === 'POST') {
+        await ensureTestimoniesTable();
+        const body = await request.json();
+        const text = (body.text || '').trim();
+        const kind = body.kind === 'video' ? 'video' : 'text';
+        if (kind === 'text' && text.length < 10) {
+          return json({ error: 'Please write at least a few sentences' }, corsHeaders, 400);
+        }
+        if (kind === 'video' && !body.video_key) {
+          return json({ error: 'Video upload required' }, corsHeaders, 400);
+        }
+        await env.DB.prepare(
+          `INSERT INTO testimonies (user_id, name, anonymous, kind, text, video_key, gift_tag, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`
+        ).bind(
+          body.user_id || null,
+          body.name || 'A G4 sister',
+          body.anonymous ? 1 : 0,
+          kind,
+          text,
+          body.video_key || '',
+          body.gift_tag || ''
+        ).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/testimonies - public feed of approved + featured stories
+      // ?user_id=X to mark which ones the requester has hearted
+      if (path === '/api/testimonies' && request.method === 'GET') {
+        await ensureTestimoniesTable();
+        const requesterId = parseInt(url.searchParams.get('user_id') || '0', 10);
+        const { results } = await env.DB.prepare(
+          `SELECT * FROM testimonies WHERE status IN ('approved', 'featured')
+           ORDER BY featured DESC, created_at DESC LIMIT 200`
+        ).all();
+        // Mark which stories the requester has hearted
+        let heartedSet = new Set();
+        if (requesterId) {
+          const { results: hearts } = await env.DB.prepare(
+            'SELECT testimony_id FROM testimony_hearts WHERE user_id = ?'
+          ).bind(requesterId).all();
+          heartedSet = new Set(hearts.map(h => h.testimony_id));
+        }
+        const out = (results || []).map(t => {
+          const display = t.anonymous ? { name: 'A G4 sister' } : { name: t.name };
+          return Object.assign({}, t, {
+            display_name: display.name,
+            i_hearted: heartedSet.has(t.id) ? 1 : 0
+          });
+        });
+        return json(out, corsHeaders);
+      }
+
+      // GET /api/testimonies/all - admin: list everything (pending/approved/rejected/featured)
+      if (path === '/api/testimonies/all' && request.method === 'GET') {
+        await ensureTestimoniesTable();
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM testimonies ORDER BY status = "pending" DESC, created_at DESC'
+        ).all();
+        return json(results || [], corsHeaders);
+      }
+
+      // POST /api/testimonies/:id/heart - toggle heart from a user
+      const tHeartMatch = path.match(/^\/api\/testimonies\/(\d+)\/heart$/);
+      if (tHeartMatch && request.method === 'POST') {
+        await ensureTestimoniesTable();
+        const tid = parseInt(tHeartMatch[1]);
+        const body = await request.json();
+        const uid = parseInt(body.user_id || 0);
+        if (!uid) return json({ error: 'user_id required' }, corsHeaders, 400);
+        const existing = await env.DB.prepare(
+          'SELECT id FROM testimony_hearts WHERE testimony_id = ? AND user_id = ?'
+        ).bind(tid, uid).first();
+        if (existing) {
+          await env.DB.prepare('DELETE FROM testimony_hearts WHERE id = ?').bind(existing.id).run();
+          await env.DB.prepare('UPDATE testimonies SET heart_count = MAX(heart_count - 1, 0) WHERE id = ?').bind(tid).run();
+          return json({ hearted: false }, corsHeaders);
+        } else {
+          await env.DB.prepare('INSERT INTO testimony_hearts (testimony_id, user_id) VALUES (?, ?)').bind(tid, uid).run();
+          await env.DB.prepare('UPDATE testimonies SET heart_count = heart_count + 1 WHERE id = ?').bind(tid).run();
+          return json({ hearted: true }, corsHeaders);
+        }
+      }
+
+      // PATCH /api/testimonies/:id - admin: approve/reject/feature/unfeature
+      // body: { status?: 'approved'|'rejected'|'pending', featured?: 0|1 }
+      const tPatchMatch = path.match(/^\/api\/testimonies\/(\d+)$/);
+      if (tPatchMatch && request.method === 'PATCH') {
+        await ensureTestimoniesTable();
+        const tid = parseInt(tPatchMatch[1]);
+        const body = await request.json();
+        const updates = [];
+        const values = [];
+        if (typeof body.status === 'string' && ['pending', 'approved', 'rejected', 'featured'].indexOf(body.status) !== -1) {
+          updates.push('status = ?');
+          values.push(body.status);
+        }
+        if (typeof body.featured !== 'undefined') {
+          // When marking a story featured, unfeature any others first so only one can be featured at a time
+          if (body.featured) {
+            await env.DB.prepare('UPDATE testimonies SET featured = 0').run();
+          }
+          updates.push('featured = ?');
+          values.push(body.featured ? 1 : 0);
+        }
+        if (!updates.length) return json({ error: 'No fields' }, corsHeaders, 400);
+        values.push(tid);
+        await env.DB.prepare('UPDATE testimonies SET ' + updates.join(', ') + ' WHERE id = ?').bind(...values).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/testimonies/:id - admin
+      if (tPatchMatch && request.method === 'DELETE') {
+        await ensureTestimoniesTable();
+        const tid = parseInt(tPatchMatch[1]);
+        await env.DB.prepare('DELETE FROM testimony_hearts WHERE testimony_id = ?').bind(tid).run();
+        await env.DB.prepare('DELETE FROM testimonies WHERE id = ?').bind(tid).run();
+        return json({ success: true }, corsHeaders);
       }
 
       // ===== QUIZ (Know Your Sisters) =====

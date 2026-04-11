@@ -614,6 +614,7 @@
             <button class="nav-tab" data-section="prayers"><span class="nav-icon">🙏</span> Prayer Wall <span class="badge" id="count-prayers">0</span></button>
             <button class="nav-tab" data-section="feedback"><span class="nav-icon">📝</span> Feedback <span class="badge" id="count-feedback">0</span></button>
             <button class="nav-tab" data-section="topics"><span class="nav-icon">💡</span> Theme Ideas <span class="badge" id="count-topics">0</span></button>
+            <button class="nav-tab" data-section="stories"><span class="nav-icon">✨</span> Stories <span class="badge" id="count-stories">0</span></button>
             <button class="nav-tab" data-section="polls"><span class="nav-icon">💬</span> Polls/Q&A <span class="badge" id="count-polls">0</span></button>
             <button class="nav-tab" data-section="games"><span class="nav-icon">🎮</span> Games</button>
             <button class="nav-tab" data-section="quiz"><span class="nav-icon">🧠</span> Quiz</button>
@@ -1045,6 +1046,25 @@
                 <p>No theme suggestions yet</p>
             </div>
         </div>
+
+        <!-- Stories (Testimonies) -->
+        <div class="section" id="section-stories">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap;">
+                <div style="font-size:0.85rem;color:#777;">Stories submitted by women. Approve to publish, feature one as Story of the Week, or reject.</div>
+                <button class="btn btn-primary" id="btn-download-stories-csv" onclick="downloadStoriesCsv()" style="display:none;">&#x2b07;&#xfe0f; Download CSV</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:14px;">
+                <button class="btn" id="story-filter-pending" onclick="setStoryFilter('pending')">Pending</button>
+                <button class="btn" id="story-filter-approved" onclick="setStoryFilter('approved')">Approved</button>
+                <button class="btn" id="story-filter-rejected" onclick="setStoryFilter('rejected')">Rejected</button>
+                <button class="btn" id="story-filter-all" onclick="setStoryFilter('all')">All</button>
+            </div>
+            <div id="stories-list" style="display:flex;flex-direction:column;gap:12px;"></div>
+            <div class="empty-state" id="empty-stories" style="display:none;">
+                <div class="icon">&#x2728;</div>
+                <p>No stories in this view</p>
+            </div>
+        </div>
     </div>
     </div>
 </div>
@@ -1147,7 +1167,7 @@ const SECTION_TITLES = {
     stats: 'Stats', users: 'Users', churches: 'Churches', news: 'News / Reminders',
     navmenu: 'Nav Menu', homebuttons: 'Home Buttons', videos: 'Videos',
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
-    topics: 'Theme Suggestions',
+    topics: 'Theme Suggestions', stories: 'Stories',
     polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme'
 };
 
@@ -1208,6 +1228,7 @@ async function refreshAll() {
         loadPrayers(),
         loadFeedback(),
         loadTopics(),
+        loadStories(),
         loadGameSettings(),
         loadFunFacts(),
         loadPackingScores(),
@@ -2063,6 +2084,168 @@ function downloadTopicsCsv() {
     showToast(`Downloaded ${topicsCache.length} suggestions`);
 }
 
+// --- Stories (Testimonies) ---
+let storiesCache = [];
+let storyFilter = 'pending';
+
+async function loadStories() {
+    try {
+        const data = await apiFetch('/api/testimonies/all');
+        const items = Array.isArray(data) ? data : [];
+        storiesCache = items;
+        // Header badge counts pending only (the actionable bucket)
+        const pendingCount = items.filter(s => s.status === 'pending').length;
+        document.getElementById('count-stories').textContent = pendingCount;
+        const downloadBtn = document.getElementById('btn-download-stories-csv');
+        if (downloadBtn) downloadBtn.style.display = items.length ? '' : 'none';
+        renderStoryFilter();
+        renderStoriesList();
+    } catch (e) {
+        console.error('Stories:', e);
+        document.getElementById('stories-list').innerHTML = '';
+        document.getElementById('empty-stories').style.display = '';
+    }
+}
+
+function setStoryFilter(filter) {
+    storyFilter = filter;
+    renderStoryFilter();
+    renderStoriesList();
+}
+
+function renderStoryFilter() {
+    ['pending', 'approved', 'rejected', 'all'].forEach(f => {
+        const btn = document.getElementById('story-filter-' + f);
+        if (!btn) return;
+        if (f === storyFilter) {
+            btn.className = 'btn btn-primary';
+        } else {
+            btn.className = 'btn btn-outline';
+        }
+    });
+}
+
+function renderStoriesList() {
+    const list = document.getElementById('stories-list');
+    const empty = document.getElementById('empty-stories');
+    let items = storiesCache.slice();
+    if (storyFilter === 'pending') items = items.filter(s => s.status === 'pending');
+    else if (storyFilter === 'approved') items = items.filter(s => s.status === 'approved' || s.featured);
+    else if (storyFilter === 'rejected') items = items.filter(s => s.status === 'rejected');
+    if (!items.length) {
+        list.innerHTML = '';
+        empty.style.display = '';
+        return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = items.map(s => {
+        const name = esc(s.anonymous ? 'A G4 sister (anonymous)' : (s.name || 'A G4 sister'));
+        const date = fmtDateTime(s.created_at);
+        const statusBadge = renderStatusBadge(s);
+        const giftPill = s.gift_tag
+            ? `<span style="display:inline-block;padding:3px 10px;background:rgba(138,158,122,0.15);color:#5a7a5a;border-radius:14px;font-size:0.72rem;font-weight:600;">${esc(s.gift_tag)}</span>`
+            : '';
+        const heartChip = s.heart_count
+            ? `<span style="font-size:0.78rem;color:#888;">\u2764\ufe0f ${s.heart_count}</span>`
+            : '';
+        const buttons = renderStoryAdminButtons(s);
+        return `
+            <div style="background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,0.08);${s.featured ? 'border-left:4px solid #C9908A;' : ''}">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+                    <div>
+                        <strong style="font-size:0.95rem;">${name}</strong>
+                        <span style="font-size:0.75rem;color:#999;margin-left:8px;">${date}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        ${heartChip}
+                        ${giftPill}
+                        ${statusBadge}
+                    </div>
+                </div>
+                <div style="font-size:0.95rem;line-height:1.6;color:#333;white-space:pre-wrap;margin-bottom:12px;">${esc(s.text || '')}</div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    ${buttons}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderStatusBadge(s) {
+    if (s.featured) return '<span style="display:inline-block;padding:3px 10px;background:#C9908A;color:white;border-radius:14px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">\u2728 Featured</span>';
+    const map = {
+        pending: { bg: '#FBE6C2', color: '#7a5a30', label: 'Pending' },
+        approved: { bg: '#D4E6CC', color: '#3e6b3e', label: 'Approved' },
+        rejected: { bg: '#F0CFCF', color: '#8B3A3A', label: 'Rejected' }
+    };
+    const m = map[s.status] || map.pending;
+    return `<span style="display:inline-block;padding:3px 10px;background:${m.bg};color:${m.color};border-radius:14px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">${m.label}</span>`;
+}
+
+function renderStoryAdminButtons(s) {
+    const btns = [];
+    if (s.status !== 'approved' || s.featured) {
+        btns.push(`<button class="btn btn-primary" style="padding:4px 12px;font-size:0.78rem;" onclick="updateStory(${s.id}, { status: 'approved', featured: 0 })">Approve</button>`);
+    }
+    if (s.status !== 'rejected') {
+        btns.push(`<button class="btn btn-outline" style="padding:4px 12px;font-size:0.78rem;" onclick="updateStory(${s.id}, { status: 'rejected' })">Reject</button>`);
+    }
+    if (s.status === 'approved' && !s.featured) {
+        btns.push(`<button class="btn btn-outline" style="padding:4px 12px;font-size:0.78rem;" onclick="updateStory(${s.id}, { featured: 1, status: 'approved' })">\u2728 Feature</button>`);
+    }
+    if (s.featured) {
+        btns.push(`<button class="btn btn-outline" style="padding:4px 12px;font-size:0.78rem;" onclick="updateStory(${s.id}, { featured: 0 })">Unfeature</button>`);
+    }
+    btns.push(`<button class="btn btn-danger-outline" style="padding:4px 12px;font-size:0.78rem;" onclick="deleteStory(${s.id})">Delete</button>`);
+    return btns.join('');
+}
+
+async function updateStory(id, fields) {
+    try {
+        await apiFetch(`/api/testimonies/${id}`, { method: 'PATCH', body: fields });
+        loadStories();
+    } catch (e) { showToast('Error: ' + e.message); }
+}
+
+async function deleteStory(id) {
+    showModal('Delete Story', `Permanently delete story ID ${id}?`, async () => {
+        try {
+            await apiFetch(`/api/testimonies/${id}`, { method: 'DELETE' });
+            showToast('Story deleted');
+            loadStories();
+        } catch (e) { showToast('Error: ' + e.message); }
+    });
+}
+
+function downloadStoriesCsv() {
+    if (!storiesCache.length) {
+        showToast('No stories to download');
+        return;
+    }
+    const escapeCsv = (val) => {
+        if (val == null) return '';
+        const s = String(val);
+        if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+    };
+    const cols = ['id', 'date', 'name', 'anonymous', 'status', 'featured', 'gift_tag', 'heart_count', 'text'];
+    const rows = [cols.join(',')];
+    storiesCache.forEach(s => {
+        rows.push([s.id, s.created_at || '', s.name || '', s.anonymous ? 'yes' : '', s.status || '', s.featured ? 'yes' : '', s.gift_tag || '', s.heart_count || 0, s.text || ''].map(escapeCsv).join(','));
+    });
+    const csv = rows.join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `g4-stories-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Downloaded ${storiesCache.length} stories`);
+}
+
 // --- Games ---
 let gameSettings = {};
 async function loadGameSettings() {
@@ -2675,7 +2858,7 @@ const NAV_ITEMS = [
     { key: 'nav_survey', label: 'Survey', icon: '&#x1f4dd;', desc: 'Retreat feedback form' },
     { key: 'nav_secretsister', label: 'Secret Sister', icon: '&#x1f48c;', desc: 'Anonymous encouragement notes' },
     { key: 'nav_topics', label: 'Suggest Theme', icon: '&#x1f4a1;', desc: 'Collect topic ideas for next year' },
-    { key: 'home_celebrations', label: 'Birthday Card', icon: '&#x1f382;', desc: 'Show "celebrate your sisters" card on the home page' }
+    { key: 'nav_stories', label: 'Stories', icon: '&#x2728;', desc: 'Testimonies of what God is doing' }
 ];
 
 function renderNavToggles() {
@@ -2711,6 +2894,9 @@ const HOME_BUTTON_ITEMS = [
     { key: 'home_packing', label: 'Packing Points' },
     { key: 'home_connect', label: 'Connect Directory' },
     { key: 'home_schedule', label: 'View Schedule' },
+    { key: 'home_topics', label: 'Suggest Theme' },
+    { key: 'home_stories', label: 'Stories' },
+    { key: 'home_celebrations', label: 'Celebrations Card (birthdays + anniversaries)' },
 ];
 
 function renderHomeToggles() {

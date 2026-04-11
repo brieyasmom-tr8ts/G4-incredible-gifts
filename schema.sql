@@ -229,3 +229,28 @@ CREATE TABLE celebration_messages (
   FOREIGN KEY (recipient_user_id) REFERENCES users(id),
   FOREIGN KEY (sender_user_id) REFERENCES users(id)
 );
+
+CREATE TABLE testimonies (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  name TEXT DEFAULT 'A G4 sister',
+  anonymous INTEGER DEFAULT 0,
+  kind TEXT DEFAULT 'text',
+  text TEXT DEFAULT '',
+  video_key TEXT DEFAULT '',
+  gift_tag TEXT DEFAULT '',
+  status TEXT DEFAULT 'pending',
+  featured INTEGER DEFAULT 0,
+  heart_count INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE testimony_hearts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  testimony_id INTEGER NOT NULL,
+  user_id INTEGER,
+  created_at TEXT DEFAULT (datetime('now')),
+  UNIQUE(testimony_id, user_id),
+  FOREIGN KEY (testimony_id) REFERENCES testimonies(id)
+);

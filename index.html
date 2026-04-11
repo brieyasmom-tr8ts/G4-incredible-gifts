@@ -9656,10 +9656,11 @@
 
             updateFeedbackUIState();
 
-            // Check if already submitted
+            // Check if already submitted — hide the entire form card so the
+            // home page returns to normal once she's taken the survey.
             if (localStorage.getItem('g4feedback_sent')) {
-                document.getElementById('feedback-submit-btn').style.display = 'none';
-                document.getElementById('feedback-thanks').style.display = 'block';
+                const wrap = document.getElementById('feedback-form-wrap');
+                if (wrap) wrap.style.display = 'none';
                 return;
             }
 
@@ -9745,11 +9746,27 @@
                 }
 
                 localStorage.setItem('g4feedback_sent', '1');
-                btn.style.display = 'none';
-                document.getElementById('feedback-thanks').style.display = 'block';
                 updateFeedbackUIState();
                 showToast('Thank you for your feedback!');
                 launchConfetti();
+                // Let the confetti fall, then hide the whole form card so the
+                // home page quietly returns to normal.
+                const wrap = document.getElementById('feedback-form-wrap');
+                if (wrap) {
+                    wrap.style.transition = 'opacity 0.6s ease, max-height 0.6s ease, margin 0.6s ease, padding 0.6s ease';
+                    setTimeout(() => {
+                        wrap.style.maxHeight = wrap.offsetHeight + 'px';
+                        // Force a reflow so the transition picks up the starting value
+                        void wrap.offsetHeight;
+                        wrap.style.opacity = '0';
+                        wrap.style.maxHeight = '0px';
+                        wrap.style.marginTop = '0px';
+                        wrap.style.marginBottom = '0px';
+                        wrap.style.paddingTop = '0px';
+                        wrap.style.paddingBottom = '0px';
+                    }, 1800);
+                    setTimeout(() => { if (wrap) wrap.style.display = 'none'; }, 2500);
+                }
             });
         }
 

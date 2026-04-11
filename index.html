@@ -4052,6 +4052,47 @@
                 <div id="continue-container"></div>
             </div>
 
+            <!-- TESTIMONIES (Stories) TAB -->
+            <div id="stories-tab" class="tab-content">
+                <div style="text-align:center;padding:24px 20px 12px;">
+                    <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--dark-text);margin-bottom:6px;">Stories</div>
+                    <div style="font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--light-text);font-style:italic;line-height:1.5;padding:0 12px;">What God is doing in your life. Tell yours, read theirs.</div>
+                </div>
+
+                <!-- Featured story slot (admin pins) -->
+                <div id="story-featured" style="display:none;"></div>
+
+                <!-- Submit form -->
+                <div id="story-submit-card" style="margin:14px 16px;padding:20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);">
+                    <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:600;color:var(--dark-text);margin-bottom:12px;">Share your story</div>
+
+                    <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:6px;">Your story</label>
+                    <textarea id="story-text" placeholder="What has God been doing in your life? Be as honest as you want — your sisters need to hear it." maxlength="2000" style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:120px;background:white;"></textarea>
+                    <div id="story-text-counter" style="text-align:right;font-size:0.72rem;color:var(--light-text);margin-top:4px;font-family:Cormorant Garamond,serif;font-style:italic;">0 / 2000</div>
+
+                    <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin:14px 0 6px;">Tag a gift <span style="font-weight:400;font-style:italic;">(optional)</span></label>
+                    <select id="story-gift-tag" style="width:100%;padding:11px 12px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:white;">
+                        <option value="">Pick a gift this story is about...</option>
+                    </select>
+
+                    <div class="profile-toggle-row" style="margin-top:14px;">
+                        <span class="profile-toggle-label">Share this anonymously</span>
+                        <button class="profile-toggle" id="story-anon-toggle"></button>
+                    </div>
+
+                    <button id="story-submit-btn" style="width:100%;margin-top:14px;padding:14px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;cursor:pointer;">Send for review</button>
+
+                    <div style="margin-top:10px;font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);font-style:italic;line-height:1.4;text-align:center;">Stories are reviewed by an admin before going live, so your sisters can read them in a quiet, safe space.</div>
+                </div>
+
+                <!-- Feed of approved stories -->
+                <div style="margin:8px 16px 4px;font-family:'Playfair Display',serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:1.2px;">Stories from your sisters</div>
+                <div id="story-feed" style="margin:0 16px;"></div>
+                <div id="story-feed-empty" style="display:none;margin:8px 16px 30px;padding:24px 20px;background:rgba(138,158,122,0.05);border-radius:14px;text-align:center;font-family:Cormorant Garamond,serif;font-style:italic;color:var(--light-text);">
+                    Stories from your sisters will gather here. Be the first to share yours.
+                </div>
+            </div>
+
             <!-- THEME SUGGESTIONS TAB -->
             <div id="topics-tab" class="tab-content">
                 <div style="text-align:center;padding:24px 20px 12px;">

@@ -3533,7 +3533,6 @@
                         </div>
 
                         <button class="save-btn" id="feedback-submit-btn" style="margin-top:0;">Send Feedback</button>
-                        <div id="feedback-thanks" style="display:none;text-align:center;padding:16px;font-family:Cormorant Garamond,serif;font-size:1rem;color:var(--accent);font-style:italic;">Thank you for sharing your heart with us. We love you!</div>
                     </div>
                 </div>
 
@@ -3615,8 +3614,6 @@
                         <!-- Live feed — stacked, scrollable -->
                         <div id="dashboard-feed" style="display:none;margin-bottom:16px;"></div>
 
-                        <div id="dashboard-encouragement" style="display:none;"></div>
-                        <div id="dashboard-photo" style="display:none;"></div>
 
                         <!-- Quick action buttons — controlled by admin nav toggles -->
                         <div id="dashboard-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
@@ -5980,21 +5977,6 @@
 
         const giftsData = ['Eternal Life', 'Identity', 'Love', 'Peace', 'Joy', 'Freedom', 'Rest', 'Wisdom', 'Courage', 'Strength', 'Faith', 'Purpose', 'Holy Spirit', 'New Heart', 'Grace', 'Hope', 'Provision', 'Healing', 'Good Gifts', 'Comfort'];
         const giftOptions = ['I\'ve experienced this', 'I\'m walking in this', 'I want this', 'I\'m struggling here'];
-
-        const weeks12 = [
-            { week: 1, title: 'The Gift of Receiving', question: 'What am I still learning to receive from God?', action: 'Name one thing you\'re holding too tightly.' },
-            { week: 2, title: 'The Gift of Identity', question: 'Who does God say I am?', action: 'Write down 3 truths about your identity in Christ.' },
-            { week: 3, title: 'The Gift of Love', question: 'How is God\'s love changing me?', action: 'Tell one person how God has loved you.' },
-            { week: 4, title: 'The Gift of Peace', question: 'Where do I need peace most right now?', action: 'Spend 10 minutes in silence listening to God.' },
-            { week: 5, title: 'The Gift of Joy', question: 'What steals my joy and what restores it?', action: 'Do one thing this week that brings you joy.' },
-            { week: 6, title: 'The Gift of Freedom', question: 'What am I being freed from?', action: 'Identify one area where you\'re finding new freedom.' },
-            { week: 7, title: 'The Gift of Rest', question: 'How am I honoring rest in my life?', action: 'Take one full day to rest without guilt.' },
-            { week: 8, title: 'The Gift of Wisdom', question: 'Where do I need God\'s wisdom most?', action: 'Ask God for wisdom about one decision.' },
-            { week: 9, title: 'The Gift of Courage', question: 'What am I being called to do courageously?', action: 'Take one small brave step this week.' },
-            { week: 10, title: 'The Gift of Strength', question: 'How is God strengthening me?', action: 'Share your story of strength with someone.' },
-            { week: 11, title: 'The Gift of Faith', question: 'What does it look like to trust God more?', action: 'Pray about one thing and watch God work.' },
-            { week: 12, title: 'Living It Out', question: 'How has God changed my understanding of His gifts?', action: 'Share this journey with someone else.' }
-        ];
 
         // ===== 15-Week Devotions =====
         // Each devotion has 4 personalized "letter from God" variants keyed off the user's

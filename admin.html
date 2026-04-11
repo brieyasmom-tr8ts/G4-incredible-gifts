@@ -2248,8 +2248,7 @@ async function loadGameSettings() {
         document.getElementById('toggle-secret-sister').checked = settings.secret_sister === '1';
         document.getElementById('toggle-ss-reveal').checked = settings.secret_sister_reveal === '1';
         document.getElementById('toggle-wyr-on-polls').checked = settings.show_wyr_on_polls !== '0';
-        renderNavToggles();
-        renderHomeToggles();
+        renderVisibilityToggles();
     } catch (e) { console.error('Game settings:', e); }
 }
 
@@ -2931,14 +2930,6 @@ async function toggleVisibilityKey(key, on) {
     } catch(e) { showToast('Error: ' + e.message); }
 }
 
-// Legacy stubs so older call sites don't break
-function renderNavToggles() { renderVisibilityToggles(); }
-function renderHomeToggles() { renderVisibilityToggles(); }
-
-// Legacy alias — all visibility toggles go through the unified handler now
-async function toggleNavItem(key, on) {
-    return toggleVisibilityKey(key, on);
-}
 
 // --- Meme ---
 let memeQueue = []; // array of { data: base64, name: string }

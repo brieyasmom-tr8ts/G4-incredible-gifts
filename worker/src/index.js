@@ -396,14 +396,18 @@ export default {
       const userGetMatch = path.match(/^\/api\/users\/(\d+)$/);
       if (userGetMatch && request.method === 'GET') {
         const userId = parseInt(userGetMatch[1]);
+        // Lazy migration so anniversary columns exist before we SELECT them.
+        for (const col of [['anniversary', 'TEXT DEFAULT ""'], ['show_anniversary', 'INTEGER DEFAULT 0']]) {
+          try { await env.DB.prepare(`ALTER TABLE users ADD COLUMN ${col[0]} ${col[1]}`).run(); } catch(e) { /* exists */ }
+        }
         let user;
         try {
           user = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, is_speaker, created_at FROM users WHERE id = ?'
+            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, anniversary, show_anniversary, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, is_speaker, created_at FROM users WHERE id = ?'
           ).bind(userId).first();
         } catch (e) {
           user = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, email, phone, birthday, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, created_at FROM users WHERE id = ?'
+            'SELECT id, first_name, last_initial, email, phone, birthday, anniversary, show_anniversary, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, created_at FROM users WHERE id = ?'
           ).bind(userId).first();
         }
         if (!user) return json({ error: 'User not found' }, corsHeaders, 404);

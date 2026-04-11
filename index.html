@@ -10110,6 +10110,11 @@
                     const wrap = document.getElementById('feedback-form-wrap');
                     if (wrap) wrap.style.display = '';
                     if (typeof updateFeedbackUIState === 'function') updateFeedbackUIState();
+                    // Re-run initFeedbackForm so the star click handlers and
+                    // submit button are actually wired up. Without this, the
+                    // form would be visible but unresponsive because the
+                    // original init call early-returned before wiring.
+                    if (typeof initFeedbackForm === 'function') initFeedbackForm();
                 }
             } catch(e) { /* fail open */ }
         }
@@ -10137,6 +10142,12 @@
                 if (wrap) wrap.style.display = 'none';
                 return;
             }
+
+            // Idempotency guard: if we've already wired the form once this
+            // session, don't re-attach listeners (that would double-fire).
+            const formWrap = document.getElementById('feedback-form-wrap');
+            if (!formWrap || formWrap.dataset.wired === '1') return;
+            formWrap.dataset.wired = '1';
 
             // Star ratings for each category
             document.querySelectorAll('.fb-rating-row').forEach(row => {

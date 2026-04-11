@@ -3346,6 +3346,9 @@
         <div class="content-area">
             <!-- HOME TAB -->
             <div id="home-tab" class="tab-content active">
+                <!-- One-time announcement: new gifts were added to Journey -->
+                <div id="journey-new-gifts-card" style="display:none;"></div>
+
                 <!-- Celebration cards (always visible regardless of retreat status) -->
                 <div id="my-celebration-hero" style="display:none;"></div>
                 <div id="my-celebration-lookback" style="display:none;"></div>
@@ -4635,6 +4638,8 @@
             }
             // Show the Journey nav badge if she has any unanswered gifts
             if (typeof updateJourneyBadge === 'function') updateJourneyBadge();
+            // One-time announcement for the new Journey gifts added post-retreat
+            if (typeof showJourneyNewGiftsCard === 'function') showJourneyNewGiftsCard();
         }
 
         // Load user photo from server if we don't have it cached
@@ -5559,6 +5564,68 @@
         function clearBadge(id) {
             const badge = document.getElementById(id);
             if (badge) badge.style.display = 'none';
+        }
+
+        // One-time home card announcing the gifts we added to Journey
+        // post-retreat. Shown only if:
+        //   - she has at least one unanswered gift from the new set
+        //   - she hasn't dismissed or tapped the card before
+        // Dismisses on: tap-through, X button, or when she's answered
+        // all the new gifts (the card becomes moot).
+        function showJourneyNewGiftsCard() {
+            const card = document.getElementById('journey-new-gifts-card');
+            if (!card) return;
+            // Respect a previous dismissal
+            if (localStorage.getItem('g4_new_journey_gifts_seen') === '1') {
+                card.style.display = 'none';
+                return;
+            }
+            if (typeof JOURNEY_NEW_GIFTS === 'undefined' || !appState || !appState.journeyResponses) {
+                card.style.display = 'none';
+                return;
+            }
+            // Count unanswered new gifts
+            let unanswered = 0;
+            JOURNEY_NEW_GIFTS.forEach(g => { if (!appState.journeyResponses[g]) unanswered++; });
+            if (unanswered === 0) {
+                card.style.display = 'none';
+                return;
+            }
+            card.innerHTML = `
+                <div style="position:relative;margin:12px 16px;padding:18px 20px 18px 22px;background:linear-gradient(135deg,rgba(201,144,138,0.14),rgba(212,165,154,0.06));border-radius:14px;border:1px solid rgba(201,144,138,0.30);box-shadow:var(--shadow-sm);">
+                    <button id="journey-new-gifts-dismiss" aria-label="Dismiss" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border:none;background:rgba(255,255,255,0.6);color:var(--taupe);border-radius:50%;cursor:pointer;font-size:1rem;line-height:1;display:flex;align-items:center;justify-content:center;">&times;</button>
+                    <div style="display:flex;align-items:center;gap:14px;padding-right:18px;">
+                        <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <span style="font-size:1.3rem;">&#127873;</span>
+                        </div>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;">New for you</div>
+                            <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--dark-text);margin-bottom:2px;">Your journey just grew</div>
+                            <div style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--light-text);line-height:1.35;">We added more gifts to reflect on. Answer them so your devotions become personal.</div>
+                        </div>
+                    </div>
+                    <div style="text-align:right;margin-top:12px;">
+                        <button id="journey-new-gifts-go" style="padding:8px 18px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.88rem;font-weight:600;cursor:pointer;">Answer them &rarr;</button>
+                    </div>
+                </div>
+            `;
+            card.style.display = 'block';
+            // Wire handlers
+            const dismiss = () => {
+                localStorage.setItem('g4_new_journey_gifts_seen', '1');
+                card.style.display = 'none';
+            };
+            const dismissBtn = document.getElementById('journey-new-gifts-dismiss');
+            if (dismissBtn) dismissBtn.addEventListener('click', dismiss);
+            const goBtn = document.getElementById('journey-new-gifts-go');
+            if (goBtn) goBtn.addEventListener('click', () => {
+                dismiss();
+                if (typeof switchToTab === 'function') switchToTab('journey');
+                // After a moment, scroll to the first unanswered gift
+                setTimeout(() => {
+                    if (typeof scrollToFirstUnansweredGift === 'function') scrollToFirstUnansweredGift();
+                }, 300);
+            });
         }
 
         // Show a dot on the Journey nav tab if she has any unanswered gifts.
@@ -7076,6 +7143,9 @@
                         updateJourneyResult();
                         submitJourneyResponse(gift, option);
                         if (typeof updateJourneyBadge === 'function') updateJourneyBadge();
+                        // If she just answered the last "new" gift, the home
+                        // announcement card should stop showing. Refresh it.
+                        if (typeof showJourneyNewGiftsCard === 'function') showJourneyNewGiftsCard();
                         // Completion celebration: if this click just filled in the last gift,
                         // fire confetti and a warm toast. Only fires on the exact transition
                         // so re-answering after completion doesn't re-trigger.

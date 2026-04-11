@@ -10123,22 +10123,26 @@
             if (!currentUser || !currentUser.id) return;
             if (!localStorage.getItem('g4feedback_sent')) return;
             try {
-                const resp = await fetch(API_URL + '/api/feedback/mine?user_id=' + currentUser.id);
-                if (!resp.ok) return; // fail open — keep the flag if we can't verify
+                // Send both user_id AND name so the server finds her row
+                // even if user_id drifted (re-signup, legacy null user_id).
+                const displayName = currentUser.display_name || currentUser.first_name || '';
+                const qs = 'user_id=' + encodeURIComponent(currentUser.id) +
+                           '&name=' + encodeURIComponent(displayName);
+                const resp = await fetch(API_URL + '/api/feedback/mine?' + qs);
+                if (!resp.ok) return; // fail open
                 const data = await resp.json();
-                if (data && data.submitted === false) {
-                    // Server has no record of this user's feedback. Clear the
-                    // flag so she sees the form and can resubmit.
+                // Only clear the flag on an EXPLICIT "not submitted" response.
+                // Any error field (e.g. lookup_failed) means we can't verify,
+                // so trust the client and leave the form hidden.
+                if (data && data.submitted === false && !data.error) {
                     localStorage.removeItem('g4feedback_sent');
-                    // Make sure the form card is visible and the UI state reflects
-                    // the reconciled truth.
                     const wrap = document.getElementById('feedback-form-wrap');
                     if (wrap) wrap.style.display = '';
                     if (typeof updateFeedbackUIState === 'function') updateFeedbackUIState();
-                    // Re-run initFeedbackForm so the star click handlers and
-                    // submit button are actually wired up. Without this, the
-                    // form would be visible but unresponsive because the
-                    // original init call early-returned before wiring.
+                    // Re-run init so the star click handlers and submit
+                    // button are actually wired up. Without this, the form
+                    // would be visible but unresponsive because the original
+                    // init call early-returned before wiring.
                     if (typeof initFeedbackForm === 'function') initFeedbackForm();
                 }
             } catch(e) { /* fail open */ }

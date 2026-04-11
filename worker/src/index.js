@@ -1527,13 +1527,11 @@ export default {
       // ===== FEEDBACK =====
 
       // POST /api/feedback - submit retreat feedback
+      // Everything is optional. A blank submission is still a valid signal.
       if (path === '/api/feedback' && request.method === 'POST') {
         const body = await request.json();
-        const rating = body.rating;
-
-        if (!rating) {
-          return json({ error: 'Rating is required' }, corsHeaders, 400);
-        }
+        // Coerce to integer if present, null if missing/zero
+        const rating = body.rating ? parseInt(body.rating, 10) || null : null;
 
         // Ensure the feedback table exists in case this is a fresh deploy.
         try {

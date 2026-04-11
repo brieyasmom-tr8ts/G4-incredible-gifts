@@ -10185,10 +10185,8 @@
             document.getElementById('feedback-submit-btn').addEventListener('click', async () => {
                 const btn = document.getElementById('feedback-submit-btn');
 
-                if (!feedbackRatings.overall) {
-                    showToast('Please rate your overall experience');
-                    return;
-                }
+                // Everything is optional — no required fields. Women can send
+                // as much or as little as they want.
 
                 btn.disabled = true;
                 btn.textContent = 'Sending...';

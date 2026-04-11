@@ -3031,6 +3031,23 @@
     <div class="sparkle-container" id="sparkle-container"></div>
     <div id="toast" class="toast"></div>
 
+    <!-- Celebration send modal -->
+    <div id="celebration-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(60,50,45,0.55);align-items:center;justify-content:center;padding:20px;">
+        <div style="background:white;border-radius:18px;max-width:420px;width:100%;padding:24px 22px;box-shadow:0 12px 40px rgba(0,0,0,0.25);">
+            <div id="celebration-modal-title" style="font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:var(--dark-text);margin-bottom:4px;text-align:center;"></div>
+            <div id="celebration-modal-subtitle" style="font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-style:italic;color:var(--light-text);text-align:center;margin-bottom:18px;"></div>
+            <textarea id="celebration-modal-text" placeholder="Add a note (optional). Share what she means to you, a memory, a verse..." style="width:100%;padding:12px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);resize:vertical;min-height:90px;background:white;"></textarea>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding:0 4px;">
+                <span style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--taupe);">Sign anonymously</span>
+                <button class="profile-toggle" id="celebration-modal-anon"></button>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:18px;">
+                <button id="celebration-modal-cancel" style="flex:1;padding:12px;background:white;color:var(--taupe);border:1.5px solid var(--warm-grey);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:600;cursor:pointer;">Cancel</button>
+                <button id="celebration-modal-send" style="flex:2;padding:12px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:600;cursor:pointer;">Send <span style="font-size:1rem;">&#10084;&#65039;</span></button>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container">
         <div class="header" style="position:relative;">
 <button id="header-profile-btn" style="display:none;position:absolute;top:calc(12px + max(env(safe-area-inset-top,0px),24px));right:16px;background:none;border:none;cursor:pointer;padding:0;z-index:10;" aria-label="My Profile">
@@ -3070,6 +3087,15 @@
                             </div>
                             <button id="feedback-banner-btn" style="padding:8px 14px;background:var(--accent);color:white;border:none;border-radius:8px;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;cursor:pointer;white-space:nowrap;">Take it</button>
                         </div>
+                    </div>
+
+                    <!-- Celebrations card (birthdays + anniversaries today / coming up) -->
+                    <div id="celebrations-card" style="display:none;margin:12px 16px;padding:0;background:white;border-radius:14px;border:1px solid rgba(201,144,138,0.20);box-shadow:var(--shadow-sm);overflow:hidden;">
+                        <div style="padding:14px 18px 8px;display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.2rem;">&#127874;</span>
+                            <div style="font-family:'Playfair Display',serif;font-size:0.75rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;">Celebrations</div>
+                        </div>
+                        <div id="celebrations-card-list"></div>
                     </div>
 
                     <!-- This Week's Devotion (everyone) -->
@@ -4291,7 +4317,7 @@
             try {
                 const data = await apiGet('/api/users/' + currentUser.id + '?owner=1');
                 if (data && !data.error) {
-                    const fields = ['photo_data', 'email', 'phone', 'birthday', 'show_email', 'show_phone', 'show_birthday', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
+                    const fields = ['photo_data', 'email', 'phone', 'birthday', 'anniversary', 'show_email', 'show_phone', 'show_birthday', 'show_anniversary', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
                     fields.forEach(f => { if (data[f] !== undefined) currentUser[f] = data[f]; });
                     saveUser(currentUser);
                     showWelcome();
@@ -4710,8 +4736,17 @@
                     <label>Birthday</label>
                     <input type="date" id="profile-birthday" value="${currentUser.birthday || ''}">
                     <div class="profile-toggle-row" style="margin-top:6px;">
-                        <span class="profile-toggle-label">Visible to others</span>
+                        <span class="profile-toggle-label">Let G4 sisters celebrate me</span>
                         <button class="profile-toggle ${currentUser.show_birthday ? 'on' : ''}" id="toggle-birthday"></button>
+                    </div>
+                </div>
+
+                <div class="profile-field">
+                    <label>Wedding Anniversary <span style="font-weight:400;font-style:italic;color:var(--light-text);">(optional)</span></label>
+                    <input type="date" id="profile-anniversary" value="${currentUser.anniversary || ''}">
+                    <div class="profile-toggle-row" style="margin-top:6px;">
+                        <span class="profile-toggle-label">Let G4 sisters celebrate it</span>
+                        <button class="profile-toggle ${currentUser.show_anniversary ? 'on' : ''}" id="toggle-anniversary"></button>
                     </div>
                 </div>
 
@@ -4796,10 +4831,12 @@
 
             // Toggle buttons
             function saveToggles() {
+                const annivToggle = sheet.querySelector('#toggle-anniversary');
                 const toggleData = {
                     show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,
                     show_phone: sheet.querySelector('#toggle-phone').classList.contains('on') ? 1 : 0,
                     show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,
+                    show_anniversary: annivToggle && annivToggle.classList.contains('on') ? 1 : 0,
                     show_about: sheet.querySelector('#toggle-about').classList.contains('on') ? 1 : 0,
                 };
                 Object.assign(currentUser, toggleData);
@@ -4858,10 +4895,13 @@
                 btn.disabled = true;
                 btn.textContent = 'Saving...';
 
+                const annivToggleSubmit = sheet.querySelector('#toggle-anniversary');
+                const annivField = sheet.querySelector('#profile-anniversary');
                 const profileData = {
                     email: sheet.querySelector('#profile-email').value.trim(),
                     phone: sheet.querySelector('#profile-phone').value.trim(),
                     birthday: sheet.querySelector('#profile-birthday').value,
+                    anniversary: annivField ? annivField.value : '',
                     location: sheet.querySelector('#profile-location').value.trim(),
                     job: sheet.querySelector('#profile-job').value.trim(),
                     church: sheet.querySelector('#profile-church').value.trim(),
@@ -4872,6 +4912,7 @@
                     show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,
                     show_phone: sheet.querySelector('#toggle-phone').classList.contains('on') ? 1 : 0,
                     show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,
+                    show_anniversary: annivToggleSubmit && annivToggleSubmit.classList.contains('on') ? 1 : 0,
                     show_about: sheet.querySelector('#toggle-about').classList.contains('on') ? 1 : 0,
                 };
 
@@ -8399,6 +8440,165 @@
             }, 100);
         }
 
+        // ===== Celebrations (birthdays + anniversaries) =====
+        let _celebrationModalState = null;
+
+        async function loadCelebrationsHomeCard() {
+            const card = document.getElementById('celebrations-card');
+            const list = document.getElementById('celebrations-card-list');
+            if (!card || !list) return;
+            // Admin can hide this with the home_celebrations toggle (defaults to on if not set).
+            if (typeof navSettings !== 'undefined' && navSettings.home_celebrations === '0') {
+                card.style.display = 'none';
+                return;
+            }
+            try {
+                const userId = currentUser ? currentUser.id : 0;
+                const resp = await fetch(API_URL + '/api/celebrations/upcoming?days=7&user_id=' + userId);
+                if (!resp.ok) { card.style.display = 'none'; return; }
+                const items = await resp.json();
+                if (!Array.isArray(items) || !items.length) {
+                    card.style.display = 'none';
+                    return;
+                }
+                list.innerHTML = items.map(item => renderCelebrationRow(item)).join('');
+                card.style.display = 'block';
+                // Wire up the buttons
+                list.querySelectorAll('[data-celebrate-btn]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const data = JSON.parse(btn.dataset.celebrate);
+                        openCelebrationModal(data);
+                    });
+                });
+                list.querySelectorAll('[data-heart-btn]').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const data = JSON.parse(btn.dataset.heart);
+                        await sendCelebrationHeart(data);
+                        btn.innerHTML = '\u2764\ufe0f Sent';
+                        btn.disabled = true;
+                    });
+                });
+            } catch (e) {
+                card.style.display = 'none';
+            }
+        }
+
+        function renderCelebrationRow(item) {
+            const isToday = item.is_today;
+            const occasionLabel = item.occasion === 'birthday' ? 'birthday' : 'anniversary';
+            const timeLabel = isToday
+                ? (item.occasion === 'birthday' ? 'Today is her birthday!' : 'Today is her anniversary!')
+                : (item.days_away === 1 ? 'Tomorrow' : 'In ' + item.days_away + ' days');
+            const photo = item.photo_data
+                ? '<img src="' + item.photo_data + '" style="width:48px;height:48px;border-radius:50%;object-fit:cover;flex-shrink:0;">'
+                : '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;color:white;font-family:Playfair Display,serif;font-weight:700;">' + (item.first_name || '?').charAt(0) + '</div>';
+            const cakeIcon = item.occasion === 'birthday' ? '\ud83c\udf82' : '\ud83d\udc8d';
+            const fullName = (item.first_name || '') + (item.last_initial ? ' ' + item.last_initial + '.' : '');
+            const data = JSON.stringify({
+                user_id: item.user_id,
+                first_name: item.first_name,
+                occasion: item.occasion,
+                occasion_date: item.occasion_date,
+                is_today: isToday
+            }).replace(/"/g, '&quot;');
+            const bg = isToday ? 'background:linear-gradient(135deg,rgba(201,144,138,0.10),rgba(212,165,154,0.06));' : '';
+            return `
+                <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-top:1px solid rgba(139,134,128,0.08);${bg}">
+                    ${photo}
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-family:'Playfair Display',serif;font-size:0.98rem;font-weight:700;color:var(--dark-text);">${esc(fullName)} ${cakeIcon}</div>
+                        <div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:${isToday ? 'var(--accent)' : 'var(--light-text)'};font-style:italic;">${timeLabel}</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+                        <button data-heart-btn data-heart="${data}" style="padding:6px 12px;background:white;color:var(--accent);border:1.5px solid var(--accent);border-radius:8px;font-size:0.78rem;font-family:'Cormorant Garamond',serif;font-weight:600;cursor:pointer;">\u2764\ufe0f Heart</button>
+                        <button data-celebrate-btn data-celebrate="${data}" style="padding:6px 12px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:0.78rem;font-family:'Cormorant Garamond',serif;font-weight:600;cursor:pointer;">Add note</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+        }
+
+        async function sendCelebrationHeart(target, messageText, anonymous) {
+            try {
+                const payload = {
+                    recipient_user_id: target.user_id,
+                    sender_user_id: currentUser ? currentUser.id : null,
+                    sender_name: currentUser ? (currentUser.display_name || currentUser.first_name || 'A G4 sister') : 'A G4 sister',
+                    sender_anonymous: anonymous ? 1 : 0,
+                    occasion: target.occasion,
+                    occasion_date: target.occasion_date,
+                    message_text: messageText || ''
+                };
+                const resp = await fetch(API_URL + '/api/celebrations/send', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (!resp.ok) throw new Error('send failed');
+                showToast('Sent with love \u2764\ufe0f');
+                return true;
+            } catch (e) {
+                showToast('Could not send: ' + (e.message || 'try again'));
+                return false;
+            }
+        }
+
+        function openCelebrationModal(target) {
+            _celebrationModalState = target;
+            const modal = document.getElementById('celebration-modal');
+            const title = document.getElementById('celebration-modal-title');
+            const subtitle = document.getElementById('celebration-modal-subtitle');
+            const textarea = document.getElementById('celebration-modal-text');
+            const anonBtn = document.getElementById('celebration-modal-anon');
+            title.textContent = 'A note for ' + target.first_name;
+            subtitle.textContent = target.occasion === 'birthday'
+                ? 'Celebrate her birthday with a few words.'
+                : 'Celebrate her anniversary with a few words.';
+            textarea.value = '';
+            anonBtn.classList.remove('on');
+            modal.style.display = 'flex';
+        }
+
+        function closeCelebrationModal() {
+            const modal = document.getElementById('celebration-modal');
+            if (modal) modal.style.display = 'none';
+            _celebrationModalState = null;
+        }
+
+        function initCelebrationModal() {
+            const modal = document.getElementById('celebration-modal');
+            if (!modal || modal.dataset.wired) return;
+            modal.dataset.wired = '1';
+            document.getElementById('celebration-modal-cancel').addEventListener('click', closeCelebrationModal);
+            document.getElementById('celebration-modal-anon').addEventListener('click', (e) => {
+                e.preventDefault();
+                e.target.closest('button').classList.toggle('on');
+            });
+            document.getElementById('celebration-modal-send').addEventListener('click', async () => {
+                if (!_celebrationModalState) return;
+                const text = document.getElementById('celebration-modal-text').value.trim();
+                const anonymous = document.getElementById('celebration-modal-anon').classList.contains('on');
+                const sendBtn = document.getElementById('celebration-modal-send');
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'Sending...';
+                const ok = await sendCelebrationHeart(_celebrationModalState, text, anonymous);
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = 'Send <span style="font-size:1rem;">\u2764\ufe0f</span>';
+                if (ok) {
+                    closeCelebrationModal();
+                    loadCelebrationsHomeCard();
+                }
+            });
+            // Click outside to close
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeCelebrationModal();
+            });
+        }
+
         function buildDevotionHomeCards() {
             const weekCard = document.getElementById('devotion-week-card');
             const personalCard = document.getElementById('devotion-personal-card');
@@ -8475,6 +8675,8 @@
                 initFeedbackForm();
                 buildDevotionHomeCards();
                 maybeShowDevotionWeekReminder();
+                initCelebrationModal();
+                loadCelebrationsHomeCard();
                 document.getElementById('post-retreat-continue').addEventListener('click', () => {
                     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));

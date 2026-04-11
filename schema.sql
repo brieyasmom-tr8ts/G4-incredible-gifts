@@ -214,3 +214,18 @@ CREATE TABLE theme_suggestions (
   created_at TEXT DEFAULT (datetime('now')),
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE TABLE celebration_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipient_user_id INTEGER NOT NULL,
+  sender_user_id INTEGER,
+  sender_name TEXT DEFAULT 'A G4 sister',
+  sender_anonymous INTEGER DEFAULT 0,
+  occasion TEXT NOT NULL,
+  occasion_date TEXT NOT NULL,
+  message_text TEXT DEFAULT '',
+  has_heart INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (recipient_user_id) REFERENCES users(id),
+  FOREIGN KEY (sender_user_id) REFERENCES users(id)
+);

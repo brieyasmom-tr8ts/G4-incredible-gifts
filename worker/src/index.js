@@ -419,9 +419,11 @@ export default {
           email: (isOwner || user.show_email) ? user.email : '',
           phone: (isOwner || user.show_phone) ? user.phone : '',
           birthday: (isOwner || user.show_birthday) ? user.birthday : '',
+          anniversary: (isOwner || user.show_anniversary) ? (user.anniversary || '') : '',
           show_email: user.show_email || 0,
           show_phone: user.show_phone || 0,
           show_birthday: user.show_birthday || 0,
+          show_anniversary: user.show_anniversary || 0,
           instagram: user.instagram || '',
           facebook: user.facebook || '',
           show_about: user.show_about || 0,
@@ -442,7 +444,11 @@ export default {
         const userId = parseInt(profileMatch[1]);
         const body = await request.json();
 
-        const allowed = ['email', 'phone', 'birthday', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
+        // Lazy migration: ensure anniversary columns exist
+        for (const col of [['anniversary', 'TEXT DEFAULT ""'], ['show_anniversary', 'INTEGER DEFAULT 0']]) {
+          try { await env.DB.prepare(`ALTER TABLE users ADD COLUMN ${col[0]} ${col[1]}`).run(); } catch(e) { /* exists */ }
+        }
+        const allowed = ['email', 'phone', 'birthday', 'anniversary', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'show_anniversary', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
         const fields = [];
         const values = [];
         for (const key of allowed) {
@@ -514,7 +520,7 @@ export default {
 
       // DELETE /api/admin/reset - clear all test data
       if (path === '/api/admin/reset' && request.method === 'DELETE') {
-        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'users'];
+        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'users'];
         for (const t of tables) {
           try { await env.DB.prepare(`DELETE FROM ${t}`).run(); } catch(e) { /* table may not exist */ }
         }
@@ -1768,6 +1774,170 @@ export default {
         values.push(tsId);
         await env.DB.prepare('UPDATE theme_suggestions SET ' + updates.join(', ') + ' WHERE id = ?').bind(...values).run();
         return json({ success: true }, corsHeaders);
+      }
+
+      // ===== CELEBRATIONS (birthdays + anniversaries) =====
+      // Helper to ensure the celebration_messages table exists.
+      const ensureCelebrationsTable = async () => {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS celebration_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            recipient_user_id INTEGER NOT NULL,
+            sender_user_id INTEGER,
+            sender_name TEXT DEFAULT 'Anonymous',
+            sender_anonymous INTEGER DEFAULT 0,
+            occasion TEXT NOT NULL,
+            occasion_date TEXT NOT NULL,
+            message_text TEXT DEFAULT '',
+            has_heart INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (recipient_user_id) REFERENCES users(id),
+            FOREIGN KEY (sender_user_id) REFERENCES users(id)
+          )`).run();
+        } catch(e) { /* exists */ }
+        // Ensure anniversary columns on users
+        for (const col of [['anniversary', 'TEXT DEFAULT ""'], ['show_anniversary', 'INTEGER DEFAULT 0']]) {
+          try { await env.DB.prepare(`ALTER TABLE users ADD COLUMN ${col[0]} ${col[1]}`).run(); } catch(e) { /* exists */ }
+        }
+      };
+
+      // GET /api/celebrations/upcoming?days=7&user_id=X
+      // Returns sisters with a visible birthday/anniversary in the next N days, excluding self.
+      // Each row: { id (user id), first_name, last_initial, photo_data, occasion, month_day, days_away, is_today }
+      if (path === '/api/celebrations/upcoming' && request.method === 'GET') {
+        await ensureCelebrationsTable();
+        const days = Math.max(1, Math.min(31, parseInt(url.searchParams.get('days') || '7', 10)));
+        const requesterId = parseInt(url.searchParams.get('user_id') || '0', 10);
+        const { results } = await env.DB.prepare(
+          `SELECT id, first_name, last_initial, photo_data, birthday, anniversary, show_birthday, show_anniversary
+           FROM users
+           WHERE (show_birthday = 1 AND birthday IS NOT NULL AND birthday != '')
+              OR (show_anniversary = 1 AND anniversary IS NOT NULL AND anniversary != '')`
+        ).all();
+
+        // Compute "days away" for any visible date in the next N days. We compare on
+        // month-day only so years don't matter. All times are server (UTC) but for
+        // a same-day check that's close enough; client can refine in user TZ.
+        const now = new Date();
+        const upcoming = [];
+        const pushIfWithinWindow = (user, occasion, dateStr) => {
+          if (!dateStr) return;
+          const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if (!m) return;
+          const targetMonth = parseInt(m[2], 10) - 1;
+          const targetDay = parseInt(m[3], 10);
+          // Build the next occurrence (this year or next)
+          let target = new Date(Date.UTC(now.getUTCFullYear(), targetMonth, targetDay));
+          if (target < new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))) {
+            target = new Date(Date.UTC(now.getUTCFullYear() + 1, targetMonth, targetDay));
+          }
+          const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+          const daysAway = Math.round((target - today) / (1000 * 60 * 60 * 24));
+          if (daysAway > days) return;
+          upcoming.push({
+            user_id: user.id,
+            first_name: user.first_name,
+            last_initial: user.last_initial,
+            photo_data: user.photo_data || '',
+            occasion: occasion,
+            month_day: m[2] + '-' + m[3],
+            year_of_event: target.getUTCFullYear(),
+            occasion_date: target.getUTCFullYear() + '-' + m[2] + '-' + m[3],
+            days_away: daysAway,
+            is_today: daysAway === 0
+          });
+        };
+        for (const u of results) {
+          if (u.id === requesterId) continue;
+          if (u.show_birthday) pushIfWithinWindow(u, 'birthday', u.birthday);
+          if (u.show_anniversary) pushIfWithinWindow(u, 'anniversary', u.anniversary);
+        }
+        upcoming.sort((a, b) => a.days_away - b.days_away);
+        return json(upcoming, corsHeaders);
+      }
+
+      // POST /api/celebrations/send
+      // body: { recipient_user_id, sender_user_id, sender_name, sender_anonymous,
+      //         occasion ('birthday'|'anniversary'), occasion_date 'YYYY-MM-DD', message_text? }
+      if (path === '/api/celebrations/send' && request.method === 'POST') {
+        await ensureCelebrationsTable();
+        const body = await request.json();
+        if (!body.recipient_user_id || !body.occasion || !body.occasion_date) {
+          return json({ error: 'Missing required fields' }, corsHeaders, 400);
+        }
+        if (body.occasion !== 'birthday' && body.occasion !== 'anniversary') {
+          return json({ error: 'Invalid occasion' }, corsHeaders, 400);
+        }
+        await env.DB.prepare(
+          `INSERT INTO celebration_messages
+            (recipient_user_id, sender_user_id, sender_name, sender_anonymous, occasion, occasion_date, message_text, has_heart)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          parseInt(body.recipient_user_id),
+          body.sender_user_id ? parseInt(body.sender_user_id) : null,
+          body.sender_name || 'A G4 sister',
+          body.sender_anonymous ? 1 : 0,
+          body.occasion,
+          body.occasion_date,
+          (body.message_text || '').trim(),
+          1
+        ).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/celebrations/mine?user_id=X[&occasion_date=YYYY-MM-DD]
+      // Returns all celebration messages for the requesting user.
+      // If occasion_date is provided, only returns messages for that specific celebration.
+      if (path === '/api/celebrations/mine' && request.method === 'GET') {
+        await ensureCelebrationsTable();
+        const userId = parseInt(url.searchParams.get('user_id') || '0', 10);
+        if (!userId) return json({ error: 'user_id required' }, corsHeaders, 400);
+        const occasionDate = url.searchParams.get('occasion_date') || '';
+        let query = 'SELECT * FROM celebration_messages WHERE recipient_user_id = ?';
+        const binds = [userId];
+        if (occasionDate) {
+          query += ' AND occasion_date = ?';
+          binds.push(occasionDate);
+        }
+        query += ' ORDER BY created_at DESC';
+        const { results } = await env.DB.prepare(query).bind(...binds).all();
+        return json(results, corsHeaders);
+      }
+
+      // GET /api/celebrations/check-mine?user_id=X
+      // Quick check: is today the user's birthday or anniversary? Returns the active occasion(s).
+      if (path === '/api/celebrations/check-mine' && request.method === 'GET') {
+        await ensureCelebrationsTable();
+        const userId = parseInt(url.searchParams.get('user_id') || '0', 10);
+        if (!userId) return json({ error: 'user_id required' }, corsHeaders, 400);
+        const user = await env.DB.prepare('SELECT id, birthday, anniversary FROM users WHERE id = ?').bind(userId).first();
+        if (!user) return json({ active: [] }, corsHeaders);
+        const now = new Date();
+        const todayMD = String(now.getUTCMonth() + 1).padStart(2, '0') + '-' + String(now.getUTCDate()).padStart(2, '0');
+        const active = [];
+        const checkDate = (occasion, dateStr) => {
+          if (!dateStr) return;
+          const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if (!m) return;
+          if ((m[2] + '-' + m[3]) === todayMD) {
+            active.push({
+              occasion: occasion,
+              occasion_date: now.getUTCFullYear() + '-' + m[2] + '-' + m[3]
+            });
+          }
+        };
+        checkDate('birthday', user.birthday);
+        checkDate('anniversary', user.anniversary);
+        return json({ active: active }, corsHeaders);
+      }
+
+      // GET /api/celebrations/all - admin: list all celebration messages
+      if (path === '/api/celebrations/all' && request.method === 'GET') {
+        await ensureCelebrationsTable();
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM celebration_messages ORDER BY created_at DESC LIMIT 500'
+        ).all();
+        return json(results, corsHeaders);
       }
 
       // ===== QUIZ (Know Your Sisters) =====

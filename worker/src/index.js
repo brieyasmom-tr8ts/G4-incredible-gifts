@@ -1560,12 +1560,15 @@ export default {
         } catch(e) { /* table exists */ }
 
         // Lazy migration: add every column the INSERT uses if it's missing.
-        // Covers both the original columns (name, favorite, etc.) and the
-        // newer ones added over time. Self-heals regardless of how old the
-        // production table is. Each ALTER is in its own try so one failure
-        // doesn't block the rest.
+        // Covers both the original columns (name, rating, favorite, etc.)
+        // and the newer ones added over time. Self-heals regardless of how
+        // old the production table is. Each ALTER is in its own try so one
+        // failure doesn't block the rest. Note: rating (singular, overall
+        // star 1-5) is DIFFERENT from ratings (plural, JSON breakdown).
         const feedbackCols = [
+          ['user_id', 'INTEGER'],
           ['name', "TEXT DEFAULT 'Anonymous'"],
+          ['rating', 'INTEGER'],
           ['favorite', "TEXT DEFAULT ''"],
           ['improve', "TEXT DEFAULT ''"],
           ['come_again', "TEXT DEFAULT ''"],

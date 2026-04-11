@@ -7545,6 +7545,21 @@
             wrap.appendChild(timelineLabel);
             wrap.appendChild(renderGrowthTimeline(devotion));
 
+            // Footer link back to the Journey tab so she can revisit or
+            // update her answers anytime. The devotion is personalized from
+            // these answers, so keeping them one tap away is helpful.
+            const journeyLink = document.createElement('div');
+            journeyLink.style.cssText = 'margin-top:18px;padding-top:14px;border-top:1px dashed rgba(139,134,128,0.25);text-align:center;';
+            const journeyBtn = document.createElement('button');
+            journeyBtn.style.cssText = "padding:8px 18px;background:white;color:var(--accent);border:1.5px solid var(--accent);border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.88rem;font-weight:600;cursor:pointer;";
+            journeyBtn.textContent = '\u2728 See Your Journey';
+            journeyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof switchToTab === 'function') switchToTab('journey');
+            });
+            journeyLink.appendChild(journeyBtn);
+            wrap.appendChild(journeyLink);
+
             return wrap;
         }
 
@@ -9472,15 +9487,25 @@
 
             const currentWeek = getCurrentDevotionWeek();
 
-            // Devotions haven't started yet. Show a "starts Monday" preview card.
+            // Devotions haven't started yet. Show a "starts Monday" preview
+            // card that invites her to visit the Journey tab while she waits.
             if (currentWeek === 0) {
                 const startDate = DEVOTIONS_START;
                 const dateStr = startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
                 document.getElementById('devotion-week-card-week').textContent = 'Coming ' + startDate.toLocaleDateString('en-US', { weekday: 'short' }) + ' at 5 AM';
                 document.getElementById('devotion-week-card-gift').textContent = 'Devotions begin ' + dateStr;
-                document.getElementById('devotion-week-card-verse').textContent = 'A new gift each Monday for 15 weeks. Your first one is Peace.';
+                document.getElementById('devotion-week-card-verse').textContent = 'A new gift each Monday for 15 weeks. Your first one is Peace.\u00a0 Tap to visit Your Journey in the meantime.';
                 weekCard.style.display = 'block';
-                weekCard.style.cursor = 'default';
+                weekCard.style.cursor = 'pointer';
+                if (!weekCard.dataset.wiredPrestart) {
+                    weekCard.dataset.wiredPrestart = '1';
+                    weekCard.addEventListener('click', () => {
+                        if (typeof switchToTab === 'function') switchToTab('journey');
+                        setTimeout(() => {
+                            if (typeof scrollToFirstUnansweredGift === 'function') scrollToFirstUnansweredGift();
+                        }, 200);
+                    });
+                }
                 personalCard.style.display = 'none';
                 return;
             }

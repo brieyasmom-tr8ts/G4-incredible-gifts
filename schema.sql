@@ -203,3 +203,14 @@ CREATE TABLE meme_votes (
   FOREIGN KEY (user_id) REFERENCES users(id),
   FOREIGN KEY (caption_id) REFERENCES meme_captions(id)
 );
+
+CREATE TABLE theme_suggestions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER,
+  name TEXT DEFAULT 'Anonymous',
+  suggestion TEXT NOT NULL,
+  admin_starred INTEGER DEFAULT 0,
+  admin_tags TEXT DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);

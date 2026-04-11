@@ -514,7 +514,7 @@ export default {
 
       // DELETE /api/admin/reset - clear all test data
       if (path === '/api/admin/reset' && request.method === 'DELETE') {
-        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'users'];
+        const tables = ['messages', 'moments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'users'];
         for (const t of tables) {
           try { await env.DB.prepare(`DELETE FROM ${t}`).run(); } catch(e) { /* table may not exist */ }
         }
@@ -1706,6 +1706,68 @@ export default {
           'SELECT * FROM suggestions ORDER BY created_at DESC'
         ).all();
         return json(results, corsHeaders);
+      }
+
+      // ===== THEME SUGGESTIONS (next year planning) =====
+
+      // POST /api/theme-suggestions - submit a topic/theme idea for next year
+      if (path === '/api/theme-suggestions' && request.method === 'POST') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS theme_suggestions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', suggestion TEXT NOT NULL, admin_starred INTEGER DEFAULT 0, admin_tags TEXT DEFAULT '', created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) { /* exists */ }
+
+        const body = await request.json();
+        if (!body.suggestion || !body.suggestion.trim()) {
+          return json({ error: 'Suggestion text is required' }, corsHeaders, 400);
+        }
+
+        await env.DB.prepare(
+          'INSERT INTO theme_suggestions (user_id, name, suggestion) VALUES (?, ?, ?)'
+        ).bind(
+          body.user_id || null,
+          body.name || 'Anonymous',
+          body.suggestion.trim()
+        ).run();
+
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/theme-suggestions - admin: list all
+      if (path === '/api/theme-suggestions' && request.method === 'GET') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS theme_suggestions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', suggestion TEXT NOT NULL, admin_starred INTEGER DEFAULT 0, admin_tags TEXT DEFAULT '', created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) { /* exists */ }
+
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM theme_suggestions ORDER BY admin_starred DESC, created_at DESC'
+        ).all();
+        return json(results, corsHeaders);
+      }
+
+      // DELETE /api/theme-suggestions/:id - admin
+      const tsDeleteMatch = path.match(/^\/api\/theme-suggestions\/(\d+)$/);
+      if (tsDeleteMatch && request.method === 'DELETE') {
+        const tsId = parseInt(tsDeleteMatch[1]);
+        await env.DB.prepare('DELETE FROM theme_suggestions WHERE id = ?').bind(tsId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // PATCH /api/theme-suggestions/:id - admin: star/unstar or update tags
+      if (tsDeleteMatch && request.method === 'PATCH') {
+        const tsId = parseInt(tsDeleteMatch[1]);
+        const body = await request.json();
+        const updates = [];
+        const values = [];
+        if (typeof body.admin_starred !== 'undefined') {
+          updates.push('admin_starred = ?');
+          values.push(body.admin_starred ? 1 : 0);
+        }
+        if (typeof body.admin_tags === 'string') {
+          updates.push('admin_tags = ?');
+          values.push(body.admin_tags);
+        }
+        if (!updates.length) {
+          return json({ error: 'No fields to update' }, corsHeaders, 400);
+        }
+        values.push(tsId);
+        await env.DB.prepare('UPDATE theme_suggestions SET ' + updates.join(', ') + ' WHERE id = ?').bind(...values).run();
+        return json({ success: true }, corsHeaders);
       }
 
       // ===== QUIZ (Know Your Sisters) =====

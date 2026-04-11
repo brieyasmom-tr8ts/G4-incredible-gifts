@@ -1535,19 +1535,52 @@ export default {
           return json({ error: 'Rating is required' }, corsHeaders, 400);
         }
 
-        // Migrate feedback table to add new columns
-        const newCols = [
-          ['liked_most', 'TEXT DEFAULT ""'],
-          ['liked_least', 'TEXT DEFAULT ""'],
-          ['ratings', 'TEXT DEFAULT ""'],
-          ['rating_comments', 'TEXT DEFAULT ""'],
-          ['more_of', 'TEXT DEFAULT ""'],
-          ['invite_friend', 'TEXT DEFAULT ""'],
-          ['final_thoughts', 'TEXT DEFAULT ""'],
-          ['speakers', 'TEXT DEFAULT ""'],
-          ['app_feedback', 'TEXT DEFAULT ""'],
+        // Ensure the feedback table exists in case this is a fresh deploy.
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            name TEXT DEFAULT 'Anonymous',
+            rating INTEGER,
+            favorite TEXT DEFAULT '',
+            improve TEXT DEFAULT '',
+            come_again TEXT DEFAULT '',
+            other TEXT DEFAULT '',
+            liked_most TEXT DEFAULT '',
+            liked_least TEXT DEFAULT '',
+            ratings TEXT DEFAULT '',
+            rating_comments TEXT DEFAULT '',
+            more_of TEXT DEFAULT '',
+            invite_friend TEXT DEFAULT '',
+            final_thoughts TEXT DEFAULT '',
+            speakers TEXT DEFAULT '',
+            app_feedback TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch(e) { /* table exists */ }
+
+        // Lazy migration: add every column the INSERT uses if it's missing.
+        // Covers both the original columns (name, favorite, etc.) and the
+        // newer ones added over time. Self-heals regardless of how old the
+        // production table is. Each ALTER is in its own try so one failure
+        // doesn't block the rest.
+        const feedbackCols = [
+          ['name', "TEXT DEFAULT 'Anonymous'"],
+          ['favorite', "TEXT DEFAULT ''"],
+          ['improve', "TEXT DEFAULT ''"],
+          ['come_again', "TEXT DEFAULT ''"],
+          ['other', "TEXT DEFAULT ''"],
+          ['liked_most', "TEXT DEFAULT ''"],
+          ['liked_least', "TEXT DEFAULT ''"],
+          ['ratings', "TEXT DEFAULT ''"],
+          ['rating_comments', "TEXT DEFAULT ''"],
+          ['more_of', "TEXT DEFAULT ''"],
+          ['invite_friend', "TEXT DEFAULT ''"],
+          ['final_thoughts', "TEXT DEFAULT ''"],
+          ['speakers', "TEXT DEFAULT ''"],
+          ['app_feedback', "TEXT DEFAULT ''"],
         ];
-        for (const [col, type] of newCols) {
+        for (const [col, type] of feedbackCols) {
           try { await env.DB.prepare(`ALTER TABLE feedback ADD COLUMN ${col} ${type}`).run(); } catch(e) { /* exists */ }
         }
 

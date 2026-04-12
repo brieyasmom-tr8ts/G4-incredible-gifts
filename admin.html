@@ -575,6 +575,16 @@
             #section-games > div { grid-template-columns: 1fr !important; }
             .table-wrap { overflow-x: auto; }
             table { min-width: 600px; }
+            /* Budget signup list: stack on mobile */
+            #signup-list-body [style*="grid-template-columns:2fr"] {
+                grid-template-columns: 1fr 1fr !important;
+                font-size: 0.82rem;
+            }
+        }
+        @media (max-width: 480px) {
+            #signup-list-body [style*="grid-template-columns:2fr"] {
+                grid-template-columns: 1fr !important;
+            }
         }
     </style>
 </head>
@@ -1368,6 +1378,64 @@
                     </div>
                 </div>
 
+                <!-- Expense Log -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.3rem;">
+                        <div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Expense Log</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Every dollar going out. Date, vendor, amount, category. This is what your accountant wants to see.</div>
+                        </div>
+                        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-refresh" onclick="toggleExpenseForm()" style="white-space:nowrap;">+ Add expense</button>
+                            <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="loadExpenses()">Refresh</button>
+                        </div>
+                    </div>
+
+                    <div id="expense-form" style="display:none;margin-top:1rem;padding:1rem;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
+                        <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);margin-bottom:0.75rem;" id="expense-form-title">New expense</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:0.75rem;">
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Description *</label>
+                                <input type="text" id="exp-description" placeholder="What was purchased" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Amount *</label>
+                                <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="exp-amount" step="0.01" min="0" placeholder="0.00" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Vendor / Paid to</label>
+                                <input type="text" id="exp-vendor" placeholder="Walmart, Amazon, etc." style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Date</label>
+                                <input type="date" id="exp-date" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Category</label>
+                                <select id="exp-category" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;">
+                                    <option value="">— Uncategorized —</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Ref / Check #</label>
+                                <input type="text" id="exp-reference" placeholder="Optional" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                            </div>
+                        </div>
+                        <div style="margin-bottom:0.75rem;">
+                            <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Memo</label>
+                            <input type="text" id="exp-memo" placeholder="Optional notes" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        </div>
+                        <div style="display:flex;gap:0.5rem;">
+                            <button type="button" class="btn btn-refresh" onclick="saveExpenseForm()" id="exp-save-btn">Save expense</button>
+                            <button type="button" class="btn btn-cancel" onclick="cancelExpenseForm()">Cancel</button>
+                        </div>
+                    </div>
+
+                    <div id="expense-list-body" style="margin-top:1rem;">
+                        <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
+                    </div>
+                </div>
+
                 <!-- Registration Link -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
                     <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Registration Link</div>
@@ -1377,6 +1445,20 @@
                         <button type="button" class="btn btn-refresh" onclick="saveRegistrationLink()">Save</button>
                     </div>
                     <div id="reg-link-status" style="font-size:0.78rem;color:var(--sage);margin-top:6px;display:none;"></div>
+                </div>
+
+                <!-- Reports & Admin -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.75rem;">Reports &amp; Admin</div>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                        <button type="button" class="btn btn-refresh" onclick="downloadFinancialReport()" style="white-space:nowrap;">&#x1f4ca; Download Financial Report</button>
+                    </div>
+                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">The report includes all income (payments received), all expenses, budget categories, and a summary. Hand it to your accountant.</div>
+                    <div style="border-top:1px solid rgba(200,185,176,0.3);padding-top:1rem;">
+                        <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:#a13224;margin-bottom:0.5rem;">Danger zone</div>
+                        <button type="button" class="btn" style="background:rgba(161,50,36,0.08);color:#a13224;border:1px solid rgba(161,50,36,0.2);" onclick="clearAllBudgetData()">Clear all budget data</button>
+                        <div style="font-size:0.78rem;color:var(--light-text);margin-top:4px;">Deletes everything: signups, payments, expenses, categories, receipts, calculator values. Cannot be undone.</div>
+                    </div>
                 </div>
 
                 <!-- Coming Soon placeholder for later phases -->
@@ -3529,6 +3611,7 @@ function showBudgetContent() {
     });
     loadBudgetCategories();
     loadSignups();
+    loadExpenses();
     loadRegistrationLink();
 }
 
@@ -4458,6 +4541,7 @@ function renderSignupsList(signups, stats) {
             <div style="text-align:right;font-size:0.88rem;font-weight:600;color:${balColor};">${fmtMoney(balance)}</div>
             <div>${statusChip(s.status)}</div>
             <div style="display:flex;gap:2px;">
+                <button type="button" onclick="recordPayment(${s.id})" style="background:none;border:none;color:var(--sage);font-size:0.85rem;cursor:pointer;padding:4px;" title="Record payment">&#x1f4b2;</button>
                 ${showMarkPaid ? '<button type="button" onclick="markSignupPaid(' + s.id + ')" style="background:none;border:none;color:var(--sage);font-size:0.85rem;cursor:pointer;padding:4px;" title="Mark paid in full">&#x2714;</button>' : ''}
                 <button type="button" onclick="toggleSignupForm(window._signupRows[${s.id}])" style="background:none;border:none;color:var(--taupe);font-size:0.85rem;cursor:pointer;padding:4px;" title="Edit">&#x270e;</button>
                 <button type="button" onclick='deleteSignup(${s.id}, ${safeName})' style="background:none;border:none;color:var(--light-text);font-size:1.1rem;cursor:pointer;padding:4px;" title="Delete">&times;</button>
@@ -4657,6 +4741,251 @@ function downloadCsvFile(filename, headers, rows) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+// --- Expense Log ---
+let _expenseEditingId = null;
+
+function toggleExpenseForm(editRow) {
+    const form = document.getElementById('expense-form');
+    if (!form) return;
+    // Populate category dropdown
+    populateExpenseCategoryDropdown();
+    if (editRow) {
+        _expenseEditingId = editRow.id;
+        document.getElementById('expense-form-title').textContent = 'Edit expense';
+        document.getElementById('exp-save-btn').textContent = 'Update';
+        document.getElementById('exp-description').value = editRow.description || '';
+        document.getElementById('exp-amount').value = editRow.amount || '';
+        document.getElementById('exp-vendor').value = editRow.vendor || '';
+        document.getElementById('exp-date').value = editRow.expense_date || '';
+        document.getElementById('exp-category').value = editRow.category_id || '';
+        document.getElementById('exp-reference').value = editRow.reference || '';
+        document.getElementById('exp-memo').value = editRow.memo || '';
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else if (form.style.display === 'none') {
+        _expenseEditingId = null;
+        document.getElementById('expense-form-title').textContent = 'New expense';
+        document.getElementById('exp-save-btn').textContent = 'Save expense';
+        document.getElementById('exp-description').value = '';
+        document.getElementById('exp-amount').value = '';
+        document.getElementById('exp-vendor').value = '';
+        document.getElementById('exp-date').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('exp-category').value = '';
+        document.getElementById('exp-reference').value = '';
+        document.getElementById('exp-memo').value = '';
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+        cancelExpenseForm();
+    }
+}
+
+function cancelExpenseForm() {
+    _expenseEditingId = null;
+    document.getElementById('expense-form').style.display = 'none';
+}
+
+function populateExpenseCategoryDropdown() {
+    const sel = document.getElementById('exp-category');
+    if (!sel) return;
+    const current = sel.value;
+    const inputs = document.querySelectorAll('#budget-cats-body input[data-field="name"]');
+    let html = '<option value="">— Uncategorized —</option>';
+    inputs.forEach(inp => {
+        const id = inp.dataset.catId;
+        const name = inp.value || 'Category ' + id;
+        html += '<option value="' + id + '">' + esc(name) + '</option>';
+    });
+    sel.innerHTML = html;
+    sel.value = current;
+}
+
+async function saveExpenseForm() {
+    const description = document.getElementById('exp-description').value.trim();
+    if (!description) { showToast('Description is required.'); return; }
+    const body = {
+        description,
+        amount: parseFloat(document.getElementById('exp-amount').value) || 0,
+        vendor: document.getElementById('exp-vendor').value.trim(),
+        expense_date: document.getElementById('exp-date').value,
+        category_id: document.getElementById('exp-category').value || null,
+        reference: document.getElementById('exp-reference').value.trim(),
+        memo: document.getElementById('exp-memo').value.trim()
+    };
+    try {
+        if (_expenseEditingId) {
+            await apiFetch('/api/budget/expenses/' + _expenseEditingId, { method: 'PATCH', body });
+            showToast('Expense updated.');
+        } else {
+            await apiFetch('/api/budget/expenses', { method: 'POST', body });
+            showToast('Expense added.');
+        }
+        cancelExpenseForm();
+        loadExpenses();
+        loadBudgetCategories(); // refresh actual totals
+    } catch (e) {
+        showToast('Save failed: ' + (e.message || ''));
+    }
+}
+
+async function loadExpenses() {
+    const body = document.getElementById('expense-list-body');
+    if (!body) return;
+    try {
+        const data = await apiFetch('/api/budget/expenses');
+        const expenses = (data && Array.isArray(data.expenses)) ? data.expenses : [];
+        window._lastExpensesData = expenses;
+        renderExpensesList(expenses);
+    } catch (e) {
+        body.innerHTML = '<div style="color:#a13224;font-size:0.88rem;">Could not load expenses: ' + esc(e.message || '') + '</div>';
+    }
+}
+
+function renderExpensesList(expenses) {
+    const body = document.getElementById('expense-list-body');
+    if (!body) return;
+    if (!expenses.length) {
+        body.innerHTML = '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No expenses yet. Tap "+ Add expense" to record spending.</div>';
+        return;
+    }
+    const total = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    window._expenseRows = {};
+    expenses.forEach(e => { window._expenseRows[e.id] = e; });
+    let html = `
+        <div style="padding:8px 12px;background:rgba(193,131,97,0.06);border-radius:8px;margin-bottom:0.75rem;font-size:0.82rem;">
+            <strong>${expenses.length}</strong> expense${expenses.length === 1 ? '' : 's'} totaling <strong style="color:var(--accent);">${fmtMoney(total)}</strong>
+        </div>
+    `;
+    expenses.forEach(e => {
+        const catLabel = e.category_name ? esc(e.category_name) : '<span style="color:var(--light-text);">uncategorized</span>';
+        html += `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;padding:8px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:0.9rem;font-weight:600;color:var(--dark-text);">${esc(e.description)}</div>
+                <div style="font-size:0.72rem;color:var(--light-text);">${e.expense_date || '—'} ${e.vendor ? '&middot; ' + esc(e.vendor) : ''} ${e.reference ? '&middot; Ref: ' + esc(e.reference) : ''}</div>
+                <div style="font-size:0.72rem;color:var(--taupe);">${catLabel}${e.memo ? ' &middot; <em>' + esc(e.memo) + '</em>' : ''}</div>
+            </div>
+            <div style="text-align:right;white-space:nowrap;">
+                <div style="font-size:0.95rem;font-weight:700;color:var(--accent);">${fmtMoney(e.amount || 0)}</div>
+                <div style="display:flex;gap:2px;justify-content:flex-end;margin-top:2px;">
+                    <button type="button" onclick="toggleExpenseForm(window._expenseRows[${e.id}])" style="background:none;border:none;color:var(--taupe);font-size:0.82rem;cursor:pointer;padding:2px 4px;" title="Edit">&#x270e;</button>
+                    <button type="button" onclick="deleteExpense(${e.id})" style="background:none;border:none;color:var(--light-text);font-size:1rem;cursor:pointer;padding:2px 4px;" title="Delete">&times;</button>
+                </div>
+            </div>
+        </div>`;
+    });
+    body.innerHTML = html;
+}
+
+async function deleteExpense(id) {
+    if (!confirm('Delete this expense?')) return;
+    try {
+        await apiFetch('/api/budget/expenses/' + id, { method: 'DELETE' });
+        loadExpenses();
+        loadBudgetCategories();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+// --- Record Payment (on signups) ---
+async function recordPayment(signupId) {
+    const row = window._signupRows && window._signupRows[signupId];
+    if (!row) return;
+    const balance = (Number(row.ticket_price) || 0) - (Number(row.amount_paid) || 0);
+    const amtStr = prompt('Payment amount for ' + row.name + '?\n(Balance: ' + fmtMoney(balance) + ')', balance > 0 ? balance.toFixed(2) : '');
+    if (amtStr === null) return;
+    const amount = parseFloat(amtStr);
+    if (!amount || amount <= 0) { showToast('Enter a valid amount.'); return; }
+    const method = prompt('Payment method? (cash, check, venmo, zelle, paypal, other)', row.payment_method || '') || '';
+    const memo = prompt('Memo? (e.g. "Deposit", "Balance", "Scholarship")', '') || '';
+    try {
+        await apiFetch('/api/budget/signups/' + signupId + '/payments', {
+            method: 'POST',
+            body: { amount, method, memo, payment_date: new Date().toISOString().slice(0, 10) }
+        });
+        showToast('Payment of ' + fmtMoney(amount) + ' recorded for ' + row.name);
+        loadSignups();
+    } catch (e) {
+        showToast('Error: ' + (e.message || ''));
+    }
+}
+
+// --- Financial Report ---
+async function downloadFinancialReport() {
+    showToast('Generating report...');
+    try {
+        const data = await apiFetch('/api/budget/report');
+        if (!data) { showToast('No data.'); return; }
+        const lines = [];
+        const add = (text) => lines.push(text);
+        add('G4 RETREAT FINANCIAL REPORT');
+        add('Generated: ' + new Date().toLocaleString());
+        add('');
+        add('=== SUMMARY ===');
+        add('Total Income (payments received),' + (data.summary.total_income || 0).toFixed(2));
+        add('Total Expenses,' + (data.summary.total_expenses || 0).toFixed(2));
+        add('Net (Income - Expenses),' + (data.summary.net || 0).toFixed(2));
+        add('Total Billed (ticket prices),' + (data.summary.total_billed || 0).toFixed(2));
+        add('Signups,' + (data.summary.signup_count || 0));
+        add('');
+        add('=== INCOME - PAYMENTS RECEIVED ===');
+        add('Date,Name,Amount,Method,Memo');
+        (data.payments || []).forEach(p => {
+            add([p.payment_date || '', '"' + (p.signup_name || '').replace(/"/g, '""') + '"', (p.amount || 0).toFixed(2), p.method || '', '"' + (p.memo || '').replace(/"/g, '""') + '"'].join(','));
+        });
+        add('');
+        add('=== EXPENSES ===');
+        add('Date,Description,Vendor,Amount,Category,Reference,Memo');
+        (data.expenses || []).forEach(e => {
+            add([e.expense_date || '', '"' + (e.description || '').replace(/"/g, '""') + '"', '"' + (e.vendor || '').replace(/"/g, '""') + '"', (e.amount || 0).toFixed(2), '"' + (e.category_name || '').replace(/"/g, '""') + '"', e.reference || '', '"' + (e.memo || '').replace(/"/g, '""') + '"'].join(','));
+        });
+        add('');
+        add('=== BUDGET CATEGORIES ===');
+        add('Category,Planned,Actual,Remaining');
+        (data.categories || []).forEach(c => {
+            const p = Number(c.planned) || 0;
+            const a = Number(c.actual) || 0;
+            add(['"' + (c.name || '').replace(/"/g, '""') + '"', p.toFixed(2), a.toFixed(2), (p - a).toFixed(2)].join(','));
+        });
+        add('');
+        add('=== SIGNUPS ===');
+        add('Name,Email,Phone,Room,Ticket,Paid,Balance,Status');
+        (data.signups || []).forEach(s => {
+            const bal = (Number(s.ticket_price) || 0) - (Number(s.amount_paid) || 0);
+            add(['"' + (s.name || '').replace(/"/g, '""') + '"', s.email || '', s.phone || '', '"' + (s.room_label || '').replace(/"/g, '""') + '"', (s.ticket_price || 0).toFixed(2), (s.amount_paid || 0).toFixed(2), bal.toFixed(2), s.status || ''].join(','));
+        });
+        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'g4-financial-report.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Report downloaded!');
+    } catch (e) {
+        showToast('Failed: ' + (e.message || ''));
+    }
+}
+
+// --- Clear All Data ---
+async function clearAllBudgetData() {
+    const first = confirm('This will delete ALL budget data:\n\n• All signups & payments\n• All expenses\n• All categories & sub-items\n• All receipts\n• Calculator values & ticket prices\n\nThis CANNOT be undone. Are you sure?');
+    if (!first) return;
+    const second = prompt('Type DELETE to confirm:', '');
+    if (second !== 'DELETE') { showToast('Cancelled.'); return; }
+    try {
+        const res = await apiFetch('/api/budget/clear-all', { method: 'POST', body: { confirm: 'DELETE_ALL_BUDGET_DATA' } });
+        if (res && res.error) { showToast('Failed: ' + res.error); return; }
+        showToast('All budget data cleared.');
+        // Reload everything
+        loadBudgetCategories();
+        loadSignups();
+        loadExpenses();
+        initRetreatCalculator();
+    } catch (e) {
+        showToast('Failed: ' + (e.message || ''));
+    }
 }
 
 // --- Registration Link ---

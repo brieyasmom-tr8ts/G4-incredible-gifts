@@ -1195,13 +1195,15 @@
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">4-woman rooms</label>
                             <input type="number" id="calc-n4" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
                         </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">No hotel (people)</label>
+                            <input type="number" id="calc-n-nohotel" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        </div>
                     </div>
 
-                    <!-- Pricing -->
-                    <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Ticket price</div>
-                    <div style="max-width:220px;margin-bottom:1.25rem;">
-                        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">What you charge per woman</label>
-                        <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-charge" placeholder="450" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                    <!-- Pricing note -->
+                    <div style="padding:10px 14px;background:rgba(138,158,122,0.08);border-radius:10px;font-size:0.82rem;color:var(--taupe);margin-bottom:1.25rem;line-height:1.5;">
+                        <strong>Ticket prices</strong> are set per tier in the <em>Retreat Signups</em> section below. The projected totals here use those prices automatically.
                     </div>
 
                     <!-- Per-woman breakdown -->
@@ -1230,10 +1232,121 @@
                     </div>
                 </div>
 
+                <!-- Retreat Signups (Phase 3) -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.3rem;">
+                        <div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Retreat Signups</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Record each woman who signs up, track ticket price vs. what she's paid so far. Totals flow into "Taken In" above.</div>
+                        </div>
+                        <button type="button" class="btn btn-refresh" onclick="toggleSignupForm()" id="signup-add-btn" style="white-space:nowrap;">+ Add signup</button>
+                    </div>
+
+                    <!-- Ticket prices (5 tiers) -->
+                    <div style="margin-top:1rem;padding:1rem;background:rgba(138,158,122,0.06);border:1px solid rgba(138,158,122,0.2);border-radius:10px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+                            <div style="font-family:Playfair Display,serif;font-size:0.9rem;font-weight:700;color:var(--taupe);">Ticket Prices</div>
+                            <div style="font-size:0.72rem;color:var(--light-text);">Pick a tier when adding a signup — the price pre-fills from here.</div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.6rem;">
+                            <div>
+                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">1 per room</label>
+                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-1" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">2 per room</label>
+                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-2" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">3 per room</label>
+                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-3" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">4 per room</label>
+                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-4" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">No hotel</label>
+                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-nohotel" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add / edit form -->
+                    <div id="signup-form" style="display:none;margin-top:1rem;padding:1rem;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
+                        <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);margin-bottom:0.75rem;" id="signup-form-title">New signup</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;margin-bottom:0.75rem;">
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Name *</label>
+                                <input type="text" id="signup-name" placeholder="Jane Doe" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Email</label>
+                                <input type="email" id="signup-email" placeholder="jane@example.com" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Phone</label>
+                                <input type="tel" id="signup-phone" placeholder="(555) 123-4567" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Tier</label>
+                                <select id="signup-room" onchange="signupTierChanged()" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;">
+                                    <option value="1">1 per room</option>
+                                    <option value="2" selected>2 per room</option>
+                                    <option value="3">3 per room</option>
+                                    <option value="4">4 per room</option>
+                                    <option value="0">No hotel</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Ticket price</label>
+                                <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="signup-price" step="0.01" min="0" placeholder="0.00" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                                <div style="font-size:0.68rem;color:var(--light-text);margin-top:3px;">Auto-filled from the tier above. You can override it.</div>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Amount paid</label>
+                                <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="signup-paid" step="0.01" min="0" placeholder="0.00" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Payment method</label>
+                                <select id="signup-method" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;">
+                                    <option value="">—</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="check">Check</option>
+                                    <option value="venmo">Venmo</option>
+                                    <option value="zelle">Zelle</option>
+                                    <option value="paypal">PayPal</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Status</label>
+                                <select id="signup-status" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;">
+                                    <option value="signed_up">Signed up</option>
+                                    <option value="paid">Paid in full</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:0.75rem;">
+                            <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Notes</label>
+                            <textarea id="signup-notes" rows="2" placeholder="Anything to remember about her registration" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;resize:vertical;"></textarea>
+                        </div>
+                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-refresh" onclick="saveSignupForm()" id="signup-save-btn">Save signup</button>
+                            <button type="button" class="btn btn-cancel" onclick="cancelSignupForm()">Cancel</button>
+                        </div>
+                    </div>
+
+                    <div id="signup-list-body" style="margin-top:1rem;">
+                        <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
+                    </div>
+                </div>
+
                 <!-- Coming Soon placeholder for later phases -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
                     <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;margin-bottom:0.3rem;">Coming next</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Attendee payment tracking &middot; expense log with receipts &middot; email reminders (Resend). Ship one phase at a time.</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Expense log rollup across categories &middot; email reminders to women with outstanding balances (Resend) &middot; Stripe checkout for 2027. Ship one phase at a time.</div>
                 </div>
             </div>
         </div>
@@ -3375,10 +3488,11 @@ async function budgetCheckPassword() {
 function showBudgetContent() {
     document.getElementById('budget-gate').style.display = 'none';
     document.getElementById('budget-content').style.display = 'block';
-    initRetreatCalculator();
+    loadTicketPrices().then(() => {
+        initRetreatCalculator();
+    });
     loadBudgetCategories();
-    // Phases 3-5 will populate the overview cards with real data. For now
-    // they stay at $0 so the shape of the page is in place.
+    loadSignups();
 }
 
 // --- Budget by Category ---
@@ -3606,7 +3720,9 @@ const _budgetOverview = {
     rooms: 0,
     hotelCost: 0,
     revenue: 0,
-    budgetSpent: 0
+    budgetSpent: 0,
+    signupRevenue: null,
+    signupCount: 0
 };
 
 function refreshBudgetOverview() {
@@ -3618,9 +3734,11 @@ function refreshBudgetOverview() {
     if (!roomsEl) return;
     roomsEl.textContent = _budgetOverview.rooms || 0;
     hotelEl.textContent = fmtMoney(_budgetOverview.hotelCost || 0);
-    revEl.textContent = fmtMoney(_budgetOverview.revenue || 0);
+    // Prefer actual signup collected total when signups exist
+    const takenIn = (_budgetOverview.signupRevenue != null) ? _budgetOverview.signupRevenue : (_budgetOverview.revenue || 0);
+    revEl.textContent = fmtMoney(takenIn);
     spentEl.textContent = fmtMoney(_budgetOverview.budgetSpent || 0);
-    const remaining = (_budgetOverview.revenue || 0) - (_budgetOverview.hotelCost || 0) - (_budgetOverview.budgetSpent || 0);
+    const remaining = takenIn - (_budgetOverview.hotelCost || 0) - (_budgetOverview.budgetSpent || 0);
     leftEl.textContent = fmtMoney(remaining);
     leftEl.style.color = remaining >= 0 ? 'var(--rose)' : '#a13224';
 }
@@ -3651,7 +3769,7 @@ const _calcFieldMap = {
     'calc-n2':              'retreat_calc_n2',
     'calc-n3':              'retreat_calc_n3',
     'calc-n4':              'retreat_calc_n4',
-    'calc-charge':          'retreat_calc_charge'
+    'calc-n-nohotel':       'retreat_calc_n_nohotel'
 };
 
 let _calcSaveTimer = null;
@@ -3729,6 +3847,17 @@ function roomCostForOccupancy(occ, baseNightly, extraNightly, nights) {
     return nightlyRate * nights;
 }
 
+// Helper: reads current ticket prices from the tp-* inputs
+function getTicketPrices() {
+    return {
+        1: parseFloat((document.getElementById('tp-1') || {}).value) || 0,
+        2: parseFloat((document.getElementById('tp-2') || {}).value) || 0,
+        3: parseFloat((document.getElementById('tp-3') || {}).value) || 0,
+        4: parseFloat((document.getElementById('tp-4') || {}).value) || 0,
+        0: parseFloat((document.getElementById('tp-nohotel') || {}).value) || 0
+    };
+}
+
 function recalcRetreatCalculator() {
     const baseNightly = parseFloat(document.getElementById('calc-room-base').value) || 0;
     const extraNightly = parseFloat(document.getElementById('calc-room-extra').value) || 0;
@@ -3740,21 +3869,20 @@ function recalcRetreatCalculator() {
     const n2 = parseInt(document.getElementById('calc-n2').value, 10) || 0;
     const n3 = parseInt(document.getElementById('calc-n3').value, 10) || 0;
     const n4 = parseInt(document.getElementById('calc-n4').value, 10) || 0;
-    const charge = parseFloat(document.getElementById('calc-charge').value) || 0;
+    const nNoHotel = parseInt(document.getElementById('calc-n-nohotel').value, 10) || 0;
+    const tp = getTicketPrices();
 
-    const totalWomen = n1 + (n2 * 2) + (n3 * 3) + (n4 * 4);
+    const hotelWomen = n1 + (n2 * 2) + (n3 * 3) + (n4 * 4);
+    const totalWomen = hotelWomen + nNoHotel;
     const perWomanEl = document.getElementById('calc-per-woman');
     const totalEl = document.getElementById('calc-total-summary');
 
-    // Keep the top overview cards in sync with whatever's typed into the
-    // calculator (live projected values). The "What's Left" card combines
-    // these with the budget-categories actual total.
     _budgetOverview.rooms = n1 + n2 + n3 + n4;
-    _budgetOverview.revenue = totalWomen * charge;
-    // hotelCost is computed below for the projected total path; default 0
+    // Revenue from tier prices
+    const tierRevenue = (n1 * 1 * tp[1]) + (n2 * 2 * tp[2]) + (n3 * 3 * tp[3]) + (n4 * 4 * tp[4]) + (nNoHotel * tp[0]);
+    _budgetOverview.revenue = tierRevenue;
     _budgetOverview.hotelCost = 0;
 
-    // No costs entered yet — show a gentle hint
     if (baseNightly <= 0 && foodCost <= 0 && confCost <= 0) {
         perWomanEl.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 14px;background:rgba(247,240,235,0.5);border-radius:10px;">Enter the venue costs above to see the breakdown.</div>';
         totalEl.textContent = 'Enter costs and room counts above to see the projection.';
@@ -3762,32 +3890,40 @@ function recalcRetreatCalculator() {
         return;
     }
 
-    // Conference split only makes sense when we know how many women.
     const confPerWoman = totalWomen > 0 ? (confCost / totalWomen) : null;
 
-    // Per-occupancy breakdown: 1, 2, 3, 4 women per room
-    const rows = [1, 2, 3, 4].map(occ => {
+    // Per-occupancy breakdown cards (1/2/3/4 hotel + no-hotel)
+    const hotelRows = [1, 2, 3, 4].map(occ => {
         const roomTotal = roomCostForOccupancy(occ, baseNightly, extraNightly, nights);
         const roomPerWoman = roomTotal / occ;
         const subtotal = roomPerWoman + foodCost + (confPerWoman || 0);
         const tax = subtotal * taxRate;
         const total = subtotal + tax;
+        const charge = tp[occ] || 0;
         const profit = charge > 0 ? (charge - total) : null;
-        return { occ, roomTotal, roomPerWoman, tax, subtotal, total, profit };
+        return { occ, roomTotal, roomPerWoman, tax, subtotal, total, charge, profit };
     });
+
+    // No-hotel card: no room cost, but still food + conf split + tax
+    const nhSubtotal = foodCost + (confPerWoman || 0);
+    const nhTax = nhSubtotal * taxRate;
+    const nhTotal = nhSubtotal + nhTax;
+    const nhCharge = tp[0] || 0;
+    const nhProfit = nhCharge > 0 ? (nhCharge - nhTotal) : null;
 
     const confDisplay = confPerWoman !== null ? fmtMoney(confPerWoman) : '(set rooms)';
 
     perWomanEl.innerHTML = `
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;">
-            ${rows.map(r => {
+            ${hotelRows.map(r => {
                 const profitColor = r.profit === null ? 'var(--light-text)' : (r.profit >= 0 ? 'var(--sage)' : '#a13224');
                 const profitText = r.profit === null ? '—' : fmtMoney(r.profit);
                 const occLabel = r.occ === 1 ? '1 woman per room' : (r.occ + ' women per room');
+                const chargeText = r.charge > 0 ? fmtMoney(r.charge) : '<span style="font-style:italic;color:var(--light-text);">set price below</span>';
                 return `
                 <div style="padding:14px 16px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
                     <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--taupe);margin-bottom:2px;">${occLabel}</div>
-                    <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:8px;">Room total: ${fmtMoney(r.roomTotal)}</div>
+                    <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:8px;">Room total: ${fmtMoney(r.roomTotal)} &middot; Ticket: ${chargeText}</div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Room / woman</span><span style="color:var(--taupe);">${fmtMoney(r.roomPerWoman)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Food</span><span style="color:var(--taupe);">${fmtMoney(foodCost)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Conference</span><span style="color:var(--taupe);">${confDisplay}</span></div>
@@ -3796,6 +3932,15 @@ function recalcRetreatCalculator() {
                     <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:${profitColor};margin-top:2px;"><span>Profit / woman</span><span>${profitText}</span></div>
                 </div>
             `;}).join('')}
+            <div style="padding:14px 16px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
+                <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--taupe);margin-bottom:2px;">No hotel</div>
+                <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:8px;">Ticket: ${nhCharge > 0 ? fmtMoney(nhCharge) : '<span style="font-style:italic;">set price below</span>'}</div>
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Food</span><span style="color:var(--taupe);">${fmtMoney(foodCost)}</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Conference</span><span style="color:var(--taupe);">${confDisplay}</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Tax &amp; fees</span><span style="color:var(--taupe);">${fmtMoney(nhTax)}</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:var(--dark-text);padding-top:4px;border-top:1px solid rgba(200,185,176,0.4);margin-top:4px;"><span>Total cost</span><span>${fmtMoney(nhTotal)}</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:${nhProfit === null ? 'var(--light-text)' : (nhProfit >= 0 ? 'var(--sage)' : '#a13224')};margin-top:2px;"><span>Profit / woman</span><span>${nhProfit === null ? '—' : fmtMoney(nhProfit)}</span></div>
+            </div>
         </div>
     `;
 
@@ -3806,20 +3951,18 @@ function recalcRetreatCalculator() {
         return;
     }
 
-    // Sum the actual room costs by occupancy count
     const totalRoomCost =
         (n1 * roomCostForOccupancy(1, baseNightly, extraNightly, nights)) +
         (n2 * roomCostForOccupancy(2, baseNightly, extraNightly, nights)) +
         (n3 * roomCostForOccupancy(3, baseNightly, extraNightly, nights)) +
         (n4 * roomCostForOccupancy(4, baseNightly, extraNightly, nights));
-    // Push the hotel number into the overview cards
     _budgetOverview.hotelCost = totalRoomCost;
     const totalFoodCost = totalWomen * foodCost;
     const totalConfCost = confCost;
     const totalSubtotal = totalRoomCost + totalFoodCost + totalConfCost;
     const totalTax = totalSubtotal * taxRate;
     const totalCost = totalSubtotal + totalTax;
-    const totalRevenue = totalWomen * charge;
+    const totalRevenue = tierRevenue;
     const totalProfit = totalRevenue - totalCost;
     const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
     const profitColor = totalProfit >= 0 ? 'var(--sage)' : '#a13224';
@@ -3838,6 +3981,248 @@ function recalcRetreatCalculator() {
     `;
 
     refreshBudgetOverview();
+}
+
+// --- Ticket Prices (Phase 3) ---
+// Five tier prices stored in game_settings under retreat_ticket_* keys.
+// Loaded once when the budget section opens. Debounced save on every edit.
+const _ticketPriceFieldMap = {
+    'tp-1':       'retreat_ticket_1',
+    'tp-2':       'retreat_ticket_2',
+    'tp-3':       'retreat_ticket_3',
+    'tp-4':       'retreat_ticket_4',
+    'tp-nohotel': 'retreat_ticket_nohotel'
+};
+
+async function loadTicketPrices() {
+    try {
+        const data = await apiFetch('/api/budget/ticket-prices');
+        const prices = (data && data.prices) || {};
+        Object.keys(_ticketPriceFieldMap).forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const key = _ticketPriceFieldMap[id];
+            if (prices[key] !== undefined && prices[key] !== '') {
+                el.value = prices[key];
+            }
+        });
+    } catch (e) {
+        console.warn('ticket prices load failed:', e && e.message);
+    }
+}
+
+let _ticketPriceSaveTimer = null;
+function scheduleTicketPriceSave() {
+    if (_ticketPriceSaveTimer) clearTimeout(_ticketPriceSaveTimer);
+    _ticketPriceSaveTimer = setTimeout(saveTicketPricesNow, 500);
+    // Recalc immediately so the calculator projection updates live
+    recalcRetreatCalculator();
+}
+
+async function saveTicketPricesNow() {
+    const payload = {};
+    Object.keys(_ticketPriceFieldMap).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        payload[_ticketPriceFieldMap[id]] = el.value == null ? '' : String(el.value);
+    });
+    try {
+        await apiFetch('/api/budget/ticket-prices', { method: 'POST', body: payload });
+    } catch (e) {
+        console.warn('ticket prices save failed:', e && e.message);
+    }
+}
+
+// --- Retreat Signups (Phase 3) ---
+let _signupEditingId = null; // null = new signup, number = editing existing
+
+function toggleSignupForm(editRow) {
+    const form = document.getElementById('signup-form');
+    if (!form) return;
+    if (editRow) {
+        // Editing an existing signup
+        _signupEditingId = editRow.id;
+        document.getElementById('signup-form-title').textContent = 'Edit signup';
+        document.getElementById('signup-save-btn').textContent = 'Update';
+        document.getElementById('signup-name').value = editRow.name || '';
+        document.getElementById('signup-email').value = editRow.email || '';
+        document.getElementById('signup-phone').value = editRow.phone || '';
+        document.getElementById('signup-room').value = String(editRow.room_occupancy || 2);
+        document.getElementById('signup-price').value = editRow.ticket_price || '';
+        document.getElementById('signup-paid').value = editRow.amount_paid || '';
+        document.getElementById('signup-method').value = editRow.payment_method || '';
+        document.getElementById('signup-status').value = editRow.status || 'signed_up';
+        document.getElementById('signup-notes').value = editRow.notes || '';
+        form.style.display = 'block';
+    } else if (form.style.display === 'none') {
+        // New signup
+        _signupEditingId = null;
+        document.getElementById('signup-form-title').textContent = 'New signup';
+        document.getElementById('signup-save-btn').textContent = 'Save signup';
+        document.getElementById('signup-name').value = '';
+        document.getElementById('signup-email').value = '';
+        document.getElementById('signup-phone').value = '';
+        document.getElementById('signup-room').value = '2';
+        signupTierChanged(); // pre-fill price from tier
+        document.getElementById('signup-paid').value = '';
+        document.getElementById('signup-method').value = '';
+        document.getElementById('signup-status').value = 'signed_up';
+        document.getElementById('signup-notes').value = '';
+        form.style.display = 'block';
+    } else {
+        cancelSignupForm();
+    }
+}
+
+function cancelSignupForm() {
+    _signupEditingId = null;
+    document.getElementById('signup-form').style.display = 'none';
+}
+
+function signupTierChanged() {
+    const tier = document.getElementById('signup-room').value;
+    const tp = getTicketPrices();
+    const price = tp[parseInt(tier, 10)] || 0;
+    if (price > 0) document.getElementById('signup-price').value = price;
+}
+
+async function saveSignupForm() {
+    const name = document.getElementById('signup-name').value.trim();
+    if (!name) { showToast('Name is required.'); return; }
+    const body = {
+        name,
+        email: document.getElementById('signup-email').value.trim(),
+        phone: document.getElementById('signup-phone').value.trim(),
+        room_occupancy: parseInt(document.getElementById('signup-room').value, 10) || 2,
+        ticket_price: parseFloat(document.getElementById('signup-price').value) || 0,
+        amount_paid: parseFloat(document.getElementById('signup-paid').value) || 0,
+        payment_method: document.getElementById('signup-method').value,
+        notes: document.getElementById('signup-notes').value.trim(),
+        status: document.getElementById('signup-status').value
+    };
+    try {
+        if (_signupEditingId) {
+            const res = await apiFetch('/api/budget/signups/' + _signupEditingId, { method: 'PATCH', body });
+            if (res && res.error) { showToast('Save failed: ' + res.error); return; }
+            showToast('Signup updated.');
+        } else {
+            const res = await apiFetch('/api/budget/signups', { method: 'POST', body });
+            if (res && res.error) { showToast('Save failed: ' + res.error); return; }
+            showToast('Signup added!');
+        }
+        cancelSignupForm();
+        loadSignups();
+    } catch (e) {
+        showToast('Save failed: ' + (e.message || ''));
+    }
+}
+
+async function loadSignups() {
+    const body = document.getElementById('signup-list-body');
+    if (!body) return;
+    try {
+        const data = await apiFetch('/api/budget/signups');
+        const signups = (data && Array.isArray(data.signups)) ? data.signups : [];
+        const stats = (data && data.stats) || {};
+        renderSignupsList(signups, stats);
+        // Push real "Taken In" into overview. If there are signups, use
+        // actual collected total. Otherwise let calculator projection stand.
+        if (signups.length > 0) {
+            _budgetOverview.signupRevenue = stats.total_collected || 0;
+            _budgetOverview.signupCount = stats.count || 0;
+            document.getElementById('ov-revenue-sub').textContent = 'From ' + signups.length + ' signup' + (signups.length === 1 ? '' : 's');
+        } else {
+            _budgetOverview.signupRevenue = null;
+            document.getElementById('ov-revenue-sub').textContent = 'Projected from calculator';
+        }
+        refreshBudgetOverview();
+    } catch (e) {
+        body.innerHTML = '<div style="color:#a13224;font-size:0.88rem;">Could not load signups: ' + esc(e.message || '') + '</div>';
+    }
+}
+
+function tierLabel(occ) {
+    if (occ === 0) return 'No hotel';
+    return occ + ' per room';
+}
+
+const _signupStatusLabels = {
+    signed_up: 'Signed up',
+    paid: 'Paid in full',
+    cancelled: 'Cancelled'
+};
+function statusChip(s) {
+    const label = _signupStatusLabels[s] || s;
+    const colors = {
+        signed_up: 'color:var(--accent);background:rgba(193,131,97,0.1)',
+        paid: 'color:var(--sage);background:rgba(138,158,122,0.12)',
+        cancelled: 'color:#a13224;background:rgba(161,50,36,0.08)'
+    };
+    return `<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:600;${colors[s] || ''}">${esc(label)}</span>`;
+}
+
+function renderSignupsList(signups, stats) {
+    const body = document.getElementById('signup-list-body');
+    if (!body) return;
+    if (!signups.length) {
+        body.innerHTML = '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No signups yet. Tap "+ Add signup" to start recording registrations.</div>';
+        return;
+    }
+    // Stats bar
+    let html = `
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;padding:10px 12px;background:rgba(138,158,122,0.06);border-radius:8px;margin-bottom:0.75rem;font-size:0.82rem;">
+            <div><strong>${stats.count || 0}</strong> signed up</div>
+            <div><strong style="color:var(--sage);">${fmtMoney(stats.total_collected || 0)}</strong> collected</div>
+            <div><strong style="color:var(--accent);">${fmtMoney(stats.total_outstanding || 0)}</strong> outstanding</div>
+        </div>
+    `;
+    // Header
+    html += `
+        <div style="display:grid;grid-template-columns:2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto;gap:0.4rem;align-items:center;padding:6px 10px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);">
+            <div>Name</div>
+            <div>Tier</div>
+            <div style="text-align:right;">Ticket</div>
+            <div style="text-align:right;">Paid</div>
+            <div style="text-align:right;">Balance</div>
+            <div>Status</div>
+            <div></div>
+        </div>
+    `;
+    // Stash rows for edit lookups by ID
+    window._signupRows = {};
+    signups.forEach(s => { window._signupRows[s.id] = s; });
+
+    html += signups.map(s => {
+        const balance = (Number(s.ticket_price) || 0) - (Number(s.amount_paid) || 0);
+        const balColor = balance <= 0 ? 'var(--sage)' : 'var(--accent)';
+        const safeName = JSON.stringify(s.name);
+        return `
+        <div style="display:grid;grid-template-columns:2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto;gap:0.4rem;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
+            <div>
+                <div style="font-size:0.9rem;font-weight:600;color:var(--dark-text);">${esc(s.name)}</div>
+                ${s.email ? '<div style="font-size:0.7rem;color:var(--light-text);">' + esc(s.email) + '</div>' : ''}
+            </div>
+            <div style="font-size:0.82rem;color:var(--taupe);">${tierLabel(s.room_occupancy)}</div>
+            <div style="text-align:right;font-size:0.88rem;color:var(--taupe);">${fmtMoney(s.ticket_price || 0)}</div>
+            <div style="text-align:right;font-size:0.88rem;color:var(--sage);">${fmtMoney(s.amount_paid || 0)}</div>
+            <div style="text-align:right;font-size:0.88rem;font-weight:600;color:${balColor};">${fmtMoney(balance)}</div>
+            <div>${statusChip(s.status)}</div>
+            <div style="display:flex;gap:4px;">
+                <button type="button" onclick="toggleSignupForm(window._signupRows[${s.id}])" style="background:none;border:none;color:var(--taupe);font-size:0.85rem;cursor:pointer;padding:4px;" title="Edit">&#x270e;</button>
+                <button type="button" onclick='deleteSignup(${s.id}, ${safeName})' style="background:none;border:none;color:var(--light-text);font-size:1.1rem;cursor:pointer;padding:4px;" title="Delete">&times;</button>
+            </div>
+        </div>
+        `;
+    }).join('');
+    body.innerHTML = html;
+}
+
+async function deleteSignup(id, name) {
+    if (!confirm('Remove "' + name + '" from the signups list? This cannot be undone.')) return;
+    try {
+        await apiFetch('/api/budget/signups/' + id, { method: 'DELETE' });
+        loadSignups();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
 
 // --- Scavenger Hunt ---

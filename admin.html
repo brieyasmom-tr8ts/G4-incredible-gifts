@@ -2918,7 +2918,9 @@ const FEATURE_ITEMS = [
     { label: 'Meme',                icon: '&#x1f602;',           desc: 'What Do You Meme? game',           nav_key: 'nav_meme',        home_key: null },
     { label: 'Quiz',                icon: '&#x1f9e0;',           desc: 'Know Your Sisters daily quiz',     nav_key: 'nav_quiz',        home_key: null },
     { label: 'Survey',              icon: '&#x1f4dd;',           desc: 'Retreat feedback form',            nav_key: 'nav_survey',      home_key: null },
-    { label: 'Secret Sister',       icon: '&#x1f48c;',           desc: 'Anonymous encouragement notes',    nav_key: 'nav_secretsister', home_key: null },
+    // Secret Sister intentionally not listed here — it lives on the home
+    // card now, not the bottom nav. The old nav_secretsister toggle is
+    // hardcoded off in index.html's navKeyEnabled.
     { label: 'Packing Points',      icon: '&#x1f9f3;',           desc: 'Packing scores game (home-only modal)', nav_key: null,        home_key: 'home_packing' },
     { label: 'View Schedule',       icon: '&#x1f5d3;&#xfe0f;',   desc: 'Shortcut to schedule on home',     nav_key: null,              home_key: 'home_schedule' },
     { label: 'Suggest Theme',       icon: '&#x1f4a1;',           desc: 'Collect topic ideas for next year', nav_key: 'nav_topics',     home_key: 'home_topics' },

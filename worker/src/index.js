@@ -2536,9 +2536,14 @@ export default {
             amount_paid REAL DEFAULT 0,
             payment_method TEXT DEFAULT '',
             notes TEXT DEFAULT '',
+            room_label TEXT DEFAULT '',
             status TEXT DEFAULT 'signed_up',
             created_at TEXT DEFAULT (datetime('now'))
           )`).run();
+        } catch (e) { /* already exists */ }
+        // Lazy migration for existing tables missing room_label
+        try {
+          await env.DB.prepare("ALTER TABLE retreat_signups ADD COLUMN room_label TEXT DEFAULT ''").run();
         } catch (e) { /* already exists */ }
       }
 
@@ -2546,7 +2551,7 @@ export default {
       if (path === '/api/budget/signups' && request.method === 'GET') {
         await ensureRetreatSignupsTable();
         const { results } = await env.DB.prepare(
-          'SELECT id, name, email, phone, room_occupancy, ticket_price, amount_paid, payment_method, notes, status, created_at FROM retreat_signups ORDER BY created_at DESC, id DESC'
+          'SELECT id, name, email, phone, room_occupancy, ticket_price, amount_paid, payment_method, notes, room_label, status, created_at FROM retreat_signups ORDER BY created_at DESC, id DESC'
         ).all();
         const rows = results || [];
         let totalCollected = 0, totalOwed = 0, totalBilled = 0;
@@ -2581,10 +2586,11 @@ export default {
         const amountPaid = parseFloat(body.amount_paid) || 0;
         const paymentMethod = (body.payment_method || '').toString().trim();
         const notes = (body.notes || '').toString().trim();
+        const roomLabel = (body.room_label || '').toString().trim();
         const status = (body.status || 'signed_up').toString().trim();
         const result = await env.DB.prepare(
-          'INSERT INTO retreat_signups (name, email, phone, room_occupancy, ticket_price, amount_paid, payment_method, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        ).bind(name, email, phone, roomOccupancy, ticketPrice, amountPaid, paymentMethod, notes, status).run();
+          'INSERT INTO retreat_signups (name, email, phone, room_occupancy, ticket_price, amount_paid, payment_method, notes, room_label, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(name, email, phone, roomOccupancy, ticketPrice, amountPaid, paymentMethod, notes, roomLabel, status).run();
         return json({ success: true, id: result.meta ? result.meta.last_row_id : null }, corsHeaders);
       }
 
@@ -2604,6 +2610,7 @@ export default {
         if (body.amount_paid !== undefined) { fields.push('amount_paid = ?'); values.push(parseFloat(body.amount_paid) || 0); }
         if (body.payment_method !== undefined) { fields.push('payment_method = ?'); values.push(String(body.payment_method).trim()); }
         if (body.notes !== undefined) { fields.push('notes = ?'); values.push(String(body.notes).trim()); }
+        if (body.room_label !== undefined) { fields.push('room_label = ?'); values.push(String(body.room_label).trim()); }
         if (body.status !== undefined) { fields.push('status = ?'); values.push(String(body.status).trim()); }
         if (!fields.length) return json({ error: 'No fields to update' }, corsHeaders, 400);
         values.push(id);
@@ -2617,6 +2624,81 @@ export default {
         await ensureRetreatSignupsTable();
         await env.DB.prepare('DELETE FROM retreat_signups WHERE id = ?').bind(id).run();
         return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/budget/signups/import - bulk CSV import.
+      // Accepts JSON array of rows (parsed client-side). Matches by email
+      // first, then by name. Updates existing, creates new.
+      if (path === '/api/budget/signups/import' && request.method === 'POST') {
+        const body = await request.json();
+        const rows = body && Array.isArray(body.rows) ? body.rows : [];
+        if (!rows.length) return json({ error: 'No rows to import' }, corsHeaders, 400);
+        await ensureRetreatSignupsTable();
+
+        // Load existing signups for matching
+        const { results: existing } = await env.DB.prepare(
+          'SELECT id, name, email FROM retreat_signups'
+        ).all();
+        const byEmail = {};
+        const byName = {};
+        (existing || []).forEach(r => {
+          if (r.email) byEmail[r.email.toLowerCase().trim()] = r.id;
+          if (r.name) byName[r.name.toLowerCase().trim()] = r.id;
+        });
+
+        let created = 0, updated = 0, skipped = 0;
+        for (const row of rows) {
+          const name = (row.name || '').toString().trim();
+          if (!name) { skipped++; continue; }
+          const email = (row.email || '').toString().trim();
+          const phone = (row.phone || '').toString().trim();
+          const roomOccupancy = parseInt(row.room_occupancy, 10) || 2;
+          const ticketPrice = parseFloat(row.ticket_price) || 0;
+          const amountPaid = parseFloat(row.amount_paid) || 0;
+          const paymentMethod = (row.payment_method || '').toString().trim();
+          const notes = (row.notes || '').toString().trim();
+          const roomLabel = (row.room_label || '').toString().trim();
+          const status = (row.status || 'signed_up').toString().trim();
+
+          // Try to match existing
+          let matchId = null;
+          if (email && byEmail[email.toLowerCase()]) {
+            matchId = byEmail[email.toLowerCase()];
+          } else if (byName[name.toLowerCase()]) {
+            matchId = byName[name.toLowerCase()];
+          }
+
+          if (matchId) {
+            // Update existing — merge non-empty fields
+            const fields = [];
+            const values = [];
+            if (email) { fields.push('email = ?'); values.push(email); }
+            if (phone) { fields.push('phone = ?'); values.push(phone); }
+            if (ticketPrice > 0) { fields.push('ticket_price = ?'); values.push(ticketPrice); }
+            if (amountPaid > 0) { fields.push('amount_paid = ?'); values.push(amountPaid); }
+            if (paymentMethod) { fields.push('payment_method = ?'); values.push(paymentMethod); }
+            if (roomLabel) { fields.push('room_label = ?'); values.push(roomLabel); }
+            if (notes) { fields.push('notes = ?'); values.push(notes); }
+            // Auto-set paid status
+            if (amountPaid > 0 && ticketPrice > 0 && amountPaid >= ticketPrice) {
+              fields.push('status = ?'); values.push('paid');
+            }
+            if (fields.length) {
+              values.push(matchId);
+              await env.DB.prepare(`UPDATE retreat_signups SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+              updated++;
+            } else {
+              skipped++;
+            }
+          } else {
+            // Create new
+            await env.DB.prepare(
+              'INSERT INTO retreat_signups (name, email, phone, room_occupancy, ticket_price, amount_paid, payment_method, notes, room_label, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            ).bind(name, email, phone, roomOccupancy, ticketPrice, amountPaid, paymentMethod, notes, roomLabel, status).run();
+            created++;
+          }
+        }
+        return json({ success: true, created, updated, skipped }, corsHeaders);
       }
 
       // ===== FEEDBACK =====

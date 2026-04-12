@@ -2121,6 +2121,96 @@ export default {
       // visits CHECK it. No per-person accounts — this is a thin gate to keep
       // financial data separate from casual admin URL sharing.
 
+      // Budget categories table (lazy-created on first hit)
+      async function ensureBudgetCategoriesTable() {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS budget_categories (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            planned REAL DEFAULT 0,
+            actual REAL DEFAULT 0,
+            sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch (e) { /* already exists */ }
+      }
+
+      // GET /api/budget/categories - list all categories
+      if (path === '/api/budget/categories' && request.method === 'GET') {
+        await ensureBudgetCategoriesTable();
+        const { results } = await env.DB.prepare(
+          'SELECT id, name, planned, actual, sort_order FROM budget_categories ORDER BY sort_order, id'
+        ).all();
+        return json({ categories: results || [] }, corsHeaders);
+      }
+
+      // POST /api/budget/categories - create a new category
+      if (path === '/api/budget/categories' && request.method === 'POST') {
+        const body = await request.json();
+        const name = (body && body.name || '').toString().trim();
+        if (!name) return json({ error: 'Name is required' }, corsHeaders, 400);
+        const planned = parseFloat(body.planned) || 0;
+        const actual = parseFloat(body.actual) || 0;
+        const sortOrder = parseInt(body.sort_order, 10) || 0;
+        await ensureBudgetCategoriesTable();
+        const result = await env.DB.prepare(
+          'INSERT INTO budget_categories (name, planned, actual, sort_order) VALUES (?, ?, ?, ?)'
+        ).bind(name, planned, actual, sortOrder).run();
+        return json({ success: true, id: result.meta ? result.meta.last_row_id : null }, corsHeaders);
+      }
+
+      // PATCH /api/budget/categories/:id - update a category
+      const budgetCatUpdateMatch = path.match(/^\/api\/budget\/categories\/(\d+)$/);
+      if (budgetCatUpdateMatch && request.method === 'PATCH') {
+        const id = parseInt(budgetCatUpdateMatch[1], 10);
+        const body = await request.json();
+        await ensureBudgetCategoriesTable();
+        const fields = [];
+        const values = [];
+        if (body.name !== undefined) { fields.push('name = ?'); values.push(String(body.name).trim()); }
+        if (body.planned !== undefined) { fields.push('planned = ?'); values.push(parseFloat(body.planned) || 0); }
+        if (body.actual !== undefined) { fields.push('actual = ?'); values.push(parseFloat(body.actual) || 0); }
+        if (body.sort_order !== undefined) { fields.push('sort_order = ?'); values.push(parseInt(body.sort_order, 10) || 0); }
+        if (!fields.length) return json({ error: 'No fields to update' }, corsHeaders, 400);
+        values.push(id);
+        await env.DB.prepare(`UPDATE budget_categories SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/budget/categories/:id - delete a category
+      if (budgetCatUpdateMatch && request.method === 'DELETE') {
+        const id = parseInt(budgetCatUpdateMatch[1], 10);
+        await ensureBudgetCategoriesTable();
+        await env.DB.prepare('DELETE FROM budget_categories WHERE id = ?').bind(id).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/budget/categories/seed - insert Heather's default list
+      // if the table is empty. No-op if any rows exist.
+      if (path === '/api/budget/categories/seed' && request.method === 'POST') {
+        await ensureBudgetCategoriesTable();
+        const existing = await env.DB.prepare('SELECT COUNT(*) AS c FROM budget_categories').first();
+        if (existing && existing.c > 0) return json({ success: true, seeded: 0 }, corsHeaders);
+        const defaults = [
+          'Food',
+          'Table gift (3)',
+          'Dinner',
+          'Dessert',
+          'Party',
+          'Misc Supplies',
+          'Welcome bags',
+          'Table snacks',
+          'Table decor',
+          'Give aways'
+        ];
+        for (let i = 0; i < defaults.length; i++) {
+          await env.DB.prepare(
+            'INSERT INTO budget_categories (name, planned, actual, sort_order) VALUES (?, 0, 0, ?)'
+          ).bind(defaults[i], i).run();
+        }
+        return json({ success: true, seeded: defaults.length }, corsHeaders);
+      }
+
       // GET /api/budget/auth/status - does a password exist yet?
       if (path === '/api/budget/auth/status' && request.method === 'GET') {
         try {

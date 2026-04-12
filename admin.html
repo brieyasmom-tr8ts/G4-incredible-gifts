@@ -3450,9 +3450,9 @@ function renderBudgetCategoryRow(c) {
     const safeName = JSON.stringify(c.name);
     return `
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto;gap:0.4rem;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
-            <input type="text" value="${esc(c.name)}" data-cat-id="${c.id}" data-field="name" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--dark-text);background:transparent;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" onblur="budgetCatSave(this)" />
-            <input type="number" step="0.01" min="0" value="${Number(c.planned) || 0}" data-cat-id="${c.id}" data-field="planned" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--taupe);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" onblur="budgetCatSave(this)" />
-            <input type="number" step="0.01" min="0" value="${Number(c.actual) || 0}" data-cat-id="${c.id}" data-field="actual" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" onblur="budgetCatSave(this)" />
+            <input type="text" value="${esc(c.name)}" data-cat-id="${c.id}" data-field="name" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--dark-text);background:transparent;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
+            <input type="number" step="0.01" min="0" value="${Number(c.planned) || 0}" data-cat-id="${c.id}" data-field="planned" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--taupe);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
+            <input type="number" step="0.01" min="0" value="${Number(c.actual) || 0}" data-cat-id="${c.id}" data-field="actual" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
             <div style="text-align:right;font-size:0.9rem;font-weight:600;color:${diffColor};padding:6px 8px;">${fmtMoney(diff)}</div>
             <button type="button" onclick='openBudgetReceiptsModal(${c.id}, ${safeName})' style="background:none;border:none;color:var(--taupe);font-size:1rem;cursor:pointer;padding:4px 8px;" title="Receipts">&#x1f4ce;</button>
             <button type="button" onclick='deleteBudgetCategory(${c.id}, ${safeName})' style="background:none;border:none;color:var(--light-text);font-size:1.1rem;cursor:pointer;padding:4px 8px;" title="Delete">&times;</button>
@@ -3531,24 +3531,54 @@ async function deleteBudgetReceipt(receiptId) {
     } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
 
-async function budgetCatSave(input) {
+// Debounced save on every keystroke so a refresh mid-edit can't lose data.
+// Each input keeps its own timer keyed by "id-field".
+const _budgetCatSaveTimers = {};
+function budgetCatInput(input) {
     const id = input.dataset.catId;
     const field = input.dataset.field;
     if (!id || !field) return;
+    const key = id + '-' + field;
+    if (_budgetCatSaveTimers[key]) clearTimeout(_budgetCatSaveTimers[key]);
+    _budgetCatSaveTimers[key] = setTimeout(() => budgetCatSaveField(input, false), 500);
+}
+
+// On blur we save immediately (no debounce) so the "finished typing" case
+// is instant, reset styles, and refresh the totals row.
+function budgetCatBlur(input) {
+    const id = input.dataset.catId;
+    const field = input.dataset.field;
+    if (!id || !field) return;
+    const key = id + '-' + field;
+    if (_budgetCatSaveTimers[key]) { clearTimeout(_budgetCatSaveTimers[key]); delete _budgetCatSaveTimers[key]; }
     input.style.background = 'transparent';
     input.style.borderColor = 'transparent';
+    budgetCatSaveField(input, true);
+}
+
+async function budgetCatSaveField(input, rerenderOnSuccess) {
+    const id = input.dataset.catId;
+    const field = input.dataset.field;
+    if (!id || !field) return;
     const value = field === 'name' ? input.value.trim() : (parseFloat(input.value) || 0);
     try {
         const body = {};
         body[field] = value;
         const res = await apiFetch('/api/budget/categories/' + id, { method: 'PATCH', body });
         if (res && res.error) { showToast('Save failed: ' + res.error); return; }
-        // Refresh so totals + remaining recompute
-        loadBudgetCategories();
+        if (rerenderOnSuccess) {
+            // Refresh so totals + remaining recompute. Only on blur to avoid
+            // ripping focus out of the input mid-keystroke.
+            loadBudgetCategories();
+        }
     } catch (e) {
         showToast('Save failed: ' + (e.message || ''));
     }
 }
+
+// Back-compat shim for any stale inline handlers (none remain after this
+// PR, but keep so a stale page doesn't crash).
+function budgetCatSave(input) { return budgetCatBlur(input); }
 
 async function addBudgetCategory() {
     const name = prompt('New category name:');
@@ -3607,18 +3637,87 @@ function fmtMoney(n) {
     return sign + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function initRetreatCalculator() {
-    const ids = ['calc-room-base', 'calc-room-extra', 'calc-nights', 'calc-food-cost', 'calc-conference-cost', 'calc-tax-rate', 'calc-n1', 'calc-n2', 'calc-n3', 'calc-n4', 'calc-charge'];
+// Map of DOM input IDs → server state keys. Used for both hydration
+// (loading saved values on init) and persistence (debounced save on every
+// keystroke). Server stores in game_settings with retreat_calc_* prefix.
+const _calcFieldMap = {
+    'calc-room-base':       'retreat_calc_room_base',
+    'calc-room-extra':      'retreat_calc_room_extra',
+    'calc-nights':          'retreat_calc_nights',
+    'calc-food-cost':       'retreat_calc_food_cost',
+    'calc-conference-cost': 'retreat_calc_conference_cost',
+    'calc-tax-rate':        'retreat_calc_tax_rate',
+    'calc-n1':              'retreat_calc_n1',
+    'calc-n2':              'retreat_calc_n2',
+    'calc-n3':              'retreat_calc_n3',
+    'calc-n4':              'retreat_calc_n4',
+    'calc-charge':          'retreat_calc_charge'
+};
+
+let _calcSaveTimer = null;
+function scheduleCalcStateSave() {
+    if (_calcSaveTimer) clearTimeout(_calcSaveTimer);
+    _calcSaveTimer = setTimeout(saveCalcStateNow, 500);
+}
+
+async function saveCalcStateNow() {
+    const payload = {};
+    Object.keys(_calcFieldMap).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        payload[_calcFieldMap[id]] = el.value == null ? '' : String(el.value);
+    });
+    try {
+        await apiFetch('/api/budget/calculator/state', { method: 'POST', body: payload });
+    } catch (e) {
+        // Silent failure — next save will retry. Log for diagnostics.
+        console.warn('calc state save failed:', e && e.message);
+    }
+}
+
+async function loadCalcState() {
+    try {
+        const data = await apiFetch('/api/budget/calculator/state');
+        const state = (data && data.state) || {};
+        Object.keys(_calcFieldMap).forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const key = _calcFieldMap[id];
+            if (state[key] !== undefined && state[key] !== '') {
+                el.value = state[key];
+            }
+        });
+    } catch (e) {
+        console.warn('calc state load failed:', e && e.message);
+    }
+}
+
+async function initRetreatCalculator() {
+    const ids = Object.keys(_calcFieldMap);
     const inputs = ids.map(id => document.getElementById(id)).filter(Boolean);
     if (inputs.length === 0) return;
-    const recalc = () => recalcRetreatCalculator();
+    // Pull saved state from the server first so refreshed pages show the
+    // values Heather last typed. Then wire up live-save on every keystroke.
+    await loadCalcState();
     inputs.forEach(el => {
         if (!el.dataset.wired) {
             el.dataset.wired = '1';
-            el.addEventListener('input', recalc);
+            el.addEventListener('input', () => {
+                recalcRetreatCalculator();
+                scheduleCalcStateSave();
+            });
         }
     });
-    recalc();
+    // Final safety net — if she closes the tab within the debounce window,
+    // fire a save via the visibilitychange event.
+    if (!window._calcSaveUnloadWired) {
+        window._calcSaveUnloadWired = true;
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') saveCalcStateNow();
+        });
+        window.addEventListener('pagehide', saveCalcStateNow);
+    }
+    recalcRetreatCalculator();
 }
 
 // Returns the total room cost for the whole retreat (nights × nightly rate)

@@ -3874,36 +3874,28 @@ const FEATURE_ITEMS = [
     { label: 'Connect',             icon: '&#x1f49b;',           desc: 'People directory & profiles',      nav_key: 'nav_connect',     home_key: 'home_connect' },
     { label: 'Uplift',              icon: '&#x1f64f;',           desc: 'Prayer wall & encouragement',      nav_key: 'nav_uplift',      home_key: 'home_uplift' },
     { label: 'Polls',               icon: '&#x1f4ac;',           desc: 'Live polls & responses',           nav_key: 'nav_polls',       home_key: 'home_polls' },
-    { label: 'Journey',             icon: '&#x1f381;',           desc: 'Gift reflections',                 nav_key: 'nav_journey',     home_key: null },
+    { label: 'Journey',             icon: '&#x1f381;',           desc: 'Gift reflections',                 nav_key: 'nav_journey',     home_key: 'home_journey' },
     // Journal removed from Visibility — it's no longer a top-level tab. The
     // "My Reflections" archive is reached from inside the devotion hub.
     { label: 'Gratitude Wall',      icon: '&#x1f49b;',           desc: 'Word cloud gratitude wall',        nav_key: 'nav_gratitude',   home_key: 'home_gratitude' },
     { label: 'Photo Booth',         icon: '&#x1f5bc;&#xfe0f;',   desc: 'Photo booth with fun frames',      nav_key: 'nav_photobooth',  home_key: 'home_photobooth' },
     { label: 'Send Love (Marnie)',  icon: '&#x1f48c;',           desc: 'Messages & videos for Marnie',     nav_key: 'nav_sendlove',    home_key: 'home_sendlove' },
     { label: 'Scavenger Hunt',      icon: '&#x1f4f7;',           desc: 'Photo scavenger hunt with voting', nav_key: 'nav_hunt',        home_key: 'home_hunt' },
-    { label: 'Meme',                icon: '&#x1f602;',           desc: 'What Do You Meme? game',           nav_key: 'nav_meme',        home_key: null },
-    { label: 'Who Am I?',           icon: '&#x1f914;',           desc: 'Fun facts slideshow',              nav_key: 'nav_whoami',      home_key: null },
-    { label: 'Quiz',                icon: '&#x1f9e0;',           desc: 'Know Your Sisters daily quiz',     nav_key: 'nav_quiz',        home_key: null },
-    { label: 'Survey',              icon: '&#x1f4dd;',           desc: 'Retreat feedback form',            nav_key: 'nav_survey',      home_key: null },
+    { label: 'Meme',                icon: '&#x1f602;',           desc: 'What Do You Meme? game',           nav_key: 'nav_meme',        home_key: 'home_meme' },
+    { label: 'Who Am I?',           icon: '&#x1f914;',           desc: 'Fun facts slideshow',              nav_key: 'nav_whoami',      home_key: 'home_whoami' },
+    { label: 'Quiz',                icon: '&#x1f9e0;',           desc: 'Know Your Sisters daily quiz',     nav_key: 'nav_quiz',        home_key: 'home_quiz' },
+    { label: 'Survey',              icon: '&#x1f4dd;',           desc: 'Retreat feedback form',            nav_key: 'nav_survey',      home_key: 'home_survey' },
     // Secret Sister intentionally not listed here — it lives on the home
     // card now, not the bottom nav. The old nav_secretsister toggle is
     // hardcoded off in index.html's navKeyEnabled.
-    { label: 'Packing Points',      icon: '&#x1f9f3;',           desc: 'Packing scores game (home-only modal)', nav_key: null,        home_key: 'home_packing' },
-    { label: 'View Schedule',       icon: '&#x1f5d3;&#xfe0f;',   desc: 'Shortcut to schedule on home',     nav_key: null,              home_key: 'home_schedule' },
+    { label: 'Packing Points',      icon: '&#x1f9f3;',           desc: 'Packing scores game',              nav_key: 'nav_packing',     home_key: 'home_packing' },
     { label: 'Suggest Theme',       icon: '&#x1f4a1;',           desc: 'Collect topic ideas for next year', nav_key: 'nav_topics',     home_key: 'home_topics' },
     { label: 'Stories',             icon: '&#x2728;',            desc: 'Testimonies of what God is doing', nav_key: 'nav_stories',     home_key: 'home_stories' },
-    { label: 'Celebrations Card',   icon: '&#x1f382;',           desc: 'Show upcoming birthdays + anniversaries on home', nav_key: null, home_key: 'home_celebrations' },
+    { label: 'Celebrations',        icon: '&#x1f382;',           desc: 'Upcoming birthdays & anniversaries', nav_key: 'nav_celebrations', home_key: 'home_celebrations' },
 ];
 
-// "View Schedule" home key is a duplicate of Schedule's home_schedule key;
-// the deduping is deliberate — we list packing + schedule shortcut rows
-// above so admins see the home-only entries visually.
-// Filter out the duplicate row for Schedule if needed:
-const FEATURE_ITEMS_DEDUPED = FEATURE_ITEMS.filter((item, idx, arr) => {
-    // Drop the duplicate "View Schedule" row because Schedule already handles home_schedule
-    if (item.label === 'View Schedule') return false;
-    return true;
-});
+// Every feature now has both nav_key and home_key — no dedup needed.
+const FEATURE_ITEMS_DEDUPED = FEATURE_ITEMS;
 
 function renderVisibilityToggles() {
     const list = document.getElementById('visibility-toggles-list');

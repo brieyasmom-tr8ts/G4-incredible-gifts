@@ -10,6 +10,95 @@ function containsBlockedWords(text) {
   return BLOCKED_WORDS.some(w => lower.includes(w));
 }
 
+// ===== WEEKLY SECRET SISTER =====
+// The retreat-time secret_sister table handles the one-time weekend game.
+// secret_sister_pairings is the post-retreat weekly rotation: every
+// Wednesday at 5am EDT a new round of pairings is created lazily on the
+// first request that asks for it. No cron needed — the round number is
+// derived from an anchor date and pairings are generated on demand.
+//
+// Wednesday April 15 2026 5:00am EDT = 9:00am UTC. First round starts here.
+const SS_ANCHOR_UTC_MS = Date.UTC(2026, 3, 15, 9, 0, 0); // month 3 = April
+const SS_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const SS_DELIVERY_DELAY_SQL = "'-1 hours'"; // SQLite modifier for the delay
+
+function getCurrentSSRound() {
+  const now = Date.now();
+  if (now < SS_ANCHOR_UTC_MS) return 0;
+  return Math.floor((now - SS_ANCHOR_UTC_MS) / SS_WEEK_MS) + 1;
+}
+
+async function ensureWeeklySSTable(db) {
+  try {
+    await db.prepare(`CREATE TABLE IF NOT EXISTS secret_sister_pairings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      round_number INTEGER NOT NULL,
+      giver_id INTEGER NOT NULL,
+      receiver_id INTEGER NOT NULL,
+      giver_name TEXT DEFAULT '',
+      receiver_name TEXT DEFAULT '',
+      note TEXT DEFAULT '',
+      written_at TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(round_number, giver_id)
+    )`).run();
+  } catch (e) { /* already exists */ }
+  // Round-creation lock table so two concurrent requests don't both try
+  // to generate pairings for the same round with different shuffles.
+  try {
+    await db.prepare(`CREATE TABLE IF NOT EXISTS secret_sister_round_locks (
+      round_number INTEGER PRIMARY KEY,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+  } catch (e) { /* already exists */ }
+  // Lazy column: per-user opt-out from the weekly rotation.
+  try {
+    await db.prepare('ALTER TABLE users ADD COLUMN secret_sister_opt_out INTEGER DEFAULT 0').run();
+  } catch (e) { /* already exists */ }
+}
+
+async function ensureSSRoundExists(db, roundNumber) {
+  if (roundNumber <= 0) return false;
+  // Claim the lock — only the winning request generates pairings. Other
+  // concurrent callers hit UNIQUE(round_number) on the lock table and bail
+  // out, then read the pairings the winner created.
+  try {
+    await db.prepare('INSERT INTO secret_sister_round_locks (round_number) VALUES (?)').bind(roundNumber).run();
+  } catch (e) {
+    // Lock already claimed — someone else is generating, or already did.
+    return true;
+  }
+  // We won the lock. Fetch eligible users (opted in, have a real profile).
+  const { results: users } = await db.prepare(
+    `SELECT id, first_name, COALESCE(last_initial, '') AS last_initial
+     FROM users
+     WHERE COALESCE(secret_sister_opt_out, 0) = 0
+       AND first_name IS NOT NULL AND first_name != ''
+     ORDER BY id`
+  ).all();
+  if (!users || users.length < 2) return false;
+  // Shuffle
+  const shuffled = [...users];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  // Cyclic pairings: giver[i] → receiver[(i+1) % n]. Guarantees no
+  // self-pairings and gives every woman exactly one giver and one receiver.
+  for (let i = 0; i < shuffled.length; i++) {
+    const giver = shuffled[i];
+    const receiver = shuffled[(i + 1) % shuffled.length];
+    const giverName = giver.last_initial ? `${giver.first_name} ${giver.last_initial}.` : giver.first_name;
+    const receiverName = receiver.last_initial ? `${receiver.first_name} ${receiver.last_initial}.` : receiver.first_name;
+    try {
+      await db.prepare(
+        'INSERT INTO secret_sister_pairings (round_number, giver_id, receiver_id, giver_name, receiver_name) VALUES (?, ?, ?, ?, ?)'
+      ).bind(roundNumber, giver.id, receiver.id, giverName, receiverName).run();
+    } catch (e) { /* concurrent insert lost race, ignore */ }
+  }
+  return true;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -524,7 +613,7 @@ export default {
 
       // DELETE /api/admin/reset - clear all test data
       if (path === '/api/admin/reset' && request.method === 'DELETE') {
-        const tables = ['messages', 'moments', 'moment_reactions', 'moment_comments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'testimony_hearts', 'testimonies', 'journal_activity', 'users'];
+        const tables = ['messages', 'moments', 'moment_reactions', 'moment_comments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'secret_sister_pairings', 'secret_sister_round_locks', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'testimony_hearts', 'testimonies', 'journal_activity', 'users'];
         for (const t of tables) {
           try { await env.DB.prepare(`DELETE FROM ${t}`).run(); } catch(e) { /* table may not exist */ }
         }
@@ -1654,6 +1743,71 @@ export default {
       if (path === '/api/games/secretsister/all' && request.method === 'DELETE') {
         await env.DB.prepare('DELETE FROM secret_sister').run();
         return json({ success: true }, corsHeaders);
+      }
+
+      // ===== WEEKLY SECRET SISTER (post-retreat) =====
+
+      // GET /api/secretsister/week?user_id=N - this week's state for me
+      if (path === '/api/secretsister/week' && request.method === 'GET') {
+        const userId = parseInt(url.searchParams.get('user_id'));
+        if (!userId) return json({ error: 'user_id required' }, corsHeaders, 400);
+        await ensureWeeklySSTable(env.DB);
+        const round = getCurrentSSRound();
+        if (round === 0) {
+          // Before the first round begins
+          return json({
+            round: 0,
+            starts_at: new Date(SS_ANCHOR_UTC_MS).toISOString(),
+            my_assignment: null,
+            my_note: null,
+            received_note: null
+          }, corsHeaders);
+        }
+        await ensureSSRoundExists(env.DB, round);
+        // Who am I writing to this week?
+        const mine = await env.DB.prepare(
+          'SELECT receiver_id, receiver_name, note FROM secret_sister_pairings WHERE round_number = ? AND giver_id = ?'
+        ).bind(round, userId).first();
+        // Who wrote to me this week? Only reveal if the note is ≥1hr old
+        // (blurs timing so senders stay anonymous).
+        const received = await env.DB.prepare(
+          `SELECT note FROM secret_sister_pairings
+           WHERE round_number = ? AND receiver_id = ?
+             AND note != '' AND written_at IS NOT NULL
+             AND julianday(written_at) <= julianday('now', ${SS_DELIVERY_DELAY_SQL})`
+        ).bind(round, userId).first();
+        return json({
+          round,
+          my_assignment: mine ? { receiver_id: mine.receiver_id, receiver_name: mine.receiver_name } : null,
+          my_note: mine && mine.note ? mine.note : null,
+          received_note: received && received.note ? received.note : null
+        }, corsHeaders);
+      }
+
+      // POST /api/secretsister/write - save my note for the current round
+      if (path === '/api/secretsister/write' && request.method === 'POST') {
+        const { user_id, note } = await request.json();
+        if (!user_id || !note || !note.trim()) {
+          return json({ error: 'Please write a note first' }, corsHeaders, 400);
+        }
+        if (containsBlockedWords(note)) {
+          return json({ error: 'Please keep it kind and uplifting' }, corsHeaders, 400);
+        }
+        await ensureWeeklySSTable(env.DB);
+        const round = getCurrentSSRound();
+        if (round === 0) {
+          return json({ error: "Secret Sister rounds haven't started yet" }, corsHeaders, 400);
+        }
+        await ensureSSRoundExists(env.DB, round);
+        const result = await env.DB.prepare(
+          `UPDATE secret_sister_pairings
+           SET note = ?, written_at = datetime('now')
+           WHERE round_number = ? AND giver_id = ?`
+        ).bind(note.trim(), round, user_id).run();
+        if (!result.meta || result.meta.changes === 0) {
+          return json({ error: 'No assignment found for you this week' }, corsHeaders, 400);
+        }
+        return json({ success: true, round }, corsHeaders);
       }
 
       // ===== FEEDBACK =====

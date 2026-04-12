@@ -1135,9 +1135,19 @@
                     <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Venue costs</div>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;margin-bottom:1.25rem;">
                         <div>
-                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Hotel cost per room</label>
-                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-room-cost" placeholder="450" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
-                            <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">For the whole retreat, per room</div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Base room cost / night</label>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-room-base" placeholder="145" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Covers 1 or 2 women per room</div>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Extra per extra woman / night</label>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-room-extra" placeholder="15" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Added for the 3rd and 4th woman</div>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Number of nights</label>
+                            <div style="display:flex;align-items:center;gap:6px;"><input type="number" id="calc-nights" placeholder="2" step="1" min="1" value="2" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Typical G4 retreat is 2 nights</div>
                         </div>
                         <div>
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Food cost per woman</label>
@@ -1150,7 +1160,7 @@
                             <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Flat fee, split across women</div>
                         </div>
                         <div>
-                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Tax rate</label>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Tax &amp; fees</label>
                             <div style="display:flex;align-items:center;gap:6px;"><input type="number" id="calc-tax-rate" placeholder="8" step="0.01" min="0" max="100" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /><span style="font-size:0.95rem;color:var(--taupe);">%</span></div>
                             <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Applied to the cost total</div>
                         </div>
@@ -1158,7 +1168,11 @@
 
                     <!-- Room occupancy -->
                     <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Expected rooms</div>
-                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1.25rem;">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;margin-bottom:1.25rem;">
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">1-woman rooms</label>
+                            <input type="number" id="calc-n1" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        </div>
                         <div>
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">2-woman rooms</label>
                             <input type="number" id="calc-n2" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
@@ -3336,7 +3350,7 @@ function fmtMoney(n) {
 }
 
 function initRetreatCalculator() {
-    const ids = ['calc-room-cost', 'calc-food-cost', 'calc-conference-cost', 'calc-tax-rate', 'calc-n2', 'calc-n3', 'calc-n4', 'calc-charge'];
+    const ids = ['calc-room-base', 'calc-room-extra', 'calc-nights', 'calc-food-cost', 'calc-conference-cost', 'calc-tax-rate', 'calc-n1', 'calc-n2', 'calc-n3', 'calc-n4', 'calc-charge'];
     const inputs = ids.map(id => document.getElementById(id)).filter(Boolean);
     if (inputs.length === 0) return;
     const recalc = () => recalcRetreatCalculator();
@@ -3349,56 +3363,69 @@ function initRetreatCalculator() {
     recalc();
 }
 
+// Returns the total room cost for the whole retreat (nights × nightly rate)
+// for a given room occupancy. 1 or 2 women pay the base rate; 3 and 4 women
+// add the per-extra-woman surcharge for the 3rd and 4th.
+function roomCostForOccupancy(occ, baseNightly, extraNightly, nights) {
+    const extras = Math.max(0, occ - 2);
+    const nightlyRate = baseNightly + (extras * extraNightly);
+    return nightlyRate * nights;
+}
+
 function recalcRetreatCalculator() {
-    const roomCost = parseFloat(document.getElementById('calc-room-cost').value) || 0;
+    const baseNightly = parseFloat(document.getElementById('calc-room-base').value) || 0;
+    const extraNightly = parseFloat(document.getElementById('calc-room-extra').value) || 0;
+    const nights = parseInt(document.getElementById('calc-nights').value, 10) || 0;
     const foodCost = parseFloat(document.getElementById('calc-food-cost').value) || 0;
     const confCost = parseFloat(document.getElementById('calc-conference-cost').value) || 0;
     const taxRate = (parseFloat(document.getElementById('calc-tax-rate').value) || 0) / 100;
+    const n1 = parseInt(document.getElementById('calc-n1').value, 10) || 0;
     const n2 = parseInt(document.getElementById('calc-n2').value, 10) || 0;
     const n3 = parseInt(document.getElementById('calc-n3').value, 10) || 0;
     const n4 = parseInt(document.getElementById('calc-n4').value, 10) || 0;
     const charge = parseFloat(document.getElementById('calc-charge').value) || 0;
 
-    const totalWomen = (n2 * 2) + (n3 * 3) + (n4 * 4);
+    const totalWomen = n1 + (n2 * 2) + (n3 * 3) + (n4 * 4);
     const perWomanEl = document.getElementById('calc-per-woman');
     const totalEl = document.getElementById('calc-total-summary');
 
     // No costs entered yet — show a gentle hint
-    if (roomCost <= 0 && foodCost <= 0 && confCost <= 0) {
+    if (baseNightly <= 0 && foodCost <= 0 && confCost <= 0) {
         perWomanEl.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 14px;background:rgba(247,240,235,0.5);border-radius:10px;">Enter the venue costs above to see the breakdown.</div>';
         totalEl.textContent = 'Enter costs and room counts above to see the projection.';
         return;
     }
 
-    // Conference split only makes sense when we know how many women. If
-    // totalWomen is 0, fall back to "—" for conference per woman in the
-    // breakdown, but still show room / food / tax math.
+    // Conference split only makes sense when we know how many women.
     const confPerWoman = totalWomen > 0 ? (confCost / totalWomen) : null;
 
-    // Per-occupancy breakdown
-    const rows = [2, 3, 4].map(occ => {
-        const roomPerWoman = roomCost > 0 ? (roomCost / occ) : 0;
+    // Per-occupancy breakdown: 1, 2, 3, 4 women per room
+    const rows = [1, 2, 3, 4].map(occ => {
+        const roomTotal = roomCostForOccupancy(occ, baseNightly, extraNightly, nights);
+        const roomPerWoman = roomTotal / occ;
         const subtotal = roomPerWoman + foodCost + (confPerWoman || 0);
         const tax = subtotal * taxRate;
         const total = subtotal + tax;
         const profit = charge > 0 ? (charge - total) : null;
-        return { occ, roomPerWoman, tax, subtotal, total, profit };
+        return { occ, roomTotal, roomPerWoman, tax, subtotal, total, profit };
     });
 
-    const confDisplay = confPerWoman !== null ? fmtMoney(confPerWoman) : '(set room counts)';
+    const confDisplay = confPerWoman !== null ? fmtMoney(confPerWoman) : '(set rooms)';
 
     perWomanEl.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;">
             ${rows.map(r => {
                 const profitColor = r.profit === null ? 'var(--light-text)' : (r.profit >= 0 ? 'var(--sage)' : '#a13224');
                 const profitText = r.profit === null ? '—' : fmtMoney(r.profit);
+                const occLabel = r.occ === 1 ? '1 woman per room' : (r.occ + ' women per room');
                 return `
                 <div style="padding:14px 16px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
-                    <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);margin-bottom:8px;">${r.occ} women per room</div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Room</span><span style="color:var(--taupe);">${fmtMoney(r.roomPerWoman)}</span></div>
+                    <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--taupe);margin-bottom:2px;">${occLabel}</div>
+                    <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:8px;">Room total: ${fmtMoney(r.roomTotal)}</div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Room / woman</span><span style="color:var(--taupe);">${fmtMoney(r.roomPerWoman)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Food</span><span style="color:var(--taupe);">${fmtMoney(foodCost)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Conference</span><span style="color:var(--taupe);">${confDisplay}</span></div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Tax</span><span style="color:var(--taupe);">${fmtMoney(r.tax)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Tax &amp; fees</span><span style="color:var(--taupe);">${fmtMoney(r.tax)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:var(--dark-text);padding-top:4px;border-top:1px solid rgba(200,185,176,0.4);margin-top:4px;"><span>Total cost</span><span>${fmtMoney(r.total)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:${profitColor};margin-top:2px;"><span>Profit / woman</span><span>${profitText}</span></div>
                 </div>
@@ -3412,7 +3439,12 @@ function recalcRetreatCalculator() {
         return;
     }
 
-    const totalRoomCost = (n2 + n3 + n4) * roomCost;
+    // Sum the actual room costs by occupancy count
+    const totalRoomCost =
+        (n1 * roomCostForOccupancy(1, baseNightly, extraNightly, nights)) +
+        (n2 * roomCostForOccupancy(2, baseNightly, extraNightly, nights)) +
+        (n3 * roomCostForOccupancy(3, baseNightly, extraNightly, nights)) +
+        (n4 * roomCostForOccupancy(4, baseNightly, extraNightly, nights));
     const totalFoodCost = totalWomen * foodCost;
     const totalConfCost = confCost;
     const totalSubtotal = totalRoomCost + totalFoodCost + totalConfCost;
@@ -3432,7 +3464,7 @@ function recalcRetreatCalculator() {
             <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Margin</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:${profitColor};">${totalRevenue > 0 ? margin.toFixed(1) + '%' : '—'}</div></div>
         </div>
         <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(138,158,122,0.25);font-size:0.78rem;color:var(--light-text);">
-            Rooms ${fmtMoney(totalRoomCost)} &middot; Food ${fmtMoney(totalFoodCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax ${fmtMoney(totalTax)}
+            Rooms ${fmtMoney(totalRoomCost)} &middot; Food ${fmtMoney(totalFoodCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(totalTax)}
         </div>
     `;
 }

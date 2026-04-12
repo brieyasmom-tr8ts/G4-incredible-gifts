@@ -943,6 +943,16 @@
                     </div>
                     <div id="weekly-ss-pair-list" style="max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
                 </div>
+                <!-- Participation Analytics -->
+                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px dashed rgba(200,185,176,0.5);">
+                    <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;margin-bottom:0.35rem;">Participation (metadata only)</div>
+                    <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.75rem;">Who has written, who has received, who's been overlooked. Tap "Send note" to drop an anonymous encouragement note on any woman\u2019s scrapbook — she\u2019ll see it as a normal secret sister note, never knowing it came from admin.</div>
+                    <div id="ss-participation-needs-note" style="margin-bottom:0.75rem;"></div>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem;">
+                        <button class="btn btn-refresh" onclick="loadSSParticipation()">Refresh Participation</button>
+                    </div>
+                    <div id="ss-participation-list" style="max-height:480px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
+                </div>
             </div>
             <!-- Scavenger Hunt -->
             <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
@@ -1086,6 +1096,20 @@
         <div class="modal-actions">
             <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
             <button class="btn btn-danger" id="modal-confirm">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Secret Sister send-note modal -->
+<div class="modal-overlay" id="ss-admin-send-modal">
+    <div class="modal-box" style="max-width:440px;">
+        <h2 style="font-family:Playfair Display,serif;font-size:1.2rem;margin-bottom:4px;">Send a Secret Sister Note</h2>
+        <p style="font-size:0.85rem;color:#777;margin-bottom:8px;">Your note will appear in <strong id="ss-admin-send-target">her</strong> scrapbook as a regular anonymous secret sister note. She won't know it came from admin.</p>
+        <textarea id="ss-admin-send-textarea" placeholder="A kind word, a prayer, something she needs to hear..." maxlength="300" style="width:100%;min-height:110px;padding:10px 12px;border:1.5px solid rgba(139,134,128,0.25);border-radius:10px;font-family:Cormorant Garamond,serif;font-size:16px;color:#333;resize:vertical;outline:none;background:white;box-sizing:border-box;margin-bottom:6px;"></textarea>
+        <div style="font-size:0.72rem;color:#999;text-align:right;margin-bottom:12px;"><span id="ss-admin-send-char">0</span>/300</div>
+        <div class="modal-actions">
+            <button class="btn btn-cancel" onclick="closeSSAdminSendModal()">Cancel</button>
+            <button class="btn btn-refresh" id="ss-admin-send-confirm">Send Anonymously</button>
         </div>
     </div>
 </div>
@@ -1245,6 +1269,7 @@ async function refreshAll() {
         loadPackingScores(),
         loadSecretSisters(),
         loadWeeklySSStatus(),
+        loadSSParticipation(),
         loadWYRQuestions(),
         loadActiveAnnouncement(),
         loadPolls(),
@@ -2873,6 +2898,162 @@ async function forceWeeklySSRound() {
         showToast('This week\'s pairings are ready');
         loadWeeklySSStatus();
     } catch (e) { showToast('Error: ' + (e.message || 'Could not run')); }
+}
+
+// --- Secret Sister Participation Analytics ---
+const SS_DROUGHT_WEEKS = 3; // Red-flag threshold
+
+// Compute weeks since a SQLite timestamp string ("YYYY-MM-DD HH:MM:SS" UTC)
+function weeksSince(sqliteTs) {
+    if (!sqliteTs) return null;
+    const when = new Date(sqliteTs.replace(' ', 'T') + 'Z');
+    if (isNaN(when.getTime())) return null;
+    const ms = Date.now() - when.getTime();
+    return ms / (7 * 24 * 60 * 60 * 1000);
+}
+
+function ssDateBadge(sqliteTs) {
+    if (!sqliteTs) {
+        return '<span style="display:inline-block;padding:2px 8px;background:#e5e5e5;color:#777;font-size:0.72rem;font-weight:600;border-radius:10px;">never</span>';
+    }
+    const w = weeksSince(sqliteTs) || 0;
+    const when = new Date(sqliteTs.replace(' ', 'T') + 'Z');
+    const label = when.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    let color;
+    if (w < 1) color = { bg: 'rgba(138,158,122,0.18)', fg: '#5a7a48' };       // green
+    else if (w < 2) color = { bg: 'rgba(212,175,55,0.18)', fg: '#8a6d0e' };    // yellow-ish
+    else if (w < SS_DROUGHT_WEEKS) color = { bg: 'rgba(230,150,80,0.18)', fg: '#9c5a1e' }; // orange
+    else color = { bg: 'rgba(192,57,43,0.14)', fg: '#a13224' };               // red
+    return `<span style="display:inline-block;padding:2px 8px;background:${color.bg};color:${color.fg};font-size:0.72rem;font-weight:600;border-radius:10px;">${label}</span>`;
+}
+
+async function loadSSParticipation() {
+    const list = document.getElementById('ss-participation-list');
+    const needs = document.getElementById('ss-participation-needs-note');
+    if (!list || !needs) return;
+    list.innerHTML = '<div style="color:var(--light-text);font-size:0.85rem;padding:8px 0;">Loading...</div>';
+    needs.innerHTML = '';
+    try {
+        const data = await apiFetch('/api/secretsister/participation');
+        const users = (data && Array.isArray(data.users)) ? data.users : [];
+        if (!users.length) {
+            list.innerHTML = '<div style="color:var(--light-text);font-size:0.88rem;padding:8px 0;">No users yet.</div>';
+            return;
+        }
+
+        // Needs a note this week: women with drought ≥ 3 weeks, excluding
+        // those who've already received an admin-sent note this round, sorted
+        // by "most lonely first" (never → oldest → newest). Top 5 shown.
+        const needsList = users
+            .filter(u => !u.opted_out && !u.admin_sent_this_round && (() => {
+                const w = weeksSince(u.last_received_at);
+                return w === null || w >= SS_DROUGHT_WEEKS;
+            })())
+            .sort((a, b) => {
+                const wa = weeksSince(a.last_received_at);
+                const wb = weeksSince(b.last_received_at);
+                if (wa === null && wb === null) return 0;
+                if (wa === null) return -1; // never first
+                if (wb === null) return 1;
+                return wb - wa; // larger drought first
+            })
+            .slice(0, 5);
+
+        if (needsList.length > 0) {
+            needs.innerHTML = `
+                <div style="padding:10px 14px;background:rgba(192,57,43,0.06);border:1px solid rgba(192,57,43,0.18);border-radius:10px;">
+                    <div style="font-family:Playfair Display,serif;font-size:0.82rem;font-weight:700;color:#a13224;margin-bottom:6px;">&#x1f494; Needs a note this week (${needsList.length})</div>
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                    ${needsList.map(u => `
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;background:white;border-radius:8px;">
+                            <div style="font-size:0.88rem;color:var(--taupe);"><strong>${esc(u.name)}</strong> &middot; <span style="color:#a13224;font-size:0.78rem;">${u.last_received_at ? Math.floor(weeksSince(u.last_received_at)) + ' weeks ago' : 'never'}</span></div>
+                            <button class="btn btn-refresh" style="font-size:0.75rem;padding:0.2rem 0.6rem;" onclick="openSSAdminSendModal(${u.user_id}, '${esc(u.name).replace(/'/g, '&#39;')}')">&#x1f48c; Send</button>
+                        </div>
+                    `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Full participation table, sorted by last_received ASC (lonely first)
+        const sorted = [...users].sort((a, b) => {
+            const wa = weeksSince(a.last_received_at);
+            const wb = weeksSince(b.last_received_at);
+            if (wa === null && wb === null) return 0;
+            if (wa === null) return -1;
+            if (wb === null) return 1;
+            return wb - wa;
+        });
+
+        list.innerHTML = `
+            <div style="display:grid;grid-template-columns:1.4fr 0.6fr 0.6fr 1fr 1fr auto;gap:6px;padding:6px 10px;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);">
+                <div>Name</div><div>Paired</div><div>Written</div><div>Last Written</div><div>Last Received</div><div></div>
+            </div>
+            ${sorted.map(u => `
+                <div style="display:grid;grid-template-columns:1.4fr 0.6fr 0.6fr 1fr 1fr auto;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
+                    <div style="font-size:0.88rem;">
+                        <strong>${esc(u.name)}</strong>
+                        ${u.opted_out ? '<span style="display:inline-block;margin-left:4px;padding:1px 6px;background:#e5e5e5;color:#777;font-size:0.68rem;font-weight:600;border-radius:8px;">opted out</span>' : ''}
+                        ${u.admin_sent_this_round ? '<span style="display:inline-block;margin-left:4px;padding:1px 6px;background:rgba(138,158,122,0.18);color:#5a7a48;font-size:0.68rem;font-weight:600;border-radius:8px;" title="You already sent her an anonymous note this round">&#x2713; admin</span>' : ''}
+                    </div>
+                    <div style="font-size:0.85rem;color:var(--taupe);">${u.rounds_paired}</div>
+                    <div style="font-size:0.85rem;color:var(--taupe);">${u.notes_written}</div>
+                    <div>${ssDateBadge(u.last_written_at)}</div>
+                    <div>${ssDateBadge(u.last_received_at)}</div>
+                    <div><button class="btn btn-refresh" style="font-size:0.72rem;padding:0.2rem 0.6rem;" onclick="openSSAdminSendModal(${u.user_id}, '${esc(u.name).replace(/'/g, '&#39;')}')">&#x1f48c;</button></div>
+                </div>
+            `).join('')}
+        `;
+    } catch (e) { list.innerHTML = '<div style="color:var(--accent);padding:8px 0;">Could not load participation.</div>'; }
+}
+
+function openSSAdminSendModal(userId, name) {
+    const modal = document.getElementById('ss-admin-send-modal');
+    const targetEl = document.getElementById('ss-admin-send-target');
+    const textarea = document.getElementById('ss-admin-send-textarea');
+    const charEl = document.getElementById('ss-admin-send-char');
+    const confirmBtn = document.getElementById('ss-admin-send-confirm');
+    if (!modal || !targetEl || !textarea || !confirmBtn) return;
+    targetEl.textContent = name || 'her';
+    textarea.value = '';
+    charEl.textContent = '0';
+    confirmBtn.textContent = 'Send Anonymously';
+    confirmBtn.disabled = false;
+    modal.classList.add('show');
+    textarea.focus();
+
+    textarea.oninput = () => { charEl.textContent = textarea.value.length; };
+
+    confirmBtn.onclick = async () => {
+        const note = textarea.value.trim();
+        if (!note) { showToast('Please write a note first'); return; }
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Sending...';
+        try {
+            const res = await apiFetch('/api/secretsister/admin-send', {
+                method: 'POST',
+                body: { recipient_user_id: userId, note }
+            });
+            if (res && res.error) {
+                showToast(res.error);
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Send Anonymously';
+                return;
+            }
+            showToast('Sent with love');
+            closeSSAdminSendModal();
+            loadSSParticipation();
+        } catch (e) {
+            showToast('Error: ' + (e.message || 'Could not send'));
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Send Anonymously';
+        }
+    };
+}
+
+function closeSSAdminSendModal() {
+    const modal = document.getElementById('ss-admin-send-modal');
+    if (modal) modal.classList.remove('show');
 }
 
 // --- Scavenger Hunt ---

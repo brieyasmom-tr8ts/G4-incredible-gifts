@@ -2115,6 +2115,63 @@ export default {
         return json({ success: true, round, recipient: recipientName }, corsHeaders);
       }
 
+      // ===== BUDGET & PAYMENTS =====
+      // Password gate. Single shared password stored in game_settings as a
+      // SHA-256 hash. First visit prompts the admin to SET a password; later
+      // visits CHECK it. No per-person accounts — this is a thin gate to keep
+      // financial data separate from casual admin URL sharing.
+
+      // GET /api/budget/auth/status - does a password exist yet?
+      if (path === '/api/budget/auth/status' && request.method === 'GET') {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT DEFAULT ''
+          )`).run();
+          const row = await env.DB.prepare(
+            "SELECT value FROM game_settings WHERE key = 'budget_password_hash'"
+          ).first();
+          return json({ has_password: !!(row && row.value) }, corsHeaders);
+        } catch (e) {
+          return json({ has_password: false }, corsHeaders);
+        }
+      }
+
+      // POST /api/budget/auth/set - set the password for the FIRST time.
+      // Rejects if a password is already set (rotation is a separate flow).
+      if (path === '/api/budget/auth/set' && request.method === 'POST') {
+        const { password_hash } = await request.json();
+        if (!password_hash || typeof password_hash !== 'string' || password_hash.length < 10) {
+          return json({ error: 'Invalid password hash' }, corsHeaders, 400);
+        }
+        await env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_settings (
+          key TEXT PRIMARY KEY,
+          value TEXT DEFAULT ''
+        )`).run();
+        const existing = await env.DB.prepare(
+          "SELECT value FROM game_settings WHERE key = 'budget_password_hash'"
+        ).first();
+        if (existing && existing.value) {
+          return json({ error: 'Password already set. Ask the admin who set it or reset via D1.' }, corsHeaders, 409);
+        }
+        await env.DB.prepare(
+          "INSERT INTO game_settings (key, value) VALUES ('budget_password_hash', ?)"
+        ).bind(password_hash).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/budget/auth/check - verify a password attempt
+      if (path === '/api/budget/auth/check' && request.method === 'POST') {
+        const { password_hash } = await request.json();
+        if (!password_hash) return json({ ok: false }, corsHeaders, 400);
+        const row = await env.DB.prepare(
+          "SELECT value FROM game_settings WHERE key = 'budget_password_hash'"
+        ).first();
+        if (!row || !row.value) return json({ ok: false, error: 'No password set' }, corsHeaders, 400);
+        const ok = row.value === password_hash;
+        return json({ ok }, corsHeaders);
+      }
+
       // ===== FEEDBACK =====
 
       // POST /api/feedback - submit retreat feedback

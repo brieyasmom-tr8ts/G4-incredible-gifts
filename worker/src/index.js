@@ -1763,13 +1763,56 @@ export default {
         await ensureWeeklySSTable(env.DB);
         const round = getCurrentSSRound();
         if (round === 0) {
-          // Before the first round begins
+          // Before the first weekly round begins, bridge to the retreat-time
+          // game if it's active. Heather's retreat-time game is running right
+          // now; on Wednesday April 15 the round number will flip to 1 and
+          // the weekly rotation takes over automatically.
+          let retreatActive = false;
+          let retreatRevealed = false;
+          try {
+            const gameOn = await env.DB.prepare(
+              "SELECT value FROM game_settings WHERE key = 'secret_sister'"
+            ).first();
+            retreatActive = gameOn && gameOn.value === '1';
+            const revealOn = await env.DB.prepare(
+              "SELECT value FROM game_settings WHERE key = 'secret_sister_reveal'"
+            ).first();
+            retreatRevealed = revealOn && revealOn.value === '1';
+          } catch (e) { /* settings table may not exist yet */ }
+
+          let retreatAssignment = null;
+          let retreatMyNote = null;
+          let retreatReceivedNote = null;
+          if (retreatActive) {
+            try {
+              const mine = await env.DB.prepare(
+                'SELECT receiver_id, receiver_name, note FROM secret_sister WHERE giver_id = ?'
+              ).bind(userId).first();
+              if (mine) {
+                retreatAssignment = { receiver_id: mine.receiver_id, receiver_name: mine.receiver_name };
+                retreatMyNote = mine.note || null;
+              }
+              // Received note respects the old reveal toggle
+              if (retreatRevealed) {
+                const inbound = await env.DB.prepare(
+                  'SELECT note FROM secret_sister WHERE receiver_id = ? AND note IS NOT NULL AND note != \'\''
+                ).bind(userId).first();
+                if (inbound) retreatReceivedNote = inbound.note;
+              }
+            } catch (e) { /* table may not exist yet */ }
+          }
+
           return json({
             round: 0,
             starts_at: new Date(SS_ANCHOR_UTC_MS).toISOString(),
             my_assignment: null,
             my_note: null,
-            received_note: null
+            received_note: null,
+            // Retreat-time game state (null if not active / no assignment)
+            retreat_active: retreatActive,
+            retreat_assignment: retreatAssignment,
+            retreat_my_note: retreatMyNote,
+            retreat_received_note: retreatReceivedNote
           }, corsHeaders);
         }
         await ensureSSRoundExists(env.DB, round);

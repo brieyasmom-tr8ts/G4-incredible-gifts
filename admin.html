@@ -1126,52 +1126,10 @@
                     </div>
                 </div>
 
-                <!-- Room Cost Calculator -->
-                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Room Cost Calculator</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">Plug in the hotel's per-room cost and what you charge per woman. I'll work out the profit for every room configuration.</div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.25rem;">
-                        <div>
-                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Hotel cost per room</label>
-                            <div style="display:flex;align-items:center;gap:6px;">
-                                <span style="font-size:1rem;color:var(--taupe);">$</span>
-                                <input type="number" id="room-cost-input" placeholder="450" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                        </div>
-                        <div>
-                            <label style="display:block;font-size:0.82rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">What you charge per woman</label>
-                            <div style="display:flex;align-items:center;gap:6px;">
-                                <span style="font-size:1rem;color:var(--taupe);">$</span>
-                                <input type="number" id="room-charge-input" placeholder="350" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                        </div>
-                    </div>
-                    <div id="room-calc-results"></div>
-                    <div style="margin-top:1rem;padding-top:1rem;border-top:1px dashed rgba(200,185,176,0.5);">
-                        <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;margin-bottom:0.35rem;">Projected Total</div>
-                        <div style="font-size:0.8rem;color:var(--light-text);margin-bottom:0.75rem;">How many rooms of each type do you expect to sell?</div>
-                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:0.75rem;">
-                            <div>
-                                <label style="display:block;font-size:0.78rem;color:var(--taupe);margin-bottom:4px;">2-woman rooms</label>
-                                <input type="number" id="room-count-2" min="0" step="1" placeholder="0" style="width:100%;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.78rem;color:var(--taupe);margin-bottom:4px;">3-woman rooms</label>
-                                <input type="number" id="room-count-3" min="0" step="1" placeholder="0" style="width:100%;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.78rem;color:var(--taupe);margin-bottom:4px;">4-woman rooms</label>
-                                <input type="number" id="room-count-4" min="0" step="1" placeholder="0" style="width:100%;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                        </div>
-                        <div id="room-total-summary" style="font-size:0.9rem;color:var(--taupe);padding:10px 14px;background:rgba(138,158,122,0.08);border-radius:10px;">Enter numbers above to see the total.</div>
-                    </div>
-                </div>
-
                 <!-- Coming Soon placeholder for later phases -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
                     <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;margin-bottom:0.3rem;">Coming next</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Attendee payment tracking &middot; expense log with receipt uploads &middot; email reminders &middot; Stripe integration. Ship one phase at a time.</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Room cost calculator &middot; attendee payment tracking &middot; expense log with receipts &middot; email reminders (Resend) &middot; Stripe integration. Ship one phase at a time.</div>
                 </div>
             </div>
         </div>
@@ -3297,94 +3255,8 @@ async function budgetCheckPassword() {
 function showBudgetContent() {
     document.getElementById('budget-gate').style.display = 'none';
     document.getElementById('budget-content').style.display = 'block';
-    initRoomCalculator();
-    // Phases 3-6 will populate the overview cards with real data. For now
+    // Phases 2-6 will populate the overview cards with real data. For now
     // they stay at $0 so the shape of the page is in place.
-}
-
-// Room Cost Calculator — pure client math, recalculates on every input.
-function initRoomCalculator() {
-    const costInput = document.getElementById('room-cost-input');
-    const chargeInput = document.getElementById('room-charge-input');
-    const count2 = document.getElementById('room-count-2');
-    const count3 = document.getElementById('room-count-3');
-    const count4 = document.getElementById('room-count-4');
-    if (!costInput || !chargeInput) return;
-
-    const recalc = () => renderRoomCalcResults({
-        roomCost: parseFloat(costInput.value) || 0,
-        charge: parseFloat(chargeInput.value) || 0,
-        n2: parseInt(count2.value, 10) || 0,
-        n3: parseInt(count3.value, 10) || 0,
-        n4: parseInt(count4.value, 10) || 0,
-    });
-
-    [costInput, chargeInput, count2, count3, count4].forEach(el => {
-        if (!el) return;
-        if (!el.dataset.wired) {
-            el.dataset.wired = '1';
-            el.addEventListener('input', recalc);
-        }
-    });
-    recalc();
-}
-
-function fmtMoney(n) {
-    if (!isFinite(n)) return '$—';
-    const sign = n < 0 ? '-' : '';
-    const abs = Math.abs(n);
-    return sign + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function renderRoomCalcResults({ roomCost, charge, n2, n3, n4 }) {
-    const resultsEl = document.getElementById('room-calc-results');
-    const summaryEl = document.getElementById('room-total-summary');
-    if (!resultsEl || !summaryEl) return;
-
-    if (roomCost <= 0 || charge <= 0) {
-        resultsEl.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 14px;background:rgba(247,240,235,0.5);border-radius:10px;">Enter both values above to see the math.</div>';
-        summaryEl.textContent = 'Enter numbers above to see the total.';
-        return;
-    }
-
-    // Per-occupancy math
-    const rows = [2, 3, 4].map(occ => {
-        const perPerson = roomCost / occ;
-        const profitPerPerson = charge - perPerson;
-        const profitPerRoom = profitPerPerson * occ;
-        return { occ, perPerson, profitPerPerson, profitPerRoom };
-    });
-
-    resultsEl.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;">
-            ${rows.map(r => `
-                <div style="padding:12px 14px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
-                    <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--taupe);margin-bottom:6px;">${r.occ} women per room</div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--light-text);margin-bottom:2px;"><span>Cost per woman</span><span style="color:var(--taupe);font-weight:600;">${fmtMoney(r.perPerson)}</span></div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--light-text);margin-bottom:2px;"><span>Profit per woman</span><span style="color:${r.profitPerPerson >= 0 ? 'var(--sage)' : '#a13224'};font-weight:600;">${fmtMoney(r.profitPerPerson)}</span></div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.82rem;color:var(--light-text);"><span>Profit per room</span><span style="color:${r.profitPerRoom >= 0 ? 'var(--sage)' : '#a13224'};font-weight:600;">${fmtMoney(r.profitPerRoom)}</span></div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-
-    // Projected total
-    const totalWomen = (n2 * 2) + (n3 * 3) + (n4 * 4);
-    const totalRevenue = totalWomen * charge;
-    const totalRoomCost = (n2 + n3 + n4) * roomCost;
-    const totalProfit = totalRevenue - totalRoomCost;
-    if (totalWomen === 0) {
-        summaryEl.textContent = 'Enter numbers above to see the total.';
-    } else {
-        summaryEl.innerHTML = `
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem;">
-                <div><strong style="display:block;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Women booked</strong><span style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--taupe);">${totalWomen}</span></div>
-                <div><strong style="display:block;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Revenue</strong><span style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--sage);">${fmtMoney(totalRevenue)}</span></div>
-                <div><strong style="display:block;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Hotel cost</strong><span style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--accent);">${fmtMoney(totalRoomCost)}</span></div>
-                <div><strong style="display:block;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Profit</strong><span style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:${totalProfit >= 0 ? 'var(--sage)' : '#a13224'};">${fmtMoney(totalProfit)}</span></div>
-            </div>
-        `;
-    }
 }
 
 // --- Scavenger Hunt ---

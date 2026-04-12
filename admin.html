@@ -927,6 +927,22 @@
                 </div>
                 <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.5rem;">Pairs: <strong id="ss-count">0</strong> | Notes written: <strong id="ss-notes-count">0</strong></div>
                 <div id="ss-pairs-list" style="margin-top:0.5rem;max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
+                <!-- Weekly Rotation (Post-Retreat) -->
+                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px dashed rgba(200,185,176,0.5);">
+                    <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;margin-bottom:0.35rem;">Weekly Rotation (Post-Retreat)</div>
+                    <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.75rem;">Auto-assigned every Wednesday 5am EDT starting April 15, 2026. Pairings are generated lazily the first time anyone opens the app after the rollover.</div>
+                    <div style="font-size:0.88rem;color:var(--taupe);margin-bottom:0.6rem;line-height:1.8;">
+                        Current round: <strong id="weekly-ss-round">—</strong> &nbsp;|&nbsp;
+                        Pairs: <strong id="weekly-ss-pair-count">—</strong> &nbsp;|&nbsp;
+                        Notes written: <strong id="weekly-ss-written-count">—</strong> &nbsp;|&nbsp;
+                        Opted out: <strong id="weekly-ss-optout-count">—</strong>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem;">
+                        <button class="btn btn-refresh" onclick="loadWeeklySSStatus()">Refresh</button>
+                        <button class="btn btn-refresh" onclick="forceWeeklySSRound()">Run This Week's Assignment Now</button>
+                    </div>
+                    <div id="weekly-ss-pair-list" style="max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
+                </div>
             </div>
             <!-- Scavenger Hunt -->
             <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
@@ -1228,6 +1244,7 @@ async function refreshAll() {
         loadFunFacts(),
         loadPackingScores(),
         loadSecretSisters(),
+        loadWeeklySSStatus(),
         loadWYRQuestions(),
         loadActiveAnnouncement(),
         loadPolls(),
@@ -2818,6 +2835,44 @@ function clearSecretSisters() {
             loadSecretSisters();
         } catch (e) { showToast('Error: ' + e.message); }
     });
+}
+
+// --- Weekly Secret Sister (Post-Retreat) ---
+async function loadWeeklySSStatus() {
+    try {
+        const data = await apiFetch('/api/secretsister/status');
+        if (!data) return;
+        document.getElementById('weekly-ss-round').textContent = data.round === 0 ? 'Not started' : data.round;
+        document.getElementById('weekly-ss-pair-count').textContent = data.pair_count != null ? data.pair_count : 0;
+        document.getElementById('weekly-ss-written-count').textContent = data.written_count != null ? data.written_count : 0;
+        document.getElementById('weekly-ss-optout-count').textContent = data.opted_out_count != null ? data.opted_out_count : 0;
+        const list = document.getElementById('weekly-ss-pair-list');
+        const pairs = Array.isArray(data.pairs) ? data.pairs : [];
+        if (!pairs.length) {
+            const startDate = data.starts_at ? new Date(data.starts_at) : null;
+            const when = startDate ? startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'Wednesday April 15';
+            list.innerHTML = '<div style="color:var(--light-text);font-size:0.88rem;padding:8px 0;">No pairings yet. First round auto-generates on ' + when + '.</div>';
+            return;
+        }
+        list.innerHTML = pairs.map(p => `
+            <div style="padding:0.5rem 0.75rem;background:rgba(247,240,235,0.5);border-radius:10px;margin-bottom:0.4rem;display:flex;align-items:flex-start;gap:0.5rem;">
+                <div style="flex:1;">
+                    <div style="font-size:0.88rem;"><strong>${esc(p.giver_name || '')}</strong> → <strong style="color:var(--accent);">${esc(p.receiver_name || '')}</strong></div>
+                    ${p.note && p.note.trim() ? `<div style="font-size:0.82rem;color:var(--taupe);font-style:italic;margin-top:3px;line-height:1.4;">"${esc(p.note)}"</div>` : '<div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;">No note yet</div>'}
+                </div>
+                ${p.note && p.note.trim() ? '<div style="font-size:0.78rem;color:var(--sage);">✓</div>' : ''}
+            </div>
+        `).join('');
+    } catch (e) { console.error('Weekly SS status:', e); }
+}
+
+async function forceWeeklySSRound() {
+    try {
+        const res = await apiFetch('/api/secretsister/force-round', { method: 'POST', body: {} });
+        if (res && res.error) { showToast(res.error); return; }
+        showToast('This week\'s pairings are ready');
+        loadWeeklySSStatus();
+    } catch (e) { showToast('Error: ' + (e.message || 'Could not run')); }
 }
 
 // --- Scavenger Hunt ---

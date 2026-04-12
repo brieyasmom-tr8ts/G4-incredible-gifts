@@ -2623,7 +2623,234 @@ export default {
         const id = parseInt(budgetSignupMatch[1], 10);
         await ensureRetreatSignupsTable();
         await env.DB.prepare('DELETE FROM retreat_signups WHERE id = ?').bind(id).run();
+        // Also delete associated payments
+        try { await env.DB.prepare('DELETE FROM budget_payments WHERE signup_id = ?').bind(id).run(); } catch(e) {}
         return json({ success: true }, corsHeaders);
+      }
+
+      // ----- Payment History -----
+      // Individual payment entries per signup, with date, amount, method, memo.
+      async function ensurePaymentsTable() {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS budget_payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            signup_id INTEGER NOT NULL,
+            amount REAL NOT NULL DEFAULT 0,
+            payment_date TEXT DEFAULT '',
+            method TEXT DEFAULT '',
+            memo TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch (e) { /* exists */ }
+      }
+
+      // GET /api/budget/payments - all payments (for the report)
+      if (path === '/api/budget/payments' && request.method === 'GET') {
+        await ensurePaymentsTable();
+        const { results } = await env.DB.prepare(
+          'SELECT p.id, p.signup_id, p.amount, p.payment_date, p.method, p.memo, p.created_at, s.name as signup_name FROM budget_payments p LEFT JOIN retreat_signups s ON p.signup_id = s.id ORDER BY p.payment_date DESC, p.id DESC'
+        ).all();
+        return json({ payments: results || [] }, corsHeaders);
+      }
+
+      // GET /api/budget/signups/:id/payments - payments for one signup
+      const signupPaymentsMatch = path.match(/^\/api\/budget\/signups\/(\d+)\/payments$/);
+      if (signupPaymentsMatch && request.method === 'GET') {
+        const signupId = parseInt(signupPaymentsMatch[1], 10);
+        await ensurePaymentsTable();
+        const { results } = await env.DB.prepare(
+          'SELECT id, amount, payment_date, method, memo, created_at FROM budget_payments WHERE signup_id = ? ORDER BY payment_date DESC, id DESC'
+        ).bind(signupId).all();
+        return json({ payments: results || [] }, corsHeaders);
+      }
+
+      // POST /api/budget/signups/:id/payments - record a payment
+      if (signupPaymentsMatch && request.method === 'POST') {
+        const signupId = parseInt(signupPaymentsMatch[1], 10);
+        const body = await request.json();
+        const amount = parseFloat(body.amount) || 0;
+        if (amount <= 0) return json({ error: 'Amount must be > 0' }, corsHeaders, 400);
+        await ensurePaymentsTable();
+        await ensureRetreatSignupsTable();
+        const paymentDate = (body.payment_date || new Date().toISOString().slice(0, 10)).toString().trim();
+        const method = (body.method || '').toString().trim();
+        const memo = (body.memo || '').toString().trim();
+        await env.DB.prepare(
+          'INSERT INTO budget_payments (signup_id, amount, payment_date, method, memo) VALUES (?, ?, ?, ?, ?)'
+        ).bind(signupId, amount, paymentDate, method, memo).run();
+        // Update signup's amount_paid to sum of all payments
+        await env.DB.prepare(
+          'UPDATE retreat_signups SET amount_paid = (SELECT COALESCE(SUM(amount), 0) FROM budget_payments WHERE signup_id = ?) WHERE id = ?'
+        ).bind(signupId, signupId).run();
+        // Auto-set paid status if fully paid
+        const signup = await env.DB.prepare('SELECT ticket_price, amount_paid, status FROM retreat_signups WHERE id = ?').bind(signupId).first();
+        if (signup && signup.amount_paid >= signup.ticket_price && signup.ticket_price > 0 && signup.status === 'signed_up') {
+          await env.DB.prepare("UPDATE retreat_signups SET status = 'paid' WHERE id = ?").bind(signupId).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/budget/payments/:id - remove a payment
+      const paymentDeleteMatch = path.match(/^\/api\/budget\/payments\/(\d+)$/);
+      if (paymentDeleteMatch && request.method === 'DELETE') {
+        const paymentId = parseInt(paymentDeleteMatch[1], 10);
+        await ensurePaymentsTable();
+        const payment = await env.DB.prepare('SELECT signup_id FROM budget_payments WHERE id = ?').bind(paymentId).first();
+        await env.DB.prepare('DELETE FROM budget_payments WHERE id = ?').bind(paymentId).run();
+        if (payment) {
+          await env.DB.prepare(
+            'UPDATE retreat_signups SET amount_paid = (SELECT COALESCE(SUM(amount), 0) FROM budget_payments WHERE signup_id = ?) WHERE id = ?'
+          ).bind(payment.signup_id, payment.signup_id).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // ----- Expense Log -----
+      async function ensureExpensesTable() {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS budget_expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category_id INTEGER,
+            description TEXT NOT NULL DEFAULT '',
+            amount REAL NOT NULL DEFAULT 0,
+            vendor TEXT DEFAULT '',
+            expense_date TEXT DEFAULT '',
+            memo TEXT DEFAULT '',
+            reference TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch (e) { /* exists */ }
+      }
+
+      // GET /api/budget/expenses - all expenses
+      if (path === '/api/budget/expenses' && request.method === 'GET') {
+        await ensureExpensesTable();
+        const { results } = await env.DB.prepare(
+          'SELECT e.id, e.category_id, e.description, e.amount, e.vendor, e.expense_date, e.memo, e.reference, e.created_at, c.name as category_name FROM budget_expenses e LEFT JOIN budget_categories c ON e.category_id = c.id ORDER BY e.expense_date DESC, e.id DESC'
+        ).all();
+        return json({ expenses: results || [] }, corsHeaders);
+      }
+
+      // POST /api/budget/expenses - create an expense
+      if (path === '/api/budget/expenses' && request.method === 'POST') {
+        const body = await request.json();
+        const description = (body.description || '').toString().trim();
+        if (!description) return json({ error: 'Description is required' }, corsHeaders, 400);
+        const amount = parseFloat(body.amount) || 0;
+        const categoryId = body.category_id ? parseInt(body.category_id, 10) : null;
+        const vendor = (body.vendor || '').toString().trim();
+        const expenseDate = (body.expense_date || new Date().toISOString().slice(0, 10)).toString().trim();
+        const memo = (body.memo || '').toString().trim();
+        const reference = (body.reference || '').toString().trim();
+        await ensureExpensesTable();
+        await env.DB.prepare(
+          'INSERT INTO budget_expenses (category_id, description, amount, vendor, expense_date, memo, reference) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).bind(categoryId, description, amount, vendor, expenseDate, memo, reference).run();
+        // Update category actual if linked
+        if (categoryId) {
+          await ensureBudgetCategoriesTable();
+          await env.DB.prepare(
+            'UPDATE budget_categories SET actual = (SELECT COALESCE(SUM(amount), 0) FROM budget_expenses WHERE category_id = ?) WHERE id = ?'
+          ).bind(categoryId, categoryId).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // PATCH /api/budget/expenses/:id - update an expense
+      const expenseMatch = path.match(/^\/api\/budget\/expenses\/(\d+)$/);
+      if (expenseMatch && request.method === 'PATCH') {
+        const id = parseInt(expenseMatch[1], 10);
+        const body = await request.json();
+        await ensureExpensesTable();
+        const oldExpense = await env.DB.prepare('SELECT category_id FROM budget_expenses WHERE id = ?').bind(id).first();
+        const fields = [];
+        const values = [];
+        if (body.description !== undefined) { fields.push('description = ?'); values.push(String(body.description).trim()); }
+        if (body.amount !== undefined) { fields.push('amount = ?'); values.push(parseFloat(body.amount) || 0); }
+        if (body.category_id !== undefined) { fields.push('category_id = ?'); values.push(body.category_id ? parseInt(body.category_id, 10) : null); }
+        if (body.vendor !== undefined) { fields.push('vendor = ?'); values.push(String(body.vendor).trim()); }
+        if (body.expense_date !== undefined) { fields.push('expense_date = ?'); values.push(String(body.expense_date).trim()); }
+        if (body.memo !== undefined) { fields.push('memo = ?'); values.push(String(body.memo).trim()); }
+        if (body.reference !== undefined) { fields.push('reference = ?'); values.push(String(body.reference).trim()); }
+        if (!fields.length) return json({ error: 'No fields' }, corsHeaders, 400);
+        values.push(id);
+        await env.DB.prepare(`UPDATE budget_expenses SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+        // Recompute category actuals for old and new category
+        const newCatId = body.category_id !== undefined ? (body.category_id ? parseInt(body.category_id, 10) : null) : (oldExpense ? oldExpense.category_id : null);
+        await ensureBudgetCategoriesTable();
+        if (oldExpense && oldExpense.category_id) {
+          await env.DB.prepare('UPDATE budget_categories SET actual = (SELECT COALESCE(SUM(amount), 0) FROM budget_expenses WHERE category_id = ?) WHERE id = ?').bind(oldExpense.category_id, oldExpense.category_id).run();
+        }
+        if (newCatId && newCatId !== (oldExpense && oldExpense.category_id)) {
+          await env.DB.prepare('UPDATE budget_categories SET actual = (SELECT COALESCE(SUM(amount), 0) FROM budget_expenses WHERE category_id = ?) WHERE id = ?').bind(newCatId, newCatId).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/budget/expenses/:id
+      if (expenseMatch && request.method === 'DELETE') {
+        const id = parseInt(expenseMatch[1], 10);
+        await ensureExpensesTable();
+        const expense = await env.DB.prepare('SELECT category_id FROM budget_expenses WHERE id = ?').bind(id).first();
+        await env.DB.prepare('DELETE FROM budget_expenses WHERE id = ?').bind(id).run();
+        if (expense && expense.category_id) {
+          await ensureBudgetCategoriesTable();
+          await env.DB.prepare('UPDATE budget_categories SET actual = (SELECT COALESCE(SUM(amount), 0) FROM budget_expenses WHERE category_id = ?) WHERE id = ?').bind(expense.category_id, expense.category_id).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/budget/clear-all - wipe all budget data for starting fresh
+      if (path === '/api/budget/clear-all' && request.method === 'POST') {
+        const body = await request.json();
+        if (!body || body.confirm !== 'DELETE_ALL_BUDGET_DATA') {
+          return json({ error: 'Must confirm with {"confirm":"DELETE_ALL_BUDGET_DATA"}' }, corsHeaders, 400);
+        }
+        try { await env.DB.prepare('DELETE FROM budget_payments').run(); } catch(e) {}
+        try { await env.DB.prepare('DELETE FROM budget_expenses').run(); } catch(e) {}
+        try { await env.DB.prepare('DELETE FROM budget_sub_items').run(); } catch(e) {}
+        try { await env.DB.prepare('DELETE FROM budget_receipts').run(); } catch(e) {}
+        try { await env.DB.prepare('DELETE FROM budget_categories').run(); } catch(e) {}
+        try { await env.DB.prepare('DELETE FROM retreat_signups').run(); } catch(e) {}
+        // Clear calculator state + ticket prices
+        try { await env.DB.prepare("DELETE FROM game_settings WHERE key LIKE 'retreat_calc_%' OR key LIKE 'retreat_ticket_%'").run(); } catch(e) {}
+        // Clean up R2 budget receipts
+        try {
+          const list = await env.VIDEOS.list({ prefix: 'budget/receipts/' });
+          for (const obj of (list.objects || [])) {
+            await env.VIDEOS.delete(obj.key);
+          }
+        } catch(e) {}
+        return json({ success: true, message: 'All budget data cleared' }, corsHeaders);
+      }
+
+      // GET /api/budget/report - comprehensive financial report data
+      if (path === '/api/budget/report' && request.method === 'GET') {
+        await ensureRetreatSignupsTable();
+        await ensureBudgetCategoriesTable();
+        await ensurePaymentsTable();
+        await ensureExpensesTable();
+        const signups = (await env.DB.prepare('SELECT id, name, email, phone, room_occupancy, ticket_price, amount_paid, room_label, status FROM retreat_signups ORDER BY name').all()).results || [];
+        const payments = (await env.DB.prepare('SELECT p.*, s.name as signup_name FROM budget_payments p LEFT JOIN retreat_signups s ON p.signup_id = s.id ORDER BY p.payment_date, p.id').all()).results || [];
+        const categories = (await env.DB.prepare('SELECT id, name, planned, actual FROM budget_categories ORDER BY sort_order, id').all()).results || [];
+        const expenses = (await env.DB.prepare('SELECT e.*, c.name as category_name FROM budget_expenses e LEFT JOIN budget_categories c ON e.category_id = c.id ORDER BY e.expense_date, e.id').all()).results || [];
+        // Totals
+        let totalIncome = 0, totalExpenses = 0, totalBilled = 0, totalPlanned = 0;
+        payments.forEach(p => { totalIncome += Number(p.amount) || 0; });
+        expenses.forEach(e => { totalExpenses += Number(e.amount) || 0; });
+        signups.forEach(s => { totalBilled += Number(s.ticket_price) || 0; });
+        categories.forEach(c => { totalPlanned += Number(c.planned) || 0; });
+        return json({
+          signups, payments, categories, expenses,
+          summary: {
+            total_income: totalIncome,
+            total_expenses: totalExpenses,
+            net: totalIncome - totalExpenses,
+            total_billed: totalBilled,
+            total_planned: totalPlanned,
+            signup_count: signups.length
+          }
+        }, corsHeaders);
       }
 
       // POST /api/budget/signups/import - bulk CSV import.

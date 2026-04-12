@@ -485,14 +485,18 @@ export default {
       const userGetMatch = path.match(/^\/api\/users\/(\d+)$/);
       if (userGetMatch && request.method === 'GET') {
         const userId = parseInt(userGetMatch[1]);
-        // Lazy migration so anniversary columns exist before we SELECT them.
-        for (const col of [['anniversary', 'TEXT DEFAULT ""'], ['show_anniversary', 'INTEGER DEFAULT 0']]) {
+        // Lazy migration so anniversary + weekly SS opt-out columns exist before we SELECT them.
+        for (const col of [
+          ['anniversary', 'TEXT DEFAULT ""'],
+          ['show_anniversary', 'INTEGER DEFAULT 0'],
+          ['secret_sister_opt_out', 'INTEGER DEFAULT 0']
+        ]) {
           try { await env.DB.prepare(`ALTER TABLE users ADD COLUMN ${col[0]} ${col[1]}`).run(); } catch(e) { /* exists */ }
         }
         let user;
         try {
           user = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, anniversary, show_anniversary, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, is_speaker, created_at FROM users WHERE id = ?'
+            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, anniversary, show_anniversary, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, is_speaker, secret_sister_opt_out, created_at FROM users WHERE id = ?'
           ).bind(userId).first();
         } catch (e) {
           user = await env.DB.prepare(
@@ -527,6 +531,7 @@ export default {
           about: (isOwner || user.show_about) ? (user.about || '') : '',
           is_team: user.is_team || 0,
           is_speaker: user.is_speaker || 0,
+          secret_sister_opt_out: user.secret_sister_opt_out || 0,
           created_at: user.created_at
         }, corsHeaders);
       }
@@ -537,11 +542,15 @@ export default {
         const userId = parseInt(profileMatch[1]);
         const body = await request.json();
 
-        // Lazy migration: ensure anniversary columns exist
-        for (const col of [['anniversary', 'TEXT DEFAULT ""'], ['show_anniversary', 'INTEGER DEFAULT 0']]) {
+        // Lazy migration: ensure anniversary + weekly SS opt-out columns exist
+        for (const col of [
+          ['anniversary', 'TEXT DEFAULT ""'],
+          ['show_anniversary', 'INTEGER DEFAULT 0'],
+          ['secret_sister_opt_out', 'INTEGER DEFAULT 0']
+        ]) {
           try { await env.DB.prepare(`ALTER TABLE users ADD COLUMN ${col[0]} ${col[1]}`).run(); } catch(e) { /* exists */ }
         }
-        const allowed = ['email', 'phone', 'birthday', 'anniversary', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'show_anniversary', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
+        const allowed = ['email', 'phone', 'birthday', 'anniversary', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'show_anniversary', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about', 'secret_sister_opt_out'];
         const fields = [];
         const values = [];
         for (const key of allowed) {
@@ -1808,6 +1817,70 @@ export default {
           return json({ error: 'No assignment found for you this week' }, corsHeaders, 400);
         }
         return json({ success: true, round }, corsHeaders);
+      }
+
+      // GET /api/secretsister/history?user_id=N - my full sent + received archive
+      if (path === '/api/secretsister/history' && request.method === 'GET') {
+        const userId = parseInt(url.searchParams.get('user_id'));
+        if (!userId) return json({ error: 'user_id required' }, corsHeaders, 400);
+        await ensureWeeklySSTable(env.DB);
+        // Notes I've sent — I can see who I wrote to each week.
+        const { results: sent } = await env.DB.prepare(
+          `SELECT round_number, receiver_name, note, written_at
+           FROM secret_sister_pairings
+           WHERE giver_id = ? AND note != ''
+           ORDER BY round_number DESC`
+        ).bind(userId).all();
+        // Notes I've received — NEVER include giver info. Only show rounds
+        // where the note is ≥1hr old so we don't leak timing.
+        const { results: received } = await env.DB.prepare(
+          `SELECT round_number, note, written_at
+           FROM secret_sister_pairings
+           WHERE receiver_id = ? AND note != ''
+             AND written_at IS NOT NULL
+             AND julianday(written_at) <= julianday('now', ${SS_DELIVERY_DELAY_SQL})
+           ORDER BY round_number DESC`
+        ).bind(userId).all();
+        return json({
+          sent: sent || [],
+          received: received || []
+        }, corsHeaders);
+      }
+
+      // GET /api/secretsister/status - admin: current round stats + pair list
+      if (path === '/api/secretsister/status' && request.method === 'GET') {
+        await ensureWeeklySSTable(env.DB);
+        const round = getCurrentSSRound();
+        const pairs = round > 0
+          ? (await env.DB.prepare(
+              'SELECT giver_name, receiver_name, note, written_at FROM secret_sister_pairings WHERE round_number = ? ORDER BY id'
+            ).bind(round).all()).results
+          : [];
+        const writtenCount = (pairs || []).filter(p => p.note && p.note.trim()).length;
+        const optOut = await env.DB.prepare(
+          "SELECT COUNT(*) AS c FROM users WHERE COALESCE(secret_sister_opt_out, 0) = 1"
+        ).first();
+        return json({
+          round,
+          starts_at: new Date(SS_ANCHOR_UTC_MS).toISOString(),
+          pair_count: pairs ? pairs.length : 0,
+          written_count: writtenCount,
+          opted_out_count: optOut ? optOut.c : 0,
+          pairs: pairs || []
+        }, corsHeaders);
+      }
+
+      // POST /api/secretsister/force-round - admin: lazily create pairings for
+      // the current round right now (for testing). Non-destructive: if
+      // pairings already exist, this is a no-op.
+      if (path === '/api/secretsister/force-round' && request.method === 'POST') {
+        await ensureWeeklySSTable(env.DB);
+        const round = getCurrentSSRound();
+        if (round === 0) {
+          return json({ error: 'Weekly rotation has not started yet' }, corsHeaders, 400);
+        }
+        const created = await ensureSSRoundExists(env.DB, round);
+        return json({ success: true, round, created }, corsHeaders);
       }
 
       // ===== FEEDBACK =====

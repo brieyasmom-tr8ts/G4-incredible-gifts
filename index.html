@@ -3442,7 +3442,10 @@
                         <div id="weekly-ss-status" style="font-family:'Cormorant Garamond',serif;font-size:0.92rem;color:var(--light-text);line-height:1.5;margin-bottom:12px;"></div>
                         <button id="weekly-ss-write-btn" style="display:none;width:100%;padding:10px 16px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Write Her a Note &#x1f49b;</button>
                         <button id="weekly-ss-view-note-btn" style="display:none;width:100%;padding:10px 16px;background:white;color:var(--accent);border:1.5px solid var(--accent);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;margin-top:8px;">Read the Note Someone Wrote You &#x1f381;</button>
-                        <div style="margin-top:10px;font-family:'Cormorant Garamond',serif;font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;">A new sister every Wednesday morning</div>
+                        <div style="display:flex;justify-content:center;margin-top:10px;">
+                            <button id="weekly-ss-history-btn" type="button" style="background:none;border:none;font-family:'Cormorant Garamond',serif;font-size:0.82rem;color:var(--accent);text-decoration:underline;cursor:pointer;padding:4px 8px;touch-action:manipulation;">View my past sisters &rarr;</button>
+                        </div>
+                        <div style="margin-top:4px;font-family:'Cormorant Garamond',serif;font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;">A new sister every Wednesday morning</div>
                     </div>
 
                     <!-- Quick action buttons — controlled by admin home_* toggles -->
@@ -4327,6 +4330,24 @@
         </div>
     </div>
 
+    <!-- Secret Sister Scrapbook (My past sent + received notes) -->
+    <div class="modal-overlay" id="ss-scrapbook-modal" style="display:none;">
+        <div class="modal" style="max-width:95vw;width:520px;max-height:88vh;overflow-y:auto;padding:22px;text-align:left;">
+            <div style="text-align:center;margin-bottom:14px;">
+                <div style="font-size:1.6rem;">&#x1f48c;</div>
+                <h2 style="font-family:'Playfair Display',serif;font-size:1.3rem;margin:4px 0 2px;">My Secret Sisters</h2>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--light-text);font-style:italic;">Every note you've sent and received</div>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:14px;">
+                <button id="ss-scrapbook-tab-received" type="button" style="flex:1;padding:9px 12px;border:1.5px solid var(--accent);background:var(--accent);color:white;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Received</button>
+                <button id="ss-scrapbook-tab-sent" type="button" style="flex:1;padding:9px 12px;border:1.5px solid var(--accent);background:white;color:var(--accent);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Sent</button>
+            </div>
+            <div id="ss-scrapbook-received-list"></div>
+            <div id="ss-scrapbook-sent-list" style="display:none;"></div>
+            <button id="ss-scrapbook-close" type="button" style="margin-top:14px;width:100%;padding:10px;background:white;color:var(--taupe);border:1.5px solid var(--warm-grey);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;cursor:pointer;">Close</button>
+        </div>
+    </div>
+
     <!-- Hunt Instructions Modal -->
     <div class="modal-overlay" id="hunt-instructions-modal" style="display:none;">
         <div class="modal" style="text-align:center;">
@@ -5156,6 +5177,12 @@
                     </div>
                 </div>
 
+                <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;margin-top:4px;">Weekly Secret Sister</div>
+                <div class="profile-toggle-row" style="margin-bottom:12px;">
+                    <span class="profile-toggle-label">Match me with a sister each Wednesday</span>
+                    <button class="profile-toggle ${!currentUser.secret_sister_opt_out ? 'on' : ''}" id="toggle-ss-optin"></button>
+                </div>
+
                 <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;margin-top:4px;">About You</div>
                 <div class="profile-toggle-row" style="margin-bottom:12px;">
                     <span class="profile-toggle-label">Share with the group</span>
@@ -5238,12 +5265,16 @@
             // Toggle buttons
             function saveToggles() {
                 const annivToggle = sheet.querySelector('#toggle-anniversary');
+                const ssOptInToggle = sheet.querySelector('#toggle-ss-optin');
                 const toggleData = {
                     show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,
                     show_phone: sheet.querySelector('#toggle-phone').classList.contains('on') ? 1 : 0,
                     show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,
                     show_anniversary: annivToggle && annivToggle.classList.contains('on') ? 1 : 0,
                     show_about: sheet.querySelector('#toggle-about').classList.contains('on') ? 1 : 0,
+                    // Toggle ON = she wants to participate (opt_out = 0).
+                    // Toggle OFF = she opts out (opt_out = 1).
+                    secret_sister_opt_out: ssOptInToggle && ssOptInToggle.classList.contains('on') ? 0 : 1,
                 };
                 Object.assign(currentUser, toggleData);
                 saveUser(currentUser);
@@ -5303,6 +5334,7 @@
 
                 const annivToggleSubmit = sheet.querySelector('#toggle-anniversary');
                 const annivField = sheet.querySelector('#profile-anniversary');
+                const ssOptInSubmit = sheet.querySelector('#toggle-ss-optin');
                 const profileData = {
                     email: sheet.querySelector('#profile-email').value.trim(),
                     phone: sheet.querySelector('#profile-phone').value.trim(),
@@ -5320,6 +5352,8 @@
                     show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,
                     show_anniversary: annivToggleSubmit && annivToggleSubmit.classList.contains('on') ? 1 : 0,
                     show_about: sheet.querySelector('#toggle-about').classList.contains('on') ? 1 : 0,
+                    // Toggle ON = wants to participate. Toggle OFF = opt out.
+                    secret_sister_opt_out: ssOptInSubmit && ssOptInSubmit.classList.contains('on') ? 0 : 1,
                 };
 
                 if (photoInput.dataset.compressed) {
@@ -6649,7 +6683,18 @@
                     }
                     if (action === 'secretsister') {
                         switchToTab('home');
+                        // Retreat-time one-shot game (only fires if admin has
+                        // secret_sister === '1' AND she has an assignment).
                         if (typeof checkSecretSister === 'function') checkSecretSister();
+                        // Post-retreat weekly card — scroll to it so she can
+                        // see this week's sister, read her note, and open the
+                        // "View my past sisters" scrapbook archive.
+                        setTimeout(() => {
+                            const card = document.getElementById('weekly-ss-card');
+                            if (card && card.style.display !== 'none') {
+                                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        }, 220);
                         return;
                     }
                     switchToTab(btn.dataset.tab);
@@ -9622,6 +9667,96 @@
                 modal.style.display = 'none';
             };
         }
+
+        // Open the scrapbook (archive) modal and render my full history.
+        async function openSSHistoryScrapbook() {
+            if (!currentUser) { showToast('Set up your profile first'); return; }
+            const modal = document.getElementById('ss-scrapbook-modal');
+            if (!modal) return;
+            const receivedList = document.getElementById('ss-scrapbook-received-list');
+            const sentList = document.getElementById('ss-scrapbook-sent-list');
+            receivedList.innerHTML = '<div style="text-align:center;font-style:italic;color:var(--light-text);padding:18px 0;">Loading...</div>';
+            sentList.innerHTML = '';
+            modal.style.display = 'flex';
+            // Reset tabs to "Received" every time it opens
+            setSSTab('received');
+
+            try {
+                const data = await apiGet('/api/secretsister/history?user_id=' + currentUser.id);
+                const received = (data && Array.isArray(data.received)) ? data.received : [];
+                const sent = (data && Array.isArray(data.sent)) ? data.sent : [];
+
+                if (received.length === 0) {
+                    receivedList.innerHTML = '<div style="text-align:center;font-style:italic;color:var(--light-text);padding:18px 12px;font-family:Cormorant Garamond,serif;">No notes received yet. Your first one arrives about an hour after a sister writes to you.</div>';
+                } else {
+                    receivedList.innerHTML = received.map(r => renderSSHistoryRow(r, 'received')).join('');
+                }
+                if (sent.length === 0) {
+                    sentList.innerHTML = '<div style="text-align:center;font-style:italic;color:var(--light-text);padding:18px 12px;font-family:Cormorant Garamond,serif;">You haven\u2019t written any notes yet. When you do, they\u2019ll live here forever.</div>';
+                } else {
+                    sentList.innerHTML = sent.map(r => renderSSHistoryRow(r, 'sent')).join('');
+                }
+            } catch (e) {
+                receivedList.innerHTML = '<div style="color:var(--accent);text-align:center;padding:18px;">Could not load your history. Try again in a moment.</div>';
+            }
+        }
+
+        function renderSSHistoryRow(row, kind) {
+            const weekLabel = 'Week ' + (row.round_number || '?');
+            const dateStr = row.written_at ? new Date(row.written_at.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            const header = kind === 'received'
+                ? ('<div style="font-family:\'Playfair Display\',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">' + weekLabel + (dateStr ? ' &middot; ' + dateStr : '') + '</div>')
+                : ('<div style="font-family:\'Playfair Display\',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">' + weekLabel + (dateStr ? ' &middot; ' + dateStr : '') + '</div><div style="font-family:\'Playfair Display\',serif;font-size:0.95rem;font-weight:600;color:var(--dark-text);margin-bottom:6px;">To ' + esc(row.receiver_name || 'a sister') + '</div>');
+            const footer = kind === 'received'
+                ? '<div style="font-family:\'Cormorant Garamond\',serif;font-size:0.8rem;color:var(--light-text);margin-top:6px;text-align:right;">&mdash; Your Secret Sister &#x1f49b;</div>'
+                : '';
+            const noteText = esc(row.note || '').replace(/\n/g, '<br>');
+            return '<div style="padding:12px 14px;margin-bottom:10px;background:rgba(201,144,138,0.06);border:1px solid rgba(201,144,138,0.18);border-radius:12px;">'
+                + header
+                + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:0.98rem;color:var(--dark-text);line-height:1.5;font-style:italic;">' + noteText + '</div>'
+                + footer
+                + '</div>';
+        }
+
+        function setSSTab(which) {
+            const receivedBtn = document.getElementById('ss-scrapbook-tab-received');
+            const sentBtn = document.getElementById('ss-scrapbook-tab-sent');
+            const receivedList = document.getElementById('ss-scrapbook-received-list');
+            const sentList = document.getElementById('ss-scrapbook-sent-list');
+            if (!receivedBtn || !sentBtn || !receivedList || !sentList) return;
+            if (which === 'sent') {
+                sentBtn.style.background = 'var(--accent)';
+                sentBtn.style.color = 'white';
+                receivedBtn.style.background = 'white';
+                receivedBtn.style.color = 'var(--accent)';
+                sentList.style.display = 'block';
+                receivedList.style.display = 'none';
+            } else {
+                receivedBtn.style.background = 'var(--accent)';
+                receivedBtn.style.color = 'white';
+                sentBtn.style.background = 'white';
+                sentBtn.style.color = 'var(--accent)';
+                receivedList.style.display = 'block';
+                sentList.style.display = 'none';
+            }
+        }
+
+        // Wire the scrapbook tabs and close button once at load time.
+        (function initSSScrapbookWiring() {
+            document.addEventListener('DOMContentLoaded', () => {
+                const receivedBtn = document.getElementById('ss-scrapbook-tab-received');
+                const sentBtn = document.getElementById('ss-scrapbook-tab-sent');
+                const closeBtn = document.getElementById('ss-scrapbook-close');
+                if (receivedBtn) receivedBtn.addEventListener('click', () => setSSTab('received'));
+                if (sentBtn) sentBtn.addEventListener('click', () => setSSTab('sent'));
+                if (closeBtn) closeBtn.addEventListener('click', () => {
+                    const modal = document.getElementById('ss-scrapbook-modal');
+                    if (modal) modal.style.display = 'none';
+                });
+                const historyBtn = document.getElementById('weekly-ss-history-btn');
+                if (historyBtn) historyBtn.addEventListener('click', openSSHistoryScrapbook);
+            });
+        })();
 
         // ===== Celebrations (birthdays + anniversaries) =====
         let _celebrationModalState = null;

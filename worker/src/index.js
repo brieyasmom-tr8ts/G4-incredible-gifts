@@ -2133,6 +2133,19 @@ export default {
             created_at TEXT DEFAULT (datetime('now'))
           )`).run();
         } catch (e) { /* already exists */ }
+        // Child table: one row per uploaded receipt. r2_key points into the
+        // VIDEOS R2 bucket (reused for all file storage).
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS budget_receipts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category_id INTEGER NOT NULL,
+            filename TEXT NOT NULL,
+            r2_key TEXT NOT NULL,
+            content_type TEXT DEFAULT '',
+            size_bytes INTEGER DEFAULT 0,
+            uploaded_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch (e) { /* already exists */ }
       }
 
       // GET /api/budget/categories - list all categories
@@ -2182,6 +2195,83 @@ export default {
         const id = parseInt(budgetCatUpdateMatch[1], 10);
         await ensureBudgetCategoriesTable();
         await env.DB.prepare('DELETE FROM budget_categories WHERE id = ?').bind(id).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/budget/categories/:id/receipts - upload a receipt file.
+      // Expects multipart/form-data with a "file" part. Stores in R2 under
+      // budget/receipts/{categoryId}/{random}-{filename}.
+      const budgetReceiptUploadMatch = path.match(/^\/api\/budget\/categories\/(\d+)\/receipts$/);
+      if (budgetReceiptUploadMatch && request.method === 'POST') {
+        const categoryId = parseInt(budgetReceiptUploadMatch[1], 10);
+        await ensureBudgetCategoriesTable();
+        const contentType = request.headers.get('content-type') || '';
+        if (!contentType.includes('multipart/form-data')) {
+          return json({ error: 'Expected multipart/form-data' }, corsHeaders, 400);
+        }
+        try {
+          const form = await request.formData();
+          const file = form.get('file');
+          if (!file || typeof file === 'string') {
+            return json({ error: 'No file in form' }, corsHeaders, 400);
+          }
+          const originalName = (file.name || 'receipt').replace(/[^a-zA-Z0-9._-]/g, '_');
+          const rand = Math.random().toString(36).slice(2, 10);
+          const r2Key = `budget/receipts/${categoryId}/${Date.now()}-${rand}-${originalName}`;
+          await env.VIDEOS.put(r2Key, file.stream(), {
+            httpMetadata: { contentType: file.type || 'application/octet-stream' }
+          });
+          await env.DB.prepare(
+            'INSERT INTO budget_receipts (category_id, filename, r2_key, content_type, size_bytes) VALUES (?, ?, ?, ?, ?)'
+          ).bind(categoryId, originalName, r2Key, file.type || '', file.size || 0).run();
+          return json({ success: true }, corsHeaders);
+        } catch (e) {
+          return json({ error: 'Upload failed: ' + e.message }, corsHeaders, 500);
+        }
+      }
+
+      // GET /api/budget/categories/:id/receipts - list receipts for a category
+      if (budgetReceiptUploadMatch && request.method === 'GET') {
+        const categoryId = parseInt(budgetReceiptUploadMatch[1], 10);
+        await ensureBudgetCategoriesTable();
+        const { results } = await env.DB.prepare(
+          'SELECT id, filename, content_type, size_bytes, uploaded_at FROM budget_receipts WHERE category_id = ? ORDER BY uploaded_at DESC'
+        ).bind(categoryId).all();
+        return json({ receipts: results || [] }, corsHeaders);
+      }
+
+      // GET /api/budget/receipts/:id/file - stream the receipt from R2
+      const budgetReceiptFileMatch = path.match(/^\/api\/budget\/receipts\/(\d+)\/file$/);
+      if (budgetReceiptFileMatch && request.method === 'GET') {
+        const receiptId = parseInt(budgetReceiptFileMatch[1], 10);
+        await ensureBudgetCategoriesTable();
+        const row = await env.DB.prepare(
+          'SELECT r2_key, filename, content_type FROM budget_receipts WHERE id = ?'
+        ).bind(receiptId).first();
+        if (!row) return json({ error: 'Receipt not found' }, corsHeaders, 404);
+        const obj = await env.VIDEOS.get(row.r2_key);
+        if (!obj) return json({ error: 'File missing from storage' }, corsHeaders, 404);
+        return new Response(obj.body, {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': row.content_type || 'application/octet-stream',
+            'Content-Disposition': `inline; filename="${row.filename || 'receipt'}"`
+          }
+        });
+      }
+
+      // DELETE /api/budget/receipts/:id - delete a receipt
+      const budgetReceiptDeleteMatch = path.match(/^\/api\/budget\/receipts\/(\d+)$/);
+      if (budgetReceiptDeleteMatch && request.method === 'DELETE') {
+        const receiptId = parseInt(budgetReceiptDeleteMatch[1], 10);
+        await ensureBudgetCategoriesTable();
+        const row = await env.DB.prepare(
+          'SELECT r2_key FROM budget_receipts WHERE id = ?'
+        ).bind(receiptId).first();
+        if (row && row.r2_key) {
+          try { await env.VIDEOS.delete(row.r2_key); } catch (e) { /* ignore */ }
+        }
+        await env.DB.prepare('DELETE FROM budget_receipts WHERE id = ?').bind(receiptId).run();
         return json({ success: true }, corsHeaders);
       }
 

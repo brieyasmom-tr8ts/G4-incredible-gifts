@@ -618,6 +618,7 @@
             <button class="nav-tab" data-section="games"><span class="nav-icon">🎮</span> Games</button>
             <button class="nav-tab" data-section="quiz"><span class="nav-icon">🧠</span> Quiz</button>
             <button class="nav-tab" data-section="meme"><span class="nav-icon">😂</span> Meme</button>
+            <button class="nav-tab" data-section="budget"><span class="nav-icon">💰</span> Budget &amp; Payments</button>
         </nav>
         <div class="sidebar-footer">
             <button class="btn btn-danger" style="width:100%;font-size:0.82rem;padding:0.5rem;" onclick="confirmResetAll()">Delete All Test Data</button>
@@ -1089,6 +1090,49 @@
                 <p>No stories in this view</p>
             </div>
         </div>
+
+        <!-- Budget & Payments (password-gated) -->
+        <div class="section" id="section-budget">
+            <!-- Password gate: either "set password" (first run) or "enter password" -->
+            <div id="budget-gate" style="max-width:440px;margin:3rem auto;padding:2rem;background:white;border-radius:14px;box-shadow:var(--shadow-md);text-align:center;">
+                <div style="font-size:2.2rem;margin-bottom:8px;">&#x1f512;</div>
+                <h2 id="budget-gate-title" style="font-family:Playfair Display,serif;font-size:1.3rem;margin-bottom:6px;">Budget &amp; Payments</h2>
+                <p id="budget-gate-subtitle" style="font-size:0.9rem;color:var(--light-text);margin-bottom:1.25rem;line-height:1.5;">Loading...</p>
+                <input type="password" id="budget-gate-password" placeholder="Password" autocomplete="current-password" style="width:100%;padding:10px 14px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;margin-bottom:10px;" />
+                <input type="password" id="budget-gate-password-confirm" placeholder="Confirm password" autocomplete="new-password" style="display:none;width:100%;padding:10px 14px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;margin-bottom:10px;" />
+                <button id="budget-gate-submit" class="btn btn-refresh" style="width:100%;padding:10px;">Unlock</button>
+                <div id="budget-gate-error" style="margin-top:10px;color:#a13224;font-size:0.82rem;display:none;"></div>
+                <div style="margin-top:14px;font-size:0.78rem;color:var(--light-text);font-style:italic;">Your team shares one password. Only admins should see this section.</div>
+            </div>
+
+            <!-- Everything below only shows after the gate opens -->
+            <div id="budget-content" style="display:none;">
+                <!-- Overview cards -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.25rem 1.5rem;text-align:center;border-top:4px solid var(--sage);">
+                        <div style="font-size:0.72rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:6px;">Revenue</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.8rem;font-weight:700;color:var(--sage);" id="budget-revenue">$0</div>
+                        <div style="font-size:0.75rem;color:var(--light-text);margin-top:2px;" id="budget-revenue-sub">From attendees</div>
+                    </div>
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.25rem 1.5rem;text-align:center;border-top:4px solid var(--accent);">
+                        <div style="font-size:0.72rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:6px;">Expenses</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.8rem;font-weight:700;color:var(--accent);" id="budget-expenses">$0</div>
+                        <div style="font-size:0.75rem;color:var(--light-text);margin-top:2px;" id="budget-expenses-sub">Tracked so far</div>
+                    </div>
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.25rem 1.5rem;text-align:center;border-top:4px solid var(--blush);">
+                        <div style="font-size:0.72rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:6px;">Net Profit</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.8rem;font-weight:700;color:var(--blush);" id="budget-profit">$0</div>
+                        <div style="font-size:0.75rem;color:var(--light-text);margin-top:2px;" id="budget-profit-sub">Revenue &minus; Expenses</div>
+                    </div>
+                </div>
+
+                <!-- Coming Soon placeholder for later phases -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
+                    <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;margin-bottom:0.3rem;">Coming next</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Room cost calculator &middot; attendee payment tracking &middot; expense log with receipts &middot; email reminders (Resend) &middot; Stripe integration. Ship one phase at a time.</div>
+                </div>
+            </div>
+        </div>
     </div>
     </div>
 </div>
@@ -1211,7 +1255,8 @@ const SECTION_TITLES = {
     visibility: 'Visibility', videos: 'Videos',
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
     topics: 'Theme Suggestions', stories: 'Stories',
-    polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme'
+    polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme',
+    budget: 'Budget & Payments'
 };
 
 function toggleSidebar() {
@@ -1234,6 +1279,10 @@ function activateAdminSection(sectionName, opts) {
     document.getElementById('sidebar-overlay').classList.remove('open');
     if (!opts || opts.persist !== false) {
         try { localStorage.setItem('g4admin_section', sectionName); } catch(e) {}
+    }
+    // Lazy-init the budget section (password gate + calculator) when shown
+    if (sectionName === 'budget' && typeof initBudgetSection === 'function') {
+        initBudgetSection();
     }
     return true;
 }
@@ -3110,6 +3159,104 @@ function openSSAdminSendModal(userId, name) {
 function closeSSAdminSendModal() {
     const modal = document.getElementById('ss-admin-send-modal');
     if (modal) modal.classList.remove('show');
+}
+
+// --- Budget & Payments ---
+// Password gate + overview + room cost calculator (Phase 1+2).
+
+async function sha256Hex(text) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function initBudgetSection() {
+    // If this browser has unlocked the section earlier, skip straight to
+    // content. The unlock flag is a soft session lock, not the password.
+    if (localStorage.getItem('g4_budget_unlocked') === '1') {
+        showBudgetContent();
+        return;
+    }
+    // Otherwise, ask the server whether a password has been set yet.
+    const gateSubtitle = document.getElementById('budget-gate-subtitle');
+    const gateSubmit = document.getElementById('budget-gate-submit');
+    const confirmField = document.getElementById('budget-gate-password-confirm');
+    const errorEl = document.getElementById('budget-gate-error');
+    const passInput = document.getElementById('budget-gate-password');
+    errorEl.style.display = 'none';
+    passInput.value = '';
+    confirmField.value = '';
+
+    try {
+        const data = await apiFetch('/api/budget/auth/status');
+        const hasPassword = !!(data && data.has_password);
+        if (hasPassword) {
+            gateSubtitle.textContent = 'Enter the budget password to continue.';
+            gateSubmit.textContent = 'Unlock';
+            confirmField.style.display = 'none';
+            passInput.placeholder = 'Password';
+            gateSubmit.onclick = budgetCheckPassword;
+        } else {
+            gateSubtitle.textContent = 'No password set yet. Create one now — your whole team will share it.';
+            gateSubmit.textContent = 'Create Password';
+            confirmField.style.display = 'block';
+            passInput.placeholder = 'New password';
+            gateSubmit.onclick = budgetSetPassword;
+        }
+        // Press Enter to submit
+        passInput.onkeydown = (e) => { if (e.key === 'Enter') gateSubmit.click(); };
+        confirmField.onkeydown = (e) => { if (e.key === 'Enter') gateSubmit.click(); };
+        passInput.focus();
+    } catch (e) {
+        gateSubtitle.textContent = 'Could not reach the server. Refresh and try again.';
+    }
+}
+
+function budgetGateError(msg) {
+    const el = document.getElementById('budget-gate-error');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+
+async function budgetSetPassword() {
+    const a = document.getElementById('budget-gate-password').value;
+    const b = document.getElementById('budget-gate-password-confirm').value;
+    if (!a || a.length < 6) { budgetGateError('Password must be at least 6 characters.'); return; }
+    if (a !== b) { budgetGateError('Passwords don\'t match.'); return; }
+    const hash = await sha256Hex(a);
+    try {
+        const res = await apiFetch('/api/budget/auth/set', { method: 'POST', body: { password_hash: hash } });
+        if (res && res.error) { budgetGateError(res.error); return; }
+        localStorage.setItem('g4_budget_unlocked', '1');
+        showBudgetContent();
+        showToast('Password set. Budget unlocked.');
+    } catch (e) {
+        budgetGateError('Could not save password: ' + (e.message || ''));
+    }
+}
+
+async function budgetCheckPassword() {
+    const pass = document.getElementById('budget-gate-password').value;
+    if (!pass) { budgetGateError('Enter the password first.'); return; }
+    const hash = await sha256Hex(pass);
+    try {
+        const res = await apiFetch('/api/budget/auth/check', { method: 'POST', body: { password_hash: hash } });
+        if (res && res.ok) {
+            localStorage.setItem('g4_budget_unlocked', '1');
+            showBudgetContent();
+            return;
+        }
+        budgetGateError('Wrong password. Try again.');
+    } catch (e) {
+        budgetGateError('Could not verify: ' + (e.message || ''));
+    }
+}
+
+function showBudgetContent() {
+    document.getElementById('budget-gate').style.display = 'none';
+    document.getElementById('budget-content').style.display = 'block';
+    // Phases 2-6 will populate the overview cards with real data. For now
+    // they stay at $0 so the shape of the page is in place.
 }
 
 // --- Scavenger Hunt ---

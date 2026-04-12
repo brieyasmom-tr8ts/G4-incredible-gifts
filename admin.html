@@ -4975,6 +4975,24 @@ function renderRoomBoard(rooms) {
         _budgetOverview.hotelCost = totalHotelBill;
         _budgetOverview.rooms = rooms.length;
         refreshBudgetOverview();
+
+        // Push actual room counts into the calculator inputs
+        const calcN1 = document.getElementById('calc-n1');
+        const calcN2 = document.getElementById('calc-n2');
+        const calcN3 = document.getElementById('calc-n3');
+        const calcN4 = document.getElementById('calc-n4');
+        if (calcN1) calcN1.value = roomCounts[1] || 0;
+        if (calcN2) calcN2.value = roomCounts[2] || 0;
+        if (calcN3) calcN3.value = roomCounts[3] || 0;
+        if (calcN4) calcN4.value = roomCounts[4] || 0;
+        // Count no-hotel women (room_occupancy = 0)
+        const noHotelCount = (window._lastSignupsData && window._lastSignupsData.signups || [])
+            .filter(s => s.status !== 'cancelled' && s.room_occupancy === 0).length;
+        const calcNH = document.getElementById('calc-n-nohotel');
+        if (calcNH) calcNH.value = noHotelCount || 0;
+        // Recalc and save
+        recalcRetreatCalculator();
+        scheduleCalcStateSave();
     }
 }
 

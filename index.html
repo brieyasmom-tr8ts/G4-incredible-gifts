@@ -3744,27 +3744,15 @@
                 </div>
             </div>
 
-            <!-- JOURNAL TAB -->
+            <!-- MY REFLECTIONS TAB (read-only archive, reached from the devotion hub) -->
             <div id="journal-tab" class="tab-content">
                 <div class="journal-container">
-                    <p class="journal-prompt">What is God showing you right now?</p>
-                    <div style="text-align:center;margin-bottom:12px;padding:8px 14px;background:rgba(138,158,122,0.08);border-radius:10px;border:1px solid rgba(138,158,122,0.12);">
-                        <div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);font-style:italic;">This is your private journal — only you can see what you write here.</div>
+                    <div style="text-align:center;margin-bottom:6px;">
+                        <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:var(--dark-text);margin-bottom:4px;">My Reflections</div>
+                        <div style="font-family:'Cormorant Garamond',serif;font-size:0.92rem;color:var(--light-text);font-style:italic;">Every devotion reflection you've saved, in one place.</div>
                     </div>
-                    <div class="audio-note-section">
-                        <button class="audio-btn" id="audio-btn" title="Record a voice note">
-                            <span class="audio-btn-icon" id="audio-btn-icon">🎙️</span>
-                            <span class="audio-btn-text" id="audio-btn-text">Tap to record a voice note</span>
-                        </button>
-                        <div class="audio-status" id="audio-status" style="display:none;">
-                            <div class="audio-pulse-ring"></div>
-                            <span id="audio-status-text">Listening...</span>
-                        </div>
-                    </div>
-                    <textarea class="journal-textarea" id="journal-textarea" placeholder="Write freely or use the mic above..."></textarea>
-                    <div class="journal-actions">
-                        <button class="save-btn" id="save-journal-btn">Save</button>
-                        <button class="summarize-btn" id="summarize-btn" style="display:none;">Summarize</button>
+                    <div style="text-align:center;margin:12px 0;padding:8px 14px;background:rgba(138,158,122,0.08);border-radius:10px;border:1px solid rgba(138,158,122,0.12);">
+                        <div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);font-style:italic;">Your reflections live only on this device. Tap Email or Download to save a copy.</div>
                     </div>
                     <div id="journal-entries-header" style="display:none;align-items:center;justify-content:space-between;margin:16px 16px 6px;gap:8px;flex-wrap:wrap;">
                         <div style="font-family:'Playfair Display',serif;font-size:0.82rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:1px;">Your reflections</div>
@@ -6644,9 +6632,10 @@
             // Admin toggles are authoritative — no more force-show overrides.
             const DEFAULT_NAV_ON = ['nav_moments','nav_connect','nav_journey','nav_journal','nav_photobooth','nav_gratitude','nav_sendlove'];
             // Secret Sister lives on the home card — the nav item would just
-            // duplicate that. Hardcoded off so existing '1' settings in the
+            // duplicate that. Journal moved to a read-only archive inside the
+            // devotion hub. Hardcoded off so existing '1' settings in the
             // DB get ignored without needing a migration.
-            const NAV_FORCE_OFF = ['nav_secretsister'];
+            const NAV_FORCE_OFF = ['nav_secretsister', 'nav_journal'];
             const navKeyEnabled = (key) => {
                 if (NAV_FORCE_OFF.indexOf(key) !== -1) return false;
                 if (navSettings[key] === '1') return true;
@@ -7386,19 +7375,8 @@
                 const actions = document.createElement('div');
                 actions.style.cssText = 'display:flex;gap:8px;';
 
-                const editBtn = document.createElement('button');
-                editBtn.textContent = 'Edit';
-                editBtn.style.cssText = 'border:none;background:none;font-size:0.75rem;color:var(--accent);cursor:pointer;padding:2px 4px;';
-                editBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const textarea = document.getElementById('journal-textarea');
-                    textarea.value = entry.text;
-                    appState.journalEntries.splice(index, 1);
-                    saveState();
-                    buildJournal();
-                    textarea.focus();
-                });
-
+                // Reflections are immutable — no edit. Delete stays so she
+                // can remove an entry she no longer wants to keep.
                 const deleteBtn = document.createElement('button');
                 deleteBtn.textContent = 'Delete';
                 deleteBtn.style.cssText = 'border:none;background:none;font-size:0.75rem;color:var(--warm-grey);cursor:pointer;padding:2px 4px;';
@@ -7410,7 +7388,6 @@
                     buildJournal();
                 });
 
-                actions.appendChild(editBtn);
                 actions.appendChild(deleteBtn);
                 topRow.appendChild(dateDiv);
                 topRow.appendChild(actions);
@@ -7588,30 +7565,32 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Free-form write box is gone — reflections are written inside
+            // devotion prompts now. These elements may not exist, so guard
+            // every lookup.
             const saveBtn = document.getElementById('save-journal-btn');
             const textarea = document.getElementById('journal-textarea');
-            saveBtn.addEventListener('click', () => {
-                const text = textarea.value.trim();
-                if (text) {
-                    appState.journalEntries.unshift({
-                        date: new Date().toISOString(),
-                        text: text
-                    });
-                    saveState();
-                    textarea.value = '';
-                    buildJournal();
-                    showToast('Journal entry saved \u2728');
-                    launchConfetti();
-                    // Privacy-safe usage ping
-                    pingJournalActivity(text.length, '');
-                    // Gentle reminder to back up, every 10 entries, max once / 7 days
-                    maybeNudgeJournalBackup();
-                }
-            });
-            // Download button for journal export
+            if (saveBtn && textarea) {
+                saveBtn.addEventListener('click', () => {
+                    const text = textarea.value.trim();
+                    if (text) {
+                        appState.journalEntries.unshift({
+                            date: new Date().toISOString(),
+                            text: text
+                        });
+                        saveState();
+                        textarea.value = '';
+                        buildJournal();
+                        showToast('Journal entry saved \u2728');
+                        launchConfetti();
+                        pingJournalActivity(text.length, '');
+                        maybeNudgeJournalBackup();
+                    }
+                });
+            }
+            // Download / share buttons for the reflections archive
             const downloadBtn = document.getElementById('journal-download-btn');
             if (downloadBtn) downloadBtn.addEventListener('click', downloadMyJournal);
-            // Email/share button — opens native share sheet on mobile
             const emailBtn = document.getElementById('journal-email-btn');
             if (emailBtn) emailBtn.addEventListener('click', shareMyJournal);
         });
@@ -7751,6 +7730,20 @@
                     container.appendChild(makeDevotionCard(d, 'locked'));
                 });
             }
+
+            // "My Reflections" archive entry — one tap opens the read-only
+            // archive tab with every devotion reflection she's saved.
+            const reflectionsBtn = document.createElement('button');
+            reflectionsBtn.type = 'button';
+            reflectionsBtn.style.cssText = 'display:block;width:calc(100% - 32px);margin:20px 16px 8px;padding:14px 18px;background:white;border:1px solid rgba(201,144,138,0.22);border-radius:14px;box-shadow:var(--shadow-sm);cursor:pointer;font-family:inherit;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:transparent;';
+            reflectionsBtn.innerHTML = '<div style="display:flex;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">\u2728</div><div style="flex:1;min-width:0;"><div style="font-family:\'Playfair Display\',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;">My Reflections</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:0.92rem;color:var(--dark-text);line-height:1.3;">Re-read every devotion reflection you\u2019ve saved</div></div><div style="font-size:1.2rem;color:var(--accent);flex-shrink:0;">&rarr;</div></div>';
+            reflectionsBtn.addEventListener('click', () => {
+                // Refresh the list before showing — reflections may have been
+                // saved via devotion prompts since the tab was last visited.
+                if (typeof buildJournal === 'function') buildJournal();
+                switchToTab('journal');
+            });
+            container.appendChild(reflectionsBtn);
         }
 
         // Render the body of a devotion (letter, verse, teaching, prompts, action, timeline)
@@ -11519,7 +11512,8 @@
             { key: 'home_photobooth', action: "switchToTab('photobooth')", label: '<span style="color:var(--blush);">Photo</span> Booth' },
             { key: 'home_polls', action: "switchToTab('polls')", label: '<span style="color:var(--blush);">Polls</span> &amp; WYR' },
             { key: 'home_sendlove', action: "switchToTab('sendlove')", label: '<span style="color:var(--sage);">Love for</span> Marnie' },
-            { key: 'home_journal', action: "switchToTab('journal')", label: '<span style="color:var(--sage);">My</span> Journal' },
+            // home_journal removed — free-form journaling is gone; reflections
+            // live inside the devotion hub (Continue tab) now.
             { key: 'home_hunt', action: "switchToTab('hunt')", label: '<span style="color:var(--blush);">Scavenger</span> Hunt' },
             { key: 'home_packing', action: "showPackingModal({manual:true})", label: '<span style="color:var(--blush);">Packing</span> Points' },
             { key: 'home_connect', action: "switchToTab('connect')", label: '<span style="color:var(--sage);">Connect</span> Directory' },

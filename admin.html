@@ -1231,8 +1231,22 @@
                     <div id="budget-cats-body" style="margin-top:1rem;">
                         <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
                     </div>
+                    <div id="budget-cat-add-form" style="display:none;margin-top:0.75rem;padding:0.75rem;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
+                        <div style="display:flex;gap:0.5rem;align-items:flex-end;flex-wrap:wrap;">
+                            <div style="flex:2;min-width:160px;">
+                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">Category name</label>
+                                <input type="text" id="budget-cat-new-name" placeholder="e.g. Gift bags" style="width:100%;padding:7px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                            </div>
+                            <div style="flex:1;min-width:100px;">
+                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">Planned $</label>
+                                <input type="number" id="budget-cat-new-planned" step="0.01" min="0" placeholder="0" style="width:100%;padding:7px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                            </div>
+                            <button type="button" class="btn btn-refresh" onclick="submitBudgetCategoryForm()" style="padding:7px 14px;">Save</button>
+                            <button type="button" class="btn btn-cancel" onclick="closeBudgetCategoryForm()" style="padding:7px 14px;">Cancel</button>
+                        </div>
+                    </div>
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;">
-                        <button class="btn btn-refresh" onclick="addBudgetCategory()">+ Add category</button>
+                        <button class="btn btn-refresh" onclick="openBudgetCategoryForm()">+ Add category</button>
                         <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="loadBudgetCategories()">Refresh</button>
                         <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="downloadBudgetCategoriesCsv()">&#x2B07; CSV</button>
                     </div>
@@ -1247,6 +1261,7 @@
                         </div>
                         <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
                             <button type="button" class="btn btn-refresh" onclick="toggleSignupForm()" id="signup-add-btn" style="white-space:nowrap;">+ Add signup</button>
+                            <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="loadSignups()">Refresh</button>
                             <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="downloadSignupsCsv()">&#x2B07; CSV</button>
                         </div>
                     </div>
@@ -3703,15 +3718,36 @@ async function budgetCatSaveField(input, rerenderOnSuccess) {
 // PR, but keep so a stale page doesn't crash).
 function budgetCatSave(input) { return budgetCatBlur(input); }
 
-async function addBudgetCategory() {
-    const name = prompt('New category name:');
-    if (!name || !name.trim()) return;
+function openBudgetCategoryForm() {
+    const form = document.getElementById('budget-cat-add-form');
+    if (!form) return;
+    document.getElementById('budget-cat-new-name').value = '';
+    document.getElementById('budget-cat-new-planned').value = '';
+    form.style.display = 'block';
+    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('budget-cat-new-name').focus();
+}
+
+function closeBudgetCategoryForm() {
+    const form = document.getElementById('budget-cat-add-form');
+    if (form) form.style.display = 'none';
+}
+
+async function submitBudgetCategoryForm() {
+    const name = document.getElementById('budget-cat-new-name').value.trim();
+    if (!name) { showToast('Category name is required.'); return; }
+    const planned = parseFloat(document.getElementById('budget-cat-new-planned').value) || 0;
     try {
-        const res = await apiFetch('/api/budget/categories', { method: 'POST', body: { name: name.trim(), planned: 0, actual: 0 } });
+        const res = await apiFetch('/api/budget/categories', { method: 'POST', body: { name, planned, actual: 0 } });
         if (res && res.error) { showToast('Error: ' + res.error); return; }
+        closeBudgetCategoryForm();
         loadBudgetCategories();
+        showToast('Category added.');
     } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
+
+// Back-compat shim for any stale cached admin.html with old onclick
+function addBudgetCategory() { openBudgetCategoryForm(); }
 
 async function deleteBudgetCategory(id, name) {
     if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;

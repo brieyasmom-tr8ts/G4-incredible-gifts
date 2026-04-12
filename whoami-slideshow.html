@@ -205,7 +205,10 @@
         <div class="start-count" id="start-count">Loading...</div>
         <div style="margin-bottom:20px;">
             <label style="font-size:1rem;color:rgba(255,255,255,0.4);display:block;margin-bottom:10px;">How many to play?</label>
-            <input type="number" id="batch-input" min="1" placeholder="10" style="width:100px;padding:12px 16px;border:1.5px solid rgba(255,255,255,0.2);border-radius:12px;background:rgba(255,255,255,0.08);color:white;font-family:Playfair Display,serif;font-size:1.3rem;font-weight:600;text-align:center;outline:none;">
+            <div style="position:relative;display:inline-block;">
+                <input type="text" id="batch-input" inputmode="numeric" pattern="[0-9]*" placeholder="All" style="width:110px;padding:12px 36px 12px 16px;border:1.5px solid rgba(255,255,255,0.2);border-radius:12px;background:rgba(255,255,255,0.08);color:white;font-family:Playfair Display,serif;font-size:1.3rem;font-weight:600;text-align:center;outline:none;">
+                <button id="batch-clear" onclick="document.getElementById('batch-input').value='';this.style.display='none';" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:rgba(255,255,255,0.6);width:24px;height:24px;border-radius:50%;font-size:0.85rem;cursor:pointer;line-height:1;">✕</button>
+            </div>
             <div id="batch-hint" style="font-size:0.85rem;color:rgba(255,255,255,0.3);margin-top:6px;">Leave empty for all</div>
         </div>
         <button class="start-btn" onclick="startGame()">Start the Game</button>
@@ -229,6 +232,17 @@
         let currentIndex = 0;
         let revealed = false;
         let usedIds = JSON.parse(localStorage.getItem('g4_whoami_used') || '[]');
+
+        // Show/hide clear button as user types
+        document.addEventListener('DOMContentLoaded', () => {
+            const inp = document.getElementById('batch-input');
+            const clr = document.getElementById('batch-clear');
+            inp.addEventListener('input', () => {
+                // Strip non-digits
+                inp.value = inp.value.replace(/[^0-9]/g, '');
+                clr.style.display = inp.value ? 'block' : 'none';
+            });
+        });
 
         async function loadFacts() {
             const res = await fetch(API_URL + '/api/games/funfacts');

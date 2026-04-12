@@ -2396,6 +2396,145 @@ export default {
         return json({ ok }, corsHeaders);
       }
 
+      // ----- Ticket Prices (Phase 3) -----
+      // Five tiered ticket prices stored in game_settings. Used by both the
+      // calculator (projected total) and the signup form (auto-fill).
+      if (path === '/api/budget/ticket-prices' && request.method === 'GET') {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT DEFAULT ''
+          )`).run();
+        } catch (e) { /* exists */ }
+        const { results } = await env.DB.prepare(
+          "SELECT key, value FROM game_settings WHERE key LIKE 'retreat_ticket_%'"
+        ).all();
+        const prices = {};
+        (results || []).forEach(r => { prices[r.key] = r.value; });
+        return json({ prices }, corsHeaders);
+      }
+
+      if (path === '/api/budget/ticket-prices' && request.method === 'POST') {
+        const body = await request.json();
+        if (!body || typeof body !== 'object') {
+          return json({ error: 'Expected object body' }, corsHeaders, 400);
+        }
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT DEFAULT ''
+          )`).run();
+        } catch (e) { /* exists */ }
+        for (const key of Object.keys(body)) {
+          if (!key.startsWith('retreat_ticket_')) continue;
+          const value = body[key] == null ? '' : String(body[key]);
+          await env.DB.prepare(
+            "INSERT INTO game_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+          ).bind(key, value).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // ----- Retreat Signups (Phase 3) -----
+      // Heather's manual registration ledger: one row per woman who's signed
+      // up, with how much she owes and how much she's paid so far. This is
+      // the source of truth for the "Taken In" overview card once any
+      // signups exist (before that it falls back to the calculator projection).
+      async function ensureRetreatSignupsTable() {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS retreat_signups (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT DEFAULT '',
+            phone TEXT DEFAULT '',
+            room_occupancy INTEGER DEFAULT 2,
+            ticket_price REAL DEFAULT 0,
+            amount_paid REAL DEFAULT 0,
+            payment_method TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            status TEXT DEFAULT 'signed_up',
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch (e) { /* already exists */ }
+      }
+
+      // GET /api/budget/signups - list all signups + aggregated stats
+      if (path === '/api/budget/signups' && request.method === 'GET') {
+        await ensureRetreatSignupsTable();
+        const { results } = await env.DB.prepare(
+          'SELECT id, name, email, phone, room_occupancy, ticket_price, amount_paid, payment_method, notes, status, created_at FROM retreat_signups ORDER BY created_at DESC, id DESC'
+        ).all();
+        const rows = results || [];
+        let totalCollected = 0, totalOwed = 0, totalBilled = 0;
+        rows.forEach(r => {
+          const price = Number(r.ticket_price) || 0;
+          const paid = Number(r.amount_paid) || 0;
+          totalBilled += price;
+          totalCollected += paid;
+          totalOwed += Math.max(0, price - paid);
+        });
+        return json({
+          signups: rows,
+          stats: {
+            count: rows.length,
+            total_billed: totalBilled,
+            total_collected: totalCollected,
+            total_outstanding: totalOwed
+          }
+        }, corsHeaders);
+      }
+
+      // POST /api/budget/signups - create a new signup
+      if (path === '/api/budget/signups' && request.method === 'POST') {
+        const body = await request.json();
+        const name = (body && body.name || '').toString().trim();
+        if (!name) return json({ error: 'Name is required' }, corsHeaders, 400);
+        await ensureRetreatSignupsTable();
+        const email = (body.email || '').toString().trim();
+        const phone = (body.phone || '').toString().trim();
+        const roomOccupancy = parseInt(body.room_occupancy, 10) || 2;
+        const ticketPrice = parseFloat(body.ticket_price) || 0;
+        const amountPaid = parseFloat(body.amount_paid) || 0;
+        const paymentMethod = (body.payment_method || '').toString().trim();
+        const notes = (body.notes || '').toString().trim();
+        const status = (body.status || 'signed_up').toString().trim();
+        const result = await env.DB.prepare(
+          'INSERT INTO retreat_signups (name, email, phone, room_occupancy, ticket_price, amount_paid, payment_method, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(name, email, phone, roomOccupancy, ticketPrice, amountPaid, paymentMethod, notes, status).run();
+        return json({ success: true, id: result.meta ? result.meta.last_row_id : null }, corsHeaders);
+      }
+
+      // PATCH /api/budget/signups/:id - update any field on a signup
+      const budgetSignupMatch = path.match(/^\/api\/budget\/signups\/(\d+)$/);
+      if (budgetSignupMatch && request.method === 'PATCH') {
+        const id = parseInt(budgetSignupMatch[1], 10);
+        const body = await request.json();
+        await ensureRetreatSignupsTable();
+        const fields = [];
+        const values = [];
+        if (body.name !== undefined) { fields.push('name = ?'); values.push(String(body.name).trim()); }
+        if (body.email !== undefined) { fields.push('email = ?'); values.push(String(body.email).trim()); }
+        if (body.phone !== undefined) { fields.push('phone = ?'); values.push(String(body.phone).trim()); }
+        if (body.room_occupancy !== undefined) { fields.push('room_occupancy = ?'); values.push(parseInt(body.room_occupancy, 10) || 2); }
+        if (body.ticket_price !== undefined) { fields.push('ticket_price = ?'); values.push(parseFloat(body.ticket_price) || 0); }
+        if (body.amount_paid !== undefined) { fields.push('amount_paid = ?'); values.push(parseFloat(body.amount_paid) || 0); }
+        if (body.payment_method !== undefined) { fields.push('payment_method = ?'); values.push(String(body.payment_method).trim()); }
+        if (body.notes !== undefined) { fields.push('notes = ?'); values.push(String(body.notes).trim()); }
+        if (body.status !== undefined) { fields.push('status = ?'); values.push(String(body.status).trim()); }
+        if (!fields.length) return json({ error: 'No fields to update' }, corsHeaders, 400);
+        values.push(id);
+        await env.DB.prepare(`UPDATE retreat_signups SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/budget/signups/:id - remove a signup
+      if (budgetSignupMatch && request.method === 'DELETE') {
+        const id = parseInt(budgetSignupMatch[1], 10);
+        await ensureRetreatSignupsTable();
+        await env.DB.prepare('DELETE FROM retreat_signups WHERE id = ?').bind(id).run();
+        return json({ success: true }, corsHeaders);
+      }
+
       // ===== FEEDBACK =====
 
       // POST /api/feedback - submit retreat feedback

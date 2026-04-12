@@ -1141,11 +1141,16 @@ function showToast(msg) {
 }
 
 // --- Modal ---
-function showModal(title, message, onConfirm) {
+// confirmLabel defaults to "Delete" and confirmClass to "btn btn-danger" so
+// every existing destructive confirm still works without changes. Pass both
+// when the action is non-destructive (e.g. Assign Secret Sisters).
+function showModal(title, message, onConfirm, confirmLabel, confirmClass) {
     document.getElementById('modal-title').textContent = title;
     document.getElementById('modal-message').textContent = message;
     const btn = document.getElementById('modal-confirm');
     const newBtn = btn.cloneNode(true);
+    newBtn.textContent = confirmLabel || 'Delete';
+    newBtn.className = confirmClass || 'btn btn-danger';
     btn.parentNode.replaceChild(newBtn, btn);
     newBtn.addEventListener('click', () => { closeModal(); onConfirm(); });
     document.getElementById('modal').classList.add('show');
@@ -2778,7 +2783,7 @@ async function assignSecretSisters() {
             showToast(`Assigned ${res.pairs} pairs!`);
             loadSecretSisters();
         } catch (e) { showToast('Error: ' + e.message); }
-    });
+    }, 'Assign', 'btn btn-refresh');
 }
 
 async function loadSecretSisters() {

@@ -2146,15 +2146,41 @@ export default {
             uploaded_at TEXT DEFAULT (datetime('now'))
           )`).run();
         } catch (e) { /* already exists */ }
+        // Sub-items: line-item breakdown within a category
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS budget_sub_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            cost REAL DEFAULT 0,
+            sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch (e) { /* already exists */ }
       }
 
-      // GET /api/budget/categories - list all categories
+      // GET /api/budget/categories - list all categories with sub-items
       if (path === '/api/budget/categories' && request.method === 'GET') {
         await ensureBudgetCategoriesTable();
         const { results } = await env.DB.prepare(
           'SELECT id, name, planned, actual, sort_order FROM budget_categories ORDER BY sort_order, id'
         ).all();
-        return json({ categories: results || [] }, corsHeaders);
+        const cats = results || [];
+        // Attach sub-items to each category
+        let allSubItems = [];
+        try {
+          const si = await env.DB.prepare(
+            'SELECT id, category_id, name, cost, sort_order FROM budget_sub_items ORDER BY sort_order, id'
+          ).all();
+          allSubItems = si.results || [];
+        } catch (e) { /* table may not exist yet */ }
+        const subMap = {};
+        allSubItems.forEach(s => {
+          if (!subMap[s.category_id]) subMap[s.category_id] = [];
+          subMap[s.category_id].push(s);
+        });
+        cats.forEach(c => { c.sub_items = subMap[c.id] || []; });
+        return json({ categories: cats }, corsHeaders);
       }
 
       // POST /api/budget/categories - create a new category
@@ -2272,6 +2298,64 @@ export default {
           try { await env.VIDEOS.delete(row.r2_key); } catch (e) { /* ignore */ }
         }
         await env.DB.prepare('DELETE FROM budget_receipts WHERE id = ?').bind(receiptId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // ----- Budget Sub-Items -----
+      // POST /api/budget/categories/:id/items - add a sub-item
+      const budgetAddSubItemMatch = path.match(/^\/api\/budget\/categories\/(\d+)\/items$/);
+      if (budgetAddSubItemMatch && request.method === 'POST') {
+        const categoryId = parseInt(budgetAddSubItemMatch[1], 10);
+        const body = await request.json();
+        const name = (body && body.name || '').toString().trim();
+        if (!name) return json({ error: 'Name is required' }, corsHeaders, 400);
+        const cost = parseFloat(body.cost) || 0;
+        await ensureBudgetCategoriesTable();
+        const result = await env.DB.prepare(
+          'INSERT INTO budget_sub_items (category_id, name, cost) VALUES (?, ?, ?)'
+        ).bind(categoryId, name, cost).run();
+        // Update parent actual to be sum of sub-items
+        await env.DB.prepare(
+          'UPDATE budget_categories SET actual = (SELECT COALESCE(SUM(cost), 0) FROM budget_sub_items WHERE category_id = ?) WHERE id = ?'
+        ).bind(categoryId, categoryId).run();
+        return json({ success: true, id: result.meta ? result.meta.last_row_id : null }, corsHeaders);
+      }
+
+      // PATCH /api/budget/sub-items/:id - update a sub-item
+      const budgetSubItemMatch = path.match(/^\/api\/budget\/sub-items\/(\d+)$/);
+      if (budgetSubItemMatch && request.method === 'PATCH') {
+        const id = parseInt(budgetSubItemMatch[1], 10);
+        const body = await request.json();
+        await ensureBudgetCategoriesTable();
+        const fields = [];
+        const values = [];
+        if (body.name !== undefined) { fields.push('name = ?'); values.push(String(body.name).trim()); }
+        if (body.cost !== undefined) { fields.push('cost = ?'); values.push(parseFloat(body.cost) || 0); }
+        if (!fields.length) return json({ error: 'No fields to update' }, corsHeaders, 400);
+        values.push(id);
+        await env.DB.prepare(`UPDATE budget_sub_items SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+        // Update parent actual
+        const item = await env.DB.prepare('SELECT category_id FROM budget_sub_items WHERE id = ?').bind(id).first();
+        if (item) {
+          await env.DB.prepare(
+            'UPDATE budget_categories SET actual = (SELECT COALESCE(SUM(cost), 0) FROM budget_sub_items WHERE category_id = ?) WHERE id = ?'
+          ).bind(item.category_id, item.category_id).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/budget/sub-items/:id - remove a sub-item
+      if (budgetSubItemMatch && request.method === 'DELETE') {
+        const id = parseInt(budgetSubItemMatch[1], 10);
+        await ensureBudgetCategoriesTable();
+        const item = await env.DB.prepare('SELECT category_id FROM budget_sub_items WHERE id = ?').bind(id).first();
+        await env.DB.prepare('DELETE FROM budget_sub_items WHERE id = ?').bind(id).run();
+        // Update parent actual
+        if (item) {
+          await env.DB.prepare(
+            'UPDATE budget_categories SET actual = (SELECT COALESCE(SUM(cost), 0) FROM budget_sub_items WHERE category_id = ?) WHERE id = ?'
+          ).bind(item.category_id, item.category_id).run();
+        }
         return json({ success: true }, corsHeaders);
       }
 

@@ -1165,11 +1165,6 @@
                             <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Typical G4 retreat is 2 nights</div>
                         </div>
                         <div>
-                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Food cost per woman</label>
-                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-food-cost" placeholder="120" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
-                            <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Total for the whole retreat</div>
-                        </div>
-                        <div>
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Conference space</label>
                             <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-conference-cost" placeholder="800" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                             <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Flat fee, split across women</div>
@@ -3551,51 +3546,154 @@ function renderBudgetCategoriesTable(cats) {
     }
     // Compute totals
     let totalPlanned = 0, totalActual = 0;
-    cats.forEach(c => { totalPlanned += Number(c.planned) || 0; totalActual += Number(c.actual) || 0; });
+    cats.forEach(c => {
+        totalPlanned += Number(c.planned) || 0;
+        const subs = c.sub_items || [];
+        totalActual += subs.length > 0 ? subs.reduce((s, i) => s + (Number(i.cost) || 0), 0) : (Number(c.actual) || 0);
+    });
     const totalDiff = totalPlanned - totalActual;
-    // Push into the overview state and refresh the top cards
     _budgetOverview.budgetSpent = totalActual;
     refreshBudgetOverview();
 
     // Header
     let html = `
-        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:center;padding:6px 10px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto auto;gap:0.4rem;align-items:center;padding:6px 10px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);">
             <div>Category</div>
             <div style="text-align:right;">Planned</div>
             <div style="text-align:right;">Actual</div>
             <div style="text-align:right;">Remaining</div>
-            <div></div>
+            <div></div><div></div><div></div>
         </div>
     `;
     html += cats.map(c => renderBudgetCategoryRow(c)).join('');
     // Totals row
     const diffColor = totalDiff >= 0 ? 'var(--sage)' : '#a13224';
     html += `
-        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:center;padding:12px 10px 4px;border-top:2px solid rgba(138,158,122,0.4);margin-top:4px;">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto auto;gap:0.4rem;align-items:center;padding:12px 10px 4px;border-top:2px solid rgba(138,158,122,0.4);margin-top:4px;">
             <div style="font-family:Playfair Display,serif;font-size:0.9rem;font-weight:700;color:var(--taupe);">Total</div>
             <div style="text-align:right;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);">${fmtMoney(totalPlanned)}</div>
             <div style="text-align:right;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--accent);">${fmtMoney(totalActual)}</div>
             <div style="text-align:right;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:${diffColor};">${fmtMoney(totalDiff)}</div>
-            <div></div>
+            <div></div><div></div><div></div>
         </div>
     `;
     body.innerHTML = html;
 }
 
 function renderBudgetCategoryRow(c) {
-    const diff = (Number(c.planned) || 0) - (Number(c.actual) || 0);
+    const planned = Number(c.planned) || 0;
+    const subItems = c.sub_items || [];
+    // If sub-items exist, actual is their sum; otherwise use stored actual
+    const actual = subItems.length > 0 ? subItems.reduce((s, i) => s + (Number(i.cost) || 0), 0) : (Number(c.actual) || 0);
+    const diff = planned - actual;
     const diffColor = diff >= 0 ? 'var(--sage)' : '#a13224';
     const safeName = JSON.stringify(c.name);
-    return `
-        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto;gap:0.4rem;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
+    const plannedVal = planned ? planned : '';
+    const actualVal = actual ? actual : '';
+    const hasItems = subItems.length > 0;
+    let html = `
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto auto;gap:0.4rem;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
             <input type="text" value="${esc(c.name)}" data-cat-id="${c.id}" data-field="name" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--dark-text);background:transparent;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
-            <input type="number" step="0.01" min="0" value="${Number(c.planned) || 0}" data-cat-id="${c.id}" data-field="planned" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--taupe);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
-            <input type="number" step="0.01" min="0" value="${Number(c.actual) || 0}" data-cat-id="${c.id}" data-field="actual" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
+            <input type="number" step="0.01" min="0" value="${plannedVal}" placeholder="0" data-cat-id="${c.id}" data-field="planned" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--taupe);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
+            ${hasItems
+                ? '<div style="text-align:right;font-size:0.9rem;color:var(--accent);padding:6px 8px;" title="Sum of items below">' + fmtMoney(actual) + '</div>'
+                : '<input type="number" step="0.01" min="0" value="' + actualVal + '" placeholder="0" data-cat-id="' + c.id + '" data-field="actual" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background=\'white\';this.style.borderColor=\'var(--warm-grey)\'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />'}
             <div style="text-align:right;font-size:0.9rem;font-weight:600;color:${diffColor};padding:6px 8px;">${fmtMoney(diff)}</div>
+            <button type="button" onclick="toggleSubItems(${c.id})" style="background:none;border:none;color:var(--taupe);font-size:0.8rem;cursor:pointer;padding:4px 8px;" title="Sub-items">&#x25BC;</button>
             <button type="button" onclick='openBudgetReceiptsModal(${c.id}, ${safeName})' style="background:none;border:none;color:var(--taupe);font-size:1rem;cursor:pointer;padding:4px 8px;" title="Receipts">&#x1f4ce;</button>
             <button type="button" onclick='deleteBudgetCategory(${c.id}, ${safeName})' style="background:none;border:none;color:var(--light-text);font-size:1.1rem;cursor:pointer;padding:4px 8px;" title="Delete">&times;</button>
         </div>
+        <div id="sub-items-${c.id}" style="display:none;padding:4px 10px 8px 32px;background:rgba(247,240,235,0.3);border-bottom:1px solid rgba(200,185,176,0.18);">
+            ${subItems.map(si => `
+                <div style="display:flex;align-items:center;gap:0.4rem;padding:3px 0;" data-sub-id="${si.id}">
+                    <input type="text" value="${esc(si.name)}" data-sub-id="${si.id}" data-sub-field="name" style="flex:2;padding:4px 6px;border:1px solid transparent;border-radius:5px;font-family:inherit;font-size:0.85rem;color:var(--dark-text);background:transparent;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="subItemInput(this,${c.id})" onblur="subItemBlur(this,${c.id})" />
+                    <div style="display:flex;align-items:center;gap:2px;flex:1;"><span style="font-size:0.82rem;color:var(--taupe);">$</span><input type="number" step="0.01" min="0" value="${Number(si.cost) || ''}" placeholder="0" data-sub-id="${si.id}" data-sub-field="cost" style="flex:1;padding:4px 6px;border:1px solid transparent;border-radius:5px;font-family:inherit;font-size:0.85rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="subItemInput(this,${c.id})" onblur="subItemBlur(this,${c.id})" /></div>
+                    <button type="button" onclick="deleteSubItem(${si.id},${c.id})" style="background:none;border:none;color:var(--light-text);font-size:0.95rem;cursor:pointer;padding:2px 6px;" title="Remove">&times;</button>
+                </div>
+            `).join('')}
+            <button type="button" onclick="addSubItem(${c.id})" style="margin-top:4px;font-size:0.78rem;color:var(--taupe);background:none;border:1px dashed var(--warm-grey);border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;">+ Add item</button>
+        </div>
     `;
+    return html;
+}
+
+// --- Budget Sub-Items ---
+// Expandable line-item breakdown under each category. When sub-items
+// exist, the category's actual is auto-summed from item costs.
+
+function toggleSubItems(catId) {
+    const el = document.getElementById('sub-items-' + catId);
+    if (!el) return;
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function addSubItem(catId) {
+    try {
+        await apiFetch('/api/budget/categories/' + catId + '/items', {
+            method: 'POST',
+            body: { name: 'New item', cost: 0 }
+        });
+        loadBudgetCategories();
+        // Re-open the sub-items panel after reload
+        setTimeout(() => {
+            const el = document.getElementById('sub-items-' + catId);
+            if (el) el.style.display = 'block';
+        }, 300);
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+const _subItemSaveTimers = {};
+function subItemInput(input, catId) {
+    const id = input.dataset.subId;
+    const field = input.dataset.subField;
+    if (!id || !field) return;
+    const key = 'sub-' + id + '-' + field;
+    if (_subItemSaveTimers[key]) clearTimeout(_subItemSaveTimers[key]);
+    _subItemSaveTimers[key] = setTimeout(() => subItemSaveField(input, catId, false), 500);
+}
+
+function subItemBlur(input, catId) {
+    const id = input.dataset.subId;
+    const field = input.dataset.subField;
+    if (!id || !field) return;
+    const key = 'sub-' + id + '-' + field;
+    if (_subItemSaveTimers[key]) { clearTimeout(_subItemSaveTimers[key]); delete _subItemSaveTimers[key]; }
+    input.style.background = 'transparent';
+    input.style.borderColor = 'transparent';
+    subItemSaveField(input, catId, true);
+}
+
+async function subItemSaveField(input, catId, rerenderOnSuccess) {
+    const id = input.dataset.subId;
+    const field = input.dataset.subField;
+    if (!id || !field) return;
+    const value = field === 'name' ? input.value.trim() : (parseFloat(input.value) || 0);
+    try {
+        const body = {};
+        body[field] = value;
+        await apiFetch('/api/budget/sub-items/' + id, { method: 'PATCH', body });
+        if (rerenderOnSuccess) {
+            loadBudgetCategories();
+            // Keep sub-items panel open
+            setTimeout(() => {
+                const el = document.getElementById('sub-items-' + catId);
+                if (el) el.style.display = 'block';
+            }, 300);
+        }
+    } catch (e) {
+        showToast('Save failed: ' + (e.message || ''));
+    }
+}
+
+async function deleteSubItem(subItemId, catId) {
+    try {
+        await apiFetch('/api/budget/sub-items/' + subItemId, { method: 'DELETE' });
+        loadBudgetCategories();
+        setTimeout(() => {
+            const el = document.getElementById('sub-items-' + catId);
+            if (el) el.style.display = 'block';
+        }, 300);
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
 
 // --- Budget Receipts modal ---
@@ -3815,7 +3913,6 @@ const _calcFieldMap = {
     'calc-room-base':       'retreat_calc_room_base',
     'calc-room-extra':      'retreat_calc_room_extra',
     'calc-nights':          'retreat_calc_nights',
-    'calc-food-cost':       'retreat_calc_food_cost',
     'calc-conference-cost': 'retreat_calc_conference_cost',
     'calc-tax-rate':        'retreat_calc_tax_rate',
     'calc-n1':              'retreat_calc_n1',
@@ -3915,7 +4012,6 @@ function recalcRetreatCalculator() {
     const baseNightly = parseFloat(document.getElementById('calc-room-base').value) || 0;
     const extraNightly = parseFloat(document.getElementById('calc-room-extra').value) || 0;
     const nights = parseInt(document.getElementById('calc-nights').value, 10) || 0;
-    const foodCost = parseFloat(document.getElementById('calc-food-cost').value) || 0;
     const confCost = parseFloat(document.getElementById('calc-conference-cost').value) || 0;
     const taxRate = (parseFloat(document.getElementById('calc-tax-rate').value) || 0) / 100;
     const n1 = parseInt(document.getElementById('calc-n1').value, 10) || 0;
@@ -3931,12 +4027,11 @@ function recalcRetreatCalculator() {
     const totalEl = document.getElementById('calc-total-summary');
 
     _budgetOverview.rooms = n1 + n2 + n3 + n4;
-    // Revenue from tier prices
     const tierRevenue = (n1 * 1 * tp[1]) + (n2 * 2 * tp[2]) + (n3 * 3 * tp[3]) + (n4 * 4 * tp[4]) + (nNoHotel * tp[0]);
     _budgetOverview.revenue = tierRevenue;
     _budgetOverview.hotelCost = 0;
 
-    if (baseNightly <= 0 && foodCost <= 0 && confCost <= 0) {
+    if (baseNightly <= 0 && confCost <= 0) {
         perWomanEl.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 14px;background:rgba(247,240,235,0.5);border-radius:10px;">Enter the venue costs above to see the breakdown.</div>';
         totalEl.textContent = 'Enter costs and room counts above to see the projection.';
         refreshBudgetOverview();
@@ -3949,7 +4044,7 @@ function recalcRetreatCalculator() {
     const hotelRows = [1, 2, 3, 4].map(occ => {
         const roomTotal = roomCostForOccupancy(occ, baseNightly, extraNightly, nights);
         const roomPerWoman = roomTotal / occ;
-        const subtotal = roomPerWoman + foodCost + (confPerWoman || 0);
+        const subtotal = roomPerWoman + (confPerWoman || 0);
         const tax = subtotal * taxRate;
         const total = subtotal + tax;
         const charge = tp[occ] || 0;
@@ -3957,8 +4052,8 @@ function recalcRetreatCalculator() {
         return { occ, roomTotal, roomPerWoman, tax, subtotal, total, charge, profit };
     });
 
-    // No-hotel card: no room cost, but still food + conf split + tax
-    const nhSubtotal = foodCost + (confPerWoman || 0);
+    // No-hotel card: just conference split + tax
+    const nhSubtotal = (confPerWoman || 0);
     const nhTax = nhSubtotal * taxRate;
     const nhTotal = nhSubtotal + nhTax;
     const nhCharge = tp[0] || 0;
@@ -3978,7 +4073,6 @@ function recalcRetreatCalculator() {
                     <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--taupe);margin-bottom:2px;">${occLabel}</div>
                     <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:8px;">Room total: ${fmtMoney(r.roomTotal)} &middot; Ticket: ${chargeText}</div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Room / woman</span><span style="color:var(--taupe);">${fmtMoney(r.roomPerWoman)}</span></div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Food</span><span style="color:var(--taupe);">${fmtMoney(foodCost)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Conference</span><span style="color:var(--taupe);">${confDisplay}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Tax &amp; fees</span><span style="color:var(--taupe);">${fmtMoney(r.tax)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:var(--dark-text);padding-top:4px;border-top:1px solid rgba(200,185,176,0.4);margin-top:4px;"><span>Total cost</span><span>${fmtMoney(r.total)}</span></div>
@@ -3988,7 +4082,6 @@ function recalcRetreatCalculator() {
             <div style="padding:14px 16px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
                 <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--taupe);margin-bottom:2px;">No hotel</div>
                 <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:8px;">Ticket: ${nhCharge > 0 ? fmtMoney(nhCharge) : '<span style="font-style:italic;">set price below</span>'}</div>
-                <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Food</span><span style="color:var(--taupe);">${fmtMoney(foodCost)}</span></div>
                 <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Conference</span><span style="color:var(--taupe);">${confDisplay}</span></div>
                 <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Tax &amp; fees</span><span style="color:var(--taupe);">${fmtMoney(nhTax)}</span></div>
                 <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:var(--dark-text);padding-top:4px;border-top:1px solid rgba(200,185,176,0.4);margin-top:4px;"><span>Total cost</span><span>${fmtMoney(nhTotal)}</span></div>
@@ -4010,9 +4103,8 @@ function recalcRetreatCalculator() {
         (n3 * roomCostForOccupancy(3, baseNightly, extraNightly, nights)) +
         (n4 * roomCostForOccupancy(4, baseNightly, extraNightly, nights));
     _budgetOverview.hotelCost = totalRoomCost;
-    const totalFoodCost = totalWomen * foodCost;
     const totalConfCost = confCost;
-    const totalSubtotal = totalRoomCost + totalFoodCost + totalConfCost;
+    const totalSubtotal = totalRoomCost + totalConfCost;
     const totalTax = totalSubtotal * taxRate;
     const totalCost = totalSubtotal + totalTax;
     const totalRevenue = tierRevenue;
@@ -4029,7 +4121,7 @@ function recalcRetreatCalculator() {
             <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Margin</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:${profitColor};">${totalRevenue > 0 ? margin.toFixed(1) + '%' : '—'}</div></div>
         </div>
         <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(138,158,122,0.25);font-size:0.78rem;color:var(--light-text);">
-            Rooms ${fmtMoney(totalRoomCost)} &middot; Food ${fmtMoney(totalFoodCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(totalTax)}
+            Rooms ${fmtMoney(totalRoomCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(totalTax)}
         </div>
     `;
 

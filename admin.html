@@ -1154,8 +1154,12 @@
 
                 <!-- Retreat Cost Calculator -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Retreat Cost Calculator</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;">Plug in every cost the venue charges you plus your ticket price. I'll work out the true cost per woman and your profit margin, updated live.</div>
+                    <div onclick="toggleBudgetSection('calc-body')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+                        <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Retreat Cost Calculator</div>
+                        <span style="font-size:0.8rem;color:var(--light-text);" id="calc-body-arrow">&#x25BC;</span>
+                    </div>
+                    <div id="calc-body">
+                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;margin-top:0.3rem;">Plug in every cost the venue charges you plus your ticket price. I'll work out the true cost per woman and your profit margin, updated live.</div>
 
                     <!-- Cost inputs -->
                     <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Venue costs</div>
@@ -1224,6 +1228,7 @@
                     <!-- Projected total -->
                     <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Projected total</div>
                     <div id="calc-total-summary" style="font-size:0.9rem;color:var(--taupe);padding:14px 16px;background:rgba(138,158,122,0.08);border-radius:10px;">Enter costs and room counts above to see the projection.</div>
+                    </div>
                 </div>
 
                 <!-- Budget by Category -->
@@ -1374,7 +1379,7 @@
                         </div>
                     </div>
 
-                    <div id="signup-list-body" style="margin-top:1rem;">
+                    <div id="signup-list-body" style="margin-top:1rem;max-height:500px;overflow-y:auto;">
                         <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
                     </div>
                 </div>
@@ -1453,7 +1458,7 @@
                         </div>
                     </div>
 
-                    <div id="expense-list-body" style="margin-top:1rem;">
+                    <div id="expense-list-body" style="margin-top:1rem;max-height:500px;overflow-y:auto;">
                         <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
                     </div>
                 </div>
@@ -3564,6 +3569,19 @@ function closeSSAdminSendModal() {
 
 // --- Budget & Payments ---
 // Password gate + overview + room cost calculator (Phase 1+2).
+
+function toggleBudgetSection(id) {
+    const el = document.getElementById(id);
+    const arrow = document.getElementById(id + '-arrow');
+    if (!el) return;
+    if (el.style.display === 'none') {
+        el.style.display = 'block';
+        if (arrow) arrow.innerHTML = '&#x25BC;';
+    } else {
+        el.style.display = 'none';
+        if (arrow) arrow.innerHTML = '&#x25B6;';
+    }
+}
 
 async function sha256Hex(text) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));

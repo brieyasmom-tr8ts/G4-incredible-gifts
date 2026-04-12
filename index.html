@@ -3430,23 +3430,18 @@
                         </div>
                     </div>
 
-                    <!-- Weekly Secret Sister card (post-retreat) -->
-                    <div id="weekly-ss-card" style="display:none;margin:8px 16px 12px;padding:16px 18px;background:linear-gradient(135deg,rgba(201,144,138,0.12),rgba(243,213,207,0.08));border-radius:14px;border:1px solid rgba(201,144,138,0.22);box-shadow:var(--shadow-sm);">
-                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-                            <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#c9908a,#d4a59a);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem;">&#x1f48c;</div>
+                    <!-- Weekly Secret Sister notification (single tap → scrapbook hub) -->
+                    <button id="weekly-ss-card" type="button" style="display:none;width:calc(100% - 32px);margin:8px 16px 12px;padding:14px 18px;background:linear-gradient(135deg,rgba(201,144,138,0.12),rgba(243,213,207,0.08));border-radius:14px;border:1px solid rgba(201,144,138,0.22);box-shadow:var(--shadow-sm);cursor:pointer;text-align:left;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div id="weekly-ss-icon" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#c9908a,#d4a59a);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem;">&#x1f48c;</div>
                             <div style="flex:1;min-width:0;">
-                                <div style="font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;">This Week's Secret Sister</div>
-                                <div id="weekly-ss-name" style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--dark-text);line-height:1.2;"></div>
+                                <div style="font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;">Secret Sister</div>
+                                <div id="weekly-ss-title" style="font-family:'Playfair Display',serif;font-size:1.0rem;font-weight:700;color:var(--dark-text);line-height:1.3;">This Week's Sister</div>
+                                <div id="weekly-ss-subtitle" style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);line-height:1.4;margin-top:2px;"></div>
                             </div>
+                            <div id="weekly-ss-arrow" style="font-size:1.2rem;color:var(--accent);flex-shrink:0;margin-left:4px;">&rarr;</div>
                         </div>
-                        <div id="weekly-ss-status" style="font-family:'Cormorant Garamond',serif;font-size:0.92rem;color:var(--light-text);line-height:1.5;margin-bottom:12px;"></div>
-                        <button id="weekly-ss-write-btn" style="display:none;width:100%;padding:10px 16px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Write Her a Note &#x1f49b;</button>
-                        <button id="weekly-ss-view-note-btn" style="display:none;width:100%;padding:10px 16px;background:white;color:var(--accent);border:1.5px solid var(--accent);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;margin-top:8px;">Read the Note Someone Wrote You &#x1f381;</button>
-                        <div style="display:flex;justify-content:center;margin-top:10px;">
-                            <button id="weekly-ss-history-btn" type="button" style="background:none;border:none;font-family:'Cormorant Garamond',serif;font-size:0.82rem;color:var(--accent);text-decoration:underline;cursor:pointer;padding:4px 8px;touch-action:manipulation;">View my past sisters &rarr;</button>
-                        </div>
-                        <div style="margin-top:4px;font-family:'Cormorant Garamond',serif;font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;">A new sister every Wednesday morning</div>
-                    </div>
+                    </button>
 
                     <!-- Quick action buttons — controlled by admin home_* toggles -->
                     <div id="post-retreat-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 16px;"></div>
@@ -4330,14 +4325,21 @@
         </div>
     </div>
 
-    <!-- Secret Sister Scrapbook (My past sent + received notes) -->
+    <!-- Secret Sister Scrapbook (This Week + past sent/received notes) -->
     <div class="modal-overlay" id="ss-scrapbook-modal" style="display:none;">
         <div class="modal" style="max-width:95vw;width:520px;max-height:88vh;overflow-y:auto;padding:22px;text-align:left;">
             <div style="text-align:center;margin-bottom:14px;">
                 <div style="font-size:1.6rem;">&#x1f48c;</div>
                 <h2 style="font-family:'Playfair Display',serif;font-size:1.3rem;margin:4px 0 2px;">My Secret Sisters</h2>
-                <div style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--light-text);font-style:italic;">Every note you've sent and received</div>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--light-text);font-style:italic;">This week and every one before</div>
             </div>
+            <!-- This Week section (dynamic: write / read / waiting / not-started) -->
+            <div id="ss-scrapbook-thisweek" style="padding:14px 16px;background:rgba(201,144,138,0.06);border:1px solid rgba(201,144,138,0.20);border-radius:12px;margin-bottom:16px;">
+                <div style="font-family:'Playfair Display',serif;font-size:0.68rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.3px;margin-bottom:8px;">This Week</div>
+                <div id="ss-scrapbook-thisweek-body"><div style="font-family:'Cormorant Garamond',serif;font-style:italic;color:var(--light-text);text-align:center;padding:6px 0;">Loading...</div></div>
+            </div>
+            <!-- Past archive with tabs -->
+            <div style="font-family:'Playfair Display',serif;font-size:0.68rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.3px;margin-bottom:8px;">Past</div>
             <div style="display:flex;gap:6px;margin-bottom:14px;">
                 <button id="ss-scrapbook-tab-received" type="button" style="flex:1;padding:9px 12px;border:1.5px solid var(--accent);background:var(--accent);color:white;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Received</button>
                 <button id="ss-scrapbook-tab-sent" type="button" style="flex:1;padding:9px 12px;border:1.5px solid var(--accent);background:white;color:var(--accent);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Sent</button>
@@ -9543,13 +9545,15 @@
         // The retreat-time Secret Sister game is a one-time shuffle handled by
         // checkSecretSister above. This is the post-retreat weekly rotation:
         // every Wednesday morning the server generates a new round of pairings
-        // and women get a gentle home card to write an anonymous note to that
-        // week's sister. Her received note arrives about an hour later to blur
-        // timing and preserve anonymity.
+        // and women get a gentle single-tap home notification. Tapping it opens
+        // the scrapbook hub where she can write, read, and see her past notes
+        // — all one surface, one place. Her received note also auto-pops once
+        // per round as a delight moment about an hour after a sister writes.
+        let _weeklySSLastState = null; // Cached so the scrapbook can reuse it
+
         async function loadWeeklySecretSisterCard() {
             const card = document.getElementById('weekly-ss-card');
             if (!card || !currentUser) return;
-            // Admin can hide this with the home_weekly_ss toggle. Default on.
             if (typeof navSettings !== 'undefined' && navSettings.home_weekly_ss === '0') {
                 card.style.display = 'none';
                 return;
@@ -9557,112 +9561,69 @@
             try {
                 const data = await apiGet('/api/secretsister/week?user_id=' + currentUser.id);
                 if (!data) { card.style.display = 'none'; return; }
-                const nameEl = document.getElementById('weekly-ss-name');
-                const statusEl = document.getElementById('weekly-ss-status');
-                const writeBtn = document.getElementById('weekly-ss-write-btn');
-                const viewBtn = document.getElementById('weekly-ss-view-note-btn');
+                _weeklySSLastState = data;
+                const titleEl = document.getElementById('weekly-ss-title');
+                const subEl = document.getElementById('weekly-ss-subtitle');
+                const arrowEl = document.getElementById('weekly-ss-arrow');
+                const iconEl = document.getElementById('weekly-ss-icon');
 
-                // State 1: weekly rotation hasn't started yet (round 0)
+                // State 1: before the weekly rotation begins (round 0)
                 if (data.round === 0) {
-                    nameEl.textContent = 'Starts Wednesday';
                     const startDate = data.starts_at ? new Date(data.starts_at) : null;
                     const dateStr = startDate ? startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'soon';
-                    statusEl.innerHTML = 'Starting <strong>' + dateStr + '</strong>, you\u2019ll be matched with a new sister every Wednesday morning to pray for and encourage. Check back then.';
-                    writeBtn.style.display = 'none';
-                    viewBtn.style.display = 'none';
+                    titleEl.textContent = 'Starts ' + (startDate ? startDate.toLocaleDateString('en-US', { weekday: 'long' }) : 'soon');
+                    subEl.textContent = 'Your first Secret Sister rotates in on ' + dateStr + '. Check back then.';
+                    iconEl.textContent = '\ud83d\udc8c';
+                    arrowEl.style.visibility = 'hidden';
+                    card.onclick = null;
+                    card.style.cursor = 'default';
                     card.style.display = 'block';
                     return;
                 }
 
-                // State 2: no assignment found (edge case — she wasn't in the pool)
+                // State 2: no assignment this week (opted out or edge case)
                 if (!data.my_assignment) {
                     card.style.display = 'none';
                     return;
                 }
 
-                nameEl.textContent = data.my_assignment.receiver_name || 'A sister';
+                // All tappable states open the scrapbook hub
+                card.style.cursor = 'pointer';
+                card.onclick = openSSHistoryScrapbook;
+                arrowEl.style.visibility = 'visible';
 
-                // State 3: she's already written this week's note
-                if (data.my_note) {
-                    statusEl.innerHTML = 'Your note was sent \ud83d\udc9b Watch for hers soon.';
-                    writeBtn.style.display = 'none';
-                } else {
-                    // State 4: she still needs to write it
-                    statusEl.innerHTML = 'Write her a kind word. She\u2019ll never know it\u2019s from you.';
-                    writeBtn.style.display = 'block';
-                    writeBtn.onclick = () => openWeeklySSWriteModal(data.round, data.my_assignment.receiver_name);
-                }
+                const seenKey = 'g4_ss_week_seen_' + currentUser.id + '_' + data.round;
+                const alreadySeen = !!localStorage.getItem(seenKey);
 
-                // Has someone written to her this week?
-                if (data.received_note) {
-                    viewBtn.style.display = 'block';
-                    viewBtn.onclick = () => openWeeklySSReceivedModal(data.received_note);
-                    // First-visit pop: auto-show the note once per round
-                    const seenKey = 'g4_ss_week_seen_' + currentUser.id + '_' + data.round;
-                    if (!localStorage.getItem(seenKey)) {
-                        localStorage.setItem(seenKey, '1');
-                        setTimeout(() => openWeeklySSReceivedModal(data.received_note), 1200);
-                    }
+                if (data.received_note && !alreadySeen) {
+                    // State 3: a new note just arrived — delight moment
+                    titleEl.textContent = 'You have a new note';
+                    subEl.textContent = 'Tap to read what your secret sister wrote.';
+                    iconEl.textContent = '\ud83c\udf81';
+                    // Auto-pop the received modal once per round
+                    localStorage.setItem(seenKey, '1');
+                    setTimeout(() => openWeeklySSReceivedModal(data.received_note), 1200);
+                } else if (!data.my_note) {
+                    // State 4: she still needs to write this week's note
+                    titleEl.textContent = 'Write to ' + (data.my_assignment.receiver_name || 'a sister');
+                    subEl.textContent = 'Tap to write her a kind word. She\u2019ll never know it\u2019s from you.';
+                    iconEl.textContent = '\ud83d\udc8c';
+                } else if (data.my_note && !data.received_note) {
+                    // State 5: she's written, waiting for hers to arrive
+                    titleEl.textContent = 'Note sent \ud83d\udc9b';
+                    subEl.textContent = 'Your note is on its way. Watch for hers soon.';
+                    iconEl.textContent = '\ud83d\udc9b';
                 } else {
-                    viewBtn.style.display = 'none';
+                    // State 6: all caught up — scrapbook entrypoint
+                    titleEl.textContent = 'Your Secret Sisters';
+                    subEl.textContent = 'Re-read your notes or look back at past weeks.';
+                    iconEl.textContent = '\ud83d\udc8c';
                 }
 
                 card.style.display = 'block';
             } catch (e) {
-                // Fail closed — hide the card rather than show broken state
                 card.style.display = 'none';
             }
-        }
-
-        // Reuse the existing secretsister-modal DOM but wire its submit to the
-        // new weekly endpoint. We don't touch the old checkSecretSister flow.
-        function openWeeklySSWriteModal(round, receiverName) {
-            const modal = document.getElementById('secretsister-modal');
-            if (!modal) return;
-            modal.style.display = 'flex';
-            modal.classList.add('animate-in');
-            document.getElementById('ss-assigned-name').textContent = receiverName || 'A sister';
-            const input = document.getElementById('ss-note-input');
-            input.value = '';
-            document.getElementById('ss-char').textContent = '0';
-
-            input.oninput = () => {
-                document.getElementById('ss-char').textContent = input.value.length;
-            };
-
-            const submitBtn = document.getElementById('ss-submit');
-            submitBtn.textContent = 'Send My Note \ud83d\udc9b';
-            submitBtn.disabled = false;
-            submitBtn.onclick = async () => {
-                const note = input.value.trim();
-                if (!note) { showToast('Please write a note first'); return; }
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Sending...';
-                try {
-                    const res = await apiPost('/api/secretsister/write', {
-                        user_id: currentUser.id,
-                        note: note
-                    });
-                    if (res && res.error) {
-                        showToast(res.error);
-                        submitBtn.disabled = false;
-                        submitBtn.textContent = 'Send My Note \ud83d\udc9b';
-                        return;
-                    }
-                    modal.style.display = 'none';
-                    showToast('Note sent with love \ud83d\udc9b');
-                    if (typeof launchConfetti === 'function') launchConfetti();
-                    loadWeeklySecretSisterCard();
-                } catch (e) {
-                    showToast(e && e.message ? e.message : 'Could not send. Try again.');
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = 'Send My Note \ud83d\udc9b';
-                }
-            };
-
-            document.getElementById('ss-skip').onclick = () => {
-                modal.style.display = 'none';
-            };
         }
 
         function openWeeklySSReceivedModal(noteText) {
@@ -9673,39 +9634,142 @@
             document.getElementById('ss-received-note').textContent = noteText || '';
             document.getElementById('ss-received-close').onclick = () => {
                 modal.style.display = 'none';
+                // After the delight pop closes, refresh the card so it flips
+                // to the "caught up" state for the rest of the week.
+                loadWeeklySecretSisterCard();
             };
         }
 
-        // Open the scrapbook (archive) modal and render my full history.
+        // Render the "This Week" section inside the scrapbook based on state
+        function renderSSThisWeek(data) {
+            const body = document.getElementById('ss-scrapbook-thisweek-body');
+            if (!body) return;
+
+            if (!data || data.round === 0) {
+                const startDate = data && data.starts_at ? new Date(data.starts_at) : null;
+                const dateStr = startDate ? startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'soon';
+                body.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--dark-text);line-height:1.5;text-align:center;padding:6px 4px;">Your first Secret Sister arrives <strong>' + dateStr + '</strong>. Every Wednesday morning you\u2019ll be matched with a new sister to pray for and encourage.</div>';
+                return;
+            }
+            if (!data.my_assignment) {
+                body.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-style:italic;color:var(--light-text);text-align:center;padding:6px 4px;">You aren\u2019t in this week\u2019s rotation. Check your profile if you\u2019d like to opt back in.</div>';
+                return;
+            }
+
+            const receiverName = esc(data.my_assignment.receiver_name || 'a sister');
+            let html = '';
+
+            // Top: show her received note if one has arrived (after delay)
+            if (data.received_note) {
+                html += '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">From Your Secret Sister</div>';
+                html += '<div style="font-family:Cormorant Garamond,serif;font-size:1.0rem;color:var(--dark-text);line-height:1.55;padding:10px 14px;background:white;border:1px solid rgba(201,144,138,0.18);border-radius:10px;font-style:italic;margin-bottom:12px;">' + esc(data.received_note).replace(/\n/g, '<br>') + '</div>';
+            }
+
+            // Middle: write area or confirmation
+            if (!data.my_note) {
+                html += '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">Write to</div>';
+                html += '<div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;color:var(--accent);margin-bottom:8px;">' + receiverName + '</div>';
+                html += '<textarea id="ss-thisweek-textarea" placeholder="A kind word, a prayer, something you want her to know..." maxlength="300" style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid rgba(139,134,128,0.25);border-radius:10px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);resize:vertical;outline:none;background:white;box-sizing:border-box;"></textarea>';
+                html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:8px;">';
+                html += '<div style="font-size:0.75rem;color:var(--light-text);"><span id="ss-thisweek-char">0</span>/300</div>';
+                html += '<button id="ss-thisweek-send-btn" type="button" style="padding:9px 18px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Send My Note \ud83d\udc9b</button>';
+                html += '</div>';
+            } else {
+                html += '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">You wrote to ' + receiverName + '</div>';
+                html += '<div style="font-family:Cormorant Garamond,serif;font-size:0.98rem;color:var(--dark-text);line-height:1.55;padding:10px 14px;background:white;border:1px solid rgba(201,144,138,0.18);border-radius:10px;font-style:italic;">' + esc(data.my_note).replace(/\n/g, '<br>') + '</div>';
+                if (!data.received_note) {
+                    html += '<div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);font-style:italic;text-align:center;margin-top:10px;">Watch for hers soon \ud83d\udc9b</div>';
+                }
+            }
+
+            body.innerHTML = html;
+
+            // Wire up write flow if the textarea exists
+            const textarea = document.getElementById('ss-thisweek-textarea');
+            const sendBtn = document.getElementById('ss-thisweek-send-btn');
+            const charEl = document.getElementById('ss-thisweek-char');
+            if (textarea && sendBtn && charEl) {
+                textarea.addEventListener('input', () => {
+                    charEl.textContent = textarea.value.length;
+                });
+                sendBtn.addEventListener('click', async () => {
+                    const note = textarea.value.trim();
+                    if (!note) { showToast('Please write a note first'); return; }
+                    sendBtn.disabled = true;
+                    sendBtn.textContent = 'Sending...';
+                    try {
+                        const res = await apiPost('/api/secretsister/write', { user_id: currentUser.id, note });
+                        if (res && res.error) {
+                            showToast(res.error);
+                            sendBtn.disabled = false;
+                            sendBtn.textContent = 'Send My Note \ud83d\udc9b';
+                            return;
+                        }
+                        showToast('Note sent with love \ud83d\udc9b');
+                        if (typeof launchConfetti === 'function') launchConfetti();
+                        // Re-fetch and re-render both sections so the UI flips
+                        // to the "sent" state and the home card updates too
+                        const [freshWeek, freshHistory] = await Promise.all([
+                            apiGet('/api/secretsister/week?user_id=' + currentUser.id),
+                            apiGet('/api/secretsister/history?user_id=' + currentUser.id)
+                        ]);
+                        _weeklySSLastState = freshWeek;
+                        renderSSThisWeek(freshWeek);
+                        renderSSHistoryLists(freshHistory);
+                        loadWeeklySecretSisterCard();
+                    } catch (e) {
+                        showToast(e && e.message ? e.message : 'Could not send. Try again.');
+                        sendBtn.disabled = false;
+                        sendBtn.textContent = 'Send My Note \ud83d\udc9b';
+                    }
+                });
+            }
+        }
+
+        // Open the scrapbook hub: fetches This Week state + full history,
+        // renders the combined hub view.
         async function openSSHistoryScrapbook() {
             if (!currentUser) { showToast('Set up your profile first'); return; }
             const modal = document.getElementById('ss-scrapbook-modal');
             if (!modal) return;
             const receivedList = document.getElementById('ss-scrapbook-received-list');
             const sentList = document.getElementById('ss-scrapbook-sent-list');
+            const thisWeekBody = document.getElementById('ss-scrapbook-thisweek-body');
             receivedList.innerHTML = '<div style="text-align:center;font-style:italic;color:var(--light-text);padding:18px 0;">Loading...</div>';
             sentList.innerHTML = '';
+            thisWeekBody.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-style:italic;color:var(--light-text);text-align:center;padding:6px 0;">Loading...</div>';
             modal.style.display = 'flex';
-            // Reset tabs to "Received" every time it opens
             setSSTab('received');
 
             try {
-                const data = await apiGet('/api/secretsister/history?user_id=' + currentUser.id);
-                const received = (data && Array.isArray(data.received)) ? data.received : [];
-                const sent = (data && Array.isArray(data.sent)) ? data.sent : [];
-
-                if (received.length === 0) {
-                    receivedList.innerHTML = '<div style="text-align:center;font-style:italic;color:var(--light-text);padding:18px 12px;font-family:Cormorant Garamond,serif;">No notes received yet. Your first one arrives about an hour after a sister writes to you.</div>';
-                } else {
-                    receivedList.innerHTML = received.map(r => renderSSHistoryRow(r, 'received')).join('');
-                }
-                if (sent.length === 0) {
-                    sentList.innerHTML = '<div style="text-align:center;font-style:italic;color:var(--light-text);padding:18px 12px;font-family:Cormorant Garamond,serif;">You haven\u2019t written any notes yet. When you do, they\u2019ll live here forever.</div>';
-                } else {
-                    sentList.innerHTML = sent.map(r => renderSSHistoryRow(r, 'sent')).join('');
-                }
+                const [weekData, historyData] = await Promise.all([
+                    apiGet('/api/secretsister/week?user_id=' + currentUser.id),
+                    apiGet('/api/secretsister/history?user_id=' + currentUser.id)
+                ]);
+                _weeklySSLastState = weekData;
+                renderSSThisWeek(weekData);
+                renderSSHistoryLists(historyData);
             } catch (e) {
                 receivedList.innerHTML = '<div style="color:var(--accent);text-align:center;padding:18px;">Could not load your history. Try again in a moment.</div>';
+                thisWeekBody.innerHTML = '<div style="color:var(--accent);text-align:center;padding:6px 0;">Could not load this week.</div>';
+            }
+        }
+
+        function renderSSHistoryLists(data) {
+            const receivedList = document.getElementById('ss-scrapbook-received-list');
+            const sentList = document.getElementById('ss-scrapbook-sent-list');
+            if (!receivedList || !sentList) return;
+            const received = (data && Array.isArray(data.received)) ? data.received : [];
+            const sent = (data && Array.isArray(data.sent)) ? data.sent : [];
+            if (received.length === 0) {
+                receivedList.innerHTML = '<div style="text-align:center;font-style:italic;color:var(--light-text);padding:14px 12px;font-family:Cormorant Garamond,serif;">No past notes yet. Each week\u2019s arrivals will live here.</div>';
+            } else {
+                receivedList.innerHTML = received.map(r => renderSSHistoryRow(r, 'received')).join('');
+            }
+            if (sent.length === 0) {
+                sentList.innerHTML = '<div style="text-align:center;font-style:italic;color:var(--light-text);padding:14px 12px;font-family:Cormorant Garamond,serif;">Notes you\u2019ve sent will live here forever.</div>';
+            } else {
+                sentList.innerHTML = sent.map(r => renderSSHistoryRow(r, 'sent')).join('');
             }
         }
 
@@ -9751,7 +9815,9 @@
             }
         }
 
-        // Wire the scrapbook tabs and close button once at load time.
+        // Wire the scrapbook tabs and close button once at load time. The
+        // home card itself gets its onclick wired inside loadWeeklySecretSisterCard
+        // so we don't need to hook it here.
         (function initSSScrapbookWiring() {
             document.addEventListener('DOMContentLoaded', () => {
                 const receivedBtn = document.getElementById('ss-scrapbook-tab-received');
@@ -9763,8 +9829,6 @@
                     const modal = document.getElementById('ss-scrapbook-modal');
                     if (modal) modal.style.display = 'none';
                 });
-                const historyBtn = document.getElementById('weekly-ss-history-btn');
-                if (historyBtn) historyBtn.addEventListener('click', openSSHistoryScrapbook);
             });
         })();
 

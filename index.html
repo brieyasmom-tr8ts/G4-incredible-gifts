@@ -6630,8 +6630,7 @@
             { key: 'nav_secretsister', tab: 'home', icon: '\ud83d\udc8c', label: 'Secret Sister', action: 'secretsister' },
             { key: 'nav_topics', tab: 'topics', icon: '\ud83d\udca1', label: 'Suggest Theme' },
             { key: 'nav_stories', tab: 'stories', icon: '\u2728', label: 'Stories' },
-            { key: 'nav_packing', tab: 'home', icon: '\ud83e\uddf3', label: 'Packing', action: 'packing' },
-            { key: 'nav_celebrations', tab: 'home', icon: '\ud83c\udf82', label: 'Celebrations', action: 'celebrations' }
+            { key: 'nav_packing', tab: 'home', icon: '\ud83e\uddf3', label: 'Packing', action: 'packing' }
         ];
 
         let navSettings = {};
@@ -6714,16 +6713,6 @@
                         switchToTab('home');
                         setTimeout(() => {
                             if (typeof showPackingModal === 'function') showPackingModal({manual:true});
-                        }, 200);
-                        return;
-                    }
-                    if (action === 'celebrations') {
-                        switchToTab('home');
-                        setTimeout(() => {
-                            const card = document.getElementById('celebrations-card');
-                            if (card && card.style.display !== 'none') {
-                                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }
                         }, 200);
                         return;
                     }
@@ -11659,7 +11648,6 @@
             { key: 'home_whoami', action: "window.open('whoami-slideshow.html','_blank')", label: '<span style="color:var(--blush);">Who</span> Am I?' },
             { key: 'home_quiz', action: "switchToTab('quiz')", label: '<span style="color:var(--sage);">Daily</span> Quiz' },
             { key: 'home_survey', action: "homeButtonSurvey()", label: '<span style="color:var(--blush);">Retreat</span> Survey' },
-            { key: 'home_celebrations', action: "homeButtonCelebrations()", label: '<span style="color:var(--sage);">Celebrations</span>' },
         ];
         const DEFAULT_HOME_BUTTONS = ['home_moments','home_uplift','home_gratitude','home_photobooth','home_polls','home_sendlove'];
 
@@ -11670,13 +11658,6 @@
             }
             const feedbackEl = document.getElementById('feedback-form-wrap');
             if (feedbackEl) feedbackEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function homeButtonCelebrations() {
-            const card = document.getElementById('celebrations-card');
-            if (card && card.style.display !== 'none') {
-                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
         }
 
         function renderHomeButtonsInto(containerId) {

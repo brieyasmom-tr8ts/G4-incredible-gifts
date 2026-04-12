@@ -1126,10 +1126,73 @@
                     </div>
                 </div>
 
+                <!-- Retreat Cost Calculator -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Retreat Cost Calculator</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;">Plug in every cost the venue charges you plus your ticket price. I'll work out the true cost per woman and your profit margin, updated live.</div>
+
+                    <!-- Cost inputs -->
+                    <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Venue costs</div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;margin-bottom:1.25rem;">
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Hotel cost per room</label>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-room-cost" placeholder="450" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">For the whole retreat, per room</div>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Food cost per woman</label>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-food-cost" placeholder="120" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Total for the whole retreat</div>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Conference space</label>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-conference-cost" placeholder="800" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Flat fee, split across women</div>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Tax rate</label>
+                            <div style="display:flex;align-items:center;gap:6px;"><input type="number" id="calc-tax-rate" placeholder="8" step="0.01" min="0" max="100" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /><span style="font-size:0.95rem;color:var(--taupe);">%</span></div>
+                            <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Applied to the cost total</div>
+                        </div>
+                    </div>
+
+                    <!-- Room occupancy -->
+                    <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Expected rooms</div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin-bottom:1.25rem;">
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">2-woman rooms</label>
+                            <input type="number" id="calc-n2" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">3-woman rooms</label>
+                            <input type="number" id="calc-n3" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">4-woman rooms</label>
+                            <input type="number" id="calc-n4" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        </div>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Ticket price</div>
+                    <div style="max-width:220px;margin-bottom:1.25rem;">
+                        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">What you charge per woman</label>
+                        <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-charge" placeholder="450" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                    </div>
+
+                    <!-- Per-woman breakdown -->
+                    <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Per-woman breakdown</div>
+                    <div id="calc-per-woman" style="margin-bottom:1.25rem;"></div>
+
+                    <!-- Projected total -->
+                    <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Projected total</div>
+                    <div id="calc-total-summary" style="font-size:0.9rem;color:var(--taupe);padding:14px 16px;background:rgba(138,158,122,0.08);border-radius:10px;">Enter costs and room counts above to see the projection.</div>
+                </div>
+
                 <!-- Coming Soon placeholder for later phases -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
                     <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;margin-bottom:0.3rem;">Coming next</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Room cost calculator &middot; attendee payment tracking &middot; expense log with receipts &middot; email reminders (Resend) &middot; Stripe integration. Ship one phase at a time.</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Attendee payment tracking &middot; expense log with receipts &middot; email reminders (Resend) &middot; Stripe integration. Ship one phase at a time.</div>
                 </div>
             </div>
         </div>
@@ -3255,8 +3318,123 @@ async function budgetCheckPassword() {
 function showBudgetContent() {
     document.getElementById('budget-gate').style.display = 'none';
     document.getElementById('budget-content').style.display = 'block';
-    // Phases 2-6 will populate the overview cards with real data. For now
+    initRetreatCalculator();
+    // Phases 3-6 will populate the overview cards with real data. For now
     // they stay at $0 so the shape of the page is in place.
+}
+
+// --- Retreat Cost Calculator (Phase 2) ---
+// All client-side math. Room, food, conference space, and tax per woman,
+// broken down by room occupancy (2/3/4), plus a projected total based on
+// expected room counts.
+
+function fmtMoney(n) {
+    if (!isFinite(n)) return '$—';
+    const sign = n < 0 ? '-' : '';
+    const abs = Math.abs(n);
+    return sign + '$' + abs.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function initRetreatCalculator() {
+    const ids = ['calc-room-cost', 'calc-food-cost', 'calc-conference-cost', 'calc-tax-rate', 'calc-n2', 'calc-n3', 'calc-n4', 'calc-charge'];
+    const inputs = ids.map(id => document.getElementById(id)).filter(Boolean);
+    if (inputs.length === 0) return;
+    const recalc = () => recalcRetreatCalculator();
+    inputs.forEach(el => {
+        if (!el.dataset.wired) {
+            el.dataset.wired = '1';
+            el.addEventListener('input', recalc);
+        }
+    });
+    recalc();
+}
+
+function recalcRetreatCalculator() {
+    const roomCost = parseFloat(document.getElementById('calc-room-cost').value) || 0;
+    const foodCost = parseFloat(document.getElementById('calc-food-cost').value) || 0;
+    const confCost = parseFloat(document.getElementById('calc-conference-cost').value) || 0;
+    const taxRate = (parseFloat(document.getElementById('calc-tax-rate').value) || 0) / 100;
+    const n2 = parseInt(document.getElementById('calc-n2').value, 10) || 0;
+    const n3 = parseInt(document.getElementById('calc-n3').value, 10) || 0;
+    const n4 = parseInt(document.getElementById('calc-n4').value, 10) || 0;
+    const charge = parseFloat(document.getElementById('calc-charge').value) || 0;
+
+    const totalWomen = (n2 * 2) + (n3 * 3) + (n4 * 4);
+    const perWomanEl = document.getElementById('calc-per-woman');
+    const totalEl = document.getElementById('calc-total-summary');
+
+    // No costs entered yet — show a gentle hint
+    if (roomCost <= 0 && foodCost <= 0 && confCost <= 0) {
+        perWomanEl.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 14px;background:rgba(247,240,235,0.5);border-radius:10px;">Enter the venue costs above to see the breakdown.</div>';
+        totalEl.textContent = 'Enter costs and room counts above to see the projection.';
+        return;
+    }
+
+    // Conference split only makes sense when we know how many women. If
+    // totalWomen is 0, fall back to "—" for conference per woman in the
+    // breakdown, but still show room / food / tax math.
+    const confPerWoman = totalWomen > 0 ? (confCost / totalWomen) : null;
+
+    // Per-occupancy breakdown
+    const rows = [2, 3, 4].map(occ => {
+        const roomPerWoman = roomCost > 0 ? (roomCost / occ) : 0;
+        const subtotal = roomPerWoman + foodCost + (confPerWoman || 0);
+        const tax = subtotal * taxRate;
+        const total = subtotal + tax;
+        const profit = charge > 0 ? (charge - total) : null;
+        return { occ, roomPerWoman, tax, subtotal, total, profit };
+    });
+
+    const confDisplay = confPerWoman !== null ? fmtMoney(confPerWoman) : '(set room counts)';
+
+    perWomanEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;">
+            ${rows.map(r => {
+                const profitColor = r.profit === null ? 'var(--light-text)' : (r.profit >= 0 ? 'var(--sage)' : '#a13224');
+                const profitText = r.profit === null ? '—' : fmtMoney(r.profit);
+                return `
+                <div style="padding:14px 16px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
+                    <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);margin-bottom:8px;">${r.occ} women per room</div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Room</span><span style="color:var(--taupe);">${fmtMoney(r.roomPerWoman)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Food</span><span style="color:var(--taupe);">${fmtMoney(foodCost)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Conference</span><span style="color:var(--taupe);">${confDisplay}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Tax</span><span style="color:var(--taupe);">${fmtMoney(r.tax)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:var(--dark-text);padding-top:4px;border-top:1px solid rgba(200,185,176,0.4);margin-top:4px;"><span>Total cost</span><span>${fmtMoney(r.total)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:${profitColor};margin-top:2px;"><span>Profit / woman</span><span>${profitText}</span></div>
+                </div>
+            `;}).join('')}
+        </div>
+    `;
+
+    // Projected total
+    if (totalWomen === 0) {
+        totalEl.textContent = 'Enter room counts above to see the projected total.';
+        return;
+    }
+
+    const totalRoomCost = (n2 + n3 + n4) * roomCost;
+    const totalFoodCost = totalWomen * foodCost;
+    const totalConfCost = confCost;
+    const totalSubtotal = totalRoomCost + totalFoodCost + totalConfCost;
+    const totalTax = totalSubtotal * taxRate;
+    const totalCost = totalSubtotal + totalTax;
+    const totalRevenue = totalWomen * charge;
+    const totalProfit = totalRevenue - totalCost;
+    const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
+    const profitColor = totalProfit >= 0 ? 'var(--sage)' : '#a13224';
+
+    totalEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;">
+            <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Women</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--taupe);">${totalWomen}</div></div>
+            <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Revenue</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--sage);">${fmtMoney(totalRevenue)}</div></div>
+            <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">All costs</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--accent);">${fmtMoney(totalCost)}</div></div>
+            <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Profit</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:${profitColor};">${fmtMoney(totalProfit)}</div></div>
+            <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Margin</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:${profitColor};">${totalRevenue > 0 ? margin.toFixed(1) + '%' : '—'}</div></div>
+        </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(138,158,122,0.25);font-size:0.78rem;color:var(--light-text);">
+            Rooms ${fmtMoney(totalRoomCost)} &middot; Food ${fmtMoney(totalFoodCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax ${fmtMoney(totalTax)}
+        </div>
+    `;
 }
 
 // --- Scavenger Hunt ---

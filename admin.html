@@ -1255,7 +1255,9 @@
                             <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Record each woman who signs up, track ticket price vs. what she's paid so far. Totals flow into "Taken In" above.</div>
                         </div>
                         <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                            <button type="button" class="btn btn-refresh" onclick="toggleSignupForm()" id="signup-add-btn" style="white-space:nowrap;">+ Add signup</button>
+                            <button type="button" class="btn btn-refresh" onclick="toggleSignupForm()" id="signup-add-btn" style="white-space:nowrap;">+ Add</button>
+                            <button type="button" class="btn" style="background:rgba(138,158,122,0.15);color:var(--sage);white-space:nowrap;" onclick="document.getElementById('csv-import-file').click()">&#x2B06; Import CSV</button>
+                            <input type="file" id="csv-import-file" accept=".csv" style="display:none;" onchange="handleCsvImport(this)" />
                             <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="loadSignups()">Refresh</button>
                             <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="downloadSignupsCsv()">&#x2B07; CSV</button>
                         </div>
@@ -1339,6 +1341,10 @@
                                 </select>
                             </div>
                             <div>
+                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Room</label>
+                                <input type="text" id="signup-room-label" placeholder="e.g. Room 301 or with Sarah" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                            </div>
+                            <div>
                                 <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Status</label>
                                 <select id="signup-status" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;">
                                     <option value="signed_up">Signed up</option>
@@ -1362,10 +1368,21 @@
                     </div>
                 </div>
 
+                <!-- Registration Link -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Registration Link</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;line-height:1.5;">Paste your CCB (or any) registration form URL here. Women will see a "Register for the Retreat" card on their home page that opens this link. Leave blank to hide the card.</div>
+                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+                        <input type="url" id="reg-link-url" placeholder="https://pushpay.com/g/..." style="flex:1;min-width:200px;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        <button type="button" class="btn btn-refresh" onclick="saveRegistrationLink()">Save</button>
+                    </div>
+                    <div id="reg-link-status" style="font-size:0.78rem;color:var(--sage);margin-top:6px;display:none;"></div>
+                </div>
+
                 <!-- Coming Soon placeholder for later phases -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
                     <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;margin-bottom:0.3rem;">Coming next</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Expense log rollup across categories &middot; email reminders to women with outstanding balances (Resend) &middot; Stripe checkout for 2027. Ship one phase at a time.</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Email reminders to women with outstanding balances (Resend) &middot; Stripe checkout for 2027. Ship one phase at a time.</div>
                 </div>
             </div>
         </div>
@@ -3512,6 +3529,7 @@ function showBudgetContent() {
     });
     loadBudgetCategories();
     loadSignups();
+    loadRegistrationLink();
 }
 
 // --- Budget by Category ---
@@ -4206,6 +4224,7 @@ function toggleSignupForm(editRow) {
         document.getElementById('signup-paid').value = editRow.amount_paid || '';
         document.getElementById('signup-method').value = editRow.payment_method || '';
         document.getElementById('signup-status').value = editRow.status || 'signed_up';
+        document.getElementById('signup-room-label').value = editRow.room_label || '';
         document.getElementById('signup-notes').value = editRow.notes || '';
         form.style.display = 'block';
         form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -4221,6 +4240,7 @@ function toggleSignupForm(editRow) {
         signupTierChanged(); // pre-fill price from tier
         document.getElementById('signup-paid').value = '';
         document.getElementById('signup-method').value = '';
+        document.getElementById('signup-room-label').value = '';
         document.getElementById('signup-status').value = 'signed_up';
         document.getElementById('signup-notes').value = '';
         form.style.display = 'block';
@@ -4260,6 +4280,7 @@ async function saveSignupForm() {
         ticket_price: ticketPrice,
         amount_paid: amountPaid,
         payment_method: document.getElementById('signup-method').value,
+        room_label: document.getElementById('signup-room-label').value.trim(),
         notes: document.getElementById('signup-notes').value.trim(),
         status
     };
@@ -4422,11 +4443,13 @@ function renderSignupsList(signups, stats) {
         const showMarkPaid = s.status !== 'paid' && s.status !== 'cancelled' && balance > 0;
         const contactBits = [s.email, s.phone].filter(Boolean).map(x => esc(x));
         const methodLabel = s.payment_method ? esc(s.payment_method) : '';
+        const roomInfo = s.room_label ? esc(s.room_label) : '';
         return `
         <div style="display:grid;grid-template-columns:2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto;gap:0.4rem;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
             <div>
                 <div style="font-size:0.9rem;font-weight:600;color:var(--dark-text);">${esc(s.name)}</div>
                 ${contactBits.length ? '<div style="font-size:0.7rem;color:var(--light-text);">' + contactBits.join(' &middot; ') + '</div>' : ''}
+                ${roomInfo ? '<div style="font-size:0.68rem;color:var(--sage);margin-top:1px;">' + roomInfo + '</div>' : ''}
                 ${s.notes ? '<div style="font-size:0.68rem;color:var(--light-text);font-style:italic;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;" title="' + esc(s.notes) + '">' + esc(s.notes) + '</div>' : ''}
             </div>
             <div style="font-size:0.82rem;color:var(--taupe);">${tierLabel(s.room_occupancy)}</div>
@@ -4476,7 +4499,7 @@ function downloadSignupsCsv() {
     if (!data || !data.signups || !data.signups.length) {
         showToast('No signups to export.'); return;
     }
-    const headers = ['Name','Email','Phone','Tier','Ticket Price','Amount Paid','Balance','Payment Method','Status','Notes','Date'];
+    const headers = ['Name','Email','Phone','Tier','Room','Ticket Price','Amount Paid','Balance','Payment Method','Status','Notes','Date'];
     const rows = data.signups.map(s => {
         const balance = (Number(s.ticket_price) || 0) - (Number(s.amount_paid) || 0);
         return [
@@ -4484,6 +4507,7 @@ function downloadSignupsCsv() {
             s.email || '',
             s.phone || '',
             tierLabel(s.room_occupancy),
+            s.room_label || '',
             (s.ticket_price || 0).toFixed(2),
             (s.amount_paid || 0).toFixed(2),
             balance.toFixed(2),
@@ -4494,6 +4518,111 @@ function downloadSignupsCsv() {
         ];
     });
     downloadCsvFile('retreat-signups.csv', headers, rows);
+}
+
+// --- CSV Import ---
+// Parses a CSV file, auto-maps columns to our fields, shows a preview,
+// then bulk-imports via /api/budget/signups/import (upsert by email/name).
+async function handleCsvImport(fileInput) {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    fileInput.value = '';
+    const text = await file.text();
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { showToast('CSV needs a header row and at least one data row.'); return; }
+
+    // Parse CSV (handles quoted fields with commas)
+    function parseCsvLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (inQuotes) {
+                if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
+                else if (ch === '"') { inQuotes = false; }
+                else { current += ch; }
+            } else {
+                if (ch === '"') { inQuotes = true; }
+                else if (ch === ',') { result.push(current.trim()); current = ''; }
+                else { current += ch; }
+            }
+        }
+        result.push(current.trim());
+        return result;
+    }
+
+    const headers = parseCsvLine(lines[0]);
+    const dataRows = lines.slice(1).map(l => parseCsvLine(l)).filter(r => r.some(c => c));
+
+    // Auto-map columns to our fields
+    const fieldMap = {
+        name: null, email: null, phone: null, amount_paid: null,
+        ticket_price: null, payment_method: null, room_label: null, notes: null
+    };
+    const patterns = {
+        name: /^(full.?name|name|first.*last|participant)$/i,
+        email: /^(e.?mail|email.?address)$/i,
+        phone: /^(phone|mobile|cell|telephone)$/i,
+        amount_paid: /^(amount.?paid|paid|payment|total.?paid|amount)$/i,
+        ticket_price: /^(ticket|price|cost|fee|registration.?fee|total.?due|total)$/i,
+        payment_method: /^(payment.?method|method|pay.?type|payment.?type)$/i,
+        room_label: /^(room|room.?assignment|room.?number|roommate)$/i,
+        notes: /^(notes|comments|special.?needs|dietary|remarks)$/i
+    };
+    // Also check for first_name + last_name combo
+    let firstNameCol = null, lastNameCol = null;
+    headers.forEach((h, i) => {
+        const clean = h.replace(/['"]/g, '').trim();
+        if (/^(first.?name|first)$/i.test(clean)) firstNameCol = i;
+        if (/^(last.?name|last|surname)$/i.test(clean)) lastNameCol = i;
+        Object.keys(patterns).forEach(field => {
+            if (fieldMap[field] === null && patterns[field].test(clean)) {
+                fieldMap[field] = i;
+            }
+        });
+    });
+    // If no full name column but have first+last, merge them
+    const useFirstLast = fieldMap.name === null && firstNameCol !== null && lastNameCol !== null;
+
+    // Build mapped rows
+    const mapped = dataRows.map(row => {
+        const name = useFirstLast
+            ? ((row[firstNameCol] || '') + ' ' + (row[lastNameCol] || '')).trim()
+            : (fieldMap.name !== null ? (row[fieldMap.name] || '') : '');
+        return {
+            name,
+            email: fieldMap.email !== null ? (row[fieldMap.email] || '') : '',
+            phone: fieldMap.phone !== null ? (row[fieldMap.phone] || '') : '',
+            amount_paid: fieldMap.amount_paid !== null ? (row[fieldMap.amount_paid] || '') : '',
+            ticket_price: fieldMap.ticket_price !== null ? (row[fieldMap.ticket_price] || '') : '',
+            payment_method: fieldMap.payment_method !== null ? (row[fieldMap.payment_method] || '') : '',
+            room_label: fieldMap.room_label !== null ? (row[fieldMap.room_label] || '') : '',
+            notes: fieldMap.notes !== null ? (row[fieldMap.notes] || '') : ''
+        };
+    }).filter(r => r.name);
+
+    if (!mapped.length) {
+        showToast('No valid rows found. Make sure the CSV has a Name or First Name column.');
+        return;
+    }
+
+    // Show preview
+    const preview = mapped.slice(0, 5).map(r => r.name + (r.email ? ' (' + r.email + ')' : '')).join('\n');
+    const msg = 'Found ' + mapped.length + ' row(s) to import.\n\nPreview:\n' + preview +
+        (mapped.length > 5 ? '\n... and ' + (mapped.length - 5) + ' more' : '') +
+        '\n\nExisting signups will be updated by email/name match. New ones will be created.\n\nProceed?';
+    if (!confirm(msg)) return;
+
+    try {
+        showToast('Importing ' + mapped.length + ' rows...');
+        const res = await apiFetch('/api/budget/signups/import', { method: 'POST', body: { rows: mapped } });
+        if (res && res.error) { showToast('Import failed: ' + res.error); return; }
+        showToast('Done! ' + (res.created || 0) + ' new, ' + (res.updated || 0) + ' updated, ' + (res.skipped || 0) + ' skipped.');
+        loadSignups();
+    } catch (e) {
+        showToast('Import failed: ' + (e.message || ''));
+    }
 }
 
 function downloadBudgetCategoriesCsv() {
@@ -4528,6 +4657,33 @@ function downloadCsvFile(filename, headers, rows) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+// --- Registration Link ---
+async function loadRegistrationLink() {
+    try {
+        const data = await apiFetch('/api/budget/calculator/state');
+        const state = (data && data.state) || {};
+        const url = state.retreat_calc_registration_url || '';
+        const el = document.getElementById('reg-link-url');
+        if (el && url) el.value = url;
+    } catch (e) { /* silent */ }
+}
+
+async function saveRegistrationLink() {
+    const url = (document.getElementById('reg-link-url').value || '').trim();
+    try {
+        await apiFetch('/api/budget/calculator/state', {
+            method: 'POST',
+            body: { retreat_calc_registration_url: url }
+        });
+        const status = document.getElementById('reg-link-status');
+        status.textContent = url ? 'Saved! Women will see the registration card on their home page.' : 'Cleared. Registration card hidden.';
+        status.style.display = 'block';
+        setTimeout(() => { status.style.display = 'none'; }, 4000);
+    } catch (e) {
+        showToast('Save failed: ' + (e.message || ''));
+    }
 }
 
 // --- Scavenger Hunt ---

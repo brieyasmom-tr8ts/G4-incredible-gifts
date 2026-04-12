@@ -3447,6 +3447,19 @@
                         </div>
                     </button>
 
+                    <!-- Registration card (hidden unless admin sets a URL) -->
+                    <div id="registration-card-wrap" style="display:none;margin:12px 16px 0;">
+                        <a id="registration-card-link" href="#" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(135deg,rgba(138,158,122,0.12),rgba(138,158,122,0.04));border:1.5px solid rgba(138,158,122,0.25);border-radius:14px;text-decoration:none;transition:var(--transition);">
+                            <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--sage),#a8c296);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem;">&#x1f3d5;</div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;">Next Retreat</div>
+                                <div style="font-family:'Playfair Display',serif;font-size:1.0rem;font-weight:700;color:var(--dark-text);line-height:1.3;">Register for G4 2027</div>
+                                <div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);line-height:1.4;margin-top:2px;">Tap to sign up for next year's retreat</div>
+                            </div>
+                            <div style="font-size:1.2rem;color:var(--sage);flex-shrink:0;margin-left:4px;">&rarr;</div>
+                        </a>
+                    </div>
+
                     <!-- Quick action buttons — controlled by admin home_* toggles -->
                     <div id="post-retreat-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 16px;"></div>
 
@@ -9609,6 +9622,22 @@
         // per round as a delight moment about an hour after a sister writes.
         let _weeklySSLastState = null; // Cached so the scrapbook can reuse it
 
+        // Registration card — shows on home page when admin has set a registration URL
+        async function loadRegistrationCard() {
+            try {
+                const data = await apiFetch('/api/budget/calculator/state');
+                const state = (data && data.state) || {};
+                const url = state.retreat_calc_registration_url || '';
+                if (!url) return;
+                const wrap = document.getElementById('registration-card-wrap');
+                const link = document.getElementById('registration-card-link');
+                if (wrap && link) {
+                    link.href = url;
+                    wrap.style.display = 'block';
+                }
+            } catch (e) { /* silent — card just stays hidden */ }
+        }
+
         async function loadWeeklySecretSisterCard() {
             const card = document.getElementById('weekly-ss-card');
             if (!card || !currentUser) return;
@@ -10578,6 +10607,7 @@
                 // Quick-action buttons on post-retreat home, controlled by the
                 // same home_* admin toggles as the pre-retreat dashboard
                 renderHomeButtonsInto('post-retreat-buttons');
+                loadRegistrationCard();
                 // Honor ?/#survey URL deep links from email CTAs
                 handleSurveyDeepLink();
 

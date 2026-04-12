@@ -9702,7 +9702,9 @@
         }
 
         function renderSSHistoryRow(row, kind) {
-            const weekLabel = 'Week ' + (row.round_number || '?');
+            // round_number 0 means this came from the retreat-time game,
+            // merged into the scrapbook so her full history is visible.
+            const weekLabel = row.round_number === 0 ? 'Retreat Weekend' : ('Week ' + (row.round_number || '?'));
             const dateStr = row.written_at ? new Date(row.written_at.replace(' ', 'T') + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
             const header = kind === 'received'
                 ? ('<div style="font-family:\'Playfair Display\',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">' + weekLabel + (dateStr ? ' &middot; ' + dateStr : '') + '</div>')

@@ -4669,19 +4669,21 @@ async function handleCsvImport(fileInput) {
     const headers = parseCsvLine(lines[0]);
     const dataRows = lines.slice(1).map(l => parseCsvLine(l)).filter(r => r.some(c => c));
 
-    // Auto-map columns to our fields
+    // Auto-map columns to our fields (tuned for CCB exports)
     const fieldMap = {
         name: null, email: null, phone: null, amount_paid: null,
-        ticket_price: null, payment_method: null, room_label: null, notes: null
+        ticket_price: null, payment_method: null, payment_status: null,
+        room_occupancy: null, room_label: null, notes: null
     };
     const patterns = {
-        name: /^(full.?name|name|first.*last|participant)$/i,
+        name: /^(full.?name|name|first.*last|participant|profile.?matched)$/i,
         email: /^(e.?mail|email.?address)$/i,
-        phone: /^(phone|mobile|cell|telephone)$/i,
-        amount_paid: /^(amount.?paid|paid|payment|total.?paid|amount)$/i,
-        ticket_price: /^(ticket|price|cost|fee|registration.?fee|total.?due|total)$/i,
+        phone: /^(phone|mobile|mobile.?phone|cell|telephone)$/i,
+        ticket_price: /^(form.?total|ticket|price|cost|fee|registration.?fee|total.?due|total|amount)$/i,
         payment_method: /^(payment.?method|method|pay.?type|payment.?type)$/i,
-        room_label: /^(room|room.?assignment|room.?number|roommate)$/i,
+        payment_status: /^(payment.?status|status)$/i,
+        room_occupancy: /^(how.?many.?people|people.?per.?room|room.?type|room.?size|room.?occupancy)$/i,
+        room_label: /^(roommate|roommate.?pref|room.?assignment|room.?number|roommate.?preference)$/i,
         notes: /^(notes|comments|special.?needs|dietary|remarks)$/i
     };
     // Also check for first_name + last_name combo
@@ -4699,18 +4701,32 @@ async function handleCsvImport(fileInput) {
     // If no full name column but have first+last, merge them
     const useFirstLast = fieldMap.name === null && firstNameCol !== null && lastNameCol !== null;
 
+    // Helper: parse "2 Person room" → 2, "1 Person room" → 1, etc.
+    function parseRoomOccupancy(val) {
+        if (!val) return 2;
+        const m = val.match(/(\d)/);
+        return m ? parseInt(m[1], 10) : 2;
+    }
+
     // Build mapped rows
     const mapped = dataRows.map(row => {
         const name = useFirstLast
             ? ((row[firstNameCol] || '') + ' ' + (row[lastNameCol] || '')).trim()
             : (fieldMap.name !== null ? (row[fieldMap.name] || '') : '');
+        const formTotal = fieldMap.ticket_price !== null ? (parseFloat(row[fieldMap.ticket_price]) || 0) : 0;
+        const payStatus = fieldMap.payment_status !== null ? (row[fieldMap.payment_status] || '').toLowerCase().trim() : '';
+        // If payment status is "paid", amount_paid = form total
+        const amountPaid = payStatus === 'paid' ? formTotal : 0;
+        const roomOcc = fieldMap.room_occupancy !== null ? parseRoomOccupancy(row[fieldMap.room_occupancy]) : 2;
         return {
             name,
             email: fieldMap.email !== null ? (row[fieldMap.email] || '') : '',
             phone: fieldMap.phone !== null ? (row[fieldMap.phone] || '') : '',
-            amount_paid: fieldMap.amount_paid !== null ? (row[fieldMap.amount_paid] || '') : '',
-            ticket_price: fieldMap.ticket_price !== null ? (row[fieldMap.ticket_price] || '') : '',
+            ticket_price: formTotal,
+            amount_paid: amountPaid,
+            status: payStatus === 'paid' ? 'paid' : 'signed_up',
             payment_method: fieldMap.payment_method !== null ? (row[fieldMap.payment_method] || '') : '',
+            room_occupancy: roomOcc,
             room_label: fieldMap.room_label !== null ? (row[fieldMap.room_label] || '') : '',
             notes: fieldMap.notes !== null ? (row[fieldMap.notes] || '') : ''
         };
@@ -4722,10 +4738,16 @@ async function handleCsvImport(fileInput) {
     }
 
     // Show preview
-    const preview = mapped.slice(0, 5).map(r => r.name + (r.email ? ' (' + r.email + ')' : '')).join('\n');
-    const msg = 'Found ' + mapped.length + ' row(s) to import.\n\nPreview:\n' + preview +
+    const preview = mapped.slice(0, 5).map(r => {
+        const parts = [r.name];
+        if (r.ticket_price) parts.push('$' + Number(r.ticket_price).toFixed(2));
+        if (r.status === 'paid') parts.push('PAID');
+        if (r.room_occupancy) parts.push(r.room_occupancy + '-person');
+        return parts.join(' · ');
+    }).join('\n');
+    const msg = 'Found ' + mapped.length + ' signup(s) to import.\n\nPreview:\n' + preview +
         (mapped.length > 5 ? '\n... and ' + (mapped.length - 5) + ' more' : '') +
-        '\n\nExisting signups will be updated by email/name match. New ones will be created.\n\nProceed?';
+        '\n\nExisting signups matched by email or name will be updated. New ones will be created.\n\nProceed?';
     if (!confirm(msg)) return;
 
     try {

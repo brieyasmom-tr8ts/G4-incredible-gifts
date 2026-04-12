@@ -1108,21 +1108,31 @@
             <!-- Everything below only shows after the gate opens -->
             <div id="budget-content" style="display:none;">
                 <!-- Overview cards -->
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem;">
-                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.25rem 1.5rem;text-align:center;border-top:4px solid var(--sage);">
-                        <div style="font-size:0.72rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:6px;">Revenue</div>
-                        <div style="font-family:Playfair Display,serif;font-size:1.8rem;font-weight:700;color:var(--sage);" id="budget-revenue">$0</div>
-                        <div style="font-size:0.75rem;color:var(--light-text);margin-top:2px;" id="budget-revenue-sub">From attendees</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:1.5rem;">
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--taupe);">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Total Rooms</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--taupe);" id="ov-rooms">0</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;" id="ov-rooms-sub">From calculator</div>
                     </div>
-                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.25rem 1.5rem;text-align:center;border-top:4px solid var(--accent);">
-                        <div style="font-size:0.72rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:6px;">Expenses</div>
-                        <div style="font-family:Playfair Display,serif;font-size:1.8rem;font-weight:700;color:var(--accent);" id="budget-expenses">$0</div>
-                        <div style="font-size:0.75rem;color:var(--light-text);margin-top:2px;" id="budget-expenses-sub">Tracked so far</div>
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--accent);">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Hotel Charges</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--accent);" id="ov-hotel">$0</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">For the rooms</div>
                     </div>
-                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.25rem 1.5rem;text-align:center;border-top:4px solid var(--blush);">
-                        <div style="font-size:0.72rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:6px;">Net Profit</div>
-                        <div style="font-family:Playfair Display,serif;font-size:1.8rem;font-weight:700;color:var(--blush);" id="budget-profit">$0</div>
-                        <div style="font-size:0.75rem;color:var(--light-text);margin-top:2px;" id="budget-profit-sub">Revenue &minus; Expenses</div>
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--sage);">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Taken In</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--sage);" id="ov-revenue">$0</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;" id="ov-revenue-sub">Projected from calculator</div>
+                    </div>
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--blush);">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Budget Spent</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--blush);" id="ov-spent">$0</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Actual across categories</div>
+                    </div>
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--rose);">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">What's Left</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--rose);" id="ov-remaining">$0</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">After hotel + spending</div>
                     </div>
                 </div>
 
@@ -1203,10 +1213,27 @@
                     <div id="calc-total-summary" style="font-size:0.9rem;color:var(--taupe);padding:14px 16px;background:rgba(138,158,122,0.08);border-radius:10px;">Enter costs and room counts above to see the projection.</div>
                 </div>
 
+                <!-- Budget by Category -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.3rem;">
+                        <div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Budget by Category</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Plan the line items, track actual spending, see what's over or under.</div>
+                        </div>
+                    </div>
+                    <div id="budget-cats-body" style="margin-top:1rem;">
+                        <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;">
+                        <button class="btn btn-refresh" onclick="addBudgetCategory()">+ Add category</button>
+                        <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="loadBudgetCategories()">Refresh</button>
+                    </div>
+                </div>
+
                 <!-- Coming Soon placeholder for later phases -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
                     <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;margin-bottom:0.3rem;">Coming next</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Attendee payment tracking &middot; expense log with receipts &middot; email reminders (Resend) &middot; Stripe integration. Ship one phase at a time.</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Attendee payment tracking &middot; expense log with receipts &middot; email reminders (Resend). Ship one phase at a time.</div>
                 </div>
             </div>
         </div>
@@ -1225,6 +1252,22 @@
         <div class="modal-actions">
             <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
             <button class="btn btn-danger" id="modal-confirm">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Budget Receipts modal -->
+<div class="modal-overlay" id="budget-receipts-modal">
+    <div class="modal-box" style="max-width:520px;">
+        <h2 style="font-family:Playfair Display,serif;font-size:1.2rem;margin-bottom:4px;">Receipts for <span id="budget-receipts-cat-name">—</span></h2>
+        <p style="font-size:0.85rem;color:#777;margin-bottom:12px;">Upload proof of spending for this line item. Images and PDFs welcome.</p>
+        <div id="budget-receipts-list" style="max-height:40vh;overflow-y:auto;margin-bottom:12px;">
+            <div style="font-size:0.85rem;color:#777;font-style:italic;padding:8px 0;">Loading...</div>
+        </div>
+        <input type="file" id="budget-receipts-file" accept="image/*,application/pdf" style="display:none;" onchange="budgetReceiptUpload(this)" />
+        <button class="btn btn-refresh" style="width:100%;" onclick="document.getElementById('budget-receipts-file').click()">Upload a receipt</button>
+        <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+            <button class="btn btn-cancel" onclick="closeBudgetReceiptsModal()">Close</button>
         </div>
     </div>
 </div>
@@ -3333,13 +3376,228 @@ function showBudgetContent() {
     document.getElementById('budget-gate').style.display = 'none';
     document.getElementById('budget-content').style.display = 'block';
     initRetreatCalculator();
-    // Phases 3-6 will populate the overview cards with real data. For now
+    loadBudgetCategories();
+    // Phases 3-5 will populate the overview cards with real data. For now
     // they stay at $0 so the shape of the page is in place.
+}
+
+// --- Budget by Category ---
+// Planned vs actual spending per category. Table is editable in-place.
+// On first load, if there are no categories in the DB, seed with Heather's
+// default list (Food, Table gift, Dinner, etc).
+
+async function loadBudgetCategories() {
+    const body = document.getElementById('budget-cats-body');
+    if (!body) return;
+    try {
+        let data = await apiFetch('/api/budget/categories');
+        let cats = (data && Array.isArray(data.categories)) ? data.categories : [];
+        // Seed defaults if empty
+        if (cats.length === 0) {
+            await apiFetch('/api/budget/categories/seed', { method: 'POST', body: {} });
+            data = await apiFetch('/api/budget/categories');
+            cats = (data && Array.isArray(data.categories)) ? data.categories : [];
+        }
+        renderBudgetCategoriesTable(cats);
+    } catch (e) {
+        body.innerHTML = '<div style="color:#a13224;font-size:0.88rem;">Could not load categories: ' + esc(e.message || '') + '</div>';
+    }
+}
+
+function renderBudgetCategoriesTable(cats) {
+    const body = document.getElementById('budget-cats-body');
+    if (!body) return;
+    if (!cats.length) {
+        body.innerHTML = '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No categories yet. Tap "Add category" to start.</div>';
+        return;
+    }
+    // Compute totals
+    let totalPlanned = 0, totalActual = 0;
+    cats.forEach(c => { totalPlanned += Number(c.planned) || 0; totalActual += Number(c.actual) || 0; });
+    const totalDiff = totalPlanned - totalActual;
+    // Push into the overview state and refresh the top cards
+    _budgetOverview.budgetSpent = totalActual;
+    refreshBudgetOverview();
+
+    // Header
+    let html = `
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:center;padding:6px 10px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);">
+            <div>Category</div>
+            <div style="text-align:right;">Planned</div>
+            <div style="text-align:right;">Actual</div>
+            <div style="text-align:right;">Remaining</div>
+            <div></div>
+        </div>
+    `;
+    html += cats.map(c => renderBudgetCategoryRow(c)).join('');
+    // Totals row
+    const diffColor = totalDiff >= 0 ? 'var(--sage)' : '#a13224';
+    html += `
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:center;padding:12px 10px 4px;border-top:2px solid rgba(138,158,122,0.4);margin-top:4px;">
+            <div style="font-family:Playfair Display,serif;font-size:0.9rem;font-weight:700;color:var(--taupe);">Total</div>
+            <div style="text-align:right;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);">${fmtMoney(totalPlanned)}</div>
+            <div style="text-align:right;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--accent);">${fmtMoney(totalActual)}</div>
+            <div style="text-align:right;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:${diffColor};">${fmtMoney(totalDiff)}</div>
+            <div></div>
+        </div>
+    `;
+    body.innerHTML = html;
+}
+
+function renderBudgetCategoryRow(c) {
+    const diff = (Number(c.planned) || 0) - (Number(c.actual) || 0);
+    const diffColor = diff >= 0 ? 'var(--sage)' : '#a13224';
+    const safeName = JSON.stringify(c.name);
+    return `
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto;gap:0.4rem;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
+            <input type="text" value="${esc(c.name)}" data-cat-id="${c.id}" data-field="name" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--dark-text);background:transparent;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" onblur="budgetCatSave(this)" />
+            <input type="number" step="0.01" min="0" value="${Number(c.planned) || 0}" data-cat-id="${c.id}" data-field="planned" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--taupe);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" onblur="budgetCatSave(this)" />
+            <input type="number" step="0.01" min="0" value="${Number(c.actual) || 0}" data-cat-id="${c.id}" data-field="actual" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" onblur="budgetCatSave(this)" />
+            <div style="text-align:right;font-size:0.9rem;font-weight:600;color:${diffColor};padding:6px 8px;">${fmtMoney(diff)}</div>
+            <button type="button" onclick='openBudgetReceiptsModal(${c.id}, ${safeName})' style="background:none;border:none;color:var(--taupe);font-size:1rem;cursor:pointer;padding:4px 8px;" title="Receipts">&#x1f4ce;</button>
+            <button type="button" onclick='deleteBudgetCategory(${c.id}, ${safeName})' style="background:none;border:none;color:var(--light-text);font-size:1.1rem;cursor:pointer;padding:4px 8px;" title="Delete">&times;</button>
+        </div>
+    `;
+}
+
+// --- Budget Receipts modal ---
+let _currentReceiptsCategoryId = null;
+
+function openBudgetReceiptsModal(categoryId, categoryName) {
+    _currentReceiptsCategoryId = categoryId;
+    document.getElementById('budget-receipts-cat-name').textContent = categoryName || 'Category';
+    document.getElementById('budget-receipts-list').innerHTML = '<div style="font-size:0.85rem;color:#777;font-style:italic;padding:8px 0;">Loading...</div>';
+    document.getElementById('budget-receipts-modal').classList.add('show');
+    loadReceiptsForCategory(categoryId);
+}
+
+function closeBudgetReceiptsModal() {
+    _currentReceiptsCategoryId = null;
+    document.getElementById('budget-receipts-modal').classList.remove('show');
+}
+
+async function loadReceiptsForCategory(categoryId) {
+    try {
+        const data = await apiFetch('/api/budget/categories/' + categoryId + '/receipts');
+        const list = data && Array.isArray(data.receipts) ? data.receipts : [];
+        const el = document.getElementById('budget-receipts-list');
+        if (!list.length) {
+            el.innerHTML = '<div style="font-size:0.85rem;color:#777;font-style:italic;padding:12px 0;text-align:center;">No receipts yet. Tap "Upload a receipt" below.</div>';
+            return;
+        }
+        el.innerHTML = list.map(r => `
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;padding:8px 10px;background:rgba(247,240,235,0.5);border-radius:8px;margin-bottom:6px;">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:0.88rem;font-weight:600;color:var(--dark-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r.filename)}</div>
+                    <div style="font-size:0.72rem;color:#999;">${new Date(r.uploaded_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} &middot; ${Math.round((r.size_bytes || 0) / 1024)} KB</div>
+                </div>
+                <a href="${API}/api/budget/receipts/${r.id}/file" target="_blank" class="btn btn-refresh" style="font-size:0.75rem;padding:0.2rem 0.6rem;text-decoration:none;">View</a>
+                <button type="button" class="btn btn-danger-outline" style="font-size:0.75rem;padding:0.2rem 0.6rem;" onclick="deleteBudgetReceipt(${r.id})">&times;</button>
+            </div>
+        `).join('');
+    } catch (e) {
+        document.getElementById('budget-receipts-list').innerHTML = '<div style="color:#a13224;font-size:0.85rem;">Could not load receipts: ' + esc(e.message || '') + '</div>';
+    }
+}
+
+async function budgetReceiptUpload(fileInput) {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file || !_currentReceiptsCategoryId) return;
+    const form = new FormData();
+    form.append('file', file);
+    try {
+        const res = await fetch(API + '/api/budget/categories/' + _currentReceiptsCategoryId + '/receipts', {
+            method: 'POST',
+            body: form
+        });
+        if (!res.ok) {
+            const text = await res.text().catch(() => '');
+            showToast('Upload failed: ' + text);
+            return;
+        }
+        showToast('Receipt uploaded');
+        fileInput.value = '';
+        loadReceiptsForCategory(_currentReceiptsCategoryId);
+    } catch (e) {
+        showToast('Upload failed: ' + (e.message || ''));
+    }
+}
+
+async function deleteBudgetReceipt(receiptId) {
+    if (!confirm('Delete this receipt? This cannot be undone.')) return;
+    try {
+        await apiFetch('/api/budget/receipts/' + receiptId, { method: 'DELETE' });
+        if (_currentReceiptsCategoryId) loadReceiptsForCategory(_currentReceiptsCategoryId);
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+async function budgetCatSave(input) {
+    const id = input.dataset.catId;
+    const field = input.dataset.field;
+    if (!id || !field) return;
+    input.style.background = 'transparent';
+    input.style.borderColor = 'transparent';
+    const value = field === 'name' ? input.value.trim() : (parseFloat(input.value) || 0);
+    try {
+        const body = {};
+        body[field] = value;
+        const res = await apiFetch('/api/budget/categories/' + id, { method: 'PATCH', body });
+        if (res && res.error) { showToast('Save failed: ' + res.error); return; }
+        // Refresh so totals + remaining recompute
+        loadBudgetCategories();
+    } catch (e) {
+        showToast('Save failed: ' + (e.message || ''));
+    }
+}
+
+async function addBudgetCategory() {
+    const name = prompt('New category name:');
+    if (!name || !name.trim()) return;
+    try {
+        const res = await apiFetch('/api/budget/categories', { method: 'POST', body: { name: name.trim(), planned: 0, actual: 0 } });
+        if (res && res.error) { showToast('Error: ' + res.error); return; }
+        loadBudgetCategories();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+async function deleteBudgetCategory(id, name) {
+    if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
+    try {
+        await apiFetch('/api/budget/categories/' + id, { method: 'DELETE' });
+        loadBudgetCategories();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+// --- Budget Overview state ---
+// Shared state for the top overview cards. The calculator and the budget
+// categories each update their own slice, then refreshBudgetOverview()
+// recomputes What's Left and paints the cards.
+const _budgetOverview = {
+    rooms: 0,
+    hotelCost: 0,
+    revenue: 0,
+    budgetSpent: 0
+};
+
+function refreshBudgetOverview() {
+    const roomsEl = document.getElementById('ov-rooms');
+    const hotelEl = document.getElementById('ov-hotel');
+    const revEl = document.getElementById('ov-revenue');
+    const spentEl = document.getElementById('ov-spent');
+    const leftEl = document.getElementById('ov-remaining');
+    if (!roomsEl) return;
+    roomsEl.textContent = _budgetOverview.rooms || 0;
+    hotelEl.textContent = fmtMoney(_budgetOverview.hotelCost || 0);
+    revEl.textContent = fmtMoney(_budgetOverview.revenue || 0);
+    spentEl.textContent = fmtMoney(_budgetOverview.budgetSpent || 0);
+    const remaining = (_budgetOverview.revenue || 0) - (_budgetOverview.hotelCost || 0) - (_budgetOverview.budgetSpent || 0);
+    leftEl.textContent = fmtMoney(remaining);
+    leftEl.style.color = remaining >= 0 ? 'var(--rose)' : '#a13224';
 }
 
 // --- Retreat Cost Calculator (Phase 2) ---
 // All client-side math. Room, food, conference space, and tax per woman,
-// broken down by room occupancy (2/3/4), plus a projected total based on
+// broken down by room occupancy (1/2/3/4), plus a projected total based on
 // expected room counts.
 
 function fmtMoney(n) {
@@ -3389,10 +3647,19 @@ function recalcRetreatCalculator() {
     const perWomanEl = document.getElementById('calc-per-woman');
     const totalEl = document.getElementById('calc-total-summary');
 
+    // Keep the top overview cards in sync with whatever's typed into the
+    // calculator (live projected values). The "What's Left" card combines
+    // these with the budget-categories actual total.
+    _budgetOverview.rooms = n1 + n2 + n3 + n4;
+    _budgetOverview.revenue = totalWomen * charge;
+    // hotelCost is computed below for the projected total path; default 0
+    _budgetOverview.hotelCost = 0;
+
     // No costs entered yet — show a gentle hint
     if (baseNightly <= 0 && foodCost <= 0 && confCost <= 0) {
         perWomanEl.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 14px;background:rgba(247,240,235,0.5);border-radius:10px;">Enter the venue costs above to see the breakdown.</div>';
         totalEl.textContent = 'Enter costs and room counts above to see the projection.';
+        refreshBudgetOverview();
         return;
     }
 
@@ -3436,6 +3703,7 @@ function recalcRetreatCalculator() {
     // Projected total
     if (totalWomen === 0) {
         totalEl.textContent = 'Enter room counts above to see the projected total.';
+        refreshBudgetOverview();
         return;
     }
 
@@ -3445,6 +3713,8 @@ function recalcRetreatCalculator() {
         (n2 * roomCostForOccupancy(2, baseNightly, extraNightly, nights)) +
         (n3 * roomCostForOccupancy(3, baseNightly, extraNightly, nights)) +
         (n4 * roomCostForOccupancy(4, baseNightly, extraNightly, nights));
+    // Push the hotel number into the overview cards
+    _budgetOverview.hotelCost = totalRoomCost;
     const totalFoodCost = totalWomen * foodCost;
     const totalConfCost = confCost;
     const totalSubtotal = totalRoomCost + totalFoodCost + totalConfCost;
@@ -3467,6 +3737,8 @@ function recalcRetreatCalculator() {
             Rooms ${fmtMoney(totalRoomCost)} &middot; Food ${fmtMoney(totalFoodCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(totalTax)}
         </div>
     `;
+
+    refreshBudgetOverview();
 }
 
 // --- Scavenger Hunt ---

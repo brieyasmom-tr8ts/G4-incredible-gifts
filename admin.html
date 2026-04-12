@@ -850,7 +850,7 @@
                     <button class="btn btn-danger-outline" onclick="clearFunFacts()" style="margin-right:0.5rem;">Clear All Facts</button>
                     <button class="btn" style="background:var(--blush);color:white;" onclick="openTestLink('whoami')">📋 Test Link</button>
                     <a href="whoami-slideshow.html" target="_blank" class="btn" style="background:var(--sage);color:white;text-decoration:none;display:inline-flex;align-items:center;">📺 Slideshow</a>
-                    <div id="funfacts-list" style="margin-top:1rem;"></div>
+                    <div id="funfacts-list" style="margin-top:1rem;max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
                 </div>
                 <!-- Packing Points Toggle -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
@@ -876,7 +876,7 @@
                             <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
                         </label>
                     </div>
-                    <div id="packing-leaderboard" style="margin-top:1rem;"></div>
+                    <div id="packing-leaderboard" style="margin-top:1rem;max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
                 </div>
             </div>
             <!-- Would You Rather -->
@@ -926,7 +926,7 @@
                     </label>
                 </div>
                 <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.5rem;">Pairs: <strong id="ss-count">0</strong> | Notes written: <strong id="ss-notes-count">0</strong></div>
-                <div id="ss-pairs-list" style="margin-top:0.5rem;"></div>
+                <div id="ss-pairs-list" style="margin-top:0.5rem;max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
             </div>
             <!-- Scavenger Hunt -->
             <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">

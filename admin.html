@@ -1379,6 +1379,27 @@
                     </div>
                 </div>
 
+                <!-- Room Assignments -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.3rem;">
+                        <div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Room Assignments</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Auto-groups women by roommate preferences. Review and adjust, then export the roster for the hotel.</div>
+                        </div>
+                        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-refresh" onclick="autoAssignRooms()" style="white-space:nowrap;">Auto-assign</button>
+                            <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="downloadRoomRoster()">&#x2B07; Roster</button>
+                        </div>
+                    </div>
+
+                    <!-- Hotel bill summary -->
+                    <div id="room-hotel-summary" style="margin-top:1rem;padding:10px 14px;background:rgba(138,158,122,0.06);border:1px solid rgba(138,158,122,0.2);border-radius:10px;font-size:0.85rem;color:var(--taupe);">
+                        Run "Auto-assign" after importing signups to see the room breakdown and hotel bill.
+                    </div>
+
+                    <div id="room-board" style="margin-top:1rem;"></div>
+                </div>
+
                 <!-- Expense Log -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
                     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.3rem;">
@@ -4793,6 +4814,194 @@ function downloadCsvFile(filename, headers, rows) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+// --- Room Assignments ---
+// Auto-groups signups by roommate preference, assigns room numbers,
+// calculates hotel bill from actual assignments.
+
+function autoAssignRooms() {
+    const data = window._lastSignupsData;
+    if (!data || !data.signups || !data.signups.length) {
+        showToast('Import signups first.'); return;
+    }
+    const signups = data.signups.filter(s => s.status !== 'cancelled');
+    if (!signups.length) { showToast('No active signups.'); return; }
+
+    // Build a name lookup (lowercase → signup object)
+    const byName = {};
+    signups.forEach(s => {
+        byName[s.name.toLowerCase().trim()] = s;
+        // Also index by first name only for fuzzy matching
+        const first = s.name.split(' ')[0].toLowerCase().trim();
+        if (!byName[first]) byName[first] = s;
+    });
+
+    // Parse roommate preferences and build edges
+    const edges = {}; // signup.id → [matched signup ids]
+    signups.forEach(s => {
+        edges[s.id] = [];
+        const pref = (s.room_label || '').trim();
+        if (!pref) return;
+        // Split on common delimiters: comma, "and", "&", newline
+        const names = pref.split(/[,&\n]| and /i).map(n => n.trim().toLowerCase()).filter(Boolean);
+        names.forEach(name => {
+            // Try exact match, then first+last, then first name only
+            const match = byName[name] || byName[name.split(' ')[0]];
+            if (match && match.id !== s.id) {
+                edges[s.id].push(match.id);
+            }
+        });
+    });
+
+    // Build clusters using union-find
+    const parent = {};
+    signups.forEach(s => { parent[s.id] = s.id; });
+    function find(x) { return parent[x] === x ? x : (parent[x] = find(parent[x])); }
+    function union(a, b) { parent[find(a)] = find(b); }
+
+    // Union women who want each other
+    signups.forEach(s => {
+        (edges[s.id] || []).forEach(targetId => {
+            union(s.id, targetId);
+        });
+    });
+
+    // Group by cluster
+    const clusters = {};
+    signups.forEach(s => {
+        const root = find(s.id);
+        if (!clusters[root]) clusters[root] = [];
+        clusters[root].push(s);
+    });
+
+    // Assign room numbers and determine room sizes
+    const rooms = [];
+    let roomNum = 1;
+    Object.values(clusters).forEach(members => {
+        // Room size = max of what anyone in the group requested, or group size
+        const maxRequested = Math.max(...members.map(m => m.room_occupancy || 2));
+        const roomSize = Math.max(members.length, maxRequested);
+        const warnings = [];
+        if (members.length > 4) warnings.push('Too many for one room — split needed');
+        if (members.length < maxRequested) warnings.push('Room has ' + (maxRequested - members.length) + ' open spot(s)');
+        rooms.push({
+            number: roomNum++,
+            size: Math.min(roomSize, 4),
+            members,
+            warnings
+        });
+    });
+
+    // Save room labels back to signups
+    const updates = [];
+    rooms.forEach(room => {
+        room.members.forEach(s => {
+            const label = 'Room ' + room.number;
+            if (s.room_label !== label) {
+                updates.push(apiFetch('/api/budget/signups/' + s.id, {
+                    method: 'PATCH',
+                    body: { room_label: label, room_occupancy: room.size }
+                }));
+            }
+        });
+    });
+
+    Promise.all(updates).then(() => {
+        renderRoomBoard(rooms);
+        loadSignups(); // refresh the list
+        showToast('Assigned ' + signups.length + ' women to ' + rooms.length + ' room(s). Review below.');
+    }).catch(e => showToast('Error saving: ' + (e.message || '')));
+}
+
+function renderRoomBoard(rooms) {
+    const board = document.getElementById('room-board');
+    const summary = document.getElementById('room-hotel-summary');
+    if (!board) return;
+
+    if (!rooms || !rooms.length) {
+        board.innerHTML = '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No rooms assigned yet.</div>';
+        return;
+    }
+
+    // Hotel bill calculation using calculator values
+    const baseNightly = parseFloat((document.getElementById('calc-room-base') || {}).value) || 0;
+    const extraNightly = parseFloat((document.getElementById('calc-room-extra') || {}).value) || 0;
+    const nights = parseInt((document.getElementById('calc-nights') || {}).value, 10) || 2;
+
+    let totalHotelBill = 0;
+    const roomCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
+
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;">';
+    rooms.forEach(room => {
+        const size = Math.min(room.size, 4);
+        roomCounts[size] = (roomCounts[size] || 0) + 1;
+        const extras = Math.max(0, size - 2);
+        const nightlyRate = baseNightly + (extras * extraNightly);
+        const roomCost = nightlyRate * nights;
+        totalHotelBill += roomCost;
+
+        const nameList = room.members.map(m => esc(m.name)).join('<br>');
+        const warningHtml = room.warnings.length
+            ? '<div style="font-size:0.7rem;color:#a13224;margin-top:4px;">' + room.warnings.map(w => '⚠ ' + w).join('<br>') + '</div>'
+            : '';
+
+        html += `
+        <div style="padding:12px 14px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);">Room ${room.number}</div>
+                <div style="font-size:0.72rem;color:var(--light-text);">${size}-person &middot; ${fmtMoney(roomCost)}</div>
+            </div>
+            <div style="font-size:0.88rem;color:var(--dark-text);line-height:1.6;">${nameList}</div>
+            ${room.members.length < size ? '<div style="font-size:0.78rem;color:var(--sage);font-style:italic;margin-top:4px;">' + (size - room.members.length) + ' open spot(s)</div>' : ''}
+            ${warningHtml}
+        </div>`;
+    });
+    html += '</div>';
+    board.innerHTML = html;
+
+    // Summary
+    if (summary) {
+        const roomBreakdown = [1,2,3,4].filter(s => roomCounts[s] > 0).map(s => roomCounts[s] + '× ' + s + '-person').join(', ');
+        summary.innerHTML = `
+            <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;">
+                <div><strong>${rooms.length}</strong> rooms total</div>
+                <div>${roomBreakdown}</div>
+                <div>Hotel bill: <strong style="color:var(--accent);">${fmtMoney(totalHotelBill)}</strong></div>
+                <div style="font-size:0.78rem;color:var(--light-text);">${nights} night(s) @ ${fmtMoney(baseNightly)}/night base</div>
+            </div>
+        `;
+        // Update overview hotel cost with actual room assignments
+        _budgetOverview.hotelCost = totalHotelBill;
+        _budgetOverview.rooms = rooms.length;
+        refreshBudgetOverview();
+    }
+}
+
+function downloadRoomRoster() {
+    const data = window._lastSignupsData;
+    if (!data || !data.signups) { showToast('No signups.'); return; }
+    const signups = data.signups.filter(s => s.status !== 'cancelled' && s.room_label);
+    if (!signups.length) { showToast('Run Auto-assign first.'); return; }
+
+    // Group by room
+    const rooms = {};
+    signups.forEach(s => {
+        const label = s.room_label || 'Unassigned';
+        if (!rooms[label]) rooms[label] = [];
+        rooms[label].push(s);
+    });
+
+    const headers = ['Room', 'Room Size', 'Name', 'Email', 'Phone', 'Roommate Preference'];
+    const rows = [];
+    Object.keys(rooms).sort().forEach(label => {
+        const members = rooms[label];
+        const size = Math.max(...members.map(m => m.room_occupancy || 2), members.length);
+        members.forEach(m => {
+            rows.push([label, size + '-person', m.name, m.email || '', m.phone || '', '']);
+        });
+    });
+    downloadCsvFile('room-roster.csv', headers, rows);
 }
 
 // --- Expense Log ---

@@ -671,6 +671,14 @@
                 <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:1rem;">Engagement Snapshot</div>
                 <div id="stats-engagement" style="display:flex;flex-direction:column;gap:0.75rem;"></div>
             </div>
+            <!-- Journal usage (privacy-safe metadata only) -->
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1rem;">
+                <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Journal Usage</div>
+                <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:1rem;">Metadata only — we never log or store what anyone writes. This is just "how many times was the save button tapped."</div>
+                <div id="journal-usage-body">
+                    <div style="color:var(--light-text);font-size:0.88rem;">Loading...</div>
+                </div>
+            </div>
         </div>
 
         <!-- Users -->
@@ -1276,6 +1284,7 @@ async function refreshAll() {
         loadHuntStats(),
         loadMemeRounds(),
         loadStats(),
+        loadJournalUsage(),
         loadQuizScores()
     ]);
 }
@@ -1399,6 +1408,53 @@ async function loadStats() {
     } catch(e) {
         console.error('Stats:', e);
         document.getElementById('stats-cards').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--light-text);padding:2rem;font-style:italic;">Could not load stats: ' + esc(e.message) + '</div>';
+    }
+}
+
+// --- Journal usage (privacy-safe metadata roll-up) ---
+async function loadJournalUsage() {
+    const body = document.getElementById('journal-usage-body');
+    if (!body) return;
+    try {
+        const data = await apiFetch('/api/journal/activity/stats');
+        if (!data || data.error) {
+            body.innerHTML = '<div style="color:var(--light-text);font-size:0.88rem;">Could not load journal usage.</div>';
+            return;
+        }
+        const total = data.total || 0;
+        const uniqueUsers = data.uniqueUsers || 0;
+        const avgPerUser = data.avgPerUser || 0;
+        const topGifts = Array.isArray(data.topGifts) ? data.topGifts : [];
+        const firstDate = data.first ? new Date(data.first).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+        const latestDate = data.latest ? new Date(data.latest).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+
+        if (total === 0) {
+            body.innerHTML = '<div style="padding:14px;background:rgba(201,144,138,0.06);border:1px dashed rgba(201,144,138,0.2);border-radius:10px;text-align:center;color:var(--light-text);font-style:italic;">No journal saves yet. Either women haven\'t tapped Save, or this deploy was before the tracking was wired up.</div>';
+            return;
+        }
+
+        let html = '';
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.75rem;margin-bottom:1rem;">';
+        html += `<div style="padding:12px 14px;background:rgba(138,158,122,0.08);border-radius:10px;text-align:center;"><div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--sage);">${total}</div><div style="font-size:0.75rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Total saves</div></div>`;
+        html += `<div style="padding:12px 14px;background:rgba(201,144,138,0.08);border-radius:10px;text-align:center;"><div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--accent);">${uniqueUsers}</div><div style="font-size:0.75rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Unique women</div></div>`;
+        html += `<div style="padding:12px 14px;background:rgba(184,122,110,0.08);border-radius:10px;text-align:center;"><div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:#b87a6e;">${avgPerUser}</div><div style="font-size:0.75rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Avg per user</div></div>`;
+        html += '</div>';
+
+        html += `<div style="font-size:0.82rem;color:var(--taupe);margin-bottom:0.75rem;">First save: <strong>${firstDate}</strong> &middot; Latest save: <strong>${latestDate}</strong></div>`;
+
+        if (topGifts.length) {
+            html += '<div style="font-family:Playfair Display,serif;font-size:0.82rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Tagged gifts</div>';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+            html += topGifts.map(g => `<span style="display:inline-block;padding:4px 10px;background:rgba(138,158,122,0.1);color:var(--sage);border-radius:12px;font-size:0.78rem;">${esc(g.gift_tag)} &middot; ${g.c}</span>`).join('');
+            html += '</div>';
+            html += '<div style="font-size:0.78rem;color:var(--light-text);margin-top:8px;font-style:italic;">Untagged saves = free-form entries. Tagged saves = devotion reflections.</div>';
+        } else {
+            html += '<div style="font-size:0.82rem;color:var(--light-text);font-style:italic;">No tagged gifts yet — all saves have been free-form.</div>';
+        }
+
+        body.innerHTML = html;
+    } catch (e) {
+        body.innerHTML = '<div style="color:var(--accent);font-size:0.88rem;">Could not load: ' + esc(e.message || '') + '</div>';
     }
 }
 
@@ -3091,7 +3147,8 @@ const FEATURE_ITEMS = [
     { label: 'Uplift',              icon: '&#x1f64f;',           desc: 'Prayer wall & encouragement',      nav_key: 'nav_uplift',      home_key: 'home_uplift' },
     { label: 'Polls',               icon: '&#x1f4ac;',           desc: 'Live polls & responses',           nav_key: 'nav_polls',       home_key: 'home_polls' },
     { label: 'Journey',             icon: '&#x1f381;',           desc: 'Gift reflections',                 nav_key: 'nav_journey',     home_key: null },
-    { label: 'Journal',             icon: '&#x2728;',            desc: 'Personal journal',                 nav_key: 'nav_journal',     home_key: 'home_journal' },
+    // Journal removed from Visibility — it's no longer a top-level tab. The
+    // "My Reflections" archive is reached from inside the devotion hub.
     { label: 'Gratitude Wall',      icon: '&#x1f49b;',           desc: 'Word cloud gratitude wall',        nav_key: 'nav_gratitude',   home_key: 'home_gratitude' },
     { label: 'Photo Booth',         icon: '&#x1f5bc;&#xfe0f;',   desc: 'Photo booth with fun frames',      nav_key: 'nav_photobooth',  home_key: 'home_photobooth' },
     { label: 'Send Love (Marnie)',  icon: '&#x1f48c;',           desc: 'Messages & videos for Marnie',     nav_key: 'nav_sendlove',    home_key: 'home_sendlove' },

@@ -2301,6 +2301,50 @@ export default {
         return json({ success: true, seeded: defaults.length }, corsHeaders);
       }
 
+      // GET /api/budget/calculator/state - pull all retreat_calc_* settings
+      // back as a single object so the calculator can rehydrate its inputs
+      // on page load. Storing in game_settings means these values persist
+      // across devices — if Heather types numbers on her phone, her laptop
+      // sees the same state.
+      if (path === '/api/budget/calculator/state' && request.method === 'GET') {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT DEFAULT ''
+          )`).run();
+        } catch (e) { /* exists */ }
+        const { results } = await env.DB.prepare(
+          "SELECT key, value FROM game_settings WHERE key LIKE 'retreat_calc_%'"
+        ).all();
+        const state = {};
+        (results || []).forEach(r => { state[r.key] = r.value; });
+        return json({ state }, corsHeaders);
+      }
+
+      // POST /api/budget/calculator/state - upsert a batch of calculator
+      // field values. Accepts any object whose keys start with
+      // retreat_calc_ (anything else is silently ignored for safety).
+      if (path === '/api/budget/calculator/state' && request.method === 'POST') {
+        const body = await request.json();
+        if (!body || typeof body !== 'object') {
+          return json({ error: 'Expected object body' }, corsHeaders, 400);
+        }
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT DEFAULT ''
+          )`).run();
+        } catch (e) { /* exists */ }
+        for (const key of Object.keys(body)) {
+          if (!key.startsWith('retreat_calc_')) continue;
+          const value = body[key] == null ? '' : String(body[key]);
+          await env.DB.prepare(
+            "INSERT INTO game_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+          ).bind(key, value).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
       // GET /api/budget/auth/status - does a password exist yet?
       if (path === '/api/budget/auth/status' && request.method === 'GET') {
         try {

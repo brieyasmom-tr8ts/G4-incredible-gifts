@@ -1280,26 +1280,26 @@
                             <div style="font-family:Playfair Display,serif;font-size:0.9rem;font-weight:700;color:var(--taupe);">Ticket Prices</div>
                             <div style="font-size:0.72rem;color:var(--light-text);">Pick a tier when adding a signup — the price pre-fills from here.</div>
                         </div>
-                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.6rem;">
+                        <div style="display:grid;grid-template-columns:repeat(5,minmax(80px,1fr));gap:0.5rem;">
                             <div>
                                 <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">1 per room</label>
-                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-1" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-1" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;width:100%;padding:5px 6px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">2 per room</label>
-                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-2" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-2" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;width:100%;padding:5px 6px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">3 per room</label>
-                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-3" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-3" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;width:100%;padding:5px 6px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">4 per room</label>
-                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-4" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-4" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;width:100%;padding:5px 6px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">No hotel</label>
-                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-nohotel" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-nohotel" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;width:100%;padding:5px 6px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                             </div>
                         </div>
                     </div>
@@ -4234,9 +4234,10 @@ function recalcRetreatCalculator() {
         (n4 * roomCostForOccupancy(4, baseNightly, extraNightly, nights));
     _budgetOverview.hotelCost = totalRoomCost;
     const totalConfCost = confCost;
-    const totalSubtotal = totalRoomCost + totalConfCost;
-    const totalTax = totalSubtotal * taxRate;
-    const totalCost = totalSubtotal + totalTax;
+    const budgetSpent = _budgetOverview.budgetSpent || 0;
+    const venueCosts = totalRoomCost + totalConfCost;
+    const venueTax = venueCosts * taxRate;
+    const totalCost = venueCosts + venueTax + budgetSpent;
     const totalRevenue = tierRevenue;
     const totalProfit = totalRevenue - totalCost;
     const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
@@ -4251,7 +4252,7 @@ function recalcRetreatCalculator() {
             <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Margin</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:${profitColor};">${totalRevenue > 0 ? margin.toFixed(1) + '%' : '—'}</div></div>
         </div>
         <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(138,158,122,0.25);font-size:0.78rem;color:var(--light-text);">
-            Rooms ${fmtMoney(totalRoomCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(totalTax)}
+            Rooms ${fmtMoney(totalRoomCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(venueTax)} &middot; Budget items ${fmtMoney(budgetSpent)}
         </div>
     `;
 

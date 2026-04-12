@@ -4721,8 +4721,8 @@ async function handleCsvImport(fileInput) {
         ticket_price: /^(form.?total|ticket|price|cost|fee|registration.?fee|total.?due|total|amount)$/i,
         payment_method: /^(payment.?method|method|pay.?type|payment.?type)$/i,
         payment_status: /^(payment.?status|status)$/i,
-        room_occupancy: /^(how.?many.?people|people.?per.?room|room.?type|room.?size|room.?occupancy)$/i,
-        room_label: /^(roommate|roommate.?pref|room.?assignment|room.?number|roommate.?preference)$/i,
+        room_occupancy: /^(how.?many.?people.*|.*people.?per.?room.*|room.?type|room.?size|room.?occupancy|.*person.?room.*)$/i,
+        room_label: /^(roommate.*|roommate.?pref.*|room.?assignment|room.?number)$/i,
         notes: /^(notes|comments|special.?needs|dietary|remarks)$/i
     };
     // Also check for first_name + last_name combo

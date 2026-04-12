@@ -629,6 +629,7 @@
             <button class="nav-tab" data-section="quiz"><span class="nav-icon">🧠</span> Quiz</button>
             <button class="nav-tab" data-section="meme"><span class="nav-icon">😂</span> Meme</button>
             <button class="nav-tab" data-section="budget"><span class="nav-icon">💰</span> Budget &amp; Payments</button>
+            <button class="nav-tab" data-section="reminders"><span class="nav-icon">📝</span> Reminders</button>
         </nav>
         <div class="sidebar-footer">
             <button class="btn btn-danger" style="width:100%;font-size:0.82rem;padding:0.5rem;" onclick="confirmResetAll()">Delete All Test Data</button>
@@ -1468,6 +1469,30 @@
                 </div>
             </div>
         </div>
+
+        <!-- Reminders -->
+        <div class="section" id="section-reminders">
+            <div style="max-width:700px;margin:0 auto;">
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Next Year Reminders</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;line-height:1.5;">Things to remember for the next retreat. Add anything here during the year — you'll thank yourself later.</div>
+
+                    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                        <input type="text" id="reminder-new-text" placeholder="Add a reminder..." style="flex:1;padding:10px 14px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" onkeydown="if(event.key==='Enter')addReminder()" />
+                        <button type="button" class="btn btn-refresh" onclick="addReminder()">Add</button>
+                    </div>
+
+                    <div id="reminders-list" style="min-height:40px;">
+                        <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
+                    </div>
+
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;border-top:1px solid rgba(200,185,176,0.3);padding-top:1rem;">
+                        <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="downloadRemindersCsv()">&#x2B07; Export</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
     </div>
 </div>
@@ -1607,7 +1632,8 @@ const SECTION_TITLES = {
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
     topics: 'Theme Suggestions', stories: 'Stories',
     polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme',
-    budget: 'Budget & Payments'
+    budget: 'Budget & Payments',
+    reminders: 'Next Year Reminders'
 };
 
 function toggleSidebar() {
@@ -1634,6 +1660,9 @@ function activateAdminSection(sectionName, opts) {
     // Lazy-init the budget section (password gate + calculator) when shown
     if (sectionName === 'budget' && typeof initBudgetSection === 'function') {
         initBudgetSection();
+    }
+    if (sectionName === 'reminders' && typeof loadReminders === 'function') {
+        loadReminders();
     }
     return true;
 }
@@ -4986,6 +5015,89 @@ async function clearAllBudgetData() {
     } catch (e) {
         showToast('Failed: ' + (e.message || ''));
     }
+}
+
+// --- Reminders ---
+async function loadReminders() {
+    const list = document.getElementById('reminders-list');
+    if (!list) return;
+    try {
+        const data = await apiFetch('/api/reminders');
+        const items = (data && Array.isArray(data.reminders)) ? data.reminders : [];
+        renderReminders(items);
+    } catch (e) {
+        list.innerHTML = '<div style="color:#a13224;font-size:0.88rem;">Could not load reminders: ' + esc(e.message || '') + '</div>';
+    }
+}
+
+function renderReminders(items) {
+    const list = document.getElementById('reminders-list');
+    if (!list) return;
+    if (!items.length) {
+        list.innerHTML = '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No reminders yet. Start adding things you don\'t want to forget!</div>';
+        return;
+    }
+    list.innerHTML = items.map(r => {
+        const checked = r.done ? 'checked' : '';
+        const strikeStyle = r.done ? 'text-decoration:line-through;color:var(--light-text);' : '';
+        return `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 4px;border-bottom:1px solid rgba(200,185,176,0.18);">
+            <input type="checkbox" ${checked} onchange="toggleReminder(${r.id}, this.checked)" style="margin-top:4px;width:18px;height:18px;accent-color:var(--sage);cursor:pointer;flex-shrink:0;" />
+            <div style="flex:1;min-width:0;${strikeStyle}font-size:0.92rem;line-height:1.5;padding-top:1px;" id="reminder-text-${r.id}">${esc(r.text)}</div>
+            <button type="button" onclick="editReminder(${r.id})" style="background:none;border:none;color:var(--taupe);font-size:0.82rem;cursor:pointer;padding:2px 6px;flex-shrink:0;" title="Edit">&#x270e;</button>
+            <button type="button" onclick="deleteReminder(${r.id})" style="background:none;border:none;color:var(--light-text);font-size:1.05rem;cursor:pointer;padding:2px 6px;flex-shrink:0;" title="Delete">&times;</button>
+        </div>`;
+    }).join('');
+}
+
+async function addReminder() {
+    const input = document.getElementById('reminder-new-text');
+    const text = (input.value || '').trim();
+    if (!text) return;
+    try {
+        await apiFetch('/api/reminders', { method: 'POST', body: { text } });
+        input.value = '';
+        loadReminders();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+async function toggleReminder(id, done) {
+    try {
+        await apiFetch('/api/reminders/' + id, { method: 'PATCH', body: { done } });
+        loadReminders();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+async function editReminder(id) {
+    const el = document.getElementById('reminder-text-' + id);
+    if (!el) return;
+    const current = el.textContent;
+    const newText = prompt('Edit reminder:', current);
+    if (newText === null || newText.trim() === current) return;
+    try {
+        await apiFetch('/api/reminders/' + id, { method: 'PATCH', body: { text: newText.trim() } });
+        loadReminders();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+async function deleteReminder(id) {
+    if (!confirm('Delete this reminder?')) return;
+    try {
+        await apiFetch('/api/reminders/' + id, { method: 'DELETE' });
+        loadReminders();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+function downloadRemindersCsv() {
+    const items = document.querySelectorAll('#reminders-list [id^="reminder-text-"]');
+    if (!items.length) { showToast('No reminders to export.'); return; }
+    const headers = ['Status', 'Reminder'];
+    const rows = [];
+    items.forEach(el => {
+        const done = el.parentElement.querySelector('input[type="checkbox"]').checked;
+        rows.push([done ? 'Done' : 'Open', el.textContent]);
+    });
+    downloadCsvFile('retreat-reminders.csv', headers, rows);
 }
 
 // --- Registration Link ---

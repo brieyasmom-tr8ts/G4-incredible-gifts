@@ -2800,6 +2800,58 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // ----- Reminders -----
+      async function ensureRemindersTable() {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS retreat_reminders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            text TEXT NOT NULL,
+            done INTEGER DEFAULT 0,
+            sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch (e) { /* exists */ }
+      }
+
+      if (path === '/api/reminders' && request.method === 'GET') {
+        await ensureRemindersTable();
+        const { results } = await env.DB.prepare(
+          'SELECT id, text, done, sort_order, created_at FROM retreat_reminders ORDER BY done ASC, sort_order ASC, id ASC'
+        ).all();
+        return json({ reminders: results || [] }, corsHeaders);
+      }
+
+      if (path === '/api/reminders' && request.method === 'POST') {
+        const body = await request.json();
+        const text = (body && body.text || '').toString().trim();
+        if (!text) return json({ error: 'Text is required' }, corsHeaders, 400);
+        await ensureRemindersTable();
+        await env.DB.prepare('INSERT INTO retreat_reminders (text) VALUES (?)').bind(text).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      const reminderMatch = path.match(/^\/api\/reminders\/(\d+)$/);
+      if (reminderMatch && request.method === 'PATCH') {
+        const id = parseInt(reminderMatch[1], 10);
+        const body = await request.json();
+        await ensureRemindersTable();
+        const fields = [];
+        const values = [];
+        if (body.text !== undefined) { fields.push('text = ?'); values.push(String(body.text).trim()); }
+        if (body.done !== undefined) { fields.push('done = ?'); values.push(body.done ? 1 : 0); }
+        if (!fields.length) return json({ error: 'No fields' }, corsHeaders, 400);
+        values.push(id);
+        await env.DB.prepare(`UPDATE retreat_reminders SET ${fields.join(', ')} WHERE id = ?`).bind(...values).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      if (reminderMatch && request.method === 'DELETE') {
+        const id = parseInt(reminderMatch[1], 10);
+        await ensureRemindersTable();
+        await env.DB.prepare('DELETE FROM retreat_reminders WHERE id = ?').bind(id).run();
+        return json({ success: true }, corsHeaders);
+      }
+
       // POST /api/budget/clear-all - wipe all budget data for starting fresh
       if (path === '/api/budget/clear-all' && request.method === 'POST') {
         const body = await request.json();

@@ -3582,7 +3582,7 @@
                 </div>
 
                 <!-- Regular home (schedule, countdown, etc.) -->
-                <div id="regular-home">
+                <div id="regular-home" style="display:none;">
                     <!-- Profile Nudge -->
                     <div id="profile-nudge" style="display:none;margin:8px 16px 10px;padding:18px 20px;background:linear-gradient(135deg,rgba(201,144,138,0.1),rgba(212,165,154,0.08));border-radius:16px;border:1px solid rgba(201,144,138,0.15);">
                         <div style="display:flex;align-items:center;gap:14px;">
@@ -10406,6 +10406,11 @@
                         }
                     }, 2500);
                 }
+            } else {
+                // Pre-retreat path: show the regular home (kept hidden by
+                // default in HTML so there's no pre-to-post flash on refresh).
+                document.getElementById('regular-home').style.display = 'block';
+                document.getElementById('post-retreat-home').style.display = 'none';
             }
         }
 

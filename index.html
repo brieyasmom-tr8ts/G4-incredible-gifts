@@ -6691,6 +6691,12 @@
                     }
                     if (action === 'survey') {
                         switchToTab('home');
+                        // If she's already submitted, show a warm thank-you
+                        // instead of scrolling to the hidden form.
+                        if (localStorage.getItem('g4feedback_sent')) {
+                            setTimeout(() => showToast('Thank you for sharing your feedback \ud83d\udc9b'), 200);
+                            return;
+                        }
                         setTimeout(() => {
                             const feedbackEl = document.getElementById('feedback-form-wrap');
                             if (feedbackEl) feedbackEl.scrollIntoView({ behavior: 'smooth', block: 'start' });

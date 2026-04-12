@@ -9569,6 +9569,39 @@
 
                 // State 1: before the weekly rotation begins (round 0)
                 if (data.round === 0) {
+                    // Bridge: if the retreat-time game is active right now,
+                    // show that state on the card instead of a pure preview.
+                    // On Wednesday April 15 the round flips to 1 and this
+                    // branch stops running.
+                    if (data.retreat_active && data.retreat_assignment) {
+                        card.style.cursor = 'pointer';
+                        card.onclick = openSSHistoryScrapbook;
+                        arrowEl.style.visibility = 'visible';
+                        const retreatSeenKey = 'g4_ss_retreat_seen_' + currentUser.id;
+                        const retreatAlreadySeen = !!localStorage.getItem(retreatSeenKey);
+                        if (data.retreat_received_note && !retreatAlreadySeen) {
+                            titleEl.textContent = 'You have a new note';
+                            subEl.textContent = 'Tap to read what your secret sister wrote.';
+                            iconEl.textContent = '\ud83c\udf81';
+                            localStorage.setItem(retreatSeenKey, '1');
+                            setTimeout(() => openWeeklySSReceivedModal(data.retreat_received_note), 1200);
+                        } else if (!data.retreat_my_note) {
+                            titleEl.textContent = 'Write to ' + (data.retreat_assignment.receiver_name || 'a sister');
+                            subEl.textContent = 'Tap to write her a kind word. She\u2019ll never know it\u2019s from you.';
+                            iconEl.textContent = '\ud83d\udc8c';
+                        } else if (!data.retreat_received_note) {
+                            titleEl.textContent = 'Note sent \ud83d\udc9b';
+                            subEl.textContent = 'New rotation auto-starts Wednesday, April 15.';
+                            iconEl.textContent = '\ud83d\udc9b';
+                        } else {
+                            titleEl.textContent = 'Your Secret Sisters';
+                            subEl.textContent = 'New rotation auto-starts Wednesday, April 15.';
+                            iconEl.textContent = '\ud83d\udc8c';
+                        }
+                        card.style.display = 'block';
+                        return;
+                    }
+                    // No retreat-time game, just the preview
                     const startDate = data.starts_at ? new Date(data.starts_at) : null;
                     const dateStr = startDate ? startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'soon';
                     titleEl.textContent = 'Starts ' + (startDate ? startDate.toLocaleDateString('en-US', { weekday: 'long' }) : 'soon');
@@ -9640,12 +9673,100 @@
             };
         }
 
+        // Render the "This Week" section when the retreat-time game is live
+        // (round 0 + secret_sister = '1' in admin). Same visual shape as the
+        // weekly version but uses the old retreat-time fields and writes to
+        // the old /api/games/secretsister/note endpoint.
+        function renderSSRetreatThisWeek(data) {
+            const body = document.getElementById('ss-scrapbook-thisweek-body');
+            if (!body) return;
+            const receiverName = esc((data.retreat_assignment && data.retreat_assignment.receiver_name) || 'a sister');
+            const startDate = data.starts_at ? new Date(data.starts_at) : null;
+            const dateStr = startDate ? startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'Wednesday April 15';
+            let html = '';
+
+            if (data.retreat_received_note) {
+                html += '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">From Your Secret Sister</div>';
+                html += '<div style="font-family:Cormorant Garamond,serif;font-size:1.0rem;color:var(--dark-text);line-height:1.55;padding:10px 14px;background:white;border:1px solid rgba(201,144,138,0.18);border-radius:10px;font-style:italic;margin-bottom:12px;">' + esc(data.retreat_received_note).replace(/\n/g, '<br>') + '</div>';
+            }
+
+            if (!data.retreat_my_note) {
+                html += '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">Write to</div>';
+                html += '<div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;color:var(--accent);margin-bottom:8px;">' + receiverName + '</div>';
+                html += '<textarea id="ss-thisweek-textarea" placeholder="A kind word, a prayer, something you want her to know..." maxlength="300" style="width:100%;min-height:80px;padding:10px 12px;border:1.5px solid rgba(139,134,128,0.25);border-radius:10px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);resize:vertical;outline:none;background:white;box-sizing:border-box;"></textarea>';
+                html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:8px;">';
+                html += '<div style="font-size:0.75rem;color:var(--light-text);"><span id="ss-thisweek-char">0</span>/300</div>';
+                html += '<button id="ss-thisweek-send-btn" type="button" data-retreat="1" style="padding:9px 18px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Send My Note \ud83d\udc9b</button>';
+                html += '</div>';
+            } else {
+                html += '<div style="font-family:Cormorant Garamond,serif;font-size:0.82rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.08em;font-weight:600;margin-bottom:4px;">You wrote to ' + receiverName + '</div>';
+                html += '<div style="font-family:Cormorant Garamond,serif;font-size:0.98rem;color:var(--dark-text);line-height:1.55;padding:10px 14px;background:white;border:1px solid rgba(201,144,138,0.18);border-radius:10px;font-style:italic;">' + esc(data.retreat_my_note).replace(/\n/g, '<br>') + '</div>';
+                if (!data.retreat_received_note) {
+                    html += '<div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);font-style:italic;text-align:center;margin-top:10px;">Watch for hers once the reveal opens \ud83d\udc9b</div>';
+                }
+            }
+
+            // Weekly rotation announcement footer
+            html += '<div style="margin-top:12px;padding-top:10px;border-top:1px dashed rgba(201,144,138,0.18);font-family:Cormorant Garamond,serif;font-size:0.8rem;color:var(--light-text);text-align:center;font-style:italic;">New weekly rotation auto-starts <strong style="color:var(--accent);font-style:normal;">' + dateStr + '</strong></div>';
+
+            body.innerHTML = html;
+
+            // Wire the retreat-time write flow
+            const textarea = document.getElementById('ss-thisweek-textarea');
+            const sendBtn = document.getElementById('ss-thisweek-send-btn');
+            const charEl = document.getElementById('ss-thisweek-char');
+            if (textarea && sendBtn && charEl) {
+                textarea.addEventListener('input', () => {
+                    charEl.textContent = textarea.value.length;
+                });
+                sendBtn.addEventListener('click', async () => {
+                    const note = textarea.value.trim();
+                    if (!note) { showToast('Please write a note first'); return; }
+                    sendBtn.disabled = true;
+                    sendBtn.textContent = 'Sending...';
+                    try {
+                        const res = await apiPost('/api/games/secretsister/note', {
+                            user_id: currentUser.id,
+                            note: note
+                        });
+                        if (res && res.error) {
+                            showToast(res.error);
+                            sendBtn.disabled = false;
+                            sendBtn.textContent = 'Send My Note \ud83d\udc9b';
+                            return;
+                        }
+                        showToast('Note sent with love \ud83d\udc9b');
+                        if (typeof launchConfetti === 'function') launchConfetti();
+                        // Re-fetch and re-render so the UI flips to "sent"
+                        const [freshWeek, freshHistory] = await Promise.all([
+                            apiGet('/api/secretsister/week?user_id=' + currentUser.id),
+                            apiGet('/api/secretsister/history?user_id=' + currentUser.id)
+                        ]);
+                        _weeklySSLastState = freshWeek;
+                        renderSSThisWeek(freshWeek);
+                        renderSSHistoryLists(freshHistory);
+                        loadWeeklySecretSisterCard();
+                    } catch (e) {
+                        showToast(e && e.message ? e.message : 'Could not send. Try again.');
+                        sendBtn.disabled = false;
+                        sendBtn.textContent = 'Send My Note \ud83d\udc9b';
+                    }
+                });
+            }
+        }
+
         // Render the "This Week" section inside the scrapbook based on state
         function renderSSThisWeek(data) {
             const body = document.getElementById('ss-scrapbook-thisweek-body');
             if (!body) return;
 
+            // Round 0: either the retreat-time game is active (show that
+            // state) or we're in pure preview mode (show the wait message).
             if (!data || data.round === 0) {
+                if (data && data.retreat_active && data.retreat_assignment) {
+                    renderSSRetreatThisWeek(data);
+                    return;
+                }
                 const startDate = data && data.starts_at ? new Date(data.starts_at) : null;
                 const dateStr = startDate ? startDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : 'soon';
                 body.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:0.95rem;color:var(--dark-text);line-height:1.5;text-align:center;padding:6px 4px;">Your first Secret Sister arrives <strong>' + dateStr + '</strong>. Every Wednesday morning you\u2019ll be matched with a new sister to pray for and encourage.</div>';

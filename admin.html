@@ -575,16 +575,6 @@
             #section-games > div { grid-template-columns: 1fr !important; }
             .table-wrap { overflow-x: auto; }
             table { min-width: 600px; }
-            /* Budget signup list: stack on mobile */
-            #signup-list-body [style*="grid-template-columns:2fr"] {
-                grid-template-columns: 1fr 1fr !important;
-                font-size: 0.82rem;
-            }
-        }
-        @media (max-width: 480px) {
-            #signup-list-body [style*="grid-template-columns:2fr"] {
-                grid-template-columns: 1fr !important;
-            }
         }
     </style>
 </head>
@@ -629,7 +619,6 @@
             <button class="nav-tab" data-section="quiz"><span class="nav-icon">🧠</span> Quiz</button>
             <button class="nav-tab" data-section="meme"><span class="nav-icon">😂</span> Meme</button>
             <button class="nav-tab" data-section="budget"><span class="nav-icon">💰</span> Budget &amp; Payments</button>
-            <button class="nav-tab" data-section="reminders"><span class="nav-icon">📝</span> Reminders</button>
         </nav>
         <div class="sidebar-footer">
             <button class="btn btn-danger" style="width:100%;font-size:0.82rem;padding:0.5rem;" onclick="confirmResetAll()">Delete All Test Data</button>
@@ -1140,11 +1129,6 @@
                         <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--blush);" id="ov-spent">$0</div>
                         <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Actual across categories</div>
                     </div>
-                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid #c4a87d;">
-                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Women</div>
-                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:#c4a87d;" id="ov-women">0</div>
-                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;" id="ov-women-sub">From signups</div>
-                    </div>
                     <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--rose);">
                         <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">What's Left</div>
                         <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--rose);" id="ov-remaining">$0</div>
@@ -1154,12 +1138,8 @@
 
                 <!-- Retreat Cost Calculator -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div onclick="toggleBudgetSection('calc-body')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
-                        <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Retreat Cost Calculator</div>
-                        <span style="font-size:0.8rem;color:var(--light-text);" id="calc-body-arrow">&#x25BC;</span>
-                    </div>
-                    <div id="calc-body">
-                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;margin-top:0.3rem;">Plug in every cost the venue charges you plus your ticket price. I'll work out the true cost per woman and your profit margin, updated live.</div>
+                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Retreat Cost Calculator</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;">Plug in every cost the venue charges you plus your ticket price. I'll work out the true cost per woman and your profit margin, updated live.</div>
 
                     <!-- Cost inputs -->
                     <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Venue costs</div>
@@ -1178,6 +1158,11 @@
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Number of nights</label>
                             <div style="display:flex;align-items:center;gap:6px;"><input type="number" id="calc-nights" placeholder="2" step="1" min="1" value="2" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                             <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Typical G4 retreat is 2 nights</div>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Food cost per woman</label>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-food-cost" placeholder="120" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Total for the whole retreat</div>
                         </div>
                         <div>
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Conference space</label>
@@ -1210,15 +1195,13 @@
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">4-woman rooms</label>
                             <input type="number" id="calc-n4" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
                         </div>
-                        <div>
-                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">No hotel (people)</label>
-                            <input type="number" id="calc-n-nohotel" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                        </div>
                     </div>
 
-                    <!-- Pricing note -->
-                    <div style="padding:10px 14px;background:rgba(138,158,122,0.08);border-radius:10px;font-size:0.82rem;color:var(--taupe);margin-bottom:1.25rem;line-height:1.5;">
-                        <strong>Ticket prices</strong> are set per tier in the <em>Retreat Signups</em> section below. The projected totals here use those prices automatically.
+                    <!-- Pricing -->
+                    <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Ticket price</div>
+                    <div style="max-width:220px;margin-bottom:1.25rem;">
+                        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">What you charge per woman</label>
+                        <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-charge" placeholder="450" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                     </div>
 
                     <!-- Per-woman breakdown -->
@@ -1228,7 +1211,6 @@
                     <!-- Projected total -->
                     <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Projected total</div>
                     <div id="calc-total-summary" style="font-size:0.9rem;color:var(--taupe);padding:14px 16px;background:rgba(138,158,122,0.08);border-radius:10px;">Enter costs and room counts above to see the projection.</div>
-                    </div>
                 </div>
 
                 <!-- Budget by Category -->
@@ -1242,283 +1224,19 @@
                     <div id="budget-cats-body" style="margin-top:1rem;">
                         <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
                     </div>
-                    <div id="budget-cat-add-form" style="display:none;margin-top:0.75rem;padding:0.75rem;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
-                        <div style="display:flex;gap:0.5rem;align-items:flex-end;flex-wrap:wrap;">
-                            <div style="flex:2;min-width:160px;">
-                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">Category name</label>
-                                <input type="text" id="budget-cat-new-name" placeholder="e.g. Gift bags" style="width:100%;padding:7px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <div style="flex:1;min-width:100px;">
-                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">Planned $</label>
-                                <input type="number" id="budget-cat-new-planned" step="0.01" min="0" placeholder="0" style="width:100%;padding:7px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <button type="button" class="btn btn-refresh" onclick="submitBudgetCategoryForm()" style="padding:7px 14px;">Save</button>
-                            <button type="button" class="btn btn-cancel" onclick="closeBudgetCategoryForm()" style="padding:7px 14px;">Cancel</button>
-                        </div>
-                    </div>
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;">
-                        <button class="btn btn-refresh" onclick="openBudgetCategoryForm()">+ Add category</button>
+                        <button class="btn btn-refresh" onclick="addBudgetCategory()">+ Add category</button>
                         <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="loadBudgetCategories()">Refresh</button>
-                        <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="downloadBudgetCategoriesCsv()">&#x2B07; CSV</button>
-                    </div>
-                </div>
-
-                <!-- Retreat Signups (Phase 3) -->
-                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.3rem;">
-                        <div>
-                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Retreat Signups</div>
-                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Record each woman who signs up, track ticket price vs. what she's paid so far. Totals flow into "Taken In" above.</div>
-                        </div>
-                        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                            <button type="button" class="btn btn-refresh" onclick="toggleSignupForm()" id="signup-add-btn" style="white-space:nowrap;">+ Add</button>
-                            <button type="button" class="btn" style="background:rgba(138,158,122,0.15);color:var(--sage);white-space:nowrap;" onclick="document.getElementById('csv-import-file').click()">&#x2B06; Import CSV</button>
-                            <input type="file" id="csv-import-file" accept=".csv" style="display:none;" onchange="handleCsvImport(this)" />
-                            <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="loadSignups()">Refresh</button>
-                            <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="downloadSignupsCsv()">&#x2B07; CSV</button>
-                        </div>
-                    </div>
-
-                    <!-- Ticket prices (5 tiers) -->
-                    <div style="margin-top:1rem;padding:1rem;background:rgba(138,158,122,0.06);border:1px solid rgba(138,158,122,0.2);border-radius:10px;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
-                            <div style="font-family:Playfair Display,serif;font-size:0.9rem;font-weight:700;color:var(--taupe);">Ticket Prices</div>
-                            <div style="font-size:0.72rem;color:var(--light-text);">Pick a tier when adding a signup — the price pre-fills from here.</div>
-                        </div>
-                        <div style="display:grid;grid-template-columns:repeat(5,minmax(80px,1fr));gap:0.5rem;">
-                            <div>
-                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">1 per room</label>
-                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-1" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;width:100%;padding:5px 6px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">2 per room</label>
-                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-2" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;width:100%;padding:5px 6px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">3 per room</label>
-                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-3" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;width:100%;padding:5px 6px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">4 per room</label>
-                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-4" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;width:100%;padding:5px 6px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.7rem;font-weight:600;color:var(--taupe);margin-bottom:3px;">No hotel</label>
-                                <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="tp-nohotel" step="0.01" min="0" placeholder="0" oninput="scheduleTicketPriceSave()" style="flex:1;width:100%;padding:5px 6px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Add / edit form -->
-                    <div id="signup-form" style="display:none;margin-top:1rem;padding:1rem;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
-                        <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);margin-bottom:0.75rem;" id="signup-form-title">New signup</div>
-                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;margin-bottom:0.75rem;">
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Name *</label>
-                                <input type="text" id="signup-name" placeholder="Jane Doe" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Email</label>
-                                <input type="email" id="signup-email" placeholder="jane@example.com" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Phone</label>
-                                <input type="tel" id="signup-phone" placeholder="(555) 123-4567" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Tier</label>
-                                <select id="signup-room" onchange="signupTierChanged()" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;">
-                                    <option value="1">1 per room</option>
-                                    <option value="2" selected>2 per room</option>
-                                    <option value="3">3 per room</option>
-                                    <option value="4">4 per room</option>
-                                    <option value="0">No hotel</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Ticket price</label>
-                                <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="signup-price" step="0.01" min="0" placeholder="0.00" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
-                                <div style="font-size:0.68rem;color:var(--light-text);margin-top:3px;">Auto-filled from the tier above. You can override it.</div>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Amount paid</label>
-                                <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="signup-paid" step="0.01" min="0" placeholder="0.00" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Payment method</label>
-                                <select id="signup-method" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;">
-                                    <option value="">—</option>
-                                    <option value="cash">Cash</option>
-                                    <option value="check">Check</option>
-                                    <option value="venmo">Venmo</option>
-                                    <option value="zelle">Zelle</option>
-                                    <option value="paypal">PayPal</option>
-                                    <option value="other">Other</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Room</label>
-                                <input type="text" id="signup-room-label" placeholder="e.g. Room 301 or with Sarah" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Status</label>
-                                <select id="signup-status" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;">
-                                    <option value="signed_up">Signed up</option>
-                                    <option value="paid">Paid in full</option>
-                                    <option value="cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div style="margin-bottom:0.75rem;">
-                            <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Notes</label>
-                            <textarea id="signup-notes" rows="2" placeholder="Anything to remember about her registration" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;resize:vertical;"></textarea>
-                        </div>
-                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                            <button type="button" class="btn btn-refresh" onclick="saveSignupForm()" id="signup-save-btn">Save signup</button>
-                            <button type="button" class="btn btn-cancel" onclick="cancelSignupForm()">Cancel</button>
-                        </div>
-                    </div>
-
-                    <div id="signup-list-body" style="margin-top:1rem;max-height:500px;overflow-y:auto;">
-                        <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
-                    </div>
-                </div>
-
-                <!-- Room Assignments -->
-                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.3rem;">
-                        <div>
-                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Room Assignments</div>
-                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Auto-groups women by roommate preferences. Review and adjust, then export the roster for the hotel.</div>
-                        </div>
-                        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                            <button type="button" class="btn btn-refresh" onclick="autoAssignRooms()" style="white-space:nowrap;">Auto-assign</button>
-                            <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="downloadRoomRoster()">&#x2B07; Roster</button>
-                        </div>
-                    </div>
-
-                    <!-- Hotel bill summary -->
-                    <div id="room-hotel-summary" style="margin-top:1rem;padding:10px 14px;background:rgba(138,158,122,0.06);border:1px solid rgba(138,158,122,0.2);border-radius:10px;font-size:0.85rem;color:var(--taupe);">
-                        Run "Auto-assign" after importing signups to see the room breakdown and hotel bill.
-                    </div>
-
-                    <div id="room-board" style="margin-top:1rem;"></div>
-                </div>
-
-                <!-- Expense Log -->
-                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.3rem;">
-                        <div>
-                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Expense Log</div>
-                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Every dollar going out. Date, vendor, amount, category. This is what your accountant wants to see.</div>
-                        </div>
-                        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                            <button type="button" class="btn btn-refresh" onclick="toggleExpenseForm()" style="white-space:nowrap;">+ Add expense</button>
-                            <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="loadExpenses()">Refresh</button>
-                        </div>
-                    </div>
-
-                    <div id="expense-form" style="display:none;margin-top:1rem;padding:1rem;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
-                        <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);margin-bottom:0.75rem;" id="expense-form-title">New expense</div>
-                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:0.75rem;">
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Description *</label>
-                                <input type="text" id="exp-description" placeholder="What was purchased" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Amount *</label>
-                                <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="exp-amount" step="0.01" min="0" placeholder="0.00" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Vendor / Paid to</label>
-                                <input type="text" id="exp-vendor" placeholder="Walmart, Amazon, etc." style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Date</label>
-                                <input type="date" id="exp-date" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Category</label>
-                                <select id="exp-category" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;">
-                                    <option value="">— Uncategorized —</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Ref / Check #</label>
-                                <input type="text" id="exp-reference" placeholder="Optional" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                            </div>
-                        </div>
-                        <div style="margin-bottom:0.75rem;">
-                            <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Memo</label>
-                            <input type="text" id="exp-memo" placeholder="Optional notes" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                        </div>
-                        <div style="display:flex;gap:0.5rem;">
-                            <button type="button" class="btn btn-refresh" onclick="saveExpenseForm()" id="exp-save-btn">Save expense</button>
-                            <button type="button" class="btn btn-cancel" onclick="cancelExpenseForm()">Cancel</button>
-                        </div>
-                    </div>
-
-                    <div id="expense-list-body" style="margin-top:1rem;max-height:500px;overflow-y:auto;">
-                        <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
-                    </div>
-                </div>
-
-                <!-- Registration Link -->
-                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Registration Link</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;line-height:1.5;">Paste your CCB (or any) registration form URL here. Women will see a "Register for the Retreat" card on their home page that opens this link. Leave blank to hide the card.</div>
-                    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-                        <input type="url" id="reg-link-url" placeholder="https://pushpay.com/g/..." style="flex:1;min-width:200px;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:15px;color:var(--dark-text);background:white;box-sizing:border-box;" />
-                        <button type="button" class="btn btn-refresh" onclick="saveRegistrationLink()">Save</button>
-                    </div>
-                    <div id="reg-link-status" style="font-size:0.78rem;color:var(--sage);margin-top:6px;display:none;"></div>
-                </div>
-
-                <!-- Reports & Admin -->
-                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.75rem;">Reports &amp; Admin</div>
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
-                        <button type="button" class="btn btn-refresh" onclick="downloadFinancialReport()" style="white-space:nowrap;">&#x1f4ca; Download Financial Report</button>
-                    </div>
-                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">The report includes all income (payments received), all expenses, budget categories, and a summary. Hand it to your accountant.</div>
-                    <div style="border-top:1px solid rgba(200,185,176,0.3);padding-top:1rem;">
-                        <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:#a13224;margin-bottom:0.5rem;">Danger zone</div>
-                        <button type="button" class="btn" style="background:rgba(161,50,36,0.08);color:#a13224;border:1px solid rgba(161,50,36,0.2);" onclick="clearAllBudgetData()">Clear all budget data</button>
-                        <div style="font-size:0.78rem;color:var(--light-text);margin-top:4px;">Deletes everything: signups, payments, expenses, categories, receipts, calculator values. Cannot be undone.</div>
                     </div>
                 </div>
 
                 <!-- Coming Soon placeholder for later phases -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
                     <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;margin-bottom:0.3rem;">Coming next</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Email reminders to women with outstanding balances (Resend) &middot; Stripe checkout for 2027. Ship one phase at a time.</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Attendee payment tracking &middot; expense log with receipts &middot; email reminders (Resend). Ship one phase at a time.</div>
                 </div>
             </div>
         </div>
-
-        <!-- Reminders -->
-        <div class="section" id="section-reminders">
-            <div style="max-width:700px;margin:0 auto;">
-                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Next Year Reminders</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;line-height:1.5;">Things to remember for the next retreat. Add anything here during the year — you'll thank yourself later.</div>
-
-                    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
-                        <input type="text" id="reminder-new-text" placeholder="Add a reminder..." style="flex:1;padding:10px 14px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" onkeydown="if(event.key==='Enter')addReminder()" />
-                        <button type="button" class="btn btn-refresh" onclick="addReminder()">Add</button>
-                    </div>
-
-                    <div id="reminders-list" style="min-height:40px;">
-                        <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
-                    </div>
-
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;border-top:1px solid rgba(200,185,176,0.3);padding-top:1rem;">
-                        <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="downloadRemindersCsv()">&#x2B07; Export</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     </div>
     </div>
 </div>
@@ -1658,8 +1376,7 @@ const SECTION_TITLES = {
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
     topics: 'Theme Suggestions', stories: 'Stories',
     polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme',
-    budget: 'Budget & Payments',
-    reminders: 'Next Year Reminders'
+    budget: 'Budget & Payments'
 };
 
 function toggleSidebar() {
@@ -1686,9 +1403,6 @@ function activateAdminSection(sectionName, opts) {
     // Lazy-init the budget section (password gate + calculator) when shown
     if (sectionName === 'budget' && typeof initBudgetSection === 'function') {
         initBudgetSection();
-    }
-    if (sectionName === 'reminders' && typeof loadReminders === 'function') {
-        loadReminders();
     }
     return true;
 }
@@ -3570,19 +3284,6 @@ function closeSSAdminSendModal() {
 // --- Budget & Payments ---
 // Password gate + overview + room cost calculator (Phase 1+2).
 
-function toggleBudgetSection(id) {
-    const el = document.getElementById(id);
-    const arrow = document.getElementById(id + '-arrow');
-    if (!el) return;
-    if (el.style.display === 'none') {
-        el.style.display = 'block';
-        if (arrow) arrow.innerHTML = '&#x25BC;';
-    } else {
-        el.style.display = 'none';
-        if (arrow) arrow.innerHTML = '&#x25B6;';
-    }
-}
-
 async function sha256Hex(text) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
@@ -3674,13 +3375,10 @@ async function budgetCheckPassword() {
 function showBudgetContent() {
     document.getElementById('budget-gate').style.display = 'none';
     document.getElementById('budget-content').style.display = 'block';
-    loadTicketPrices().then(() => {
-        initRetreatCalculator();
-    });
+    initRetreatCalculator();
     loadBudgetCategories();
-    loadSignups();
-    loadExpenses();
-    loadRegistrationLink();
+    // Phases 3-5 will populate the overview cards with real data. For now
+    // they stay at $0 so the shape of the page is in place.
 }
 
 // --- Budget by Category ---
@@ -3715,154 +3413,51 @@ function renderBudgetCategoriesTable(cats) {
     }
     // Compute totals
     let totalPlanned = 0, totalActual = 0;
-    cats.forEach(c => {
-        totalPlanned += Number(c.planned) || 0;
-        const subs = c.sub_items || [];
-        totalActual += subs.length > 0 ? subs.reduce((s, i) => s + (Number(i.cost) || 0), 0) : (Number(c.actual) || 0);
-    });
+    cats.forEach(c => { totalPlanned += Number(c.planned) || 0; totalActual += Number(c.actual) || 0; });
     const totalDiff = totalPlanned - totalActual;
+    // Push into the overview state and refresh the top cards
     _budgetOverview.budgetSpent = totalActual;
     refreshBudgetOverview();
 
     // Header
     let html = `
-        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto auto;gap:0.4rem;align-items:center;padding:6px 10px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:center;padding:6px 10px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);">
             <div>Category</div>
             <div style="text-align:right;">Planned</div>
             <div style="text-align:right;">Actual</div>
             <div style="text-align:right;">Remaining</div>
-            <div></div><div></div><div></div>
+            <div></div>
         </div>
     `;
     html += cats.map(c => renderBudgetCategoryRow(c)).join('');
     // Totals row
     const diffColor = totalDiff >= 0 ? 'var(--sage)' : '#a13224';
     html += `
-        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto auto;gap:0.4rem;align-items:center;padding:12px 10px 4px;border-top:2px solid rgba(138,158,122,0.4);margin-top:4px;">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:0.5rem;align-items:center;padding:12px 10px 4px;border-top:2px solid rgba(138,158,122,0.4);margin-top:4px;">
             <div style="font-family:Playfair Display,serif;font-size:0.9rem;font-weight:700;color:var(--taupe);">Total</div>
             <div style="text-align:right;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);">${fmtMoney(totalPlanned)}</div>
             <div style="text-align:right;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--accent);">${fmtMoney(totalActual)}</div>
             <div style="text-align:right;font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:${diffColor};">${fmtMoney(totalDiff)}</div>
-            <div></div><div></div><div></div>
+            <div></div>
         </div>
     `;
     body.innerHTML = html;
 }
 
 function renderBudgetCategoryRow(c) {
-    const planned = Number(c.planned) || 0;
-    const subItems = c.sub_items || [];
-    // If sub-items exist, actual is their sum; otherwise use stored actual
-    const actual = subItems.length > 0 ? subItems.reduce((s, i) => s + (Number(i.cost) || 0), 0) : (Number(c.actual) || 0);
-    const diff = planned - actual;
+    const diff = (Number(c.planned) || 0) - (Number(c.actual) || 0);
     const diffColor = diff >= 0 ? 'var(--sage)' : '#a13224';
     const safeName = JSON.stringify(c.name);
-    const plannedVal = planned ? planned : '';
-    const actualVal = actual ? actual : '';
-    const hasItems = subItems.length > 0;
-    let html = `
-        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto auto;gap:0.4rem;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
+    return `
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto;gap:0.4rem;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
             <input type="text" value="${esc(c.name)}" data-cat-id="${c.id}" data-field="name" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--dark-text);background:transparent;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
-            <input type="number" step="0.01" min="0" value="${plannedVal}" placeholder="0" data-cat-id="${c.id}" data-field="planned" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--taupe);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
-            ${hasItems
-                ? '<div style="text-align:right;font-size:0.9rem;color:var(--accent);padding:6px 8px;" title="Sum of items below">' + fmtMoney(actual) + '</div>'
-                : '<input type="number" step="0.01" min="0" value="' + actualVal + '" placeholder="0" data-cat-id="' + c.id + '" data-field="actual" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background=\'white\';this.style.borderColor=\'var(--warm-grey)\'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />'}
+            <input type="number" step="0.01" min="0" value="${Number(c.planned) || 0}" data-cat-id="${c.id}" data-field="planned" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--taupe);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
+            <input type="number" step="0.01" min="0" value="${Number(c.actual) || 0}" data-cat-id="${c.id}" data-field="actual" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
             <div style="text-align:right;font-size:0.9rem;font-weight:600;color:${diffColor};padding:6px 8px;">${fmtMoney(diff)}</div>
-            <button type="button" onclick="toggleSubItems(${c.id})" style="background:none;border:none;color:var(--taupe);font-size:0.8rem;cursor:pointer;padding:4px 8px;" title="Sub-items">&#x25BC;</button>
             <button type="button" onclick='openBudgetReceiptsModal(${c.id}, ${safeName})' style="background:none;border:none;color:var(--taupe);font-size:1rem;cursor:pointer;padding:4px 8px;" title="Receipts">&#x1f4ce;</button>
             <button type="button" onclick='deleteBudgetCategory(${c.id}, ${safeName})' style="background:none;border:none;color:var(--light-text);font-size:1.1rem;cursor:pointer;padding:4px 8px;" title="Delete">&times;</button>
         </div>
-        <div id="sub-items-${c.id}" style="display:none;padding:4px 10px 8px 32px;background:rgba(247,240,235,0.3);border-bottom:1px solid rgba(200,185,176,0.18);">
-            ${subItems.map(si => `
-                <div style="display:flex;align-items:center;gap:0.4rem;padding:3px 0;" data-sub-id="${si.id}">
-                    <input type="text" value="${esc(si.name)}" data-sub-id="${si.id}" data-sub-field="name" style="flex:2;padding:4px 6px;border:1px solid transparent;border-radius:5px;font-family:inherit;font-size:0.85rem;color:var(--dark-text);background:transparent;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="subItemInput(this,${c.id})" onblur="subItemBlur(this,${c.id})" />
-                    <div style="display:flex;align-items:center;gap:2px;flex:1;"><span style="font-size:0.82rem;color:var(--taupe);">$</span><input type="number" step="0.01" min="0" value="${Number(si.cost) || ''}" placeholder="0" data-sub-id="${si.id}" data-sub-field="cost" style="flex:1;padding:4px 6px;border:1px solid transparent;border-radius:5px;font-family:inherit;font-size:0.85rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="subItemInput(this,${c.id})" onblur="subItemBlur(this,${c.id})" /></div>
-                    <button type="button" onclick="deleteSubItem(${si.id},${c.id})" style="background:none;border:none;color:var(--light-text);font-size:0.95rem;cursor:pointer;padding:2px 6px;" title="Remove">&times;</button>
-                </div>
-            `).join('')}
-            <button type="button" onclick="addSubItem(${c.id})" style="margin-top:4px;font-size:0.78rem;color:var(--taupe);background:none;border:1px dashed var(--warm-grey);border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit;">+ Add item</button>
-        </div>
     `;
-    return html;
-}
-
-// --- Budget Sub-Items ---
-// Expandable line-item breakdown under each category. When sub-items
-// exist, the category's actual is auto-summed from item costs.
-
-function toggleSubItems(catId) {
-    const el = document.getElementById('sub-items-' + catId);
-    if (!el) return;
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
-async function addSubItem(catId) {
-    try {
-        await apiFetch('/api/budget/categories/' + catId + '/items', {
-            method: 'POST',
-            body: { name: 'New item', cost: 0 }
-        });
-        loadBudgetCategories();
-        // Re-open the sub-items panel after reload
-        setTimeout(() => {
-            const el = document.getElementById('sub-items-' + catId);
-            if (el) el.style.display = 'block';
-        }, 300);
-    } catch (e) { showToast('Error: ' + (e.message || '')); }
-}
-
-const _subItemSaveTimers = {};
-function subItemInput(input, catId) {
-    const id = input.dataset.subId;
-    const field = input.dataset.subField;
-    if (!id || !field) return;
-    const key = 'sub-' + id + '-' + field;
-    if (_subItemSaveTimers[key]) clearTimeout(_subItemSaveTimers[key]);
-    _subItemSaveTimers[key] = setTimeout(() => subItemSaveField(input, catId, false), 500);
-}
-
-function subItemBlur(input, catId) {
-    const id = input.dataset.subId;
-    const field = input.dataset.subField;
-    if (!id || !field) return;
-    const key = 'sub-' + id + '-' + field;
-    if (_subItemSaveTimers[key]) { clearTimeout(_subItemSaveTimers[key]); delete _subItemSaveTimers[key]; }
-    input.style.background = 'transparent';
-    input.style.borderColor = 'transparent';
-    subItemSaveField(input, catId, true);
-}
-
-async function subItemSaveField(input, catId, rerenderOnSuccess) {
-    const id = input.dataset.subId;
-    const field = input.dataset.subField;
-    if (!id || !field) return;
-    const value = field === 'name' ? input.value.trim() : (parseFloat(input.value) || 0);
-    try {
-        const body = {};
-        body[field] = value;
-        await apiFetch('/api/budget/sub-items/' + id, { method: 'PATCH', body });
-        if (rerenderOnSuccess) {
-            loadBudgetCategories();
-            // Keep sub-items panel open
-            setTimeout(() => {
-                const el = document.getElementById('sub-items-' + catId);
-                if (el) el.style.display = 'block';
-            }, 300);
-        }
-    } catch (e) {
-        showToast('Save failed: ' + (e.message || ''));
-    }
-}
-
-async function deleteSubItem(subItemId, catId) {
-    try {
-        await apiFetch('/api/budget/sub-items/' + subItemId, { method: 'DELETE' });
-        loadBudgetCategories();
-        setTimeout(() => {
-            const el = document.getElementById('sub-items-' + catId);
-            if (el) el.style.display = 'block';
-        }, 300);
-    } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
 
 // --- Budget Receipts modal ---
@@ -3985,36 +3580,15 @@ async function budgetCatSaveField(input, rerenderOnSuccess) {
 // PR, but keep so a stale page doesn't crash).
 function budgetCatSave(input) { return budgetCatBlur(input); }
 
-function openBudgetCategoryForm() {
-    const form = document.getElementById('budget-cat-add-form');
-    if (!form) return;
-    document.getElementById('budget-cat-new-name').value = '';
-    document.getElementById('budget-cat-new-planned').value = '';
-    form.style.display = 'block';
-    form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    document.getElementById('budget-cat-new-name').focus();
-}
-
-function closeBudgetCategoryForm() {
-    const form = document.getElementById('budget-cat-add-form');
-    if (form) form.style.display = 'none';
-}
-
-async function submitBudgetCategoryForm() {
-    const name = document.getElementById('budget-cat-new-name').value.trim();
-    if (!name) { showToast('Category name is required.'); return; }
-    const planned = parseFloat(document.getElementById('budget-cat-new-planned').value) || 0;
+async function addBudgetCategory() {
+    const name = prompt('New category name:');
+    if (!name || !name.trim()) return;
     try {
-        const res = await apiFetch('/api/budget/categories', { method: 'POST', body: { name, planned, actual: 0 } });
+        const res = await apiFetch('/api/budget/categories', { method: 'POST', body: { name: name.trim(), planned: 0, actual: 0 } });
         if (res && res.error) { showToast('Error: ' + res.error); return; }
-        closeBudgetCategoryForm();
         loadBudgetCategories();
-        showToast('Category added.');
     } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
-
-// Back-compat shim for any stale cached admin.html with old onclick
-function addBudgetCategory() { openBudgetCategoryForm(); }
 
 async function deleteBudgetCategory(id, name) {
     if (!confirm('Delete "' + name + '"? This cannot be undone.')) return;
@@ -4032,9 +3606,7 @@ const _budgetOverview = {
     rooms: 0,
     hotelCost: 0,
     revenue: 0,
-    budgetSpent: 0,
-    signupRevenue: null,
-    signupCount: 0
+    budgetSpent: 0
 };
 
 function refreshBudgetOverview() {
@@ -4043,24 +3615,14 @@ function refreshBudgetOverview() {
     const revEl = document.getElementById('ov-revenue');
     const spentEl = document.getElementById('ov-spent');
     const leftEl = document.getElementById('ov-remaining');
-    const womenEl = document.getElementById('ov-women');
-    const womenSubEl = document.getElementById('ov-women-sub');
     if (!roomsEl) return;
     roomsEl.textContent = _budgetOverview.rooms || 0;
     hotelEl.textContent = fmtMoney(_budgetOverview.hotelCost || 0);
-    // Prefer actual signup collected total when signups exist
-    const takenIn = (_budgetOverview.signupRevenue != null) ? _budgetOverview.signupRevenue : (_budgetOverview.revenue || 0);
-    revEl.textContent = fmtMoney(takenIn);
+    revEl.textContent = fmtMoney(_budgetOverview.revenue || 0);
     spentEl.textContent = fmtMoney(_budgetOverview.budgetSpent || 0);
-    const remaining = takenIn - (_budgetOverview.hotelCost || 0) - (_budgetOverview.budgetSpent || 0);
+    const remaining = (_budgetOverview.revenue || 0) - (_budgetOverview.hotelCost || 0) - (_budgetOverview.budgetSpent || 0);
     leftEl.textContent = fmtMoney(remaining);
     leftEl.style.color = remaining >= 0 ? 'var(--rose)' : '#a13224';
-    // Women count
-    if (womenEl) {
-        const sc = _budgetOverview.signupCount || 0;
-        womenEl.textContent = sc;
-        if (womenSubEl) womenSubEl.textContent = sc ? ('From ' + sc + ' signup' + (sc === 1 ? '' : 's')) : 'From signups';
-    }
 }
 
 // --- Retreat Cost Calculator (Phase 2) ---
@@ -4082,13 +3644,14 @@ const _calcFieldMap = {
     'calc-room-base':       'retreat_calc_room_base',
     'calc-room-extra':      'retreat_calc_room_extra',
     'calc-nights':          'retreat_calc_nights',
+    'calc-food-cost':       'retreat_calc_food_cost',
     'calc-conference-cost': 'retreat_calc_conference_cost',
     'calc-tax-rate':        'retreat_calc_tax_rate',
     'calc-n1':              'retreat_calc_n1',
     'calc-n2':              'retreat_calc_n2',
     'calc-n3':              'retreat_calc_n3',
     'calc-n4':              'retreat_calc_n4',
-    'calc-n-nohotel':       'retreat_calc_n_nohotel'
+    'calc-charge':          'retreat_calc_charge'
 };
 
 let _calcSaveTimer = null;
@@ -4166,96 +3729,73 @@ function roomCostForOccupancy(occ, baseNightly, extraNightly, nights) {
     return nightlyRate * nights;
 }
 
-// Helper: reads current ticket prices from the tp-* inputs
-function getTicketPrices() {
-    return {
-        1: parseFloat((document.getElementById('tp-1') || {}).value) || 0,
-        2: parseFloat((document.getElementById('tp-2') || {}).value) || 0,
-        3: parseFloat((document.getElementById('tp-3') || {}).value) || 0,
-        4: parseFloat((document.getElementById('tp-4') || {}).value) || 0,
-        0: parseFloat((document.getElementById('tp-nohotel') || {}).value) || 0
-    };
-}
-
 function recalcRetreatCalculator() {
     const baseNightly = parseFloat(document.getElementById('calc-room-base').value) || 0;
     const extraNightly = parseFloat(document.getElementById('calc-room-extra').value) || 0;
     const nights = parseInt(document.getElementById('calc-nights').value, 10) || 0;
+    const foodCost = parseFloat(document.getElementById('calc-food-cost').value) || 0;
     const confCost = parseFloat(document.getElementById('calc-conference-cost').value) || 0;
     const taxRate = (parseFloat(document.getElementById('calc-tax-rate').value) || 0) / 100;
     const n1 = parseInt(document.getElementById('calc-n1').value, 10) || 0;
     const n2 = parseInt(document.getElementById('calc-n2').value, 10) || 0;
     const n3 = parseInt(document.getElementById('calc-n3').value, 10) || 0;
     const n4 = parseInt(document.getElementById('calc-n4').value, 10) || 0;
-    const nNoHotel = parseInt(document.getElementById('calc-n-nohotel').value, 10) || 0;
-    const tp = getTicketPrices();
+    const charge = parseFloat(document.getElementById('calc-charge').value) || 0;
 
-    const hotelWomen = n1 + (n2 * 2) + (n3 * 3) + (n4 * 4);
-    const totalWomen = hotelWomen + nNoHotel;
+    const totalWomen = n1 + (n2 * 2) + (n3 * 3) + (n4 * 4);
     const perWomanEl = document.getElementById('calc-per-woman');
     const totalEl = document.getElementById('calc-total-summary');
 
+    // Keep the top overview cards in sync with whatever's typed into the
+    // calculator (live projected values). The "What's Left" card combines
+    // these with the budget-categories actual total.
     _budgetOverview.rooms = n1 + n2 + n3 + n4;
-    const tierRevenue = (n1 * 1 * tp[1]) + (n2 * 2 * tp[2]) + (n3 * 3 * tp[3]) + (n4 * 4 * tp[4]) + (nNoHotel * tp[0]);
-    _budgetOverview.revenue = tierRevenue;
+    _budgetOverview.revenue = totalWomen * charge;
+    // hotelCost is computed below for the projected total path; default 0
     _budgetOverview.hotelCost = 0;
 
-    if (baseNightly <= 0 && confCost <= 0) {
+    // No costs entered yet — show a gentle hint
+    if (baseNightly <= 0 && foodCost <= 0 && confCost <= 0) {
         perWomanEl.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 14px;background:rgba(247,240,235,0.5);border-radius:10px;">Enter the venue costs above to see the breakdown.</div>';
         totalEl.textContent = 'Enter costs and room counts above to see the projection.';
         refreshBudgetOverview();
         return;
     }
 
+    // Conference split only makes sense when we know how many women.
     const confPerWoman = totalWomen > 0 ? (confCost / totalWomen) : null;
 
-    // Per-occupancy breakdown cards (1/2/3/4 hotel + no-hotel)
-    const hotelRows = [1, 2, 3, 4].map(occ => {
+    // Per-occupancy breakdown: 1, 2, 3, 4 women per room
+    const rows = [1, 2, 3, 4].map(occ => {
         const roomTotal = roomCostForOccupancy(occ, baseNightly, extraNightly, nights);
         const roomPerWoman = roomTotal / occ;
-        const subtotal = roomPerWoman + (confPerWoman || 0);
+        const subtotal = roomPerWoman + foodCost + (confPerWoman || 0);
         const tax = subtotal * taxRate;
         const total = subtotal + tax;
-        const charge = tp[occ] || 0;
         const profit = charge > 0 ? (charge - total) : null;
-        return { occ, roomTotal, roomPerWoman, tax, subtotal, total, charge, profit };
+        return { occ, roomTotal, roomPerWoman, tax, subtotal, total, profit };
     });
-
-    // No-hotel card: just conference split + tax
-    const nhSubtotal = (confPerWoman || 0);
-    const nhTax = nhSubtotal * taxRate;
-    const nhTotal = nhSubtotal + nhTax;
-    const nhCharge = tp[0] || 0;
-    const nhProfit = nhCharge > 0 ? (nhCharge - nhTotal) : null;
 
     const confDisplay = confPerWoman !== null ? fmtMoney(confPerWoman) : '(set rooms)';
 
     perWomanEl.innerHTML = `
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;">
-            ${hotelRows.map(r => {
+            ${rows.map(r => {
                 const profitColor = r.profit === null ? 'var(--light-text)' : (r.profit >= 0 ? 'var(--sage)' : '#a13224');
                 const profitText = r.profit === null ? '—' : fmtMoney(r.profit);
                 const occLabel = r.occ === 1 ? '1 woman per room' : (r.occ + ' women per room');
-                const chargeText = r.charge > 0 ? fmtMoney(r.charge) : '<span style="font-style:italic;color:var(--light-text);">set price below</span>';
                 return `
                 <div style="padding:14px 16px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
                     <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--taupe);margin-bottom:2px;">${occLabel}</div>
-                    <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:8px;">Room total: ${fmtMoney(r.roomTotal)} &middot; Ticket: ${chargeText}</div>
+                    <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:8px;">Room total: ${fmtMoney(r.roomTotal)}</div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Room / woman</span><span style="color:var(--taupe);">${fmtMoney(r.roomPerWoman)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Food</span><span style="color:var(--taupe);">${fmtMoney(foodCost)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Conference</span><span style="color:var(--taupe);">${confDisplay}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Tax &amp; fees</span><span style="color:var(--taupe);">${fmtMoney(r.tax)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:var(--dark-text);padding-top:4px;border-top:1px solid rgba(200,185,176,0.4);margin-top:4px;"><span>Total cost</span><span>${fmtMoney(r.total)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:${profitColor};margin-top:2px;"><span>Profit / woman</span><span>${profitText}</span></div>
                 </div>
             `;}).join('')}
-            <div style="padding:14px 16px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
-                <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--taupe);margin-bottom:2px;">No hotel</div>
-                <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:8px;">Ticket: ${nhCharge > 0 ? fmtMoney(nhCharge) : '<span style="font-style:italic;">set price below</span>'}</div>
-                <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Conference</span><span style="color:var(--taupe);">${confDisplay}</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Tax &amp; fees</span><span style="color:var(--taupe);">${fmtMoney(nhTax)}</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:var(--dark-text);padding-top:4px;border-top:1px solid rgba(200,185,176,0.4);margin-top:4px;"><span>Total cost</span><span>${fmtMoney(nhTotal)}</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:${nhProfit === null ? 'var(--light-text)' : (nhProfit >= 0 ? 'var(--sage)' : '#a13224')};margin-top:2px;"><span>Profit / woman</span><span>${nhProfit === null ? '—' : fmtMoney(nhProfit)}</span></div>
-            </div>
         </div>
     `;
 
@@ -4266,18 +3806,20 @@ function recalcRetreatCalculator() {
         return;
     }
 
+    // Sum the actual room costs by occupancy count
     const totalRoomCost =
         (n1 * roomCostForOccupancy(1, baseNightly, extraNightly, nights)) +
         (n2 * roomCostForOccupancy(2, baseNightly, extraNightly, nights)) +
         (n3 * roomCostForOccupancy(3, baseNightly, extraNightly, nights)) +
         (n4 * roomCostForOccupancy(4, baseNightly, extraNightly, nights));
+    // Push the hotel number into the overview cards
     _budgetOverview.hotelCost = totalRoomCost;
+    const totalFoodCost = totalWomen * foodCost;
     const totalConfCost = confCost;
-    const budgetSpent = _budgetOverview.budgetSpent || 0;
-    const venueCosts = totalRoomCost + totalConfCost;
-    const venueTax = venueCosts * taxRate;
-    const totalCost = venueCosts + venueTax + budgetSpent;
-    const totalRevenue = tierRevenue;
+    const totalSubtotal = totalRoomCost + totalFoodCost + totalConfCost;
+    const totalTax = totalSubtotal * taxRate;
+    const totalCost = totalSubtotal + totalTax;
+    const totalRevenue = totalWomen * charge;
     const totalProfit = totalRevenue - totalCost;
     const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
     const profitColor = totalProfit >= 0 ? 'var(--sage)' : '#a13224';
@@ -4291,1108 +3833,11 @@ function recalcRetreatCalculator() {
             <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Margin</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:${profitColor};">${totalRevenue > 0 ? margin.toFixed(1) + '%' : '—'}</div></div>
         </div>
         <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(138,158,122,0.25);font-size:0.78rem;color:var(--light-text);">
-            Rooms ${fmtMoney(totalRoomCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(venueTax)} &middot; Budget items ${fmtMoney(budgetSpent)}
+            Rooms ${fmtMoney(totalRoomCost)} &middot; Food ${fmtMoney(totalFoodCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(totalTax)}
         </div>
     `;
 
     refreshBudgetOverview();
-}
-
-// --- Ticket Prices (Phase 3) ---
-// Five tier prices stored in game_settings under retreat_ticket_* keys.
-// Loaded once when the budget section opens. Debounced save on every edit.
-const _ticketPriceFieldMap = {
-    'tp-1':       'retreat_ticket_1',
-    'tp-2':       'retreat_ticket_2',
-    'tp-3':       'retreat_ticket_3',
-    'tp-4':       'retreat_ticket_4',
-    'tp-nohotel': 'retreat_ticket_nohotel'
-};
-
-async function loadTicketPrices() {
-    try {
-        const data = await apiFetch('/api/budget/ticket-prices');
-        const prices = (data && data.prices) || {};
-        Object.keys(_ticketPriceFieldMap).forEach(id => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            const key = _ticketPriceFieldMap[id];
-            if (prices[key] !== undefined && prices[key] !== '') {
-                el.value = prices[key];
-            }
-        });
-    } catch (e) {
-        console.warn('ticket prices load failed:', e && e.message);
-    }
-}
-
-let _ticketPriceSaveTimer = null;
-function scheduleTicketPriceSave() {
-    if (_ticketPriceSaveTimer) clearTimeout(_ticketPriceSaveTimer);
-    _ticketPriceSaveTimer = setTimeout(saveTicketPricesNow, 500);
-    // Recalc immediately so the calculator projection updates live
-    recalcRetreatCalculator();
-}
-
-async function saveTicketPricesNow() {
-    const payload = {};
-    Object.keys(_ticketPriceFieldMap).forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        payload[_ticketPriceFieldMap[id]] = el.value == null ? '' : String(el.value);
-    });
-    try {
-        await apiFetch('/api/budget/ticket-prices', { method: 'POST', body: payload });
-    } catch (e) {
-        console.warn('ticket prices save failed:', e && e.message);
-    }
-}
-
-// Safety net: save ticket prices if the page is hidden or closed mid-debounce
-if (!window._ticketPriceSaveUnloadWired) {
-    window._ticketPriceSaveUnloadWired = true;
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') saveTicketPricesNow();
-    });
-    window.addEventListener('pagehide', saveTicketPricesNow);
-}
-
-// --- Retreat Signups (Phase 3) ---
-let _signupEditingId = null; // null = new signup, number = editing existing
-
-function toggleSignupForm(editRow) {
-    const form = document.getElementById('signup-form');
-    if (!form) return;
-    if (editRow) {
-        // Editing an existing signup
-        _signupEditingId = editRow.id;
-        document.getElementById('signup-form-title').textContent = 'Edit signup';
-        document.getElementById('signup-save-btn').textContent = 'Update';
-        document.getElementById('signup-name').value = editRow.name || '';
-        document.getElementById('signup-email').value = editRow.email || '';
-        document.getElementById('signup-phone').value = editRow.phone || '';
-        document.getElementById('signup-room').value = String(editRow.room_occupancy || 2);
-        document.getElementById('signup-price').value = editRow.ticket_price || '';
-        document.getElementById('signup-paid').value = editRow.amount_paid || '';
-        document.getElementById('signup-method').value = editRow.payment_method || '';
-        document.getElementById('signup-status').value = editRow.status || 'signed_up';
-        document.getElementById('signup-room-label').value = editRow.room_label || '';
-        document.getElementById('signup-notes').value = editRow.notes || '';
-        form.style.display = 'block';
-        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else if (form.style.display === 'none') {
-        // New signup
-        _signupEditingId = null;
-        document.getElementById('signup-form-title').textContent = 'New signup';
-        document.getElementById('signup-save-btn').textContent = 'Save signup';
-        document.getElementById('signup-name').value = '';
-        document.getElementById('signup-email').value = '';
-        document.getElementById('signup-phone').value = '';
-        document.getElementById('signup-room').value = '2';
-        signupTierChanged(); // pre-fill price from tier
-        document.getElementById('signup-paid').value = '';
-        document.getElementById('signup-method').value = '';
-        document.getElementById('signup-room-label').value = '';
-        document.getElementById('signup-status').value = 'signed_up';
-        document.getElementById('signup-notes').value = '';
-        form.style.display = 'block';
-        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else {
-        cancelSignupForm();
-    }
-}
-
-function cancelSignupForm() {
-    _signupEditingId = null;
-    document.getElementById('signup-form').style.display = 'none';
-}
-
-function signupTierChanged() {
-    const tier = document.getElementById('signup-room').value;
-    const tp = getTicketPrices();
-    const price = tp[parseInt(tier, 10)] || 0;
-    if (price > 0) document.getElementById('signup-price').value = price;
-}
-
-async function saveSignupForm() {
-    const name = document.getElementById('signup-name').value.trim();
-    if (!name) { showToast('Name is required.'); return; }
-    const ticketPrice = parseFloat(document.getElementById('signup-price').value) || 0;
-    const amountPaid = parseFloat(document.getElementById('signup-paid').value) || 0;
-    let status = document.getElementById('signup-status').value;
-    // Auto-detect paid in full
-    if (ticketPrice > 0 && amountPaid >= ticketPrice && status === 'signed_up') {
-        status = 'paid';
-    }
-    const body = {
-        name,
-        email: document.getElementById('signup-email').value.trim(),
-        phone: document.getElementById('signup-phone').value.trim(),
-        room_occupancy: parseInt(document.getElementById('signup-room').value, 10) || 2,
-        ticket_price: ticketPrice,
-        amount_paid: amountPaid,
-        payment_method: document.getElementById('signup-method').value,
-        room_label: document.getElementById('signup-room-label').value.trim(),
-        notes: document.getElementById('signup-notes').value.trim(),
-        status
-    };
-    try {
-        if (_signupEditingId) {
-            const res = await apiFetch('/api/budget/signups/' + _signupEditingId, { method: 'PATCH', body });
-            if (res && res.error) { showToast('Save failed: ' + res.error); return; }
-            showToast('Signup updated.');
-        } else {
-            const res = await apiFetch('/api/budget/signups', { method: 'POST', body });
-            if (res && res.error) { showToast('Save failed: ' + res.error); return; }
-            showToast('Signup added!');
-        }
-        cancelSignupForm();
-        loadSignups();
-    } catch (e) {
-        showToast('Save failed: ' + (e.message || ''));
-    }
-}
-
-async function loadSignups() {
-    const body = document.getElementById('signup-list-body');
-    if (!body) return;
-    try {
-        const data = await apiFetch('/api/budget/signups');
-        const signups = (data && Array.isArray(data.signups)) ? data.signups : [];
-        const stats = (data && data.stats) || {};
-        renderSignupsList(signups, stats);
-        // Push real "Taken In" into overview. If there are signups, use
-        // actual collected total. Otherwise let calculator projection stand.
-        if (signups.length > 0) {
-            _budgetOverview.signupRevenue = stats.total_collected || 0;
-            _budgetOverview.signupCount = stats.count || 0;
-            document.getElementById('ov-revenue-sub').textContent = 'From ' + signups.length + ' signup' + (signups.length === 1 ? '' : 's');
-        } else {
-            _budgetOverview.signupRevenue = null;
-            document.getElementById('ov-revenue-sub').textContent = 'Projected from calculator';
-        }
-        refreshBudgetOverview();
-    } catch (e) {
-        body.innerHTML = '<div style="color:#a13224;font-size:0.88rem;">Could not load signups: ' + esc(e.message || '') + '</div>';
-    }
-}
-
-function tierLabel(occ) {
-    if (occ === 0) return 'No hotel';
-    return occ + ' per room';
-}
-
-const _signupStatusLabels = {
-    signed_up: 'Signed up',
-    paid: 'Paid in full',
-    cancelled: 'Cancelled'
-};
-function statusChip(s) {
-    const label = _signupStatusLabels[s] || s;
-    const colors = {
-        signed_up: 'color:var(--accent);background:rgba(193,131,97,0.1)',
-        paid: 'color:var(--sage);background:rgba(138,158,122,0.12)',
-        cancelled: 'color:#a13224;background:rgba(161,50,36,0.08)'
-    };
-    return `<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:600;${colors[s] || ''}">${esc(label)}</span>`;
-}
-
-let _signupFilter = 'all';
-let _signupSort = 'name';
-
-function setSignupFilter(val) {
-    _signupFilter = val;
-    // Re-render from cached data
-    if (window._lastSignupsData) {
-        renderSignupsList(window._lastSignupsData.signups, window._lastSignupsData.stats);
-    }
-}
-
-function setSignupSort(val) {
-    _signupSort = val;
-    if (window._lastSignupsData) {
-        renderSignupsList(window._lastSignupsData.signups, window._lastSignupsData.stats);
-    }
-}
-
-function renderSignupsList(signups, stats) {
-    const body = document.getElementById('signup-list-body');
-    if (!body) return;
-    // Cache for filter/sort re-renders
-    window._lastSignupsData = { signups, stats };
-
-    if (!signups.length) {
-        body.innerHTML = '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No signups yet. Tap "+ Add signup" to start recording registrations.</div>';
-        return;
-    }
-
-    // Filter
-    let filtered = signups;
-    if (_signupFilter !== 'all') {
-        filtered = signups.filter(s => s.status === _signupFilter);
-    }
-
-    // Sort
-    filtered = [...filtered].sort((a, b) => {
-        if (_signupSort === 'name') return (a.name || '').localeCompare(b.name || '');
-        if (_signupSort === 'date') return (b.created_at || '').localeCompare(a.created_at || '');
-        if (_signupSort === 'balance') {
-            const balA = (Number(a.ticket_price) || 0) - (Number(a.amount_paid) || 0);
-            const balB = (Number(b.ticket_price) || 0) - (Number(b.amount_paid) || 0);
-            return balB - balA;
-        }
-        return 0;
-    });
-
-    // Stats bar + filter/sort controls
-    let html = `
-        <div style="display:flex;gap:1rem;flex-wrap:wrap;padding:10px 12px;background:rgba(138,158,122,0.06);border-radius:8px;margin-bottom:0.75rem;font-size:0.82rem;align-items:center;">
-            <div><strong>${stats.count || 0}</strong> signed up</div>
-            <div><strong style="color:var(--sage);">${fmtMoney(stats.total_collected || 0)}</strong> collected</div>
-            <div><strong style="color:var(--accent);">${fmtMoney(stats.total_outstanding || 0)}</strong> outstanding</div>
-            <div style="margin-left:auto;display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
-                <select onchange="setSignupFilter(this.value)" style="padding:4px 8px;border:1px solid var(--warm-grey);border-radius:6px;font-size:0.78rem;font-family:inherit;color:var(--dark-text);background:white;">
-                    <option value="all"${_signupFilter === 'all' ? ' selected' : ''}>All</option>
-                    <option value="signed_up"${_signupFilter === 'signed_up' ? ' selected' : ''}>Signed up</option>
-                    <option value="paid"${_signupFilter === 'paid' ? ' selected' : ''}>Paid</option>
-                    <option value="cancelled"${_signupFilter === 'cancelled' ? ' selected' : ''}>Cancelled</option>
-                </select>
-                <select onchange="setSignupSort(this.value)" style="padding:4px 8px;border:1px solid var(--warm-grey);border-radius:6px;font-size:0.78rem;font-family:inherit;color:var(--dark-text);background:white;">
-                    <option value="name"${_signupSort === 'name' ? ' selected' : ''}>A-Z</option>
-                    <option value="date"${_signupSort === 'date' ? ' selected' : ''}>Newest</option>
-                    <option value="balance"${_signupSort === 'balance' ? ' selected' : ''}>Balance</option>
-                </select>
-            </div>
-        </div>
-    `;
-
-    if (!filtered.length) {
-        html += '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No signups match this filter.</div>';
-        body.innerHTML = html;
-        return;
-    }
-
-    // Header
-    html += `
-        <div style="display:grid;grid-template-columns:2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto;gap:0.4rem;align-items:center;padding:6px 10px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);">
-            <div>Name</div>
-            <div>Tier</div>
-            <div style="text-align:right;">Ticket</div>
-            <div style="text-align:right;">Paid</div>
-            <div style="text-align:right;">Balance</div>
-            <div>Status</div>
-            <div></div>
-        </div>
-    `;
-    // Stash rows for edit lookups by ID
-    window._signupRows = {};
-    signups.forEach(s => { window._signupRows[s.id] = s; });
-
-    html += filtered.map(s => {
-        const balance = (Number(s.ticket_price) || 0) - (Number(s.amount_paid) || 0);
-        const balColor = balance <= 0 ? 'var(--sage)' : 'var(--accent)';
-        const safeName = JSON.stringify(s.name);
-        const showMarkPaid = s.status !== 'paid' && s.status !== 'cancelled' && balance > 0;
-        const contactBits = [s.email, s.phone].filter(Boolean).map(x => esc(x));
-        const methodLabel = s.payment_method ? esc(s.payment_method) : '';
-        const roomInfo = s.room_label ? esc(s.room_label) : '';
-        return `
-        <div style="display:grid;grid-template-columns:2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto;gap:0.4rem;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
-            <div>
-                <div style="font-size:0.9rem;font-weight:600;color:var(--dark-text);">${esc(s.name)}</div>
-                ${contactBits.length ? '<div style="font-size:0.7rem;color:var(--light-text);">' + contactBits.join(' &middot; ') + '</div>' : ''}
-                ${roomInfo ? '<div style="font-size:0.68rem;color:var(--sage);margin-top:1px;">' + roomInfo + '</div>' : ''}
-                ${s.notes ? '<div style="font-size:0.68rem;color:var(--light-text);font-style:italic;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;" title="' + esc(s.notes) + '">' + esc(s.notes) + '</div>' : ''}
-            </div>
-            <div style="font-size:0.82rem;color:var(--taupe);">${tierLabel(s.room_occupancy)}</div>
-            <div style="text-align:right;font-size:0.88rem;color:var(--taupe);">${fmtMoney(s.ticket_price || 0)}</div>
-            <div style="text-align:right;font-size:0.88rem;color:var(--sage);">${fmtMoney(s.amount_paid || 0)}${methodLabel ? '<div style="font-size:0.66rem;color:var(--light-text);">' + methodLabel + '</div>' : ''}</div>
-            <div style="text-align:right;font-size:0.88rem;font-weight:600;color:${balColor};">${fmtMoney(balance)}</div>
-            <div>${statusChip(s.status)}</div>
-            <div style="display:flex;gap:2px;">
-                <button type="button" onclick="recordPayment(${s.id})" style="background:none;border:none;color:var(--sage);font-size:0.85rem;cursor:pointer;padding:4px;" title="Record payment">&#x1f4b2;</button>
-                ${showMarkPaid ? '<button type="button" onclick="markSignupPaid(' + s.id + ')" style="background:none;border:none;color:var(--sage);font-size:0.85rem;cursor:pointer;padding:4px;" title="Mark paid in full">&#x2714;</button>' : ''}
-                <button type="button" onclick="toggleSignupForm(window._signupRows[${s.id}])" style="background:none;border:none;color:var(--taupe);font-size:0.85rem;cursor:pointer;padding:4px;" title="Edit">&#x270e;</button>
-                <button type="button" onclick='deleteSignup(${s.id}, ${safeName})' style="background:none;border:none;color:var(--light-text);font-size:1.1rem;cursor:pointer;padding:4px;" title="Delete">&times;</button>
-            </div>
-        </div>
-        `;
-    }).join('');
-    body.innerHTML = html;
-}
-
-async function markSignupPaid(id) {
-    const row = window._signupRows && window._signupRows[id];
-    if (!row) return;
-    const ticketPrice = Number(row.ticket_price) || 0;
-    try {
-        await apiFetch('/api/budget/signups/' + id, {
-            method: 'PATCH',
-            body: { amount_paid: ticketPrice, status: 'paid' }
-        });
-        showToast(row.name + ' marked as paid.');
-        loadSignups();
-    } catch (e) {
-        showToast('Error: ' + (e.message || ''));
-    }
-}
-
-async function deleteSignup(id, name) {
-    if (!confirm('Remove "' + name + '" from the signups list? This cannot be undone.')) return;
-    try {
-        await apiFetch('/api/budget/signups/' + id, { method: 'DELETE' });
-        loadSignups();
-    } catch (e) { showToast('Error: ' + (e.message || '')); }
-}
-
-// --- CSV Exports ---
-
-function downloadSignupsCsv() {
-    const data = window._lastSignupsData;
-    if (!data || !data.signups || !data.signups.length) {
-        showToast('No signups to export.'); return;
-    }
-    const headers = ['Name','Email','Phone','Tier','Room','Ticket Price','Amount Paid','Balance','Payment Method','Status','Notes','Date'];
-    const rows = data.signups.map(s => {
-        const balance = (Number(s.ticket_price) || 0) - (Number(s.amount_paid) || 0);
-        return [
-            s.name || '',
-            s.email || '',
-            s.phone || '',
-            tierLabel(s.room_occupancy),
-            s.room_label || '',
-            (s.ticket_price || 0).toFixed(2),
-            (s.amount_paid || 0).toFixed(2),
-            balance.toFixed(2),
-            s.payment_method || '',
-            _signupStatusLabels[s.status] || s.status || '',
-            s.notes || '',
-            s.created_at || ''
-        ];
-    });
-    downloadCsvFile('retreat-signups.csv', headers, rows);
-}
-
-// --- CSV Import ---
-// Parses a CSV file, auto-maps columns to our fields, shows a preview,
-// then bulk-imports via /api/budget/signups/import (upsert by email/name).
-async function handleCsvImport(fileInput) {
-    const file = fileInput.files && fileInput.files[0];
-    if (!file) return;
-    fileInput.value = '';
-    const text = await file.text();
-    const lines = text.split(/\r?\n/).filter(l => l.trim());
-    if (lines.length < 2) { showToast('CSV needs a header row and at least one data row.'); return; }
-
-    // Parse CSV (handles quoted fields with commas)
-    function parseCsvLine(line) {
-        const result = [];
-        let current = '';
-        let inQuotes = false;
-        for (let i = 0; i < line.length; i++) {
-            const ch = line[i];
-            if (inQuotes) {
-                if (ch === '"' && line[i + 1] === '"') { current += '"'; i++; }
-                else if (ch === '"') { inQuotes = false; }
-                else { current += ch; }
-            } else {
-                if (ch === '"') { inQuotes = true; }
-                else if (ch === ',') { result.push(current.trim()); current = ''; }
-                else { current += ch; }
-            }
-        }
-        result.push(current.trim());
-        return result;
-    }
-
-    const headers = parseCsvLine(lines[0]);
-    const dataRows = lines.slice(1).map(l => parseCsvLine(l)).filter(r => r.some(c => c));
-
-    // Auto-map columns to our fields (tuned for CCB exports)
-    const fieldMap = {
-        name: null, email: null, phone: null, amount_paid: null,
-        ticket_price: null, payment_method: null, payment_status: null,
-        room_occupancy: null, room_label: null, notes: null
-    };
-    const patterns = {
-        name: /^(full.?name|name|first.*last|participant|profile.?matched)$/i,
-        email: /^(e.?mail|email.?address)$/i,
-        phone: /^(phone|mobile|mobile.?phone|cell|telephone)$/i,
-        ticket_price: /^(form.?total|ticket|price|cost|fee|registration.?fee|total.?due|total|amount)$/i,
-        payment_method: /^(payment.?method|method|pay.?type|payment.?type)$/i,
-        payment_status: /^(payment.?status|status)$/i,
-        room_occupancy: /^(how.?many.?people.*|.*people.?per.?room.*|room.?type|room.?size|room.?occupancy|.*person.?room.*)$/i,
-        room_label: /^(roommate.*|roommate.?pref.*|room.?assignment|room.?number)$/i,
-        notes: /^(notes|comments|special.?needs|dietary|remarks)$/i
-    };
-    // Also check for first_name + last_name combo
-    let firstNameCol = null, lastNameCol = null;
-    headers.forEach((h, i) => {
-        const clean = h.replace(/['"]/g, '').trim();
-        if (/^(first.?name|first)$/i.test(clean)) firstNameCol = i;
-        if (/^(last.?name|last|surname)$/i.test(clean)) lastNameCol = i;
-        Object.keys(patterns).forEach(field => {
-            if (fieldMap[field] === null && patterns[field].test(clean)) {
-                fieldMap[field] = i;
-            }
-        });
-    });
-    // If no full name column but have first+last, merge them
-    const useFirstLast = fieldMap.name === null && firstNameCol !== null && lastNameCol !== null;
-
-    // Helper: parse "2 Person room" → 2, "1 Person room" → 1, etc.
-    function parseRoomOccupancy(val) {
-        if (!val) return 2;
-        const m = val.match(/(\d)/);
-        return m ? parseInt(m[1], 10) : 2;
-    }
-
-    // Build mapped rows
-    const mapped = dataRows.map(row => {
-        const name = useFirstLast
-            ? ((row[firstNameCol] || '') + ' ' + (row[lastNameCol] || '')).trim()
-            : (fieldMap.name !== null ? (row[fieldMap.name] || '') : '');
-        const formTotal = fieldMap.ticket_price !== null ? (parseFloat(row[fieldMap.ticket_price]) || 0) : 0;
-        const payStatus = fieldMap.payment_status !== null ? (row[fieldMap.payment_status] || '').toLowerCase().trim() : '';
-        // If payment status is "paid", amount_paid = form total
-        const amountPaid = payStatus === 'paid' ? formTotal : 0;
-        const roomOcc = fieldMap.room_occupancy !== null ? parseRoomOccupancy(row[fieldMap.room_occupancy]) : 2;
-        return {
-            name,
-            email: fieldMap.email !== null ? (row[fieldMap.email] || '') : '',
-            phone: fieldMap.phone !== null ? (row[fieldMap.phone] || '') : '',
-            ticket_price: formTotal,
-            amount_paid: amountPaid,
-            status: payStatus === 'paid' ? 'paid' : 'signed_up',
-            payment_method: fieldMap.payment_method !== null ? (row[fieldMap.payment_method] || '') : '',
-            room_occupancy: roomOcc,
-            room_label: fieldMap.room_label !== null ? (row[fieldMap.room_label] || '') : '',
-            notes: fieldMap.notes !== null ? (row[fieldMap.notes] || '') : ''
-        };
-    }).filter(r => r.name);
-
-    if (!mapped.length) {
-        showToast('No valid rows found. Make sure the CSV has a Name or First Name column.');
-        return;
-    }
-
-    // Show preview
-    const preview = mapped.slice(0, 5).map(r => {
-        const parts = [r.name];
-        if (r.ticket_price) parts.push('$' + Number(r.ticket_price).toFixed(2));
-        if (r.status === 'paid') parts.push('PAID');
-        if (r.room_occupancy) parts.push(r.room_occupancy + '-person');
-        return parts.join(' · ');
-    }).join('\n');
-    const msg = 'Found ' + mapped.length + ' signup(s) to import.\n\nPreview:\n' + preview +
-        (mapped.length > 5 ? '\n... and ' + (mapped.length - 5) + ' more' : '') +
-        '\n\nExisting signups matched by email or name will be updated. New ones will be created.\n\nProceed?';
-    if (!confirm(msg)) return;
-
-    try {
-        showToast('Importing ' + mapped.length + ' rows...');
-        const res = await apiFetch('/api/budget/signups/import', { method: 'POST', body: { rows: mapped } });
-        if (res && res.error) { showToast('Import failed: ' + res.error); return; }
-        showToast('Done! ' + (res.created || 0) + ' new, ' + (res.updated || 0) + ' updated, ' + (res.skipped || 0) + ' skipped.');
-        loadSignups();
-    } catch (e) {
-        showToast('Import failed: ' + (e.message || ''));
-    }
-}
-
-function downloadBudgetCategoriesCsv() {
-    const body = document.getElementById('budget-cats-body');
-    if (!body) return;
-    // Read from current DOM inputs
-    const inputs = body.querySelectorAll('input[data-cat-id]');
-    if (!inputs.length) { showToast('No categories to export.'); return; }
-    const cats = {};
-    inputs.forEach(inp => {
-        const id = inp.dataset.catId;
-        if (!cats[id]) cats[id] = {};
-        cats[id][inp.dataset.field] = inp.value;
-    });
-    const headers = ['Category','Planned','Actual','Remaining'];
-    const rows = Object.values(cats).map(c => {
-        const planned = parseFloat(c.planned) || 0;
-        const actual = parseFloat(c.actual) || 0;
-        return [c.name || '', planned.toFixed(2), actual.toFixed(2), (planned - actual).toFixed(2)];
-    });
-    downloadCsvFile('budget-categories.csv', headers, rows);
-}
-
-function downloadCsvFile(filename, headers, rows) {
-    const csvContent = [headers, ...rows].map(row =>
-        row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')
-    ).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-// --- Room Assignments ---
-// Auto-groups signups by roommate preference, assigns room numbers,
-// calculates hotel bill from actual assignments.
-
-function autoAssignRooms() {
-    const data = window._lastSignupsData;
-    if (!data || !data.signups || !data.signups.length) {
-        showToast('Import signups first.'); return;
-    }
-    const signups = data.signups.filter(s => s.status !== 'cancelled');
-    if (!signups.length) { showToast('No active signups.'); return; }
-
-    // Build a name lookup (lowercase → signup object)
-    const byName = {};
-    signups.forEach(s => {
-        byName[s.name.toLowerCase().trim()] = s;
-        // Also index by first name only for fuzzy matching
-        const first = s.name.split(' ')[0].toLowerCase().trim();
-        if (!byName[first]) byName[first] = s;
-    });
-
-    // Parse roommate preferences and build edges
-    const edges = {}; // signup.id → [matched signup ids]
-    signups.forEach(s => {
-        edges[s.id] = [];
-        const pref = (s.room_label || '').trim();
-        if (!pref) return;
-        // Split on common delimiters: comma, "and", "&", newline
-        const names = pref.split(/[,&\n]| and /i).map(n => n.trim().toLowerCase()).filter(Boolean);
-        names.forEach(name => {
-            // Try exact match, then first+last, then first name only
-            const match = byName[name] || byName[name.split(' ')[0]];
-            if (match && match.id !== s.id) {
-                edges[s.id].push(match.id);
-            }
-        });
-    });
-
-    // Build clusters using union-find
-    const parent = {};
-    signups.forEach(s => { parent[s.id] = s.id; });
-    function find(x) { return parent[x] === x ? x : (parent[x] = find(parent[x])); }
-    function union(a, b) { parent[find(a)] = find(b); }
-
-    // Union women who want each other
-    signups.forEach(s => {
-        (edges[s.id] || []).forEach(targetId => {
-            union(s.id, targetId);
-        });
-    });
-
-    // Group by cluster
-    const clusters = {};
-    signups.forEach(s => {
-        const root = find(s.id);
-        if (!clusters[root]) clusters[root] = [];
-        clusters[root].push(s);
-    });
-
-    // Assign room numbers and determine room sizes
-    const rooms = [];
-    let roomNum = 1;
-    Object.values(clusters).forEach(members => {
-        // Room size = max of what anyone in the group requested, or group size
-        const maxRequested = Math.max(...members.map(m => m.room_occupancy || 2));
-        const roomSize = Math.max(members.length, maxRequested);
-        const warnings = [];
-        if (members.length > 4) warnings.push('Too many for one room — split needed');
-        if (members.length < maxRequested) warnings.push('Room has ' + (maxRequested - members.length) + ' open spot(s)');
-        rooms.push({
-            number: roomNum++,
-            size: Math.min(roomSize, 4),
-            members,
-            warnings
-        });
-    });
-
-    // Save room labels back to signups
-    const updates = [];
-    rooms.forEach(room => {
-        room.members.forEach(s => {
-            const label = 'Room ' + room.number;
-            if (s.room_label !== label) {
-                updates.push(apiFetch('/api/budget/signups/' + s.id, {
-                    method: 'PATCH',
-                    body: { room_label: label, room_occupancy: room.size }
-                }));
-            }
-        });
-    });
-
-    Promise.all(updates).then(() => {
-        renderRoomBoard(rooms);
-        loadSignups(); // refresh the list
-        showToast('Assigned ' + signups.length + ' women to ' + rooms.length + ' room(s). Review below.');
-    }).catch(e => showToast('Error saving: ' + (e.message || '')));
-}
-
-function renderRoomBoard(rooms) {
-    const board = document.getElementById('room-board');
-    const summary = document.getElementById('room-hotel-summary');
-    if (!board) return;
-
-    if (!rooms || !rooms.length) {
-        board.innerHTML = '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No rooms assigned yet.</div>';
-        return;
-    }
-
-    // Hotel bill calculation using calculator values
-    const baseNightly = parseFloat((document.getElementById('calc-room-base') || {}).value) || 0;
-    const extraNightly = parseFloat((document.getElementById('calc-room-extra') || {}).value) || 0;
-    const nights = parseInt((document.getElementById('calc-nights') || {}).value, 10) || 2;
-
-    let totalHotelBill = 0;
-    const roomCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
-
-    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;">';
-    rooms.forEach(room => {
-        const size = Math.min(room.size, 4);
-        roomCounts[size] = (roomCounts[size] || 0) + 1;
-        const extras = Math.max(0, size - 2);
-        const nightlyRate = baseNightly + (extras * extraNightly);
-        const roomCost = nightlyRate * nights;
-        totalHotelBill += roomCost;
-
-        const nameList = room.members.map(m => esc(m.name)).join('<br>');
-        const warningHtml = room.warnings.length
-            ? '<div style="font-size:0.7rem;color:#a13224;margin-top:4px;">' + room.warnings.map(w => '⚠ ' + w).join('<br>') + '</div>'
-            : '';
-
-        html += `
-        <div style="padding:12px 14px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;color:var(--taupe);">Room ${room.number}</div>
-                <div style="font-size:0.72rem;color:var(--light-text);">${size}-person &middot; ${fmtMoney(roomCost)}</div>
-            </div>
-            <div style="font-size:0.88rem;color:var(--dark-text);line-height:1.6;">${nameList}</div>
-            ${room.members.length < size ? '<div style="font-size:0.78rem;color:var(--sage);font-style:italic;margin-top:4px;">' + (size - room.members.length) + ' open spot(s)</div>' : ''}
-            ${warningHtml}
-        </div>`;
-    });
-    html += '</div>';
-    board.innerHTML = html;
-
-    // Summary
-    if (summary) {
-        const roomBreakdown = [1,2,3,4].filter(s => roomCounts[s] > 0).map(s => roomCounts[s] + '× ' + s + '-person').join(', ');
-        summary.innerHTML = `
-            <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:center;">
-                <div><strong>${rooms.length}</strong> rooms total</div>
-                <div>${roomBreakdown}</div>
-                <div>Hotel bill: <strong style="color:var(--accent);">${fmtMoney(totalHotelBill)}</strong></div>
-                <div style="font-size:0.78rem;color:var(--light-text);">${nights} night(s) @ ${fmtMoney(baseNightly)}/night base</div>
-            </div>
-        `;
-        // Update overview hotel cost with actual room assignments
-        _budgetOverview.hotelCost = totalHotelBill;
-        _budgetOverview.rooms = rooms.length;
-        refreshBudgetOverview();
-
-        // Push actual room counts into the calculator inputs
-        const calcN1 = document.getElementById('calc-n1');
-        const calcN2 = document.getElementById('calc-n2');
-        const calcN3 = document.getElementById('calc-n3');
-        const calcN4 = document.getElementById('calc-n4');
-        if (calcN1) calcN1.value = roomCounts[1] || 0;
-        if (calcN2) calcN2.value = roomCounts[2] || 0;
-        if (calcN3) calcN3.value = roomCounts[3] || 0;
-        if (calcN4) calcN4.value = roomCounts[4] || 0;
-        // Count no-hotel women (room_occupancy = 0)
-        const noHotelCount = (window._lastSignupsData && window._lastSignupsData.signups || [])
-            .filter(s => s.status !== 'cancelled' && s.room_occupancy === 0).length;
-        const calcNH = document.getElementById('calc-n-nohotel');
-        if (calcNH) calcNH.value = noHotelCount || 0;
-        // Recalc and save
-        recalcRetreatCalculator();
-        scheduleCalcStateSave();
-    }
-}
-
-function downloadRoomRoster() {
-    const data = window._lastSignupsData;
-    if (!data || !data.signups) { showToast('No signups.'); return; }
-    const signups = data.signups.filter(s => s.status !== 'cancelled' && s.room_label);
-    if (!signups.length) { showToast('Run Auto-assign first.'); return; }
-
-    // Group by room
-    const rooms = {};
-    signups.forEach(s => {
-        const label = s.room_label || 'Unassigned';
-        if (!rooms[label]) rooms[label] = [];
-        rooms[label].push(s);
-    });
-
-    const headers = ['Room', 'Room Size', 'Name', 'Email', 'Phone', 'Roommate Preference'];
-    const rows = [];
-    Object.keys(rooms).sort().forEach(label => {
-        const members = rooms[label];
-        const size = Math.max(...members.map(m => m.room_occupancy || 2), members.length);
-        members.forEach(m => {
-            rows.push([label, size + '-person', m.name, m.email || '', m.phone || '', '']);
-        });
-    });
-    downloadCsvFile('room-roster.csv', headers, rows);
-}
-
-// --- Expense Log ---
-let _expenseEditingId = null;
-
-function toggleExpenseForm(editRow) {
-    const form = document.getElementById('expense-form');
-    if (!form) return;
-    // Populate category dropdown
-    populateExpenseCategoryDropdown();
-    if (editRow) {
-        _expenseEditingId = editRow.id;
-        document.getElementById('expense-form-title').textContent = 'Edit expense';
-        document.getElementById('exp-save-btn').textContent = 'Update';
-        document.getElementById('exp-description').value = editRow.description || '';
-        document.getElementById('exp-amount').value = editRow.amount || '';
-        document.getElementById('exp-vendor').value = editRow.vendor || '';
-        document.getElementById('exp-date').value = editRow.expense_date || '';
-        document.getElementById('exp-category').value = editRow.category_id || '';
-        document.getElementById('exp-reference').value = editRow.reference || '';
-        document.getElementById('exp-memo').value = editRow.memo || '';
-        form.style.display = 'block';
-        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else if (form.style.display === 'none') {
-        _expenseEditingId = null;
-        document.getElementById('expense-form-title').textContent = 'New expense';
-        document.getElementById('exp-save-btn').textContent = 'Save expense';
-        document.getElementById('exp-description').value = '';
-        document.getElementById('exp-amount').value = '';
-        document.getElementById('exp-vendor').value = '';
-        document.getElementById('exp-date').value = new Date().toISOString().slice(0, 10);
-        document.getElementById('exp-category').value = '';
-        document.getElementById('exp-reference').value = '';
-        document.getElementById('exp-memo').value = '';
-        form.style.display = 'block';
-        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    } else {
-        cancelExpenseForm();
-    }
-}
-
-function cancelExpenseForm() {
-    _expenseEditingId = null;
-    document.getElementById('expense-form').style.display = 'none';
-}
-
-function populateExpenseCategoryDropdown() {
-    const sel = document.getElementById('exp-category');
-    if (!sel) return;
-    const current = sel.value;
-    const inputs = document.querySelectorAll('#budget-cats-body input[data-field="name"]');
-    let html = '<option value="">— Uncategorized —</option>';
-    inputs.forEach(inp => {
-        const id = inp.dataset.catId;
-        const name = inp.value || 'Category ' + id;
-        html += '<option value="' + id + '">' + esc(name) + '</option>';
-    });
-    sel.innerHTML = html;
-    sel.value = current;
-}
-
-async function saveExpenseForm() {
-    const description = document.getElementById('exp-description').value.trim();
-    if (!description) { showToast('Description is required.'); return; }
-    const body = {
-        description,
-        amount: parseFloat(document.getElementById('exp-amount').value) || 0,
-        vendor: document.getElementById('exp-vendor').value.trim(),
-        expense_date: document.getElementById('exp-date').value,
-        category_id: document.getElementById('exp-category').value || null,
-        reference: document.getElementById('exp-reference').value.trim(),
-        memo: document.getElementById('exp-memo').value.trim()
-    };
-    try {
-        if (_expenseEditingId) {
-            await apiFetch('/api/budget/expenses/' + _expenseEditingId, { method: 'PATCH', body });
-            showToast('Expense updated.');
-        } else {
-            await apiFetch('/api/budget/expenses', { method: 'POST', body });
-            showToast('Expense added.');
-        }
-        cancelExpenseForm();
-        loadExpenses();
-        loadBudgetCategories(); // refresh actual totals
-    } catch (e) {
-        showToast('Save failed: ' + (e.message || ''));
-    }
-}
-
-async function loadExpenses() {
-    const body = document.getElementById('expense-list-body');
-    if (!body) return;
-    try {
-        const data = await apiFetch('/api/budget/expenses');
-        const expenses = (data && Array.isArray(data.expenses)) ? data.expenses : [];
-        window._lastExpensesData = expenses;
-        renderExpensesList(expenses);
-    } catch (e) {
-        body.innerHTML = '<div style="color:#a13224;font-size:0.88rem;">Could not load expenses: ' + esc(e.message || '') + '</div>';
-    }
-}
-
-function renderExpensesList(expenses) {
-    const body = document.getElementById('expense-list-body');
-    if (!body) return;
-    if (!expenses.length) {
-        body.innerHTML = '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No expenses yet. Tap "+ Add expense" to record spending.</div>';
-        return;
-    }
-    const total = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-    window._expenseRows = {};
-    expenses.forEach(e => { window._expenseRows[e.id] = e; });
-    let html = `
-        <div style="padding:8px 12px;background:rgba(193,131,97,0.06);border-radius:8px;margin-bottom:0.75rem;font-size:0.82rem;">
-            <strong>${expenses.length}</strong> expense${expenses.length === 1 ? '' : 's'} totaling <strong style="color:var(--accent);">${fmtMoney(total)}</strong>
-        </div>
-    `;
-    expenses.forEach(e => {
-        const catLabel = e.category_name ? esc(e.category_name) : '<span style="color:var(--light-text);">uncategorized</span>';
-        html += `
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:0.5rem;padding:8px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
-            <div style="flex:1;min-width:0;">
-                <div style="font-size:0.9rem;font-weight:600;color:var(--dark-text);">${esc(e.description)}</div>
-                <div style="font-size:0.72rem;color:var(--light-text);">${e.expense_date || '—'} ${e.vendor ? '&middot; ' + esc(e.vendor) : ''} ${e.reference ? '&middot; Ref: ' + esc(e.reference) : ''}</div>
-                <div style="font-size:0.72rem;color:var(--taupe);">${catLabel}${e.memo ? ' &middot; <em>' + esc(e.memo) + '</em>' : ''}</div>
-            </div>
-            <div style="text-align:right;white-space:nowrap;">
-                <div style="font-size:0.95rem;font-weight:700;color:var(--accent);">${fmtMoney(e.amount || 0)}</div>
-                <div style="display:flex;gap:2px;justify-content:flex-end;margin-top:2px;">
-                    <button type="button" onclick="toggleExpenseForm(window._expenseRows[${e.id}])" style="background:none;border:none;color:var(--taupe);font-size:0.82rem;cursor:pointer;padding:2px 4px;" title="Edit">&#x270e;</button>
-                    <button type="button" onclick="deleteExpense(${e.id})" style="background:none;border:none;color:var(--light-text);font-size:1rem;cursor:pointer;padding:2px 4px;" title="Delete">&times;</button>
-                </div>
-            </div>
-        </div>`;
-    });
-    body.innerHTML = html;
-}
-
-async function deleteExpense(id) {
-    if (!confirm('Delete this expense?')) return;
-    try {
-        await apiFetch('/api/budget/expenses/' + id, { method: 'DELETE' });
-        loadExpenses();
-        loadBudgetCategories();
-    } catch (e) { showToast('Error: ' + (e.message || '')); }
-}
-
-// --- Record Payment (on signups) ---
-async function recordPayment(signupId) {
-    const row = window._signupRows && window._signupRows[signupId];
-    if (!row) return;
-    const balance = (Number(row.ticket_price) || 0) - (Number(row.amount_paid) || 0);
-    const amtStr = prompt('Payment amount for ' + row.name + '?\n(Balance: ' + fmtMoney(balance) + ')', balance > 0 ? balance.toFixed(2) : '');
-    if (amtStr === null) return;
-    const amount = parseFloat(amtStr);
-    if (!amount || amount <= 0) { showToast('Enter a valid amount.'); return; }
-    const method = prompt('Payment method? (cash, check, venmo, zelle, paypal, other)', row.payment_method || '') || '';
-    const memo = prompt('Memo? (e.g. "Deposit", "Balance", "Scholarship")', '') || '';
-    try {
-        await apiFetch('/api/budget/signups/' + signupId + '/payments', {
-            method: 'POST',
-            body: { amount, method, memo, payment_date: new Date().toISOString().slice(0, 10) }
-        });
-        showToast('Payment of ' + fmtMoney(amount) + ' recorded for ' + row.name);
-        loadSignups();
-    } catch (e) {
-        showToast('Error: ' + (e.message || ''));
-    }
-}
-
-// --- Financial Report ---
-async function downloadFinancialReport() {
-    showToast('Generating report...');
-    try {
-        const data = await apiFetch('/api/budget/report');
-        if (!data) { showToast('No data.'); return; }
-        const lines = [];
-        const add = (text) => lines.push(text);
-        add('G4 RETREAT FINANCIAL REPORT');
-        add('Generated: ' + new Date().toLocaleString());
-        add('');
-        add('=== SUMMARY ===');
-        add('Total Income (payments received),' + (data.summary.total_income || 0).toFixed(2));
-        add('Total Expenses,' + (data.summary.total_expenses || 0).toFixed(2));
-        add('Net (Income - Expenses),' + (data.summary.net || 0).toFixed(2));
-        add('Total Billed (ticket prices),' + (data.summary.total_billed || 0).toFixed(2));
-        add('Signups,' + (data.summary.signup_count || 0));
-        add('');
-        add('=== INCOME - PAYMENTS RECEIVED ===');
-        add('Date,Name,Amount,Method,Memo');
-        (data.payments || []).forEach(p => {
-            add([p.payment_date || '', '"' + (p.signup_name || '').replace(/"/g, '""') + '"', (p.amount || 0).toFixed(2), p.method || '', '"' + (p.memo || '').replace(/"/g, '""') + '"'].join(','));
-        });
-        add('');
-        add('=== EXPENSES ===');
-        add('Date,Description,Vendor,Amount,Category,Reference,Memo');
-        (data.expenses || []).forEach(e => {
-            add([e.expense_date || '', '"' + (e.description || '').replace(/"/g, '""') + '"', '"' + (e.vendor || '').replace(/"/g, '""') + '"', (e.amount || 0).toFixed(2), '"' + (e.category_name || '').replace(/"/g, '""') + '"', e.reference || '', '"' + (e.memo || '').replace(/"/g, '""') + '"'].join(','));
-        });
-        add('');
-        add('=== BUDGET CATEGORIES ===');
-        add('Category,Planned,Actual,Remaining');
-        (data.categories || []).forEach(c => {
-            const p = Number(c.planned) || 0;
-            const a = Number(c.actual) || 0;
-            add(['"' + (c.name || '').replace(/"/g, '""') + '"', p.toFixed(2), a.toFixed(2), (p - a).toFixed(2)].join(','));
-        });
-        add('');
-        add('=== SIGNUPS ===');
-        add('Name,Email,Phone,Room,Ticket,Paid,Balance,Status');
-        (data.signups || []).forEach(s => {
-            const bal = (Number(s.ticket_price) || 0) - (Number(s.amount_paid) || 0);
-            add(['"' + (s.name || '').replace(/"/g, '""') + '"', s.email || '', s.phone || '', '"' + (s.room_label || '').replace(/"/g, '""') + '"', (s.ticket_price || 0).toFixed(2), (s.amount_paid || 0).toFixed(2), bal.toFixed(2), s.status || ''].join(','));
-        });
-        const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'g4-financial-report.csv';
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast('Report downloaded!');
-    } catch (e) {
-        showToast('Failed: ' + (e.message || ''));
-    }
-}
-
-// --- Clear All Data ---
-async function clearAllBudgetData() {
-    const first = confirm('This will delete ALL budget data:\n\n• All signups & payments\n• All expenses\n• All categories & sub-items\n• All receipts\n• Calculator values & ticket prices\n\nThis CANNOT be undone. Are you sure?');
-    if (!first) return;
-    const second = prompt('Type DELETE to confirm:', '');
-    if (second !== 'DELETE') { showToast('Cancelled.'); return; }
-    try {
-        const res = await apiFetch('/api/budget/clear-all', { method: 'POST', body: { confirm: 'DELETE_ALL_BUDGET_DATA' } });
-        if (res && res.error) { showToast('Failed: ' + res.error); return; }
-        showToast('All budget data cleared.');
-        // Reload everything
-        loadBudgetCategories();
-        loadSignups();
-        loadExpenses();
-        initRetreatCalculator();
-    } catch (e) {
-        showToast('Failed: ' + (e.message || ''));
-    }
-}
-
-// --- Reminders ---
-async function loadReminders() {
-    const list = document.getElementById('reminders-list');
-    if (!list) return;
-    try {
-        const data = await apiFetch('/api/reminders');
-        const items = (data && Array.isArray(data.reminders)) ? data.reminders : [];
-        renderReminders(items);
-    } catch (e) {
-        list.innerHTML = '<div style="color:#a13224;font-size:0.88rem;">Could not load reminders: ' + esc(e.message || '') + '</div>';
-    }
-}
-
-function renderReminders(items) {
-    const list = document.getElementById('reminders-list');
-    if (!list) return;
-    if (!items.length) {
-        list.innerHTML = '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No reminders yet. Start adding things you don\'t want to forget!</div>';
-        return;
-    }
-    list.innerHTML = items.map(r => {
-        const checked = r.done ? 'checked' : '';
-        const strikeStyle = r.done ? 'text-decoration:line-through;color:var(--light-text);' : '';
-        return `
-        <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 4px;border-bottom:1px solid rgba(200,185,176,0.18);">
-            <input type="checkbox" ${checked} onchange="toggleReminder(${r.id}, this.checked)" style="margin-top:4px;width:18px;height:18px;accent-color:var(--sage);cursor:pointer;flex-shrink:0;" />
-            <div style="flex:1;min-width:0;${strikeStyle}font-size:0.92rem;line-height:1.5;padding-top:1px;" id="reminder-text-${r.id}">${esc(r.text)}</div>
-            <button type="button" onclick="editReminder(${r.id})" style="background:none;border:none;color:var(--taupe);font-size:0.82rem;cursor:pointer;padding:2px 6px;flex-shrink:0;" title="Edit">&#x270e;</button>
-            <button type="button" onclick="deleteReminder(${r.id})" style="background:none;border:none;color:var(--light-text);font-size:1.05rem;cursor:pointer;padding:2px 6px;flex-shrink:0;" title="Delete">&times;</button>
-        </div>`;
-    }).join('');
-}
-
-async function addReminder() {
-    const input = document.getElementById('reminder-new-text');
-    const text = (input.value || '').trim();
-    if (!text) return;
-    try {
-        await apiFetch('/api/reminders', { method: 'POST', body: { text } });
-        input.value = '';
-        loadReminders();
-    } catch (e) { showToast('Error: ' + (e.message || '')); }
-}
-
-async function toggleReminder(id, done) {
-    try {
-        await apiFetch('/api/reminders/' + id, { method: 'PATCH', body: { done } });
-        loadReminders();
-    } catch (e) { showToast('Error: ' + (e.message || '')); }
-}
-
-async function editReminder(id) {
-    const el = document.getElementById('reminder-text-' + id);
-    if (!el) return;
-    const current = el.textContent;
-    const newText = prompt('Edit reminder:', current);
-    if (newText === null || newText.trim() === current) return;
-    try {
-        await apiFetch('/api/reminders/' + id, { method: 'PATCH', body: { text: newText.trim() } });
-        loadReminders();
-    } catch (e) { showToast('Error: ' + (e.message || '')); }
-}
-
-async function deleteReminder(id) {
-    if (!confirm('Delete this reminder?')) return;
-    try {
-        await apiFetch('/api/reminders/' + id, { method: 'DELETE' });
-        loadReminders();
-    } catch (e) { showToast('Error: ' + (e.message || '')); }
-}
-
-function downloadRemindersCsv() {
-    const items = document.querySelectorAll('#reminders-list [id^="reminder-text-"]');
-    if (!items.length) { showToast('No reminders to export.'); return; }
-    const headers = ['Status', 'Reminder'];
-    const rows = [];
-    items.forEach(el => {
-        const done = el.parentElement.querySelector('input[type="checkbox"]').checked;
-        rows.push([done ? 'Done' : 'Open', el.textContent]);
-    });
-    downloadCsvFile('retreat-reminders.csv', headers, rows);
-}
-
-// --- Registration Link ---
-async function loadRegistrationLink() {
-    try {
-        const data = await apiFetch('/api/budget/calculator/state');
-        const state = (data && data.state) || {};
-        const url = state.retreat_calc_registration_url || '';
-        const el = document.getElementById('reg-link-url');
-        if (el && url) el.value = url;
-    } catch (e) { /* silent */ }
-}
-
-async function saveRegistrationLink() {
-    const url = (document.getElementById('reg-link-url').value || '').trim();
-    try {
-        await apiFetch('/api/budget/calculator/state', {
-            method: 'POST',
-            body: { retreat_calc_registration_url: url }
-        });
-        const status = document.getElementById('reg-link-status');
-        status.textContent = url ? 'Saved! Women will see the registration card on their home page.' : 'Cleared. Registration card hidden.';
-        status.style.display = 'block';
-        setTimeout(() => { status.style.display = 'none'; }, 4000);
-    } catch (e) {
-        showToast('Save failed: ' + (e.message || ''));
-    }
 }
 
 // --- Scavenger Hunt ---

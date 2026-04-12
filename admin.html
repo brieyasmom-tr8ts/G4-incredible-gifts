@@ -1129,6 +1129,11 @@
                         <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--blush);" id="ov-spent">$0</div>
                         <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Actual across categories</div>
                     </div>
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid #c4a87d;">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Women</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:#c4a87d;" id="ov-women">0</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;" id="ov-women-sub">From signups</div>
+                    </div>
                     <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--rose);">
                         <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">What's Left</div>
                         <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--rose);" id="ov-remaining">$0</div>
@@ -1229,6 +1234,7 @@
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;">
                         <button class="btn btn-refresh" onclick="addBudgetCategory()">+ Add category</button>
                         <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="loadBudgetCategories()">Refresh</button>
+                        <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="downloadBudgetCategoriesCsv()">&#x2B07; CSV</button>
                     </div>
                 </div>
 
@@ -1239,7 +1245,10 @@
                             <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Retreat Signups</div>
                             <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Record each woman who signs up, track ticket price vs. what she's paid so far. Totals flow into "Taken In" above.</div>
                         </div>
-                        <button type="button" class="btn btn-refresh" onclick="toggleSignupForm()" id="signup-add-btn" style="white-space:nowrap;">+ Add signup</button>
+                        <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                            <button type="button" class="btn btn-refresh" onclick="toggleSignupForm()" id="signup-add-btn" style="white-space:nowrap;">+ Add signup</button>
+                            <button type="button" class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);white-space:nowrap;" onclick="downloadSignupsCsv()">&#x2B07; CSV</button>
+                        </div>
                     </div>
 
                     <!-- Ticket prices (5 tiers) -->
@@ -3731,6 +3740,8 @@ function refreshBudgetOverview() {
     const revEl = document.getElementById('ov-revenue');
     const spentEl = document.getElementById('ov-spent');
     const leftEl = document.getElementById('ov-remaining');
+    const womenEl = document.getElementById('ov-women');
+    const womenSubEl = document.getElementById('ov-women-sub');
     if (!roomsEl) return;
     roomsEl.textContent = _budgetOverview.rooms || 0;
     hotelEl.textContent = fmtMoney(_budgetOverview.hotelCost || 0);
@@ -3741,6 +3752,12 @@ function refreshBudgetOverview() {
     const remaining = takenIn - (_budgetOverview.hotelCost || 0) - (_budgetOverview.budgetSpent || 0);
     leftEl.textContent = fmtMoney(remaining);
     leftEl.style.color = remaining >= 0 ? 'var(--rose)' : '#a13224';
+    // Women count
+    if (womenEl) {
+        const sc = _budgetOverview.signupCount || 0;
+        womenEl.textContent = sc;
+        if (womenSubEl) womenSubEl.textContent = sc ? ('From ' + sc + ' signup' + (sc === 1 ? '' : 's')) : 'From signups';
+    }
 }
 
 // --- Retreat Cost Calculator (Phase 2) ---
@@ -4033,6 +4050,15 @@ async function saveTicketPricesNow() {
     }
 }
 
+// Safety net: save ticket prices if the page is hidden or closed mid-debounce
+if (!window._ticketPriceSaveUnloadWired) {
+    window._ticketPriceSaveUnloadWired = true;
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') saveTicketPricesNow();
+    });
+    window.addEventListener('pagehide', saveTicketPricesNow);
+}
+
 // --- Retreat Signups (Phase 3) ---
 let _signupEditingId = null; // null = new signup, number = editing existing
 
@@ -4054,6 +4080,7 @@ function toggleSignupForm(editRow) {
         document.getElementById('signup-status').value = editRow.status || 'signed_up';
         document.getElementById('signup-notes').value = editRow.notes || '';
         form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } else if (form.style.display === 'none') {
         // New signup
         _signupEditingId = null;
@@ -4069,6 +4096,7 @@ function toggleSignupForm(editRow) {
         document.getElementById('signup-status').value = 'signed_up';
         document.getElementById('signup-notes').value = '';
         form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } else {
         cancelSignupForm();
     }
@@ -4089,16 +4117,23 @@ function signupTierChanged() {
 async function saveSignupForm() {
     const name = document.getElementById('signup-name').value.trim();
     if (!name) { showToast('Name is required.'); return; }
+    const ticketPrice = parseFloat(document.getElementById('signup-price').value) || 0;
+    const amountPaid = parseFloat(document.getElementById('signup-paid').value) || 0;
+    let status = document.getElementById('signup-status').value;
+    // Auto-detect paid in full
+    if (ticketPrice > 0 && amountPaid >= ticketPrice && status === 'signed_up') {
+        status = 'paid';
+    }
     const body = {
         name,
         email: document.getElementById('signup-email').value.trim(),
         phone: document.getElementById('signup-phone').value.trim(),
         room_occupancy: parseInt(document.getElementById('signup-room').value, 10) || 2,
-        ticket_price: parseFloat(document.getElementById('signup-price').value) || 0,
-        amount_paid: parseFloat(document.getElementById('signup-paid').value) || 0,
+        ticket_price: ticketPrice,
+        amount_paid: amountPaid,
         payment_method: document.getElementById('signup-method').value,
         notes: document.getElementById('signup-notes').value.trim(),
-        status: document.getElementById('signup-status').value
+        status
     };
     try {
         if (_signupEditingId) {
@@ -4161,21 +4196,81 @@ function statusChip(s) {
     return `<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:0.72rem;font-weight:600;${colors[s] || ''}">${esc(label)}</span>`;
 }
 
+let _signupFilter = 'all';
+let _signupSort = 'name';
+
+function setSignupFilter(val) {
+    _signupFilter = val;
+    // Re-render from cached data
+    if (window._lastSignupsData) {
+        renderSignupsList(window._lastSignupsData.signups, window._lastSignupsData.stats);
+    }
+}
+
+function setSignupSort(val) {
+    _signupSort = val;
+    if (window._lastSignupsData) {
+        renderSignupsList(window._lastSignupsData.signups, window._lastSignupsData.stats);
+    }
+}
+
 function renderSignupsList(signups, stats) {
     const body = document.getElementById('signup-list-body');
     if (!body) return;
+    // Cache for filter/sort re-renders
+    window._lastSignupsData = { signups, stats };
+
     if (!signups.length) {
         body.innerHTML = '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No signups yet. Tap "+ Add signup" to start recording registrations.</div>';
         return;
     }
-    // Stats bar
+
+    // Filter
+    let filtered = signups;
+    if (_signupFilter !== 'all') {
+        filtered = signups.filter(s => s.status === _signupFilter);
+    }
+
+    // Sort
+    filtered = [...filtered].sort((a, b) => {
+        if (_signupSort === 'name') return (a.name || '').localeCompare(b.name || '');
+        if (_signupSort === 'date') return (b.created_at || '').localeCompare(a.created_at || '');
+        if (_signupSort === 'balance') {
+            const balA = (Number(a.ticket_price) || 0) - (Number(a.amount_paid) || 0);
+            const balB = (Number(b.ticket_price) || 0) - (Number(b.amount_paid) || 0);
+            return balB - balA;
+        }
+        return 0;
+    });
+
+    // Stats bar + filter/sort controls
     let html = `
-        <div style="display:flex;gap:1rem;flex-wrap:wrap;padding:10px 12px;background:rgba(138,158,122,0.06);border-radius:8px;margin-bottom:0.75rem;font-size:0.82rem;">
+        <div style="display:flex;gap:1rem;flex-wrap:wrap;padding:10px 12px;background:rgba(138,158,122,0.06);border-radius:8px;margin-bottom:0.75rem;font-size:0.82rem;align-items:center;">
             <div><strong>${stats.count || 0}</strong> signed up</div>
             <div><strong style="color:var(--sage);">${fmtMoney(stats.total_collected || 0)}</strong> collected</div>
             <div><strong style="color:var(--accent);">${fmtMoney(stats.total_outstanding || 0)}</strong> outstanding</div>
+            <div style="margin-left:auto;display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;">
+                <select onchange="setSignupFilter(this.value)" style="padding:4px 8px;border:1px solid var(--warm-grey);border-radius:6px;font-size:0.78rem;font-family:inherit;color:var(--dark-text);background:white;">
+                    <option value="all"${_signupFilter === 'all' ? ' selected' : ''}>All</option>
+                    <option value="signed_up"${_signupFilter === 'signed_up' ? ' selected' : ''}>Signed up</option>
+                    <option value="paid"${_signupFilter === 'paid' ? ' selected' : ''}>Paid</option>
+                    <option value="cancelled"${_signupFilter === 'cancelled' ? ' selected' : ''}>Cancelled</option>
+                </select>
+                <select onchange="setSignupSort(this.value)" style="padding:4px 8px;border:1px solid var(--warm-grey);border-radius:6px;font-size:0.78rem;font-family:inherit;color:var(--dark-text);background:white;">
+                    <option value="name"${_signupSort === 'name' ? ' selected' : ''}>A-Z</option>
+                    <option value="date"${_signupSort === 'date' ? ' selected' : ''}>Newest</option>
+                    <option value="balance"${_signupSort === 'balance' ? ' selected' : ''}>Balance</option>
+                </select>
+            </div>
         </div>
     `;
+
+    if (!filtered.length) {
+        html += '<div style="font-size:0.88rem;color:var(--light-text);font-style:italic;padding:10px 0;">No signups match this filter.</div>';
+        body.innerHTML = html;
+        return;
+    }
+
     // Header
     html += `
         <div style="display:grid;grid-template-columns:2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto;gap:0.4rem;align-items:center;padding:6px 10px;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);">
@@ -4192,22 +4287,27 @@ function renderSignupsList(signups, stats) {
     window._signupRows = {};
     signups.forEach(s => { window._signupRows[s.id] = s; });
 
-    html += signups.map(s => {
+    html += filtered.map(s => {
         const balance = (Number(s.ticket_price) || 0) - (Number(s.amount_paid) || 0);
         const balColor = balance <= 0 ? 'var(--sage)' : 'var(--accent)';
         const safeName = JSON.stringify(s.name);
+        const showMarkPaid = s.status !== 'paid' && s.status !== 'cancelled' && balance > 0;
+        const contactBits = [s.email, s.phone].filter(Boolean).map(x => esc(x));
+        const methodLabel = s.payment_method ? esc(s.payment_method) : '';
         return `
         <div style="display:grid;grid-template-columns:2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr auto;gap:0.4rem;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
             <div>
                 <div style="font-size:0.9rem;font-weight:600;color:var(--dark-text);">${esc(s.name)}</div>
-                ${s.email ? '<div style="font-size:0.7rem;color:var(--light-text);">' + esc(s.email) + '</div>' : ''}
+                ${contactBits.length ? '<div style="font-size:0.7rem;color:var(--light-text);">' + contactBits.join(' &middot; ') + '</div>' : ''}
+                ${s.notes ? '<div style="font-size:0.68rem;color:var(--light-text);font-style:italic;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;" title="' + esc(s.notes) + '">' + esc(s.notes) + '</div>' : ''}
             </div>
             <div style="font-size:0.82rem;color:var(--taupe);">${tierLabel(s.room_occupancy)}</div>
             <div style="text-align:right;font-size:0.88rem;color:var(--taupe);">${fmtMoney(s.ticket_price || 0)}</div>
-            <div style="text-align:right;font-size:0.88rem;color:var(--sage);">${fmtMoney(s.amount_paid || 0)}</div>
+            <div style="text-align:right;font-size:0.88rem;color:var(--sage);">${fmtMoney(s.amount_paid || 0)}${methodLabel ? '<div style="font-size:0.66rem;color:var(--light-text);">' + methodLabel + '</div>' : ''}</div>
             <div style="text-align:right;font-size:0.88rem;font-weight:600;color:${balColor};">${fmtMoney(balance)}</div>
             <div>${statusChip(s.status)}</div>
-            <div style="display:flex;gap:4px;">
+            <div style="display:flex;gap:2px;">
+                ${showMarkPaid ? '<button type="button" onclick="markSignupPaid(' + s.id + ')" style="background:none;border:none;color:var(--sage);font-size:0.85rem;cursor:pointer;padding:4px;" title="Mark paid in full">&#x2714;</button>' : ''}
                 <button type="button" onclick="toggleSignupForm(window._signupRows[${s.id}])" style="background:none;border:none;color:var(--taupe);font-size:0.85rem;cursor:pointer;padding:4px;" title="Edit">&#x270e;</button>
                 <button type="button" onclick='deleteSignup(${s.id}, ${safeName})' style="background:none;border:none;color:var(--light-text);font-size:1.1rem;cursor:pointer;padding:4px;" title="Delete">&times;</button>
             </div>
@@ -4217,12 +4317,89 @@ function renderSignupsList(signups, stats) {
     body.innerHTML = html;
 }
 
+async function markSignupPaid(id) {
+    const row = window._signupRows && window._signupRows[id];
+    if (!row) return;
+    const ticketPrice = Number(row.ticket_price) || 0;
+    try {
+        await apiFetch('/api/budget/signups/' + id, {
+            method: 'PATCH',
+            body: { amount_paid: ticketPrice, status: 'paid' }
+        });
+        showToast(row.name + ' marked as paid.');
+        loadSignups();
+    } catch (e) {
+        showToast('Error: ' + (e.message || ''));
+    }
+}
+
 async function deleteSignup(id, name) {
     if (!confirm('Remove "' + name + '" from the signups list? This cannot be undone.')) return;
     try {
         await apiFetch('/api/budget/signups/' + id, { method: 'DELETE' });
         loadSignups();
     } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+// --- CSV Exports ---
+
+function downloadSignupsCsv() {
+    const data = window._lastSignupsData;
+    if (!data || !data.signups || !data.signups.length) {
+        showToast('No signups to export.'); return;
+    }
+    const headers = ['Name','Email','Phone','Tier','Ticket Price','Amount Paid','Balance','Payment Method','Status','Notes','Date'];
+    const rows = data.signups.map(s => {
+        const balance = (Number(s.ticket_price) || 0) - (Number(s.amount_paid) || 0);
+        return [
+            s.name || '',
+            s.email || '',
+            s.phone || '',
+            tierLabel(s.room_occupancy),
+            (s.ticket_price || 0).toFixed(2),
+            (s.amount_paid || 0).toFixed(2),
+            balance.toFixed(2),
+            s.payment_method || '',
+            _signupStatusLabels[s.status] || s.status || '',
+            s.notes || '',
+            s.created_at || ''
+        ];
+    });
+    downloadCsvFile('retreat-signups.csv', headers, rows);
+}
+
+function downloadBudgetCategoriesCsv() {
+    const body = document.getElementById('budget-cats-body');
+    if (!body) return;
+    // Read from current DOM inputs
+    const inputs = body.querySelectorAll('input[data-cat-id]');
+    if (!inputs.length) { showToast('No categories to export.'); return; }
+    const cats = {};
+    inputs.forEach(inp => {
+        const id = inp.dataset.catId;
+        if (!cats[id]) cats[id] = {};
+        cats[id][inp.dataset.field] = inp.value;
+    });
+    const headers = ['Category','Planned','Actual','Remaining'];
+    const rows = Object.values(cats).map(c => {
+        const planned = parseFloat(c.planned) || 0;
+        const actual = parseFloat(c.actual) || 0;
+        return [c.name || '', planned.toFixed(2), actual.toFixed(2), (planned - actual).toFixed(2)];
+    });
+    downloadCsvFile('budget-categories.csv', headers, rows);
+}
+
+function downloadCsvFile(filename, headers, rows) {
+    const csvContent = [headers, ...rows].map(row =>
+        row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')
+    ).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 // --- Scavenger Hunt ---

@@ -2957,6 +2957,7 @@ export default {
             if (amountPaid > 0) { fields.push('amount_paid = ?'); values.push(amountPaid); }
             if (paymentMethod) { fields.push('payment_method = ?'); values.push(paymentMethod); }
             if (roomLabel) { fields.push('room_label = ?'); values.push(roomLabel); }
+            fields.push('room_occupancy = ?'); values.push(roomOccupancy);
             if (notes) { fields.push('notes = ?'); values.push(notes); }
             // Auto-set paid status
             if (amountPaid > 0 && ticketPrice > 0 && amountPaid >= ticketPrice) {

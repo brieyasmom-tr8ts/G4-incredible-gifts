@@ -8206,6 +8206,9 @@
 
         function initAudioNote() {
             const audioBtn = document.getElementById('audio-btn');
+            // Audio recording was part of the old free-form journal write box
+            // that got retired. If the DOM element isn't there, bail quietly.
+            if (!audioBtn) return;
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
             if (!SpeechRecognition) {
@@ -8296,8 +8299,10 @@
         }
 
         function updateSummarizeBtn() {
-            const text = document.getElementById('journal-textarea').value.trim();
+            const textarea = document.getElementById('journal-textarea');
             const btn = document.getElementById('summarize-btn');
+            if (!textarea || !btn) return;
+            const text = textarea.value.trim();
             btn.style.display = text.length > 50 ? 'block' : 'none';
         }
 
@@ -8380,6 +8385,9 @@
         function initSummarize() {
             const summarizeBtn = document.getElementById('summarize-btn');
             const textarea = document.getElementById('journal-textarea');
+            // Both elements belonged to the old free-form write box. Bail
+            // quietly if they aren't in the DOM anymore.
+            if (!summarizeBtn || !textarea) return;
 
             textarea.addEventListener('input', updateSummarizeBtn);
 

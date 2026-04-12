@@ -6624,6 +6624,7 @@
             { key: 'nav_sendlove', tab: 'sendlove', icon: '💌', label: 'Marnie' },
             { key: 'nav_hunt', tab: 'hunt', icon: '\ud83d\udcf7', label: 'Hunt' },
             { key: 'nav_meme', tab: 'meme', icon: '\ud83d\ude02', label: 'Meme', action: 'meme' },
+            { key: 'nav_whoami', tab: 'home', icon: '\ud83e\udd14', label: 'Who Am I?', action: 'whoami' },
             { key: 'nav_quiz', tab: 'quiz', icon: '\ud83e\udde0', label: 'Quiz', badge: 'badge-quiz' },
             { key: 'nav_survey', tab: 'home', icon: '\ud83d\udcdd', label: 'Survey', action: 'survey' },
             { key: 'nav_secretsister', tab: 'home', icon: '\ud83d\udc8c', label: 'Secret Sister', action: 'secretsister' },
@@ -6687,6 +6688,10 @@
                     const action = btn.dataset.action;
                     if (action === 'meme') {
                         window.open('meme.html', '_blank');
+                        return;
+                    }
+                    if (action === 'whoami') {
+                        window.open('whoami-slideshow.html', '_blank');
                         return;
                     }
                     if (action === 'survey') {

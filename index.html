@@ -11413,12 +11413,21 @@
                 if (s[b.key] === '0') return false;
                 return DEFAULT_HOME_BUTTONS.indexOf(b.key) !== -1;
             });
+            const count = visible.length;
+            // If the count is odd the last button spans both columns so we
+            // never end up with a lonely half-width button on the last row.
+            // Single button also gets this treatment (looks like a full-width
+            // call to action instead of an awkward left-aligned half tile).
             btnContainer.innerHTML = visible
-                .map(b => '<button onclick="' + b.action + '" style="' + btnStyle + '">' + b.label + '</button>')
+                .map((b, i) => {
+                    const isLastOdd = (count % 2 === 1) && (i === count - 1);
+                    const extraStyle = isLastOdd ? 'grid-column:1 / -1;text-align:center;' : '';
+                    return '<button onclick="' + b.action + '" style="' + btnStyle + extraStyle + '">' + b.label + '</button>';
+                })
                 .join('');
             // Hide the container entirely if nothing's visible so we don't
             // leave an empty grid on the page.
-            btnContainer.style.display = visible.length ? 'grid' : 'none';
+            btnContainer.style.display = count ? 'grid' : 'none';
         }
 
         async function loadDashboard() {

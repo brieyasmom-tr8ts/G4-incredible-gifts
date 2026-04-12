@@ -1825,15 +1825,30 @@ export default {
         if (!userId) return json({ error: 'user_id required' }, corsHeaders, 400);
         await ensureWeeklySSTable(env.DB);
         // Notes I've sent — I can see who I wrote to each week.
-        const { results: sent } = await env.DB.prepare(
+        const { results: sentWeekly } = await env.DB.prepare(
           `SELECT round_number, receiver_name, note, written_at
            FROM secret_sister_pairings
            WHERE giver_id = ? AND note != ''
            ORDER BY round_number DESC`
         ).bind(userId).all();
+        // Also pull any retreat-time note I wrote via the old secret_sister
+        // table, so the scrapbook shows a complete history across both games.
+        // Labeled with round_number = 0 so the frontend can render it as
+        // "Retreat Weekend" instead of a numbered week.
+        let sentRetreat = [];
+        try {
+          const row = await env.DB.prepare(
+            `SELECT receiver_name, note, created_at AS written_at
+             FROM secret_sister
+             WHERE giver_id = ? AND note IS NOT NULL AND note != ''`
+          ).bind(userId).first();
+          if (row) sentRetreat = [Object.assign({ round_number: 0 }, row)];
+        } catch (e) { /* table may not exist on a fresh deploy */ }
+        const sent = [...(sentWeekly || []), ...sentRetreat];
+
         // Notes I've received — NEVER include giver info. Only show rounds
         // where the note is ≥1hr old so we don't leak timing.
-        const { results: received } = await env.DB.prepare(
+        const { results: receivedWeekly } = await env.DB.prepare(
           `SELECT round_number, note, written_at
            FROM secret_sister_pairings
            WHERE receiver_id = ? AND note != ''
@@ -1841,9 +1856,27 @@ export default {
              AND julianday(written_at) <= julianday('now', ${SS_DELIVERY_DELAY_SQL})
            ORDER BY round_number DESC`
         ).bind(userId).all();
+        // Also pull retreat-time received note, but only if admin has flipped
+        // the reveal toggle — same gate the retreat-time game uses.
+        let receivedRetreat = [];
+        try {
+          const reveal = await env.DB.prepare(
+            "SELECT value FROM game_settings WHERE key = 'secret_sister_reveal'"
+          ).first();
+          if (reveal && reveal.value === '1') {
+            const row = await env.DB.prepare(
+              `SELECT note, created_at AS written_at
+               FROM secret_sister
+               WHERE receiver_id = ? AND note IS NOT NULL AND note != ''`
+            ).bind(userId).first();
+            if (row) receivedRetreat = [Object.assign({ round_number: 0 }, row)];
+          }
+        } catch (e) { /* table may not exist on a fresh deploy */ }
+        const received = [...(receivedWeekly || []), ...receivedRetreat];
+
         return json({
-          sent: sent || [],
-          received: received || []
+          sent,
+          received
         }, corsHeaders);
       }
 

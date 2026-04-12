@@ -7544,6 +7544,24 @@
             showToast('Downloaded \u2014 attach it to an email to send to yourself');
         }
 
+        // One-time reassurance toast for women who wrote journal entries
+        // before the redesign. Fires at most once per device when:
+        //   1. She has ≥1 saved entry (so the message is meaningful)
+        //   2. She hasn't seen this toast yet
+        // Tells her where to find her past entries so she doesn't think
+        // they vanished when the Journal tab disappeared from the nav.
+        function maybeShowJournalMovedToast() {
+            try {
+                if (localStorage.getItem('g4_journal_moved_toast_seen') === '1') return;
+                const entries = (appState && appState.journalEntries) || [];
+                if (entries.length === 0) return;
+                localStorage.setItem('g4_journal_moved_toast_seen', '1');
+                setTimeout(() => {
+                    showToast('Your journal now lives in Continue \u2192 My Reflections \u2728');
+                }, 1500);
+            } catch(e) {}
+        }
+
         // Gentle backup nudge. Fires after she saves an entry that brings her
         // total to a multiple of 10, capped at once every 7 days so she never
         // feels nagged. Delayed 1.8s so it shows after the "saved" toast
@@ -7616,6 +7634,11 @@
                 <div class="devotion-hub-subtitle">15 weeks of devotions, written for where you are.<br>One gift each week. Reflect, journal, grow.</div>
             `;
             container.appendChild(intro);
+
+            // "My Reflections" archive card — placed at the top of the hub
+            // so returning women can find past journal entries immediately,
+            // without scrolling past 15 devotion cards.
+            container.appendChild(makeReflectionsArchiveCard());
 
             const currentWeek = getCurrentDevotionWeek();
 
@@ -7730,20 +7753,21 @@
                     container.appendChild(makeDevotionCard(d, 'locked'));
                 });
             }
+        }
 
-            // "My Reflections" archive entry — one tap opens the read-only
-            // archive tab with every devotion reflection she's saved.
-            const reflectionsBtn = document.createElement('button');
-            reflectionsBtn.type = 'button';
-            reflectionsBtn.style.cssText = 'display:block;width:calc(100% - 32px);margin:20px 16px 8px;padding:14px 18px;background:white;border:1px solid rgba(201,144,138,0.22);border-radius:14px;box-shadow:var(--shadow-sm);cursor:pointer;font-family:inherit;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:transparent;';
-            reflectionsBtn.innerHTML = '<div style="display:flex;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">\u2728</div><div style="flex:1;min-width:0;"><div style="font-family:\'Playfair Display\',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;">My Reflections</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:0.92rem;color:var(--dark-text);line-height:1.3;">Re-read every devotion reflection you\u2019ve saved</div></div><div style="font-size:1.2rem;color:var(--accent);flex-shrink:0;">&rarr;</div></div>';
-            reflectionsBtn.addEventListener('click', () => {
-                // Refresh the list before showing — reflections may have been
-                // saved via devotion prompts since the tab was last visited.
+        // Factory for the "My Reflections" archive card. Used at the top of
+        // the Continue tab so returning women can find their journal entries
+        // without scrolling past every devotion card.
+        function makeReflectionsArchiveCard() {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.style.cssText = 'display:block;width:calc(100% - 32px);margin:12px 16px;padding:14px 18px;background:white;border:1px solid rgba(201,144,138,0.22);border-radius:14px;box-shadow:var(--shadow-sm);cursor:pointer;font-family:inherit;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:transparent;';
+            btn.innerHTML = '<div style="display:flex;align-items:center;gap:12px;"><div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">\u2728</div><div style="flex:1;min-width:0;"><div style="font-family:\'Playfair Display\',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;">My Reflections</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:0.92rem;color:var(--dark-text);line-height:1.3;">Re-read every reflection and journal entry you\u2019ve saved</div></div><div style="font-size:1.2rem;color:var(--accent);flex-shrink:0;">&rarr;</div></div>';
+            btn.addEventListener('click', () => {
                 if (typeof buildJournal === 'function') buildJournal();
                 switchToTab('journal');
             });
-            container.appendChild(reflectionsBtn);
+            return btn;
         }
 
         // Render the body of a devotion (letter, verse, teaching, prompts, action, timeline)
@@ -10519,6 +10543,11 @@
                 renderHomeButtonsInto('post-retreat-buttons');
                 // Honor ?/#survey URL deep links from email CTAs
                 handleSurveyDeepLink();
+
+                // One-time reassurance for women who journaled during retreat.
+                // Only fires if she already has saved entries AND she hasn't
+                // seen the toast yet. Tells her where her journal lives now.
+                maybeShowJournalMovedToast();
 
                 // Remind on every login/page load until they take the survey
                 if (!localStorage.getItem('g4feedback_sent')) {

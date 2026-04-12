@@ -51,6 +51,19 @@ async function ensureWeeklySSTable(db) {
       created_at TEXT DEFAULT (datetime('now'))
     )`).run();
   } catch (e) { /* already exists */ }
+  // Admin-sent anonymous notes. No sender_id stored — truly anonymous to
+  // both the recipient AND the server audit trail. Admin can send these
+  // to women who've been overlooked by the random weekly rotation.
+  try {
+    await db.prepare(`CREATE TABLE IF NOT EXISTS secret_sister_admin_notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      round_number INTEGER NOT NULL,
+      recipient_user_id INTEGER NOT NULL,
+      recipient_name TEXT DEFAULT '',
+      note TEXT NOT NULL,
+      written_at TEXT DEFAULT (datetime('now'))
+    )`).run();
+  } catch (e) { /* already exists */ }
   // Lazy column: per-user opt-out from the weekly rotation.
   try {
     await db.prepare('ALTER TABLE users ADD COLUMN secret_sister_opt_out INTEGER DEFAULT 0').run();
@@ -622,7 +635,7 @@ export default {
 
       // DELETE /api/admin/reset - clear all test data
       if (path === '/api/admin/reset' && request.method === 'DELETE') {
-        const tables = ['messages', 'moments', 'moment_reactions', 'moment_comments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'secret_sister_pairings', 'secret_sister_round_locks', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'testimony_hearts', 'testimonies', 'journal_activity', 'users'];
+        const tables = ['messages', 'moments', 'moment_reactions', 'moment_comments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'secret_sister_pairings', 'secret_sister_round_locks', 'secret_sister_admin_notes', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'testimony_hearts', 'testimonies', 'journal_activity', 'users'];
         for (const t of tables) {
           try { await env.DB.prepare(`DELETE FROM ${t}`).run(); } catch(e) { /* table may not exist */ }
         }
@@ -1828,11 +1841,24 @@ export default {
              AND note != '' AND written_at IS NOT NULL
              AND julianday(written_at) <= julianday('now', ${SS_DELIVERY_DELAY_SQL})`
         ).bind(round, userId).first();
+        // Admin-sent anonymous notes for this round (no delay gate — they're
+        // intentional pastoral sends, not peer-random timing).
+        let receivedNote = received && received.note ? received.note : null;
+        if (!receivedNote) {
+          try {
+            const adminRow = await env.DB.prepare(
+              `SELECT note FROM secret_sister_admin_notes
+               WHERE round_number = ? AND recipient_user_id = ?
+               ORDER BY written_at DESC LIMIT 1`
+            ).bind(round, userId).first();
+            if (adminRow && adminRow.note) receivedNote = adminRow.note;
+          } catch (e) { /* table may not exist yet */ }
+        }
         return json({
           round,
           my_assignment: mine ? { receiver_id: mine.receiver_id, receiver_name: mine.receiver_name } : null,
           my_note: mine && mine.note ? mine.note : null,
-          received_note: received && received.note ? received.note : null
+          received_note: receivedNote
         }, corsHeaders);
       }
 
@@ -1915,7 +1941,19 @@ export default {
             if (row) receivedRetreat = [Object.assign({ round_number: 0 }, row)];
           }
         } catch (e) { /* table may not exist on a fresh deploy */ }
-        const received = [...(receivedWeekly || []), ...receivedRetreat];
+        // Admin-sent anonymous notes — these show alongside regular received
+        // notes in the Received tab, indistinguishable from a sister's note.
+        let receivedAdmin = [];
+        try {
+          const { results } = await env.DB.prepare(
+            `SELECT round_number, note, written_at
+             FROM secret_sister_admin_notes
+             WHERE recipient_user_id = ?
+             ORDER BY round_number DESC`
+          ).bind(userId).all();
+          receivedAdmin = results || [];
+        } catch (e) { /* table may not exist yet */ }
+        const received = [...(receivedWeekly || []), ...receivedAdmin, ...receivedRetreat];
 
         return json({
           sent,
@@ -1957,6 +1995,124 @@ export default {
         }
         const created = await ensureSSRoundExists(env.DB, round);
         return json({ success: true, round, created }, corsHeaders);
+      }
+
+      // GET /api/secretsister/participation - admin: per-woman rotation stats
+      // Returns every woman with her rounds_paired / notes_written /
+      // notes_received / last_written / last_received. "Received" counts
+      // both weekly pair notes AND admin-sent anonymous notes so the
+      // dashboard stops flagging her as lonely once admin has intervened.
+      if (path === '/api/secretsister/participation' && request.method === 'GET') {
+        await ensureWeeklySSTable(env.DB);
+        const currentRound = getCurrentSSRound();
+
+        // Fetch all users
+        const { results: users } = await env.DB.prepare(
+          `SELECT id, first_name, COALESCE(last_initial, '') AS last_initial,
+                  COALESCE(photo_data, '') AS photo_data,
+                  COALESCE(secret_sister_opt_out, 0) AS opted_out
+           FROM users
+           WHERE first_name IS NOT NULL AND first_name != ''
+           ORDER BY first_name`
+        ).all();
+
+        // Fetch all pairing rows (small table at ~50 women × N weeks)
+        let pairings = [];
+        try {
+          const r = await env.DB.prepare(
+            `SELECT round_number, giver_id, receiver_id, note, written_at
+             FROM secret_sister_pairings`
+          ).all();
+          pairings = r.results || [];
+        } catch (e) { /* table may not exist yet */ }
+
+        // Fetch all admin-sent notes (also small)
+        let adminNotes = [];
+        try {
+          const r = await env.DB.prepare(
+            `SELECT round_number, recipient_user_id, note, written_at
+             FROM secret_sister_admin_notes`
+          ).all();
+          adminNotes = r.results || [];
+        } catch (e) { /* table may not exist yet */ }
+
+        // Index by user_id for O(n) aggregation
+        const givenBy = new Map();
+        const receivedBy = new Map();
+        for (const p of pairings) {
+          if (!givenBy.has(p.giver_id)) givenBy.set(p.giver_id, []);
+          givenBy.get(p.giver_id).push(p);
+          if (p.note && p.note.trim()) {
+            if (!receivedBy.has(p.receiver_id)) receivedBy.set(p.receiver_id, []);
+            receivedBy.get(p.receiver_id).push(p);
+          }
+        }
+        for (const a of adminNotes) {
+          if (!receivedBy.has(a.recipient_user_id)) receivedBy.set(a.recipient_user_id, []);
+          // Mark as admin-sent so the dashboard can show a small chip if desired
+          receivedBy.get(a.recipient_user_id).push({ ...a, is_admin: true });
+        }
+
+        const rows = (users || []).map(u => {
+          const given = givenBy.get(u.id) || [];
+          const received = receivedBy.get(u.id) || [];
+          const writtenNotes = given.filter(g => g.note && g.note.trim());
+          const lastWrittenAt = writtenNotes.length
+            ? writtenNotes.map(g => g.written_at).filter(Boolean).sort().slice(-1)[0]
+            : null;
+          const lastReceivedAt = received.length
+            ? received.map(r => r.written_at).filter(Boolean).sort().slice(-1)[0]
+            : null;
+          // Check if the admin already sent to her THIS round (for the chip)
+          const adminSentThisRound = adminNotes.some(
+            a => a.recipient_user_id === u.id && a.round_number === currentRound
+          );
+          const displayName = u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name;
+          return {
+            user_id: u.id,
+            name: displayName,
+            photo_data: u.photo_data || '',
+            opted_out: !!u.opted_out,
+            rounds_paired: given.length,
+            notes_written: writtenNotes.length,
+            notes_received: received.length,
+            last_written_at: lastWrittenAt,
+            last_received_at: lastReceivedAt,
+            admin_sent_this_round: adminSentThisRound
+          };
+        });
+
+        return json({
+          round: currentRound,
+          users: rows
+        }, corsHeaders);
+      }
+
+      // POST /api/secretsister/admin-send - admin sends an anonymous note to
+      // a specific recipient. Note shows up in her scrapbook as just another
+      // "Your Secret Sister 💛" note — no hint it came from admin. Multiple
+      // sends per week allowed (admin judgment).
+      if (path === '/api/secretsister/admin-send' && request.method === 'POST') {
+        const { recipient_user_id, note } = await request.json();
+        if (!recipient_user_id || !note || !note.trim()) {
+          return json({ error: 'Recipient and note are required' }, corsHeaders, 400);
+        }
+        if (containsBlockedWords(note)) {
+          return json({ error: 'Please keep it kind and uplifting' }, corsHeaders, 400);
+        }
+        await ensureWeeklySSTable(env.DB);
+        const round = getCurrentSSRound();
+        // Look up the recipient's display name
+        const user = await env.DB.prepare(
+          "SELECT first_name, COALESCE(last_initial, '') AS last_initial FROM users WHERE id = ?"
+        ).bind(recipient_user_id).first();
+        if (!user) return json({ error: 'Recipient not found' }, corsHeaders, 404);
+        const recipientName = user.last_initial ? `${user.first_name} ${user.last_initial}.` : user.first_name;
+        await env.DB.prepare(
+          `INSERT INTO secret_sister_admin_notes (round_number, recipient_user_id, recipient_name, note)
+           VALUES (?, ?, ?, ?)`
+        ).bind(round, recipient_user_id, recipientName, note.trim()).run();
+        return json({ success: true, round, recipient: recipientName }, corsHeaders);
       }
 
       // ===== FEEDBACK =====

@@ -3753,9 +3753,12 @@
                         <button class="save-btn" id="save-journal-btn">Save</button>
                         <button class="summarize-btn" id="summarize-btn" style="display:none;">Summarize</button>
                     </div>
-                    <div id="journal-entries-header" style="display:none;align-items:center;justify-content:space-between;margin:16px 16px 6px;">
+                    <div id="journal-entries-header" style="display:none;align-items:center;justify-content:space-between;margin:16px 16px 6px;gap:8px;flex-wrap:wrap;">
                         <div style="font-family:'Playfair Display',serif;font-size:0.82rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:1px;">Your reflections</div>
-                        <button id="journal-download-btn" style="padding:6px 12px;background:white;color:var(--accent);border:1.5px solid var(--accent);border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.78rem;font-weight:600;cursor:pointer;">&#x2b07;&#xfe0f; Download</button>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button id="journal-email-btn" style="padding:6px 12px;background:white;color:var(--accent);border:1.5px solid var(--accent);border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.78rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">&#x2709;&#xfe0f; Email</button>
+                            <button id="journal-download-btn" style="padding:6px 12px;background:white;color:var(--accent);border:1.5px solid var(--accent);border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.78rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">&#x2b07;&#xfe0f; Download</button>
+                        </div>
                     </div>
                     <div class="journal-entries" id="journal-entries"></div>
                 </div>
@@ -6497,6 +6500,9 @@
             if (typeof pingJournalActivity === 'function') {
                 pingJournalActivity(trimmed.length, devotion.gift_key);
             }
+            if (typeof maybeNudgeJournalBackup === 'function') {
+                maybeNudgeJournalBackup();
+            }
             return true;
         }
 
@@ -7096,6 +7102,7 @@
                                 savedBadge.textContent = 'Saved to your journal!';
                                 showToast('Worksheet saved to Journal \u2728');
                                 if (typeof launchConfetti === 'function') launchConfetti();
+                                if (typeof maybeNudgeJournalBackup === 'function') maybeNudgeJournalBackup();
                                 setTimeout(() => { savedBadge.style.display = 'none'; }, 4000);
                             });
                             wsContainer.appendChild(saveBtn);
@@ -7420,6 +7427,96 @@
             showToast('Downloaded ' + entries.length + ' entries \u2728');
         }
 
+        // Build the plain-text body used for both download and share. Pulled
+        // out so the share and download paths stay in sync.
+        function buildJournalTextBody() {
+            const entries = (appState && appState.journalEntries) ? appState.journalEntries.slice() : [];
+            if (!entries.length) return '';
+            entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const now = new Date();
+            const userName = currentUser ? (currentUser.display_name || currentUser.first_name || 'My') : 'My';
+            const lines = [];
+            lines.push(userName + '\'s G4 Journal');
+            lines.push('Exported ' + now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }));
+            lines.push('');
+            lines.push('A private copy of every reflection you\'ve saved in the G4 app.');
+            lines.push('Keep it somewhere safe so you never lose it.');
+            lines.push('');
+            lines.push('========================================');
+            lines.push('');
+            entries.forEach(entry => {
+                const d = new Date(entry.date);
+                const dateStr = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+                const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                let header = dateStr + ' at ' + timeStr;
+                if (entry.gift_label) header += ' \u00b7 ' + entry.gift_label;
+                if (entry.prompt_key) {
+                    const promptLabels = { 'look-back': 'Look Back', 'look-in': 'Look In', 'look-forward': 'Look Forward' };
+                    header += ' \u00b7 ' + (promptLabels[entry.prompt_key] || entry.prompt_key);
+                }
+                lines.push(header);
+                lines.push('-'.repeat(40));
+                lines.push(entry.text || '');
+                lines.push('');
+                lines.push('');
+            });
+            return lines.join('\n');
+        }
+
+        // Share her journal via the native share sheet. On iOS / Android this
+        // opens the system picker (Mail, Messages, Drive, Notes, etc.) so she
+        // can send it to herself without the content ever passing through our
+        // server. Desktop browsers without the Share API fall back to the
+        // existing Download flow — same destination (her own device), just
+        // one extra step to attach the file to an email.
+        async function shareMyJournal() {
+            const entries = (appState && appState.journalEntries) || [];
+            if (!entries.length) {
+                showToast('No journal entries yet');
+                return;
+            }
+            const body = buildJournalTextBody();
+            const userName = currentUser ? (currentUser.display_name || currentUser.first_name || 'My') : 'My';
+            const subject = userName + '\'s G4 Journal';
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: subject, text: body });
+                    showToast('Shared \u2728');
+                    return;
+                } catch(e) {
+                    // User cancelled — bail quietly, don\'t show an error toast
+                    if (e && e.name === 'AbortError') return;
+                    // Any other share error falls through to the download path
+                }
+            }
+
+            // No share API (most desktop browsers) — download the file and
+            // tell her how to email it.
+            downloadMyJournal();
+            showToast('Downloaded \u2014 attach it to an email to send to yourself');
+        }
+
+        // Gentle backup nudge. Fires after she saves an entry that brings her
+        // total to a multiple of 10, capped at once every 7 days so she never
+        // feels nagged. Delayed 1.8s so it shows after the "saved" toast
+        // clears, not on top of it.
+        function maybeNudgeJournalBackup() {
+            try {
+                const entries = (appState && appState.journalEntries) || [];
+                const count = entries.length;
+                if (count === 0 || count % 10 !== 0) return;
+                const last = parseInt(localStorage.getItem('g4_journal_nudge_last') || '0', 10);
+                const now = Date.now();
+                const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
+                if (now - last < SEVEN_DAYS) return;
+                localStorage.setItem('g4_journal_nudge_last', String(now));
+                setTimeout(() => {
+                    showToast('Tap Email or Download to keep a private copy safe \ud83d\udc95');
+                }, 1800);
+            } catch(e) {}
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const saveBtn = document.getElementById('save-journal-btn');
             const textarea = document.getElementById('journal-textarea');
@@ -7437,11 +7534,16 @@
                     launchConfetti();
                     // Privacy-safe usage ping
                     pingJournalActivity(text.length, '');
+                    // Gentle reminder to back up, every 10 entries, max once / 7 days
+                    maybeNudgeJournalBackup();
                 }
             });
             // Download button for journal export
             const downloadBtn = document.getElementById('journal-download-btn');
             if (downloadBtn) downloadBtn.addEventListener('click', downloadMyJournal);
+            // Email/share button — opens native share sheet on mobile
+            const emailBtn = document.getElementById('journal-email-btn');
+            if (emailBtn) emailBtn.addEventListener('click', shareMyJournal);
         });
 
         function buildContinue() {
@@ -8266,6 +8368,7 @@
                         buildJournal();
                         showToast('Summary saved \u2728');
                         launchConfetti();
+                        if (typeof maybeNudgeJournalBackup === 'function') maybeNudgeJournalBackup();
                         updateSummarizeBtn();
                     });
 

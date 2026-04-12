@@ -3430,6 +3430,19 @@
                         </div>
                     </div>
 
+                    <!-- My Reflections home card (shown only when she has saved entries) -->
+                    <button id="reflections-home-card" type="button" style="display:none;width:calc(100% - 32px);margin:8px 16px 12px;padding:14px 18px;background:white;border:1px solid rgba(201,144,138,0.22);border-radius:14px;box-shadow:var(--shadow-sm);cursor:pointer;text-align:left;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem;">&#x2728;</div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;">My Reflections</div>
+                                <div id="reflections-home-card-count" style="font-family:'Playfair Display',serif;font-size:1.0rem;font-weight:700;color:var(--dark-text);line-height:1.3;">Re-read your journal</div>
+                                <div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);line-height:1.4;margin-top:2px;">Every reflection you've saved.</div>
+                            </div>
+                            <div style="font-size:1.2rem;color:var(--accent);flex-shrink:0;margin-left:4px;">&rarr;</div>
+                        </div>
+                    </button>
+
                     <!-- Weekly Secret Sister notification (single tap → scrapbook hub) -->
                     <button id="weekly-ss-card" type="button" style="display:none;width:calc(100% - 32px);margin:8px 16px 12px;padding:14px 18px;background:linear-gradient(135deg,rgba(201,144,138,0.12),rgba(243,213,207,0.08));border-radius:14px;border:1px solid rgba(201,144,138,0.22);box-shadow:var(--shadow-sm);cursor:pointer;text-align:left;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
                         <div style="display:flex;align-items:center;gap:12px;">
@@ -7557,9 +7570,30 @@
                 if (entries.length === 0) return;
                 localStorage.setItem('g4_journal_moved_toast_seen', '1');
                 setTimeout(() => {
-                    showToast('Your journal now lives in Continue \u2192 My Reflections \u2728');
+                    showToast('Your journal is safe \u2728 Tap the My Reflections card below.');
                 }, 1500);
             } catch(e) {}
+        }
+
+        // Show the "My Reflections" home card when she has saved entries.
+        // Tap opens the read-only archive directly — no devotion detour.
+        function loadReflectionsHomeCard() {
+            const card = document.getElementById('reflections-home-card');
+            if (!card) return;
+            const entries = (appState && appState.journalEntries) || [];
+            if (entries.length === 0) {
+                card.style.display = 'none';
+                return;
+            }
+            const countEl = document.getElementById('reflections-home-card-count');
+            if (countEl) {
+                countEl.textContent = entries.length + ' ' + (entries.length === 1 ? 'reflection' : 'reflections') + ' saved';
+            }
+            card.onclick = () => {
+                if (typeof buildJournal === 'function') buildJournal();
+                switchToTab('journal');
+            };
+            card.style.display = 'block';
         }
 
         // Gentle backup nudge. Fires after she saves an entry that brings her
@@ -10538,6 +10572,8 @@
                 loadMyCelebrationStatus();
                 // Weekly Secret Sister card (starts Wed April 15 2026, runs forever)
                 loadWeeklySecretSisterCard();
+                // My Reflections home card (shows only if she has saved entries)
+                loadReflectionsHomeCard();
                 // Quick-action buttons on post-retreat home, controlled by the
                 // same home_* admin toggles as the pre-retreat dashboard
                 renderHomeButtonsInto('post-retreat-buttons');
@@ -10546,7 +10582,7 @@
 
                 // One-time reassurance for women who journaled during retreat.
                 // Only fires if she already has saved entries AND she hasn't
-                // seen the toast yet. Tells her where her journal lives now.
+                // seen the toast yet. Points her at the My Reflections card.
                 maybeShowJournalMovedToast();
 
                 // Remind on every login/page load until they take the survey

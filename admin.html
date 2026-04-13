@@ -1775,6 +1775,8 @@ function renderChurches() {
     const list = document.getElementById('churches-list');
     const empty = document.getElementById('empty-churches');
     if (!list) return;
+    // Sort alphabetically by name
+    churchesData.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'en', { sensitivity: 'base' }));
     if (!churchesData.length) {
         list.innerHTML = '';
         if (empty) empty.style.display = '';

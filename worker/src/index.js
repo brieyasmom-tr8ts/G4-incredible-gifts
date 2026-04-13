@@ -3371,6 +3371,15 @@ export default {
       // ?user_id=X to mark which ones the requester has hearted
       if (path === '/api/testimonies' && request.method === 'GET') {
         await ensureTestimoniesTable();
+        // Ensure comments table exists
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS testimony_comments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          testimony_id INTEGER NOT NULL,
+          user_id INTEGER,
+          name TEXT DEFAULT 'A G4 sister',
+          text TEXT NOT NULL,
+          created_at TEXT DEFAULT (datetime('now'))
+        )`).run(); } catch(e) {}
         const requesterId = parseInt(url.searchParams.get('user_id') || '0', 10);
         const { results } = await env.DB.prepare(
           `SELECT * FROM testimonies WHERE status IN ('approved', 'featured')
@@ -3384,11 +3393,20 @@ export default {
           ).bind(requesterId).all();
           heartedSet = new Set(hearts.map(h => h.testimony_id));
         }
+        // Comment counts per story
+        let commentCounts = {};
+        try {
+          const { results: cc } = await env.DB.prepare(
+            'SELECT testimony_id, COUNT(*) as c FROM testimony_comments GROUP BY testimony_id'
+          ).all();
+          (cc || []).forEach(r => { commentCounts[r.testimony_id] = r.c; });
+        } catch(e) {}
         const out = (results || []).map(t => {
           const display = t.anonymous ? { name: 'A G4 sister' } : { name: t.name };
           return Object.assign({}, t, {
             display_name: display.name,
-            i_hearted: heartedSet.has(t.id) ? 1 : 0
+            i_hearted: heartedSet.has(t.id) ? 1 : 0,
+            comment_count: commentCounts[t.id] || 0
           });
         });
         return json(out, corsHeaders);
@@ -3423,6 +3441,64 @@ export default {
           await env.DB.prepare('UPDATE testimonies SET heart_count = heart_count + 1 WHERE id = ?').bind(tid).run();
           return json({ hearted: true }, corsHeaders);
         }
+      }
+
+      // GET /api/testimonies/:id/comments - list comments for a story
+      const tCommentsMatch = path.match(/^\/api\/testimonies\/(\d+)\/comments$/);
+      if (tCommentsMatch && request.method === 'GET') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS testimony_comments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT, testimony_id INTEGER NOT NULL,
+          user_id INTEGER, name TEXT DEFAULT 'A G4 sister', text TEXT NOT NULL,
+          created_at TEXT DEFAULT (datetime('now'))
+        )`).run(); } catch(e) {}
+        const tid = parseInt(tCommentsMatch[1]);
+        const { results } = await env.DB.prepare(
+          'SELECT id, user_id, name, text, created_at FROM testimony_comments WHERE testimony_id = ? ORDER BY created_at ASC'
+        ).bind(tid).all();
+        return json(results || [], corsHeaders);
+      }
+
+      // POST /api/testimonies/:id/comments - add a comment
+      if (tCommentsMatch && request.method === 'POST') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS testimony_comments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT, testimony_id INTEGER NOT NULL,
+          user_id INTEGER, name TEXT DEFAULT 'A G4 sister', text TEXT NOT NULL,
+          created_at TEXT DEFAULT (datetime('now'))
+        )`).run(); } catch(e) {}
+        const tid = parseInt(tCommentsMatch[1]);
+        const body = await request.json();
+        const text = (body.text || '').trim();
+        if (!text) return json({ error: 'text required' }, corsHeaders, 400);
+        if (text.length > 500) return json({ error: 'comment too long' }, corsHeaders, 400);
+        await env.DB.prepare(
+          'INSERT INTO testimony_comments (testimony_id, user_id, name, text) VALUES (?, ?, ?, ?)'
+        ).bind(
+          tid,
+          body.user_id ? parseInt(body.user_id) : null,
+          (body.name || 'A G4 sister').slice(0, 80),
+          text
+        ).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/testimonies/:tid/comments/:cid
+      const tCommentDeleteMatch = path.match(/^\/api\/testimonies\/(\d+)\/comments\/(\d+)$/);
+      if (tCommentDeleteMatch && request.method === 'DELETE') {
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS testimony_comments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT, testimony_id INTEGER NOT NULL,
+          user_id INTEGER, name TEXT DEFAULT 'A G4 sister', text TEXT NOT NULL,
+          created_at TEXT DEFAULT (datetime('now'))
+        )`).run(); } catch(e) {}
+        const commentId = parseInt(tCommentDeleteMatch[2]);
+        const body = await request.json().catch(() => ({}));
+        const requesterId = parseInt(body.user_id || 0);
+        const row = await env.DB.prepare('SELECT user_id FROM testimony_comments WHERE id = ?').bind(commentId).first();
+        if (!row) return json({ error: 'not found' }, corsHeaders, 404);
+        if (!isAdmin(request) && row.user_id !== requesterId) {
+          return json({ error: 'not allowed' }, corsHeaders, 403);
+        }
+        await env.DB.prepare('DELETE FROM testimony_comments WHERE id = ?').bind(commentId).run();
+        return json({ success: true }, corsHeaders);
       }
 
       // PATCH /api/testimonies/:id - admin: approve/reject/feature/unfeature

@@ -6623,6 +6623,7 @@
             { key: 'nav_photobooth', tab: 'photobooth', icon: '🖼️', label: 'Booth' },
             { key: 'nav_sendlove', tab: 'sendlove', icon: '💌', label: 'Marnie' },
             { key: 'nav_hunt', tab: 'hunt', icon: '\ud83d\udcf7', label: 'Hunt' },
+            { key: 'nav_huntslides', tab: 'home', icon: '\ud83c\udfac', label: 'Hunt Slides', action: 'huntslides' },
             { key: 'nav_meme', tab: 'meme', icon: '\ud83d\ude02', label: 'Meme', action: 'meme' },
             { key: 'nav_whoami', tab: 'home', icon: '\ud83e\udd14', label: 'Who Am I?', action: 'whoami' },
             { key: 'nav_quiz', tab: 'quiz', icon: '\ud83e\udde0', label: 'Quiz', badge: 'badge-quiz' },
@@ -6693,6 +6694,10 @@
                     }
                     if (action === 'whoami') {
                         window.open('whoami-slideshow.html', '_blank');
+                        return;
+                    }
+                    if (action === 'huntslides') {
+                        window.open('slideshow.html', '_blank');
                         return;
                     }
                     if (action === 'survey') {
@@ -11638,6 +11643,7 @@
             // home_journal removed — free-form journaling is gone; reflections
             // live inside the devotion hub (Continue tab) now.
             { key: 'home_hunt', action: "switchToTab('hunt')", label: '<span style="color:var(--blush);">Scavenger</span> Hunt' },
+            { key: 'home_huntslides', action: "window.open('slideshow.html','_blank')", label: '<span style="color:var(--sage);">Hunt</span> Slideshow' },
             { key: 'home_packing', action: "showPackingModal({manual:true})", label: '<span style="color:var(--blush);">Packing</span> Points' },
             { key: 'home_connect', action: "switchToTab('connect')", label: '<span style="color:var(--sage);">Connect</span> Directory' },
             { key: 'home_schedule', action: "switchToTab('schedule')", label: '<span style="color:var(--blush);">View</span> Schedule' },

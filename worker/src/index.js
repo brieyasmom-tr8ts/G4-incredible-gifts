@@ -373,7 +373,7 @@ export default {
       if (path === '/api/churches' && request.method === 'GET') {
         try {
           const { results } = await env.DB.prepare(
-            "SELECT TRIM(church) as name, COUNT(*) as count FROM users WHERE church IS NOT NULL AND TRIM(church) != '' GROUP BY LOWER(TRIM(church)) ORDER BY COUNT(*) DESC, TRIM(church) ASC"
+            "SELECT TRIM(church) as name, COUNT(*) as count FROM users WHERE church IS NOT NULL AND TRIM(church) != '' GROUP BY LOWER(TRIM(church)) ORDER BY TRIM(church) ASC"
           ).all();
           return json(results || [], corsHeaders);
         } catch (e) {

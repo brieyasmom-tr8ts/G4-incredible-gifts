@@ -11653,6 +11653,45 @@
                 };
                 wireHearts(feedEl);
                 if (featuredSlot) wireHearts(featuredSlot);
+
+                // Wire up comment toggles and send buttons
+                const wireComments = (root) => {
+                    root.querySelectorAll('[data-story-comments-toggle]').forEach(btn => {
+                        if (btn.dataset.wired) return;
+                        btn.dataset.wired = '1';
+                        btn.addEventListener('click', async () => {
+                            const sid = btn.dataset.storyCommentsToggle;
+                            const section = document.querySelector('[data-story-comments-section="' + sid + '"]');
+                            if (!section) return;
+                            if (section.style.display === 'none') {
+                                section.style.display = 'block';
+                                await loadStoryComments(sid);
+                            } else {
+                                section.style.display = 'none';
+                            }
+                        });
+                    });
+                    root.querySelectorAll('[data-story-comment-send]').forEach(btn => {
+                        if (btn.dataset.wired) return;
+                        btn.dataset.wired = '1';
+                        btn.addEventListener('click', () => {
+                            const sid = btn.dataset.storyCommentSend;
+                            sendStoryComment(sid);
+                        });
+                    });
+                    root.querySelectorAll('[data-story-comment-input]').forEach(input => {
+                        if (input.dataset.wired) return;
+                        input.dataset.wired = '1';
+                        input.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                sendStoryComment(input.dataset.storyCommentInput);
+                            }
+                        });
+                    });
+                };
+                wireComments(feedEl);
+                if (featuredSlot) wireComments(featuredSlot);
             } catch (e) {
                 feedEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--light-text);font-family:Cormorant Garamond,serif;font-style:italic;">Could not load stories. Pull to refresh.</div>';
             }
@@ -11689,6 +11728,7 @@
                 ? `<div style="font-family:Georgia,serif;font-size:1rem;line-height:1.6;color:var(--dark-text);white-space:pre-wrap;margin-bottom:14px;">${esc(story.text)}</div>`
                 : '';
 
+            const commentCount = story.comment_count || 0;
             return `
                 <div style="${cardStyle}" data-story-id="${story.id}">
                     ${featuredBadge}
@@ -11701,14 +11741,102 @@
                     </div>
                     ${videoHtml}
                     ${textHtml}
-                    <div style="display:flex;justify-content:flex-end;align-items:center;">
+                    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;">
+                        <button data-story-comments-toggle="${story.id}" type="button" style="display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:white;color:var(--taupe);border:1.5px solid var(--warm-grey);border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:var(--transition);touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
+                            <span style="font-size:0.9rem;">💬</span>
+                            <span data-story-comment-count="${story.id}">${commentCount}</span>
+                        </button>
                         <button data-heart-story="${story.id}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;background:${hearted ? 'rgba(201,144,138,0.12)' : 'white'};color:${hearted ? 'var(--accent)' : 'var(--taupe)'};border:1.5px solid ${hearted ? 'var(--accent)' : 'var(--warm-grey)'};border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:var(--transition);">
                             <span style="font-size:0.95rem;">${hearted ? '\u2764\ufe0f' : '\ud83e\udd0d'}</span>
                             <span data-heart-count>${heartCount}</span>
                         </button>
                     </div>
+                    <div data-story-comments-section="${story.id}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(139,134,128,0.10);">
+                        <div data-story-comments-list="${story.id}" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;max-height:240px;overflow-y:auto;"></div>
+                        <div style="display:flex;gap:8px;">
+                            <input data-story-comment-input="${story.id}" type="text" placeholder="Add a comment..." maxlength="500" style="flex:1;padding:8px 12px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Cormorant Garamond,serif;font-size:16px;color:var(--dark-text);background:white;outline:none;">
+                            <button data-story-comment-send="${story.id}" type="button" style="padding:8px 14px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:Cormorant Garamond,serif;font-size:0.85rem;font-weight:600;cursor:pointer;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Send</button>
+                        </div>
+                    </div>
                 </div>
             `;
+        }
+
+        async function loadStoryComments(storyId) {
+            const list = document.querySelector('[data-story-comments-list="' + storyId + '"]');
+            if (!list) return;
+            try {
+                const resp = await fetch(API_URL + '/api/testimonies/' + storyId + '/comments');
+                if (!resp.ok) throw new Error('failed');
+                const comments = await resp.json();
+                if (!comments.length) {
+                    list.innerHTML = '<div style="font-family:Cormorant Garamond,serif;font-size:0.85rem;color:var(--light-text);font-style:italic;text-align:center;padding:8px 0;">No comments yet. Be the first to encourage her.</div>';
+                    return;
+                }
+                list.innerHTML = comments.map(c => {
+                    const nameBadge = (typeof renderNameBadge === 'function') ? renderNameBadge(c.name, {size: 20, fontSize: '0.82rem'}) : esc(c.name);
+                    const date = c.created_at ? new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                    const isOwn = currentUser && currentUser.id === c.user_id;
+                    return '<div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;">'
+                        + '<div style="flex:1;min-width:0;">'
+                        + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">'
+                        + '<span style="font-family:Cormorant Garamond,serif;font-size:0.82rem;font-weight:600;color:var(--dark-text);">' + nameBadge + '</span>'
+                        + '<span style="font-family:Cormorant Garamond,serif;font-size:0.72rem;color:var(--light-text);">' + date + '</span>'
+                        + '</div>'
+                        + '<div style="font-family:Georgia,serif;font-size:0.88rem;color:var(--dark-text);line-height:1.5;">' + esc(c.text) + '</div>'
+                        + '</div>'
+                        + (isOwn ? '<button data-delete-story-comment="' + c.id + '" data-story-id="' + storyId + '" style="border:none;background:none;color:var(--warm-grey);font-size:0.7rem;cursor:pointer;padding:2px 4px;flex-shrink:0;">Delete</button>' : '')
+                        + '</div>';
+                }).join('');
+                // Wire delete buttons
+                list.querySelectorAll('[data-delete-story-comment]').forEach(btn => {
+                    if (btn.dataset.wired) return;
+                    btn.dataset.wired = '1';
+                    btn.addEventListener('click', async () => {
+                        if (!confirm('Delete this comment?')) return;
+                        const cid = btn.dataset.deleteStoryComment;
+                        const sid = btn.dataset.storyId;
+                        try {
+                            await fetch(API_URL + '/api/testimonies/' + sid + '/comments/' + cid, {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ user_id: currentUser ? currentUser.id : 0 })
+                            });
+                            loadStoryComments(sid);
+                            // Update count
+                            const countEl = document.querySelector('[data-story-comment-count="' + sid + '"]');
+                            if (countEl) countEl.textContent = Math.max(0, parseInt(countEl.textContent || '0') - 1);
+                        } catch(e) { showToast('Could not delete comment'); }
+                    });
+                });
+            } catch(e) {
+                list.innerHTML = '<div style="color:var(--light-text);font-size:0.85rem;text-align:center;">Could not load comments.</div>';
+            }
+        }
+
+        async function sendStoryComment(storyId) {
+            if (!currentUser) { showToast('Set up your profile first'); return; }
+            const input = document.querySelector('[data-story-comment-input="' + storyId + '"]');
+            if (!input) return;
+            const text = input.value.trim();
+            if (!text) return;
+            try {
+                const resp = await fetch(API_URL + '/api/testimonies/' + storyId + '/comments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentUser.id,
+                        name: currentUser.display_name || currentUser.first_name || 'A G4 sister',
+                        text: text
+                    })
+                });
+                if (!resp.ok) throw new Error('failed');
+                input.value = '';
+                await loadStoryComments(storyId);
+                // Update count
+                const countEl = document.querySelector('[data-story-comment-count="' + storyId + '"]');
+                if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
+            } catch(e) { showToast('Could not post comment'); }
         }
 
         function getStoryGiftLabel(giftKey) {

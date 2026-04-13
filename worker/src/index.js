@@ -946,6 +946,18 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // GET /api/journey/:user_id - return this user's saved responses
+      const journeyUserMatch = path.match(/^\/api\/journey\/(\d+)$/);
+      if (journeyUserMatch && request.method === 'GET') {
+        const uid = parseInt(journeyUserMatch[1]);
+        const { results } = await env.DB.prepare(
+          'SELECT gift, response FROM journey_responses WHERE user_id = ?'
+        ).bind(uid).all();
+        const responses = {};
+        (results || []).forEach(r => { responses[r.gift] = r.response; });
+        return json({ responses }, corsHeaders);
+      }
+
       // GET /api/journey/insights - anonymous aggregated stats
       if (path === '/api/journey/insights' && request.method === 'GET') {
         const { results } = await env.DB.prepare(

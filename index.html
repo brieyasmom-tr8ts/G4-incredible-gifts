@@ -4761,8 +4761,9 @@
             if (typeof updateJourneyBadge === 'function') updateJourneyBadge();
             // One-time announcement for the new Journey gifts added post-retreat
             if (typeof showJourneyNewGiftsCard === 'function') showJourneyNewGiftsCard();
-            // Sync journal entries across devices
+            // Sync journal entries and journey responses across devices
             if (typeof syncJournal === 'function') syncJournal();
+            if (typeof syncJourney === 'function') syncJourney();
         }
 
         // Load user photo from server if we don't have it cached
@@ -6816,6 +6817,42 @@
                     if (typeof buildJournal === 'function') buildJournal();
                 }
             } catch(e) { /* offline — no problem, local entries are safe */ }
+        }
+
+        // Sync journey responses from the server so gift selections
+        // made on one device appear on every device.
+        async function syncJourney() {
+            if (!currentUser || !currentUser.id) return;
+            try {
+                const resp = await fetch(API_URL + '/api/journey/' + currentUser.id);
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (!data.responses || typeof data.responses !== 'object') return;
+                let changed = false;
+                // Merge: server wins for any gift we don't have locally,
+                // and local selections also push to server (they were already
+                // sent via submitJourneyResponse when first selected).
+                Object.keys(data.responses).forEach(gift => {
+                    if (!appState.journeyResponses[gift] && data.responses[gift]) {
+                        appState.journeyResponses[gift] = data.responses[gift];
+                        changed = true;
+                    }
+                });
+                // Push any local-only responses to the server
+                Object.keys(appState.journeyResponses).forEach(gift => {
+                    if (!data.responses[gift] && appState.journeyResponses[gift]) {
+                        if (typeof submitJourneyResponse === 'function') {
+                            submitJourneyResponse(gift, appState.journeyResponses[gift]);
+                        }
+                    }
+                });
+                if (changed) {
+                    saveState();
+                    if (typeof buildGifts === 'function') buildGifts();
+                    if (typeof updateJourneyResult === 'function') updateJourneyResult();
+                    if (typeof updateJourneyBadge === 'function') updateJourneyBadge();
+                }
+            } catch(e) { /* offline */ }
         }
 
         function switchToTab(tabName) {

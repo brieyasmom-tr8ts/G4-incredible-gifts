@@ -10903,6 +10903,11 @@
                         if (Math.abs(dx) > 10 || Math.abs(dy) > 10) touchMoved = true;
                     }, { passive: true });
                     slideshowContainer.addEventListener('touchend', (e) => {
+                        // If the tap landed on a reaction button or comment chip,
+                        // let the button's own click handler deal with it — don't
+                        // open the overlay or swipe.
+                        const tgt = e.target;
+                        if (tgt.closest('#slideshow-reactions') || tgt.closest('[data-count]')) return;
                         const endX = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : 0;
                         const endY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : 0;
                         const dx = endX - touchStartX;

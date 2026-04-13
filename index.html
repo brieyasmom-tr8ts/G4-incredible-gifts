@@ -10698,6 +10698,11 @@
                     if (wrap) wrap.style.display = 'none';
                     return;
                 }
+                // Shuffle so the slideshow feels fresh every time
+                for (let i = moments.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [moments[i], moments[j]] = [moments[j], moments[i]];
+                }
                 slideshowMoments = moments;
                 showSlide(0);
                 startSlideshowAuto();

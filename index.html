@@ -6612,17 +6612,19 @@
         }
 
         // Save a devotion reflection as a tagged journal entry.
-        function saveDevotionReflection(devotion, promptKey, text) {
+        function saveDevotionReflection(devotion, promptKey, text, promptText) {
             if (!text || !text.trim()) return false;
             const trimmed = text.trim();
-            appState.journalEntries.unshift({
+            const entry = {
                 date: new Date().toISOString(),
                 text: trimmed,
                 gift: devotion.gift_key,
                 gift_label: devotion.gift,
                 week: devotion.week,
                 prompt_key: promptKey
-            });
+            };
+            if (promptText) entry.prompt_text = promptText;
+            appState.journalEntries.unshift(entry);
             saveState();
             // Privacy-safe usage ping — no content, just metadata
             if (typeof pingJournalActivity === 'function') {
@@ -6728,7 +6730,8 @@
                 gift: verse.gift.toLowerCase().replace(/\s+/g, '_'),
                 gift_label: verse.gift,
                 week: weekNum,
-                prompt_key: 'lectio-' + dayInfo.practice.toLowerCase()
+                prompt_key: 'lectio-' + dayInfo.practice.toLowerCase(),
+                prompt_text: dayInfo.prompt
             });
             saveState();
             if (typeof buildJournal === 'function') buildJournal();
@@ -7607,11 +7610,20 @@
                 topRow.appendChild(dateDiv);
                 topRow.appendChild(actions);
 
+                if (entry.prompt_text) {
+                    const promptDiv = document.createElement('div');
+                    promptDiv.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.88rem;font-style:italic;color:var(--light-text);margin-bottom:8px;padding:8px 12px;background:rgba(138,158,122,0.06);border-radius:8px;border-left:3px solid var(--sage);line-height:1.5;';
+                    promptDiv.textContent = entry.prompt_text;
+                    entryDiv.appendChild(topRow);
+                    entryDiv.appendChild(promptDiv);
+                } else {
+                    entryDiv.appendChild(topRow);
+                }
+
                 const textDiv = document.createElement('div');
                 textDiv.className = 'entry-text';
                 textDiv.textContent = entry.text;
 
-                entryDiv.appendChild(topRow);
                 entryDiv.appendChild(textDiv);
                 entriesDiv.appendChild(entryDiv);
             });
@@ -7672,6 +7684,7 @@
                 }
                 lines.push(header);
                 lines.push('-'.repeat(40));
+                if (entry.prompt_text) lines.push('Prompt: ' + entry.prompt_text);
                 lines.push(entry.text || '');
                 lines.push('');
                 lines.push('');
@@ -7718,6 +7731,7 @@
                 }
                 lines.push(header);
                 lines.push('-'.repeat(40));
+                if (entry.prompt_text) lines.push('Prompt: ' + entry.prompt_text);
                 lines.push(entry.text || '');
                 lines.push('');
                 lines.push('');
@@ -8188,7 +8202,7 @@
                     showToast('Write something first');
                     return;
                 }
-                const ok = saveDevotionReflection(devotion, prompt.key, text);
+                const ok = saveDevotionReflection(devotion, prompt.key, text, prompt.question);
                 if (ok) {
                     textarea.value = '';
                     status.textContent = 'Saved to journal \u2713';

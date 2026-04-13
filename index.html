@@ -8252,10 +8252,18 @@
                 date.className = 'devotion-timeline-date';
                 const d = new Date(entry.date);
                 date.textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                if (entry.prompt_text) {
+                    const prompt = document.createElement('div');
+                    prompt.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.85rem;font-style:italic;color:var(--light-text);margin-bottom:6px;padding:6px 10px;background:rgba(138,158,122,0.06);border-radius:6px;border-left:2px solid var(--sage);line-height:1.45;';
+                    prompt.textContent = entry.prompt_text;
+                    item.appendChild(date);
+                    item.appendChild(prompt);
+                } else {
+                    item.appendChild(date);
+                }
                 const text = document.createElement('div');
                 text.className = 'devotion-timeline-text';
                 text.textContent = entry.text;
-                item.appendChild(date);
                 item.appendChild(text);
                 wrap.appendChild(item);
             });

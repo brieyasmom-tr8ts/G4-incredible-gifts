@@ -3360,7 +3360,7 @@
             </div>
         </div>
 
-        <div id="welcome-banner" class="welcome-banner" style="display:none;"></div>
+        <div id="welcome-banner" class="welcome-banner" style="visibility:hidden;"></div>
 
 
         <div class="content-area">
@@ -3374,8 +3374,9 @@
                 <div id="my-celebration-lookback" style="display:none;"></div>
                 <div id="my-celebrations-archive" style="display:none;"></div>
 
-                <!-- Post-retreat home (hidden until retreat ends) -->
+                <!-- Post-retreat home (shown immediately via inline script if past retreat end) -->
                 <div id="post-retreat-home" style="display:none;">
+                <script>if(new Date()>=new Date('2026-04-11T12:00:00-04:00'))document.getElementById('post-retreat-home').style.display='block';</script>
                     <div style="text-align:center;padding:24px 20px 8px;">
                         <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--dark-text);margin-bottom:6px;">Thank You</div>
                         <div style="font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--light-text);font-style:italic;line-height:1.6;padding:0 12px;">What a weekend. What a God. Thank you for showing up, being open, and letting Him move. You are seen, you are loved, and you are carrying something incredible home with you.</div>
@@ -3600,6 +3601,7 @@
 
                 <!-- Regular home (schedule, countdown, etc.) -->
                 <div id="regular-home" style="display:none;">
+                <script>if(new Date()<new Date('2026-04-11T12:00:00-04:00'))document.getElementById('regular-home').style.display='block';</script>
                     <!-- Profile Nudge -->
                     <div id="profile-nudge" style="display:none;margin:8px 16px 10px;padding:18px 20px;background:linear-gradient(135deg,rgba(201,144,138,0.1),rgba(212,165,154,0.08));border-radius:16px;border:1px solid rgba(201,144,138,0.15);">
                         <div style="display:flex;align-items:center;gap:14px;">
@@ -4718,7 +4720,7 @@
         function showWelcome() {
             const banner = document.getElementById('welcome-banner');
             banner.textContent = getTimeGreeting() + ', ' + currentUser.first_name + ' \u2728';
-            banner.style.display = 'block';
+            banner.style.visibility = 'visible';
             setTimeout(() => banner.classList.add('animate-in'), 100);
 
 
@@ -9500,6 +9502,7 @@
         buildContinue();
         updateStatus();
         initSetup();
+        checkPostRetreat();
         initPrayerWall();
         // Lightweight badge check for polls (don't render full feed yet).
         // Use the same metric as loadSharingFeed (sum of responses across
@@ -10613,11 +10616,12 @@
         }
 
         function checkPostRetreat() {
+            // The correct home view is already visible from inline <script>
+            // tags in the HTML, so no display toggle here — just init the
+            // post-retreat features.
             const now = new Date();
             const retreatEnd = new Date('2026-04-11T12:00:00-04:00');
             if (now >= retreatEnd) {
-                document.getElementById('post-retreat-home').style.display = 'block';
-                document.getElementById('regular-home').style.display = 'none';
                 initSlideshow();
                 initFeedbackForm();
                 buildDevotionHomeCards();
@@ -10648,11 +10652,6 @@
                         }
                     }, 2500);
                 }
-            } else {
-                // Pre-retreat path: show the regular home (kept hidden by
-                // default in HTML so there's no pre-to-post flash on refresh).
-                document.getElementById('regular-home').style.display = 'block';
-                document.getElementById('post-retreat-home').style.display = 'none';
             }
         }
 
@@ -11792,8 +11791,6 @@
                 console.error('Dashboard load error:', e);
             }
         }
-
-        checkPostRetreat();
 
         // Fetch weather forecast for Ocean City, MD
         (async function loadWeather() {

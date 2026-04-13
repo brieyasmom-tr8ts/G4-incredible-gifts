@@ -10269,6 +10269,12 @@
                         openCelebrationModal(data);
                     });
                 });
+                list.querySelectorAll('[data-profile-id]').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const uid = el.dataset.profileId;
+                        if (uid && typeof showUserCard === 'function') showUserCard(uid);
+                    });
+                });
                 list.querySelectorAll('[data-heart-btn]').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
                         e.stopPropagation();
@@ -10319,11 +10325,13 @@
                     </div>`;
             return `
                 <div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-top:1px solid rgba(139,134,128,0.08);${bg}">
-                    ${photo}
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-family:'Playfair Display',serif;font-size:0.98rem;font-weight:700;color:var(--dark-text);">${esc(fullName)} ${cakeIcon}</div>
-                        ${churchCity ? '<div style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--light-text);line-height:1.2;">' + esc(churchCity) + '</div>' : ''}
-                        <div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:${isToday ? 'var(--accent)' : 'var(--light-text)'};font-style:italic;">${timeLabel}</div>
+                    <div data-profile-id="${item.user_id}" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer;">
+                        ${photo}
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-family:'Playfair Display',serif;font-size:0.98rem;font-weight:700;color:var(--dark-text);">${esc(fullName)} ${cakeIcon}</div>
+                            ${churchCity ? '<div style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--light-text);line-height:1.2;">' + esc(churchCity) + '</div>' : ''}
+                            <div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:${isToday ? 'var(--accent)' : 'var(--light-text)'};font-style:italic;">${timeLabel}</div>
+                        </div>
                     </div>
                     ${actionsHtml}
                 </div>

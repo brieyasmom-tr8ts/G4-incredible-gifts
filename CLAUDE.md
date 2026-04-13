@@ -101,6 +101,15 @@
   up total, unique users, avg per user, top gift tags. Download
   button on journal tab exports a nicely formatted .txt of her own
   entries for when she gets a new phone.
+- **Lectio Divina** — daily sacred reading card on the post-retreat
+  home page. One pairing verse per week (different from the devotion's
+  main verse, but same gift theme) broken into 7 daily practices:
+  Read (Mon), Reflect (Tue), Respond (Wed), Rest (Thu), Live (Fri),
+  Share (Sat), Receive (Sun). Each day shows the same verse with a
+  different prompt. Inline textarea saves reflections to the journal
+  tagged with `lectio-<practice>`. Replaces the static "Thank You"
+  banner once devotions start. Admin toggle: `home_lectio` (default on).
+  Data lives in `LECTIO_VERSES` and `LECTIO_DAYS` arrays in index.html.
 - **Unified Visibility admin page** — replaces separate Nav Menu +
   Home Buttons pages. Each feature has one row with two toggles
   (In nav / On home). Features that only exist in one place show
@@ -114,6 +123,11 @@
   60 total letters written. Tone approved as-is.
 - **Look Back / Look In / Look Forward** is the prompt framing on
   every devotion.
+- **Lectio Divina uses pairing verses**, not the devotion's main
+  verse. Each week gets a complementary verse that deepens the same
+  gift from a different angle. No audio — prompts guide her to read
+  aloud herself. Journal reflections save locally (same privacy
+  model as all journal entries).
 - **Admin approval before testimonies show** (pending → approved/
   featured/rejected).
 - **Hearts only on testimonies, no comments** (keeps it pure
@@ -184,6 +198,8 @@ Key functions and roughly where they live in `index.html`:
 - `buildContinue` / `renderDevotionBody` / `renderDevotionPrompt` /
   `renderDevotionJourneyPrompt` / `renderGrowthTimeline` — devotions
   hub
+- `buildLectioDivinaCard` / `getLectioDayInfo` / `saveLectioReflection`
+  — Lectio Divina daily card on post-retreat home
 - `buildGifts` / `updateJourneyResult` / `scrollToFirstUnansweredGift`
   — Journey tab
 - `loadMoments` / `openMomentOverlay` / `buildMomentInteractionBlock`

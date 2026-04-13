@@ -3381,11 +3381,6 @@
                     <!-- Lectio Divina daily card (replaces static Thank You once devotions start) -->
                     <div id="lectio-divina-card" style="display:none;margin:16px 16px 8px;padding:20px 18px 16px;background:white;border-radius:16px;border:1px solid rgba(138,158,122,0.18);box-shadow:var(--shadow-sm);"></div>
 
-                    <!-- Thank You banner (shown pre-devotions or as fallback) -->
-                    <div id="thank-you-banner" style="text-align:center;padding:24px 20px 8px;">
-                        <div style="font-family:Playfair Display,serif;font-size:1.5rem;font-weight:700;color:var(--dark-text);margin-bottom:6px;">Thank You</div>
-                        <div style="font-family:Cormorant Garamond,serif;font-size:1.05rem;color:var(--light-text);font-style:italic;line-height:1.6;padding:0 12px;">What a weekend. What a God. Thank you for showing up, being open, and letting Him move. You are seen, you are loved, and you are carrying something incredible home with you.</div>
-                    </div>
 
                     <!-- Feedback Survey Banner (hides when submitted) -->
                     <div id="feedback-banner" style="display:none;margin:14px 16px 8px;padding:16px 18px;background:linear-gradient(135deg,rgba(201,144,138,0.14),rgba(212,165,154,0.10));border-radius:14px;border:1px solid rgba(201,144,138,0.25);box-shadow:var(--shadow-sm);">
@@ -10731,13 +10726,7 @@
             const now = new Date();
             const retreatEnd = new Date('2026-04-11T12:00:00-04:00');
             if (now >= retreatEnd) {
-                // Lectio Divina card (hides Thank You once devotions start)
                 buildLectioDivinaCard();
-                if (document.getElementById('lectio-divina-card') &&
-                    document.getElementById('lectio-divina-card').style.display !== 'none') {
-                    const tyBanner = document.getElementById('thank-you-banner');
-                    if (tyBanner) tyBanner.style.display = 'none';
-                }
                 initSlideshow();
                 initFeedbackForm();
                 buildDevotionHomeCards();

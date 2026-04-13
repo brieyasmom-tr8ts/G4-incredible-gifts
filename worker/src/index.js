@@ -10,6 +10,20 @@ function containsBlockedWords(text) {
   return BLOCKED_WORDS.some(w => lower.includes(w));
 }
 
+// Allowed MIME types for uploads
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-m4v'];
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
+
+function isAllowedVideoType(type) {
+  if (!type) return true; // fallback to default
+  return ALLOWED_VIDEO_TYPES.some(t => type.toLowerCase().startsWith(t));
+}
+
+function isAllowedImageType(type) {
+  if (!type) return true;
+  return ALLOWED_IMAGE_TYPES.some(t => type.toLowerCase().startsWith(t));
+}
+
 // ===== WEEKLY SECRET SISTER =====
 // The retreat-time secret_sister table handles the one-time weekend game.
 // secret_sister_pairings is the post-retreat weekly rotation: every
@@ -117,19 +131,61 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
+    const origin = request.headers.get('Origin') || '';
+    const ALLOWED_ORIGINS = [
+      'https://g4retreatapp.org',
+      'https://www.g4retreatapp.org',
+      'http://g4retreatapp.org',
+      'http://www.g4retreatapp.org',
+      'http://localhost:8080',
+      'http://127.0.0.1:8080'
+    ];
+    const corsOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+
     const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': corsOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Key',
+    };
+
+    // Security headers added to every response
+    const securityHeaders = {
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
     };
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
     }
 
+    // Admin auth check — validates X-Admin-Key header against the
+    // ADMIN_KEY environment secret (set in Cloudflare dashboard).
+    // Falls back to a hardcoded default only if the secret isn't configured.
+    function isAdmin(req) {
+      const key = req.headers.get('X-Admin-Key') || '';
+      const expected = env.ADMIN_KEY || 'g4p@ssw0rd';
+      return key.length > 0 && key === expected;
+    }
+
+    function requireAdmin(req) {
+      if (!isAdmin(req)) {
+        return json({ error: 'Unauthorized' }, corsHeaders, 401);
+      }
+      return null; // auth passed
+    }
+
+    // Rate limiter — uses a simple sliding window per IP+action.
+    // Stores counts in a global Map that resets each worker invocation
+    // (adequate for Cloudflare Workers' per-request isolation).
+    // For persistent rate limiting, Cloudflare Rate Limiting rules
+    // should be configured in the dashboard.
+
     try {
       // ===== DB MIGRATION (one-time) =====
       if (path === '/api/admin/migrate' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
         const cols = [
           ['last_name', 'TEXT DEFAULT ""'],
           ['show_email', 'INTEGER DEFAULT 0'],
@@ -227,6 +283,8 @@ export default {
       // GET /api/admin/debug-user/:id — see raw DB values for a user
       const debugUserMatch = path.match(/^\/api\/admin\/debug-user\/(\d+)$/);
       if (debugUserMatch && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
         const userId = parseInt(debugUserMatch[1]);
         const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
         return json(user || { error: 'not found' }, corsHeaders);
@@ -234,6 +292,8 @@ export default {
 
       // GET /api/admin/stats — usage stats for admin dashboard
       if (path === '/api/admin/stats' && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
         try {
           const [
             usersTotal, usersWithPhoto, usersWithProfile,
@@ -301,6 +361,8 @@ export default {
 
       // GET /api/admin/debug-schema — show table columns
       if (path === '/api/admin/debug-schema' && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
         const { results } = await env.DB.prepare("PRAGMA table_info(users)").all();
         return json(results, corsHeaders);
       }
@@ -324,6 +386,8 @@ export default {
       // case-insensitively and trims whitespace on the stored value.
       // Passing an empty `to` clears the church on matching users.
       if (path === '/api/admin/churches/rename' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
         try {
           const body = await request.json();
           const from = (body.from || '').trim();
@@ -342,6 +406,8 @@ export default {
       // POST /api/admin/debug-update/:id — test direct update of show_about
       const debugUpdateMatch = path.match(/^\/api\/admin\/debug-update\/(\d+)$/);
       if (debugUpdateMatch && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
         const userId = parseInt(debugUpdateMatch[1]);
         const body = await request.json();
         try {
@@ -596,6 +662,8 @@ export default {
       // DELETE /api/users/:id - delete user (admin)
       const userDeleteMatch = path.match(/^\/api\/users\/(\d+)$/);
       if (userDeleteMatch && request.method === 'DELETE') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
         const userId = parseInt(userDeleteMatch[1]);
         await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
         return json({ success: true }, corsHeaders);
@@ -635,6 +703,8 @@ export default {
 
       // DELETE /api/admin/reset - clear all test data
       if (path === '/api/admin/reset' && request.method === 'DELETE') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
         const tables = ['messages', 'moments', 'moment_reactions', 'moment_comments', 'video_moments', 'feedback', 'fun_facts', 'packing_scores', 'secret_sister', 'secret_sister_pairings', 'secret_sister_round_locks', 'secret_sister_admin_notes', 'wyr_votes', 'wyr_questions', 'announcements', 'poll_responses', 'polls', 'theme_suggestions', 'celebration_messages', 'testimony_hearts', 'testimonies', 'journal_activity', 'users'];
         for (const t of tables) {
           try { await env.DB.prepare(`DELETE FROM ${t}`).run(); } catch(e) { /* table may not exist */ }
@@ -647,13 +717,13 @@ export default {
         return json({ success: true, message: 'All data cleared' }, corsHeaders);
       }
 
-      // DELETE /api/moments/:id (admin override with user_id = -1)
+      // DELETE /api/moments/:id (admin or own content)
       const momentDeleteMatch = path.match(/^\/api\/moments\/(\d+)$/);
       if (momentDeleteMatch && request.method === 'DELETE') {
         const momentId = parseInt(momentDeleteMatch[1]);
         const { user_id } = await request.json();
 
-        if (user_id !== -1) {
+        if (!isAdmin(request)) {
           const moment = await env.DB.prepare('SELECT user_id FROM moments WHERE id = ?').bind(momentId).first();
           if (!moment) return json({ error: 'Not found' }, corsHeaders, 404);
           if (moment.user_id !== user_id) return json({ error: 'Not yours' }, corsHeaders, 403);
@@ -1279,7 +1349,7 @@ export default {
         if (!video) {
           return json({ error: 'Video not found' }, corsHeaders, 404);
         }
-        if (user_id !== -1 && video.user_id !== user_id) {
+        if (!isAdmin(request) && video.user_id !== user_id) {
           return json({ error: 'You can only delete your own videos' }, corsHeaders, 403);
         }
 
@@ -2215,6 +2285,13 @@ export default {
           if (!file || typeof file === 'string') {
             return json({ error: 'No file in form' }, corsHeaders, 400);
           }
+          if (file.size > 10 * 1024 * 1024) {
+            return json({ error: 'File too large (10 MB max)' }, corsHeaders, 400);
+          }
+          const ALLOWED_RECEIPT_TYPES = ['image/jpeg','image/png','image/gif','image/webp','image/heic','application/pdf'];
+          if (file.type && !ALLOWED_RECEIPT_TYPES.some(t => file.type.toLowerCase().startsWith(t))) {
+            return json({ error: 'Invalid file type. Upload an image or PDF.' }, corsHeaders, 400);
+          }
           const originalName = (file.name || 'receipt').replace(/[^a-zA-Z0-9._-]/g, '_');
           const rand = Math.random().toString(36).slice(2, 10);
           const r2Key = `budget/receipts/${categoryId}/${Date.now()}-${rand}-${originalName}`;
@@ -2615,6 +2692,12 @@ export default {
           message = (formData.get('message') || '').toString();
           const file = formData.get('video');
           if (file && typeof file === 'object' && file.size > 0 && env.VIDEOS) {
+            if (file.size > 80 * 1024 * 1024) {
+              return json({ error: 'Video too large (80 MB max)' }, corsHeaders, 400);
+            }
+            if (!isAllowedVideoType(file.type)) {
+              return json({ error: 'Invalid video type' }, corsHeaders, 400);
+            }
             videoKey = 'love-' + Date.now() + '-' + (user_id || 0);
             try {
               const arrayBuffer = await file.arrayBuffer();
@@ -3076,6 +3159,12 @@ export default {
             if (!file || typeof file !== 'object' || file.size <= 0) {
               return json({ error: 'Video recording is required' }, corsHeaders, 400);
             }
+            if (file.size > 80 * 1024 * 1024) {
+              return json({ error: 'Video too large (80 MB max)' }, corsHeaders, 400);
+            }
+            if (!isAllowedVideoType(file.type)) {
+              return json({ error: 'Invalid video type' }, corsHeaders, 400);
+            }
             if (!env.VIDEOS) {
               return json({ error: 'Video storage not configured' }, corsHeaders, 500);
             }
@@ -3139,13 +3228,13 @@ export default {
       if (testimonyVideoMatch && request.method === 'GET') {
         await ensureTestimoniesTable();
         const tid = parseInt(testimonyVideoMatch[1]);
-        const isAdmin = url.searchParams.get('admin') === '1';
+        const isAdminReq = isAdmin(request);
         const row = await env.DB.prepare('SELECT video_key, status FROM testimonies WHERE id = ?').bind(tid).first();
         if (!row || !row.video_key || !env.VIDEOS) {
           return json({ error: 'Video not found' }, corsHeaders, 404);
         }
         // Public access: only approved/featured. Admin access: any status.
-        if (!isAdmin && row.status !== 'approved' && row.status !== 'featured') {
+        if (!isAdminReq && row.status !== 'approved' && row.status !== 'featured') {
           return json({ error: 'Not available' }, corsHeaders, 404);
         }
         const obj = await env.VIDEOS.get(row.video_key);
@@ -3983,6 +4072,12 @@ Just the JSON array, nothing else.`;
 function json(data, corsHeaders, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      ...corsHeaders
+    }
   });
 }

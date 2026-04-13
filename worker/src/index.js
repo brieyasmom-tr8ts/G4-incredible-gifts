@@ -2668,13 +2668,35 @@ export default {
           const firstRow = await env.DB.prepare(
             'SELECT created_at FROM journal_activity ORDER BY created_at ASC LIMIT 1'
           ).first();
+          // Names of women who have journaled (from activity pings)
+          // Join with users table to get names for user_ids
+          let writers = [];
+          try {
+            const { results: writerRows } = await env.DB.prepare(
+              `SELECT ja.user_id, ja.name, COUNT(*) as entry_count,
+                      MAX(ja.created_at) as last_entry,
+                      u.first_name, u.last_name
+               FROM journal_activity ja
+               LEFT JOIN users u ON ja.user_id = u.id
+               WHERE ja.user_id IS NOT NULL
+               GROUP BY ja.user_id
+               ORDER BY last_entry DESC`
+            ).all();
+            writers = (writerRows || []).map(r => ({
+              user_id: r.user_id,
+              name: r.first_name ? (r.first_name + (r.last_name ? ' ' + r.last_name.charAt(0) + '.' : '')) : r.name,
+              entries: r.entry_count,
+              last: r.last_entry
+            }));
+          } catch(e) { /* writers list is best-effort */ }
           return json({
             total,
             uniqueUsers,
             avgPerUser: uniqueUsers ? Math.round((total / uniqueUsers) * 10) / 10 : 0,
             topGifts: topGifts || [],
             firstEntry: firstRow ? firstRow.created_at : null,
-            latestEntry: latestRow ? latestRow.created_at : null
+            latestEntry: latestRow ? latestRow.created_at : null,
+            writers
           }, corsHeaders);
         } catch(e) {
           return json({ total: 0, uniqueUsers: 0, avgPerUser: 0, topGifts: [], error: e.message }, corsHeaders);

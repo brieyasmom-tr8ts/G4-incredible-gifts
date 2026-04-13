@@ -1712,6 +1712,21 @@ async function loadJournalUsage() {
             html += '<div style="font-size:0.82rem;color:var(--light-text);font-style:italic;">No tagged gifts yet — all saves have been free-form.</div>';
         }
 
+        // Writers list — who is journaling (names only, no content)
+        const writers = Array.isArray(data.writers) ? data.writers : [];
+        if (writers.length) {
+            html += '<div style="font-family:Playfair Display,serif;font-size:0.82rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.05em;margin:1rem 0 6px;">Who\'s Journaling</div>';
+            html += '<div style="display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;">';
+            html += writers.map(w => {
+                const lastDate = w.last ? new Date(w.last).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(138,158,122,0.05);border-radius:8px;font-size:0.82rem;">
+                    <span style="font-weight:600;color:var(--dark-text);">${esc(w.name || 'Unknown')}</span>
+                    <span style="color:var(--light-text);font-size:0.75rem;">${w.entries} ${w.entries === 1 ? 'save' : 'saves'} &middot; last ${lastDate}</span>
+                </div>`;
+            }).join('');
+            html += '</div>';
+        }
+
         body.innerHTML = html;
     } catch (e) {
         body.innerHTML = '<div style="color:var(--accent);font-size:0.88rem;">Could not load: ' + esc(e.message || '') + '</div>';

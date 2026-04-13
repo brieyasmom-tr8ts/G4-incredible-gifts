@@ -9502,7 +9502,6 @@
         buildContinue();
         updateStatus();
         initSetup();
-        checkPostRetreat();
         initPrayerWall();
         // Lightweight badge check for polls (don't render full feed yet).
         // Use the same metric as loadSharingFeed (sum of responses across
@@ -11791,6 +11790,8 @@
                 console.error('Dashboard load error:', e);
             }
         }
+
+        checkPostRetreat();
 
         // Fetch weather forecast for Ocean City, MD
         (async function loadWeather() {

@@ -183,18 +183,27 @@
             flex-shrink: 0;
         }
         .nav-tab .badge {
-            display: inline-flex;
+            display: none;
             align-items: center;
             justify-content: center;
-            background: var(--blush);
+            background: #e74c3c;
             color: white;
             font-size: 0.68rem;
-            font-weight: 600;
+            font-weight: 700;
             min-width: 20px;
             height: 20px;
             padding: 0 5px;
             border-radius: 10px;
             margin-left: auto;
+            animation: badgePop 0.3s ease;
+        }
+        .nav-tab .badge.has-new {
+            display: inline-flex;
+        }
+        @keyframes badgePop {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.2); }
+            100% { transform: scale(1); }
         }
 
         /* Main Panel */
@@ -1400,6 +1409,8 @@ function activateAdminSection(sectionName, opts) {
     if (!opts || opts.persist !== false) {
         try { localStorage.setItem('g4admin_section', sectionName); } catch(e) {}
     }
+    // Clear notification badge when section is viewed
+    markAdminSectionSeen(sectionName);
     // Lazy-init the budget section (password gate + calculator) when shown
     if (sectionName === 'budget' && typeof initBudgetSection === 'function') {
         initBudgetSection();
@@ -1428,6 +1439,56 @@ if (document.readyState === 'loading') {
 }
 // Restore on bfcache restore (mobile Safari back/forward, etc.)
 window.addEventListener('pageshow', restoreAdminSection);
+
+// --- Admin Notification Badges ---
+// Tracks "last seen count" per section in localStorage. When the
+// current count exceeds the last-seen count, a red bubble shows
+// the number of new items. Clicking the section clears it.
+const BADGE_SECTIONS = {
+    users:    'count-users',
+    feedback: 'count-feedback',
+    topics:   'count-topics',
+    stories:  'count-stories'
+};
+
+function updateAdminBadge(section, currentCount, isActionable) {
+    const badgeEl = document.getElementById(BADGE_SECTIONS[section]);
+    if (!badgeEl) return;
+    if (isActionable) {
+        // For stories: always show pending count (already actionable)
+        if (currentCount > 0) {
+            badgeEl.textContent = currentCount;
+            badgeEl.classList.add('has-new');
+        } else {
+            badgeEl.classList.remove('has-new');
+        }
+        return;
+    }
+    const key = 'g4admin_seen_' + section;
+    const lastSeen = parseInt(localStorage.getItem(key) || '0', 10);
+    const newCount = currentCount - lastSeen;
+    if (newCount > 0) {
+        badgeEl.textContent = '+' + newCount;
+        badgeEl.classList.add('has-new');
+    } else {
+        badgeEl.classList.remove('has-new');
+    }
+}
+
+function markAdminSectionSeen(section) {
+    const badgeEl = document.getElementById(BADGE_SECTIONS[section]);
+    if (!badgeEl) return;
+    badgeEl.classList.remove('has-new');
+    // For non-actionable sections, save current total as "seen"
+    if (section !== 'stories') {
+        const key = 'g4admin_seen_' + section;
+        const currentText = badgeEl.textContent.replace('+', '');
+        // We need the actual total, not the diff. Look it up from the data.
+        // The loaders set data-total on the badge for this purpose.
+        const total = badgeEl.dataset.total || '0';
+        localStorage.setItem(key, total);
+    }
+}
 
 // --- Data Fetch ---
 async function refreshAll() {
@@ -1632,7 +1693,9 @@ async function loadUsers() {
     try {
         const data = await apiFetch('/api/users');
         const users = Array.isArray(data) ? data : (data.users || data.data || []);
-        document.getElementById('count-users').textContent = users.length;
+        const _userBadge = document.getElementById('count-users');
+        if (_userBadge) _userBadge.dataset.total = users.length;
+        updateAdminBadge('users', users.length, false);
         const tbody = document.getElementById('users-body');
         const empty = document.getElementById('empty-users');
         if (!users.length) {
@@ -2127,7 +2190,9 @@ async function loadFeedback() {
         const data = await apiFetch('/api/feedback');
         const items = Array.isArray(data) ? data : (data.feedback || data.data || []);
         feedbackCache = items;
-        document.getElementById('count-feedback').textContent = items.length;
+        const _fbBadge = document.getElementById('count-feedback');
+        if (_fbBadge) _fbBadge.dataset.total = items.length;
+        updateAdminBadge('feedback', items.length, false);
         const downloadBtn = document.getElementById('btn-download-feedback-csv');
         if (downloadBtn) downloadBtn.style.display = items.length ? '' : 'none';
         const list = document.getElementById('feedback-list');
@@ -2262,7 +2327,9 @@ async function loadTopics() {
         const data = await apiFetch('/api/theme-suggestions');
         const items = Array.isArray(data) ? data : (data.theme_suggestions || data.data || []);
         topicsCache = items;
-        document.getElementById('count-topics').textContent = items.length;
+        const _topicBadge = document.getElementById('count-topics');
+        if (_topicBadge) _topicBadge.dataset.total = items.length;
+        updateAdminBadge('topics', items.length, false);
         const downloadBtn = document.getElementById('btn-download-topics-csv');
         if (downloadBtn) downloadBtn.style.display = items.length ? '' : 'none';
         const list = document.getElementById('topics-list');
@@ -2357,7 +2424,7 @@ async function loadStories() {
         storiesCache = items;
         // Header badge counts pending only (the actionable bucket)
         const pendingCount = items.filter(s => s.status === 'pending').length;
-        document.getElementById('count-stories').textContent = pendingCount;
+        updateAdminBadge('stories', pendingCount, true);
         const downloadBtn = document.getElementById('btn-download-stories-csv');
         if (downloadBtn) downloadBtn.style.display = items.length ? '' : 'none';
         renderStoryFilter();

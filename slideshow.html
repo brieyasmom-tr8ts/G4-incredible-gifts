@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>G4 2026 - Scavenger Hunt Slideshow</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
     <style>
@@ -24,7 +24,7 @@
             justify-content: center;
             opacity: 0;
             transition: opacity 1s ease;
-            padding: 20px 20px 100px;
+            padding: 20px 20px 140px;
         }
         .slide.active { opacity: 1; }
         .slide img {
@@ -179,11 +179,12 @@
             left: 0;
             right: 0;
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             gap: 8px;
-            padding: 14px 16px;
+            padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
             z-index: 10;
-            background: linear-gradient(transparent, rgba(0,0,0,0.7) 30%);
+            background: linear-gradient(transparent, rgba(0,0,0,0.85) 30%);
         }
         .controls button {
             padding: 8px 16px;

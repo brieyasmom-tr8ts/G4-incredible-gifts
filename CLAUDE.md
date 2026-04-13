@@ -110,6 +110,13 @@
   tagged with `lectio-<practice>`. Replaces the static "Thank You"
   banner once devotions start. Admin toggle: `home_lectio` (default on).
   Data lives in `LECTIO_VERSES` and `LECTIO_DAYS` arrays in index.html.
+- **Name disambiguation (photo + church/city)** — women with similar
+  names (e.g. Sue Davis vs Susan Davis) are now distinguishable
+  everywhere. A `renderNameBadge()` helper shows a small circular
+  profile photo + name + church/city subtitle. Applied to: Secret
+  Sister assignment cards, celebration cards, prayer wall posts,
+  moment comments, and story author names. Backed by a preloaded
+  directory cache (`lookupUserByName`). Anonymous posts stay anonymous.
 - **Unified Visibility admin page** — replaces separate Nav Menu +
   Home Buttons pages. Each feature has one row with two toggles
   (In nav / On home). Features that only exist in one place show
@@ -200,6 +207,8 @@ Key functions and roughly where they live in `index.html`:
   hub
 - `buildLectioDivinaCard` / `getLectioDayInfo` / `saveLectioReflection`
   — Lectio Divina daily card on post-retreat home
+- `renderNameBadge` / `lookupUserByName` — name disambiguation
+  helper (photo + church/city subtitle)
 - `buildGifts` / `updateJourneyResult` / `scrollToFirstUnansweredGift`
   — Journey tab
 - `loadMoments` / `openMomentOverlay` / `buildMomentInteractionBlock`

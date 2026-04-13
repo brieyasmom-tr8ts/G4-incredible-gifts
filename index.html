@@ -4911,6 +4911,60 @@
 
         // ===== People Directory =====
         let allDirectoryUsers = [];
+
+        // User lookup cache — helps distinguish women with similar names
+        // (e.g. Sue Davis vs Susan Davis) by resolving a name to her photo
+        // and church/city. Fed by the directory fetch.
+        function lookupUserByName(name) {
+            if (!name || !allDirectoryUsers.length) return null;
+            const lower = name.toLowerCase().trim();
+            return allDirectoryUsers.find(u => {
+                const full = ((u.first_name || '') + ' ' + (u.last_name || '')).toLowerCase().trim();
+                const withInitial = ((u.first_name || '') + ' ' + (u.last_initial || '') + '.').toLowerCase().trim();
+                const firstName = (u.first_name || '').toLowerCase().trim();
+                return full === lower || withInitial === lower || firstName === lower;
+            }) || null;
+        }
+
+        // Render a small inline photo + name + optional church/city subtitle.
+        // Returns an HTML string. Used everywhere a sister's name appears.
+        function renderNameBadge(name, opts) {
+            opts = opts || {};
+            const size = opts.size || 22;
+            const user = lookupUserByName(name);
+            const photo = (user && user.photo_data) ? user.photo_data : null;
+            const subtitle = user ? (user.church || user.location || '') : '';
+            const escaped = typeof escHtml === 'function' ? escHtml(name) : name;
+
+            const photoHtml = photo
+                ? '<img src="' + photo + '" alt="" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:cover;flex-shrink:0;">'
+                : '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;"><span style="color:white;font-size:' + Math.round(size * 0.5) + 'px;font-family:Playfair Display,serif;font-weight:700;">' + (name ? name.charAt(0).toUpperCase() : '?') + '</span></div>';
+
+            const subtitleHtml = subtitle && !opts.noSubtitle
+                ? '<div style="font-family:Cormorant Garamond,serif;font-size:0.72rem;color:var(--light-text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;">' + (typeof escHtml === 'function' ? escHtml(subtitle) : subtitle) + '</div>'
+                : '';
+
+            return '<div style="display:inline-flex;align-items:center;gap:6px;">' +
+                photoHtml +
+                '<div>' +
+                    '<div style="font-family:Cormorant Garamond,serif;font-size:' + (opts.fontSize || '0.85rem') + ';color:' + (opts.nameColor || 'var(--dark-text)') + ';font-weight:600;line-height:1.2;">' + escaped + '</div>' +
+                    subtitleHtml +
+                '</div>' +
+            '</div>';
+        }
+
+        // Preload the directory in the background so name badges work
+        // before the user visits Connect.
+        (async function preloadDirectory() {
+            try {
+                if (allDirectoryUsers.length) return;
+                const users = await apiGet('/api/users/directory');
+                if (users && users.length && !allDirectoryUsers.length) {
+                    allDirectoryUsers = users;
+                }
+            } catch(e) { /* non-critical */ }
+        })();
+
         // Default sort: Profiles, so women who've filled out their profile
         // float to the top when Connect opens. Heather wanted the profile
         // view to be the landing state.
@@ -5423,13 +5477,16 @@
 
                     const content = document.createElement('div');
 
-                    // Name row with inline tiny avatar
-                    // Avatar (directory size, sits left of content)
+                    // Avatar — use real photo from directory if available
+                    const _dirUser = lookupUserByName(msg.author_name);
                     const avatarEl = document.createElement('div');
-                    avatarEl.className = 'msg-avatar-placeholder';
-                    avatarEl.dataset.avatarClass = 'msg-avatar-sm';
-                    avatarEl.style.cssText = 'width:48px;height:48px;min-width:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--blush);background:linear-gradient(135deg,var(--blush),var(--rose));color:white;font-size:1.1rem;font-family:Playfair Display,serif;font-weight:700;flex-shrink:0;';
-                    avatarEl.textContent = msg.author_name.charAt(0);
+                    if (_dirUser && _dirUser.photo_data) {
+                        avatarEl.innerHTML = '<img src="' + _dirUser.photo_data + '" alt="" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--blush);">';
+                        avatarEl.style.cssText = 'flex-shrink:0;';
+                    } else {
+                        avatarEl.style.cssText = 'width:48px;height:48px;min-width:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid var(--blush);background:linear-gradient(135deg,var(--blush),var(--rose));color:white;font-size:1.1rem;font-family:Playfair Display,serif;font-weight:700;flex-shrink:0;';
+                        avatarEl.textContent = msg.author_name.charAt(0);
+                    }
 
                     // Name + type badge
                     const nameRow = document.createElement('div');
@@ -5438,6 +5495,13 @@
                     nameEl.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.9rem;font-weight:700;color:var(--dark-text);';
                     nameEl.textContent = msg.author_name;
                     nameRow.appendChild(nameEl);
+                    const _prayerChurch = _dirUser ? (_dirUser.church || _dirUser.location || '') : '';
+                    if (_prayerChurch) {
+                        const churchEl = document.createElement('span');
+                        churchEl.style.cssText = 'font-family:Cormorant Garamond,serif;font-size:0.72rem;color:var(--light-text);';
+                        churchEl.textContent = '\u00b7 ' + _prayerChurch;
+                        nameRow.appendChild(churchEl);
+                    }
                     const typeBadge = document.createElement('span');
                     typeBadge.style.cssText = 'font-size:0.7rem;padding:1px 7px;border-radius:6px;font-weight:600;';
                     if (msg.type === 'prayer') {
@@ -8916,8 +8980,7 @@
                 const header = document.createElement('div');
                 header.style.cssText = 'display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;';
                 const name = document.createElement('span');
-                name.style.cssText = "font-family:'Cormorant Garamond',serif;font-size:0.82rem;font-weight:600;color:var(--accent);";
-                name.textContent = c.name || 'A G4 sister';
+                name.innerHTML = renderNameBadge(c.name || 'A G4 sister', {size: 20, fontSize: '0.82rem', nameColor: 'var(--accent)'});
                 const actions = document.createElement('span');
                 actions.style.cssText = 'display:flex;gap:8px;align-items:center;';
                 const when = document.createElement('span');
@@ -9804,7 +9867,8 @@
                             localStorage.setItem(retreatSeenKey, '1');
                             setTimeout(() => openWeeklySSReceivedModal(data.retreat_received_note), 1200);
                         } else if (!data.retreat_my_note) {
-                            titleEl.textContent = 'Write to ' + (data.retreat_assignment.receiver_name || 'a sister');
+                            const rName = data.retreat_assignment.receiver_name || 'a sister';
+                            titleEl.innerHTML = 'Write to ' + renderNameBadge(rName, {size: 24, fontSize: '1.0rem', nameColor: 'var(--dark-text)', noSubtitle: false});
                             subEl.textContent = 'Tap to write her a kind word. She\u2019ll never know it\u2019s from you.';
                             iconEl.textContent = '\ud83d\udc8c';
                         } else if (!data.retreat_received_note) {
@@ -9856,7 +9920,8 @@
                     setTimeout(() => openWeeklySSReceivedModal(data.received_note), 1200);
                 } else if (!data.my_note) {
                     // State 4: she still needs to write this week's note
-                    titleEl.textContent = 'Write to ' + (data.my_assignment.receiver_name || 'a sister');
+                    const rName = data.my_assignment.receiver_name || 'a sister';
+                    titleEl.innerHTML = 'Write to ' + renderNameBadge(rName, {size: 24, fontSize: '1.0rem', nameColor: 'var(--dark-text)', noSubtitle: false});
                     subEl.textContent = 'Tap to write her a kind word. She\u2019ll never know it\u2019s from you.';
                     iconEl.textContent = '\ud83d\udc8c';
                 } else if (data.my_note && !data.received_note) {
@@ -10228,6 +10293,8 @@
                 : '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;color:white;font-family:Playfair Display,serif;font-weight:700;">' + (item.first_name || '?').charAt(0) + '</div>';
             const cakeIcon = item.occasion === 'birthday' ? '\ud83c\udf82' : '\ud83d\udc8d';
             const fullName = (item.first_name || '') + (item.last_initial ? ' ' + item.last_initial + '.' : '');
+            const dirUser = lookupUserByName(fullName);
+            const churchCity = dirUser ? (dirUser.church || dirUser.location || '') : '';
             const data = JSON.stringify({
                 user_id: item.user_id,
                 first_name: item.first_name,
@@ -10252,6 +10319,7 @@
                     ${photo}
                     <div style="flex:1;min-width:0;">
                         <div style="font-family:'Playfair Display',serif;font-size:0.98rem;font-weight:700;color:var(--dark-text);">${esc(fullName)} ${cakeIcon}</div>
+                        ${churchCity ? '<div style="font-family:Cormorant Garamond,serif;font-size:0.75rem;color:var(--light-text);line-height:1.2;">' + esc(churchCity) + '</div>' : ''}
                         <div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:${isToday ? 'var(--accent)' : 'var(--light-text)'};font-style:italic;">${timeLabel}</div>
                     </div>
                     ${actionsHtml}
@@ -11337,7 +11405,9 @@
         }
 
         function renderStoryCard(story, isFeatured) {
-            const name = story.anonymous ? 'A G4 sister \ud83d\udc9b' : esc(story.display_name || story.name || 'A G4 sister');
+            const _storyRawName = story.display_name || story.name || 'A G4 sister';
+            const name = story.anonymous ? 'A G4 sister \ud83d\udc9b' : esc(_storyRawName);
+            const nameBadgeHtml = story.anonymous ? name : renderNameBadge(_storyRawName, {size: 26, fontSize: '0.95rem', nameColor: 'var(--dark-text)'});
             const dateStr = story.created_at
                 ? new Date(story.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                 : '';
@@ -11370,7 +11440,7 @@
                     ${featuredBadge}
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;">
                         <div>
-                            <div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);">${name}</div>
+                            <div style="font-family:'Playfair Display',serif;font-weight:700;color:var(--dark-text);">${nameBadgeHtml}</div>
                             <div style="font-family:'Cormorant Garamond',serif;font-size:0.78rem;color:var(--light-text);font-style:italic;">${dateStr}</div>
                         </div>
                         ${giftPill}

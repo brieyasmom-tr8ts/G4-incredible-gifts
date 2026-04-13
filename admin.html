@@ -1302,13 +1302,23 @@ let refreshTimer = null;
 // --- Auth ---
 function getKey() { return sessionStorage.getItem('admin_key') || ''; }
 
-function authenticate() {
+async function authenticate() {
     const pw = document.getElementById('gate-password').value.trim();
     if (!pw) return;
-    if (pw !== 'g4p@ssw0rd') {
+    // Verify password server-side before granting access
+    try {
+        const res = await fetch(API + '/api/admin/stats', {
+            headers: { 'X-Admin-Key': pw }
+        });
+        if (!res.ok) {
+            document.getElementById('gate-password').value = '';
+            document.getElementById('gate-password').placeholder = 'Incorrect password';
+            document.getElementById('gate-password').style.borderColor = '#c9908a';
+            return;
+        }
+    } catch(e) {
         document.getElementById('gate-password').value = '';
-        document.getElementById('gate-password').placeholder = 'Incorrect password';
-        document.getElementById('gate-password').style.borderColor = '#c9908a';
+        document.getElementById('gate-password').placeholder = 'Connection error';
         return;
     }
     sessionStorage.setItem('admin_key', pw);
@@ -1328,18 +1338,38 @@ function logout() {
     location.reload();
 }
 
-// Check for existing session
-if (getKey() === 'g4p@ssw0rd') {
-    document.getElementById('password-gate').classList.add('hidden');
-    document.getElementById('app').style.display = '';
-    refreshAll();
-    startAutoRefresh();
-    // restoreAdminSection is called below once the function is declared.
+// Check for existing session — verify with server
+if (getKey()) {
+    (async () => {
+        try {
+            const res = await fetch(API + '/api/admin/stats', {
+                headers: { 'X-Admin-Key': getKey() }
+            });
+            if (res.ok) {
+                document.getElementById('password-gate').classList.add('hidden');
+                document.getElementById('app').style.display = '';
+                refreshAll();
+                startAutoRefresh();
+                if (typeof restoreAdminSection === 'function') restoreAdminSection();
+            } else {
+                sessionStorage.removeItem('admin_key');
+            }
+        } catch(e) {
+            // Offline — trust the session key for now
+            document.getElementById('password-gate').classList.add('hidden');
+            document.getElementById('app').style.display = '';
+            refreshAll();
+            startAutoRefresh();
+        }
+    })();
 }
 
 // --- API Helpers ---
 async function apiFetch(path, options = {}) {
     const headers = { ...(options.headers || {}) };
+    // Send admin key with every request for server-side auth
+    const key = getKey();
+    if (key) headers['X-Admin-Key'] = key;
     if (options.body && typeof options.body === 'object') {
         headers['Content-Type'] = 'application/json';
         options.body = JSON.stringify(options.body);

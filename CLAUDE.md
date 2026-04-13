@@ -270,9 +270,13 @@ Not yet built, deferred by agreement:
 - **The existing retreat-time features** (quiz, meme, packing points,
   scavenger hunt, WYR polls, photo booth frames, etc.) — those were
   stable before this branch and shouldn't be rewritten unless asked.
-- **Admin auth model** — there's no authentication on the admin page
-  right now (security by URL obscurity). This is by design for the
-  current scale. Don't add auth without asking.
+- **Admin auth model** — server-side auth via `X-Admin-Key` header.
+  Admin password stored in the `ADMIN_KEY` environment secret on
+  Cloudflare (falls back to hardcoded default if not set). All
+  `/api/admin/*` endpoints and destructive operations (delete user,
+  reset data) require the header. The admin.html frontend sends
+  the key via `apiFetch` on every request and verifies it server-side
+  on login. CORS restricted to `g4retreatapp.org`.
 
 ## Auto-merge workflow
 

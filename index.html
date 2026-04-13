@@ -4137,9 +4137,22 @@
                         <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:8px;">Your video story <span style="font-weight:400;font-style:italic;">(up to 3 minutes)</span></label>
                         <div id="story-video-empty" style="padding:24px 16px;background:rgba(138,158,122,0.05);border:1px dashed rgba(138,158,122,0.3);border-radius:10px;text-align:center;">
                             <div style="font-size:2rem;margin-bottom:6px;">&#127909;</div>
-                            <div style="font-family:'Cormorant Garamond',serif;font-size:0.92rem;color:var(--light-text);font-style:italic;margin-bottom:12px;">Record a video of your story or choose one from your camera roll. You can pick a different one any time before sending.</div>
+                            <div style="font-family:'Cormorant Garamond',serif;font-size:0.92rem;color:var(--light-text);font-style:italic;margin-bottom:12px;">Record a video of your story or choose one from your camera roll.</div>
                             <input type="file" accept="video/*" id="story-video-input" style="display:none;">
-                            <button type="button" id="story-video-record-btn" style="padding:10px 22px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;">Record or Choose Video</button>
+                            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                                <button type="button" id="story-video-webcam-btn" style="display:none;padding:10px 22px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;">Record Video</button>
+                                <button type="button" id="story-video-record-btn" style="padding:10px 22px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;">Choose Video</button>
+                            </div>
+                        </div>
+                        <!-- Webcam recording UI (hidden until Record is tapped) -->
+                        <div id="story-webcam-ui" style="display:none;">
+                            <video id="story-webcam-live" autoplay playsinline muted style="width:100%;border-radius:10px;background:black;margin-bottom:8px;transform:scaleX(-1);"></video>
+                            <div id="story-webcam-timer" style="display:none;text-align:center;font-family:-apple-system,system-ui,sans-serif;font-variant-numeric:tabular-nums;font-size:1.1rem;font-weight:700;color:var(--accent);margin-bottom:8px;">0:00</div>
+                            <div style="display:flex;gap:8px;justify-content:center;">
+                                <button type="button" id="story-webcam-start-btn" style="padding:10px 22px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;">Start Recording</button>
+                                <button type="button" id="story-webcam-stop-btn" style="display:none;padding:10px 22px;background:#c9908a;color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;">Stop</button>
+                                <button type="button" id="story-webcam-cancel-btn" style="padding:10px 22px;background:white;color:var(--taupe);border:1.5px solid var(--warm-grey);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;">Cancel</button>
+                            </div>
                         </div>
                         <div id="story-video-preview" style="display:none;">
                             <video id="story-video-player" controls playsinline style="width:100%;border-radius:10px;background:black;margin-bottom:8px;"></video>
@@ -11252,8 +11265,10 @@
             const preview = document.getElementById('story-video-preview');
             const empty = document.getElementById('story-video-empty');
             const player = document.getElementById('story-video-player');
+            const webcamUI = document.getElementById('story-webcam-ui');
             if (preview) preview.style.display = 'none';
             if (empty) empty.style.display = 'block';
+            if (webcamUI) webcamUI.style.display = 'none';
             if (player) { player.removeAttribute('src'); player.load(); }
         }
 
@@ -11301,7 +11316,6 @@
                 videoRetakeBtn.dataset.wired = '1';
                 videoRetakeBtn.addEventListener('click', () => {
                     resetStoryVideoState();
-                    if (videoInput) videoInput.click();
                 });
             }
             if (videoInput && !videoInput.dataset.wired) {
@@ -11349,6 +11363,118 @@
                     } catch(err) {
                         showToast('Could not load video: ' + (err.message || 'try again'));
                     }
+                });
+            }
+
+            // Webcam recording (desktop users)
+            const webcamBtn = document.getElementById('story-video-webcam-btn');
+            const webcamUI = document.getElementById('story-webcam-ui');
+            const webcamLive = document.getElementById('story-webcam-live');
+            const webcamStartBtn = document.getElementById('story-webcam-start-btn');
+            const webcamStopBtn = document.getElementById('story-webcam-stop-btn');
+            const webcamCancelBtn = document.getElementById('story-webcam-cancel-btn');
+            const webcamTimer = document.getElementById('story-webcam-timer');
+            let _webcamStream = null;
+            let _webcamRecorder = null;
+            let _webcamChunks = [];
+            let _webcamTimerInterval = null;
+
+            // Show the Record button on devices that have getUserMedia (desktop with camera)
+            if (webcamBtn && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                webcamBtn.style.display = '';
+            }
+
+            function stopWebcamStream() {
+                if (_webcamTimerInterval) { clearInterval(_webcamTimerInterval); _webcamTimerInterval = null; }
+                if (_webcamRecorder && _webcamRecorder.state !== 'inactive') {
+                    try { _webcamRecorder.stop(); } catch(e) {}
+                }
+                _webcamRecorder = null;
+                if (_webcamStream) {
+                    _webcamStream.getTracks().forEach(t => t.stop());
+                    _webcamStream = null;
+                }
+                if (webcamLive) webcamLive.srcObject = null;
+                if (webcamTimer) { webcamTimer.style.display = 'none'; webcamTimer.textContent = '0:00'; }
+                if (webcamStartBtn) { webcamStartBtn.style.display = ''; webcamStartBtn.textContent = 'Start Recording'; }
+                if (webcamStopBtn) webcamStopBtn.style.display = 'none';
+            }
+
+            if (webcamBtn && !webcamBtn.dataset.wired) {
+                webcamBtn.dataset.wired = '1';
+                webcamBtn.addEventListener('click', async () => {
+                    try {
+                        _webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        if (webcamLive) webcamLive.srcObject = _webcamStream;
+                        if (videoEmpty) videoEmpty.style.display = 'none';
+                        if (webcamUI) webcamUI.style.display = 'block';
+                        _webcamChunks = [];
+                    } catch(e) {
+                        showToast('Could not access camera — check your browser permissions');
+                    }
+                });
+            }
+
+            if (webcamStartBtn && !webcamStartBtn.dataset.wired) {
+                webcamStartBtn.dataset.wired = '1';
+                webcamStartBtn.addEventListener('click', () => {
+                    if (!_webcamStream) return;
+                    _webcamChunks = [];
+                    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus') ? 'video/webm;codecs=vp9,opus'
+                        : MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : '';
+                    _webcamRecorder = new MediaRecorder(_webcamStream, mimeType ? { mimeType } : {});
+                    _webcamRecorder.ondataavailable = (e) => { if (e.data.size > 0) _webcamChunks.push(e.data); };
+                    _webcamRecorder.onstop = () => {
+                        const blob = new Blob(_webcamChunks, { type: _webcamRecorder.mimeType || 'video/webm' });
+                        const ext = (blob.type || '').includes('mp4') ? 'mp4' : 'webm';
+                        const file = new File([blob], 'story-recording.' + ext, { type: blob.type });
+                        // Feed the recorded file into the same preview flow as the file picker
+                        _storyVideoFile = file;
+                        if (_storyVideoPreviewUrl) { try { URL.revokeObjectURL(_storyVideoPreviewUrl); } catch(e) {} }
+                        _storyVideoPreviewUrl = URL.createObjectURL(file);
+                        if (videoPlayer) { videoPlayer.src = _storyVideoPreviewUrl; videoPlayer.load(); }
+                        if (videoSize) {
+                            const mb = (file.size / (1024 * 1024)).toFixed(1);
+                            videoSize.textContent = mb + ' MB';
+                        }
+                        stopWebcamStream();
+                        if (webcamUI) webcamUI.style.display = 'none';
+                        if (videoPreview) videoPreview.style.display = 'block';
+                    };
+                    _webcamRecorder.start(1000);
+                    webcamStartBtn.style.display = 'none';
+                    if (webcamStopBtn) webcamStopBtn.style.display = '';
+                    // Timer
+                    let secs = 0;
+                    if (webcamTimer) { webcamTimer.style.display = 'block'; webcamTimer.textContent = '0:00'; }
+                    _webcamTimerInterval = setInterval(() => {
+                        secs++;
+                        const m = Math.floor(secs / 60);
+                        const s = secs % 60;
+                        if (webcamTimer) webcamTimer.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+                        if (secs >= 180 && _webcamRecorder && _webcamRecorder.state === 'recording') {
+                            _webcamRecorder.stop();
+                            clearInterval(_webcamTimerInterval);
+                            showToast('3 minute limit reached');
+                        }
+                    }, 1000);
+                });
+            }
+
+            if (webcamStopBtn && !webcamStopBtn.dataset.wired) {
+                webcamStopBtn.dataset.wired = '1';
+                webcamStopBtn.addEventListener('click', () => {
+                    if (_webcamRecorder && _webcamRecorder.state === 'recording') _webcamRecorder.stop();
+                });
+            }
+
+            if (webcamCancelBtn && !webcamCancelBtn.dataset.wired) {
+                webcamCancelBtn.dataset.wired = '1';
+                webcamCancelBtn.addEventListener('click', () => {
+                    stopWebcamStream();
+                    _webcamChunks = [];
+                    if (webcamUI) webcamUI.style.display = 'none';
+                    if (videoEmpty) videoEmpty.style.display = 'block';
                 });
             }
 

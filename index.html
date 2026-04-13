@@ -4748,6 +4748,8 @@
             if (typeof updateJourneyBadge === 'function') updateJourneyBadge();
             // One-time announcement for the new Journey gifts added post-retreat
             if (typeof showJourneyNewGiftsCard === 'function') showJourneyNewGiftsCard();
+            // Sync journal entries across devices
+            if (typeof syncJournal === 'function') syncJournal();
         }
 
         // Load user photo from server if we don't have it cached
@@ -6633,6 +6635,7 @@
             if (typeof maybeNudgeJournalBackup === 'function') {
                 maybeNudgeJournalBackup();
             }
+            if (typeof syncJournal === 'function') syncJournal();
             return true;
         }
 
@@ -6739,6 +6742,7 @@
                 pingJournalActivity(text.length, verse.gift.toLowerCase().replace(/\s+/g, '_'));
             }
             if (typeof maybeNudgeJournalBackup === 'function') maybeNudgeJournalBackup();
+            if (typeof syncJournal === 'function') syncJournal();
             textarea.value = '';
             showToast('Saved to your journal \u2728');
             if (typeof launchConfetti === 'function') launchConfetti();
@@ -6759,6 +6763,46 @@
 
         function saveState() {
             localStorage.setItem('incredibleGiftState', JSON.stringify(appState));
+        }
+
+        // Sync journal entries to the server so they appear on every device.
+        // Sends local entries, receives the merged set, and updates local state.
+        async function syncJournal() {
+            if (!currentUser || !currentUser.id) return;
+            try {
+                const resp = await fetch(API_URL + '/api/journal/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: currentUser.id,
+                        entries: appState.journalEntries || []
+                    })
+                });
+                if (!resp.ok) return;
+                const data = await resp.json();
+                if (!Array.isArray(data.entries)) return;
+
+                // Merge: add any server entries we don't have locally.
+                // Dedup by date+text (same key the server uses).
+                const localSet = new Set(
+                    (appState.journalEntries || []).map(e => e.date + '||' + e.text)
+                );
+                let added = 0;
+                data.entries.forEach(se => {
+                    const key = se.date + '||' + se.text;
+                    if (!localSet.has(key)) {
+                        appState.journalEntries.push(se);
+                        localSet.add(key);
+                        added++;
+                    }
+                });
+                if (added) {
+                    // Re-sort newest first
+                    appState.journalEntries.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    saveState();
+                    if (typeof buildJournal === 'function') buildJournal();
+                }
+            } catch(e) { /* offline — no problem, local entries are safe */ }
         }
 
         function switchToTab(tabName) {
@@ -7601,9 +7645,17 @@
                 deleteBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (!confirm('Delete this entry?')) return;
-                    appState.journalEntries.splice(index, 1);
+                    const deleted = appState.journalEntries.splice(index, 1)[0];
                     saveState();
                     buildJournal();
+                    // Also remove from server
+                    if (deleted && currentUser && currentUser.id) {
+                        fetch(API_URL + '/api/journal/entry', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: currentUser.id, date: deleted.date, text: deleted.text })
+                        }).catch(() => {});
+                    }
                 });
 
                 actions.appendChild(deleteBtn);
@@ -7861,6 +7913,7 @@
                         launchConfetti();
                         pingJournalActivity(text.length, '');
                         maybeNudgeJournalBackup();
+                        if (typeof syncJournal === 'function') syncJournal();
                     }
                 });
             }

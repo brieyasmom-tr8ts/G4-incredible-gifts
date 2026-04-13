@@ -2669,6 +2669,95 @@ export default {
         }
       }
 
+      // ===== JOURNAL SYNC (cross-device) =====
+
+      const ensureJournalEntriesTable = async () => {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS journal_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            entry_date TEXT NOT NULL,
+            text TEXT NOT NULL DEFAULT '',
+            gift TEXT DEFAULT '',
+            gift_label TEXT DEFAULT '',
+            week INTEGER DEFAULT 0,
+            prompt_key TEXT DEFAULT '',
+            prompt_text TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch(e) { /* exists */ }
+      };
+
+      // POST /api/journal/sync — client sends its local entries, server
+      // merges and returns the full set. Dedup by (user_id, entry_date, text).
+      if (path === '/api/journal/sync' && request.method === 'POST') {
+        await ensureJournalEntriesTable();
+        try {
+          const body = await request.json();
+          const userId = parseInt(body.user_id);
+          if (!userId) return json({ error: 'user_id required' }, corsHeaders, 400);
+          const clientEntries = Array.isArray(body.entries) ? body.entries : [];
+
+          // Insert any client entries the server doesn't have yet
+          for (const e of clientEntries) {
+            if (!e.date || !e.text) continue;
+            const exists = await env.DB.prepare(
+              'SELECT id FROM journal_entries WHERE user_id = ? AND entry_date = ? AND text = ? LIMIT 1'
+            ).bind(userId, e.date, e.text.slice(0, 10000)).first();
+            if (!exists) {
+              await env.DB.prepare(
+                `INSERT INTO journal_entries (user_id, entry_date, text, gift, gift_label, week, prompt_key, prompt_text)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+              ).bind(
+                userId,
+                e.date,
+                (e.text || '').slice(0, 10000),
+                (e.gift || ''),
+                (e.gift_label || ''),
+                parseInt(e.week || 0) || 0,
+                (e.prompt_key || ''),
+                (e.prompt_text || '')
+              ).run();
+            }
+          }
+
+          // Return all server entries for this user
+          const { results } = await env.DB.prepare(
+            'SELECT entry_date, text, gift, gift_label, week, prompt_key, prompt_text FROM journal_entries WHERE user_id = ? ORDER BY entry_date DESC'
+          ).bind(userId).all();
+
+          const entries = (results || []).map(r => {
+            const entry = { date: r.entry_date, text: r.text };
+            if (r.gift) entry.gift = r.gift;
+            if (r.gift_label) entry.gift_label = r.gift_label;
+            if (r.week) entry.week = r.week;
+            if (r.prompt_key) entry.prompt_key = r.prompt_key;
+            if (r.prompt_text) entry.prompt_text = r.prompt_text;
+            return entry;
+          });
+
+          return json({ entries }, corsHeaders);
+        } catch(e) {
+          return json({ error: e.message }, corsHeaders, 500);
+        }
+      }
+
+      // DELETE /api/journal/entry — remove a single entry by date+text
+      if (path === '/api/journal/entry' && request.method === 'DELETE') {
+        await ensureJournalEntriesTable();
+        try {
+          const body = await request.json();
+          const userId = parseInt(body.user_id);
+          if (!userId) return json({ error: 'user_id required' }, corsHeaders, 400);
+          await env.DB.prepare(
+            'DELETE FROM journal_entries WHERE user_id = ? AND entry_date = ? AND text = ?'
+          ).bind(userId, body.date || '', (body.text || '').slice(0, 10000)).run();
+          return json({ success: true }, corsHeaders);
+        } catch(e) {
+          return json({ error: e.message }, corsHeaders, 500);
+        }
+      }
+
       // ===== LOVE MESSAGES (MARNIE) =====
 
       // POST /api/lovemessages

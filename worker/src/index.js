@@ -3066,9 +3066,14 @@ export default {
         ).all();
 
         // Compute "days away" for any visible date in the next N days. We compare on
-        // month-day only so years don't matter. All times are server (UTC) but for
-        // a same-day check that's close enough; client can refine in user TZ.
+        // month-day only so years don't matter. All calculations use Eastern time
+        // since the retreat community is in the Eastern US.
         const now = new Date();
+        // Get current date in Eastern time
+        const etNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const etYear = etNow.getFullYear();
+        const etMonth = etNow.getMonth();
+        const etDate = etNow.getDate();
         const upcoming = [];
         const pushIfWithinWindow = (user, occasion, dateStr) => {
           if (!dateStr) return;
@@ -3076,13 +3081,18 @@ export default {
           if (!m) return;
           const targetMonth = parseInt(m[2], 10) - 1;
           const targetDay = parseInt(m[3], 10);
-          // Build the next occurrence (this year or next)
-          let target = new Date(Date.UTC(now.getUTCFullYear(), targetMonth, targetDay));
-          if (target < new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))) {
-            target = new Date(Date.UTC(now.getUTCFullYear() + 1, targetMonth, targetDay));
+          // Build the next occurrence (this year or next) using plain date math
+          // (no UTC — we just need day-level comparison in Eastern time)
+          let targetOrdinal = (targetMonth * 31 + targetDay); // rough ordinal for comparison
+          let todayOrdinal = (etMonth * 31 + etDate);
+          let daysAway;
+          // Use Date objects for accurate day diff
+          let target = new Date(etYear, targetMonth, targetDay);
+          let today = new Date(etYear, etMonth, etDate);
+          if (target < today) {
+            target = new Date(etYear + 1, targetMonth, targetDay);
           }
-          const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-          const daysAway = Math.round((target - today) / (1000 * 60 * 60 * 24));
+          daysAway = Math.round((target - today) / (1000 * 60 * 60 * 24));
           if (daysAway > days) return;
           upcoming.push({
             user_id: user.id,
@@ -3196,7 +3206,9 @@ export default {
         const user = await env.DB.prepare('SELECT id, birthday, anniversary FROM users WHERE id = ?').bind(userId).first();
         if (!user) return json({ active: [] }, corsHeaders);
         const now = new Date();
-        const todayMD = String(now.getUTCMonth() + 1).padStart(2, '0') + '-' + String(now.getUTCDate()).padStart(2, '0');
+        // Use Eastern time for "is today her birthday?" check
+        const etNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const todayMD = String(etNow.getMonth() + 1).padStart(2, '0') + '-' + String(etNow.getDate()).padStart(2, '0');
         const active = [];
         const checkDate = (occasion, dateStr) => {
           if (!dateStr) return;
@@ -3205,7 +3217,7 @@ export default {
           if ((m[2] + '-' + m[3]) === todayMD) {
             active.push({
               occasion: occasion,
-              occasion_date: now.getUTCFullYear() + '-' + m[2] + '-' + m[3]
+              occasion_date: etNow.getFullYear() + '-' + m[2] + '-' + m[3]
             });
           }
         };

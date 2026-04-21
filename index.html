@@ -3451,6 +3451,18 @@
                         </div>
                     </button>
 
+                    <!-- Resources from Mandy -->
+                    <button type="button" id="mandy-resources-card" onclick="openMandyResources()" style="display:block;width:calc(100% - 32px);margin:12px 16px;padding:16px 20px;background:linear-gradient(135deg,rgba(138,158,122,0.12),rgba(201,144,138,0.06));border-radius:14px;border:1.5px solid rgba(138,158,122,0.22);box-shadow:var(--shadow-sm);cursor:pointer;text-align:left;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--sage),#a8c296);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.4rem;">&#x1f4d6;</div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--dark-text);">Resources from Mandy</div>
+                                <div style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--light-text);line-height:1.4;margin-top:2px;">Scriptures, books, apps, and tools for your journey</div>
+                            </div>
+                            <div style="font-size:1.1rem;color:var(--sage);flex-shrink:0;">&rarr;</div>
+                        </div>
+                    </button>
+
                     <!-- Registration card (hidden unless admin sets a URL) -->
                     <div id="registration-card-wrap" style="display:none;margin:12px 16px 0;">
                         <a id="registration-card-link" href="#" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(135deg,rgba(138,158,122,0.12),rgba(138,158,122,0.04));border:1.5px solid rgba(138,158,122,0.25);border-radius:14px;text-decoration:none;transition:var(--transition);">
@@ -14670,5 +14682,126 @@
             navigator.serviceWorker.register('data:application/javascript,' + encodeURIComponent(`self.addEventListener('install', event => { self.skipWaiting(); }); self.addEventListener('activate', event => { event.waitUntil(caches.keys().then(names => Promise.all(names.map(n => caches.delete(n)))).then(() => self.clients.claim())); }); self.addEventListener('fetch', event => { event.respondWith(fetch(event.request).catch(() => caches.match(event.request))); });`)).catch(() => {});
         }
     </script>
+
+<!-- Mandy's Resources Overlay -->
+<div id="mandy-resources-overlay" style="display:none;position:fixed;inset:0;z-index:9998;background:var(--cream);overflow-y:auto;-webkit-overflow-scrolling:touch;">
+<div style="max-width:560px;margin:0 auto;padding:0 16px 80px;">
+    <div style="position:sticky;top:0;z-index:2;background:var(--cream);padding:14px 0 10px;display:flex;align-items:center;justify-content:space-between;">
+        <button type="button" onclick="closeMandyResources()" style="border:none;background:none;font-size:1.4rem;color:var(--taupe);cursor:pointer;padding:4px 8px;">&larr;</button>
+        <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:var(--dark-text);">Resources from Mandy</div>
+        <div style="width:36px;"></div>
+    </div>
+
+    <div style="text-align:center;padding:8px 0 20px;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--light-text);font-style:italic;line-height:1.6;">Scriptures, books, and tools that Mandy shared at Incredible Gifts to help you keep growing.</div>
+    </div>
+
+    <!-- Resources for Spiritual Formation -->
+    <div style="margin-bottom:24px;">
+        <div style="font-family:'Playfair Display',serif;font-size:0.78rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Resources for Spiritual Formation</div>
+
+        <a href="https://www.amazon.com/Practicing-Way-John-Mark-Comer/dp/0593193539" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);margin-bottom:10px;text-decoration:none;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(138,158,122,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">&#x1f4d6;</div>
+            <div><div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);">Practicing the Way</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);">Book by John Mark Comer</div></div>
+        </a>
+
+        <a href="https://www.24-7prayer.com/resource/lectio-365/" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);margin-bottom:10px;text-decoration:none;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(201,144,138,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">&#x1f4f1;</div>
+            <div><div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);">Lectio 365</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);">App for guided prayer and scripture meditation</div></div>
+        </a>
+
+        <a href="https://podcasts.apple.com/us/podcast/lets-read-the-gospels-with-annie-f-downs/id1614155154" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);margin-bottom:10px;text-decoration:none;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(138,158,122,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">&#x1f3a7;</div>
+            <div><div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);">Let's Read the Gospels</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);">Podcast with Annie F. Downs</div></div>
+        </a>
+
+        <a href="https://www.practicingtheway.org/ruleoflifebuilder" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);margin-bottom:10px;text-decoration:none;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(201,144,138,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">&#x1f331;</div>
+            <div><div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);">Rule of Life Builder</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);">Online tool for building your "trellis"</div></div>
+        </a>
+
+        <a href="https://open.spotify.com/playlist/79jsx966YZDrGiE36jfgwi" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);margin-bottom:10px;text-decoration:none;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(138,158,122,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">&#x1f3b5;</div>
+            <div><div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);">Beautiful Scripture Songs</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);">Spotify playlist</div></div>
+        </a>
+
+        <a href="https://www.conceptionabbey.org/wp-content/uploads/2018/11/lectio-divina-card.pdf" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);margin-bottom:10px;text-decoration:none;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(201,144,138,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">&#x1f4c4;</div>
+            <div><div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);">Lectio Divina Guide</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);">Printable reference card (PDF)</div></div>
+        </a>
+
+        <a href="https://www.fallcreekabbey.org/spiritual-location-exercise" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);margin-bottom:10px;text-decoration:none;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(138,158,122,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.2rem;">&#x1f9ed;</div>
+            <div><div style="font-family:'Playfair Display',serif;font-size:0.95rem;font-weight:700;color:var(--dark-text);">Spiritual Location Exercise</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);">Full guided exercise</div></div>
+        </a>
+    </div>
+
+    <!-- Scripture References -->
+    <div>
+        <div style="font-family:'Playfair Display',serif;font-size:0.78rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">Scripture References</div>
+        <div id="mandy-scripture-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+</div>
+</div>
+<script>
+(function() {
+    const MANDY_VERSES = [
+        {ref:'James 1:17', text:'Every good and perfect gift is from above, coming down from the Father of the heavenly lights, who does not change like shifting shadows.'},
+        {ref:'Ephesians 2:8', text:'For it is by grace you have been saved, through faith—and this is not from yourselves, it is the gift of God.'},
+        {ref:'Romans 6:23', text:'For the wages of sin is death, but the gift of God is eternal life in Christ Jesus our Lord.'},
+        {ref:'John 15:5', text:'I am the vine; you are the branches. If you remain in me and I in you, you will bear much fruit; apart from me you can do nothing.'},
+        {ref:'Romans 5:7–8', text:'Very rarely will anyone die for a righteous person, though for a good person someone might possibly dare to die. But God demonstrates his own love for us in this: While we were still sinners, Christ died for us.'},
+        {ref:'Luke 18:9–14', text:'Two men went up to the temple to pray, one a Pharisee and the other a tax collector. The Pharisee stood by himself and prayed: “God, I thank you that I am not like other people.” But the tax collector stood at a distance and beat his breast saying, “God, have mercy on me, a sinner.” I tell you that this man went home justified before God.'},
+        {ref:'Galatians 2:20', text:'I have been crucified with Christ and I no longer live, but Christ lives in me. The life I now live in the body, I live by faith in the Son of God, who loved me and gave himself for me.'},
+        {ref:'Galatians 5:1', text:'It is for freedom that Christ has set us free. Stand firm, then, and do not let yourselves be burdened again by a yoke of slavery.'},
+        {ref:'John 10:9–10', text:'I am the gate; whoever enters through me will be saved. They will come in and go out, and find pasture. The thief comes only to steal and kill and destroy; I have come that they may have life, and have it to the full.'},
+        {ref:'Matthew 11:28–30', text:'Come to me, all you who are weary and burdened, and I will give you rest. Take my yoke upon you and learn from me, for I am gentle and humble in heart, and you will find rest for your souls. For my yoke is easy and my burden is light.'},
+        {ref:'2 Timothy 2:11–12', text:'If we died with him, we will also live with him; if we endure, we will also reign with him.'},
+        {ref:'Matthew 7:9–11', text:'Which of you, if your son asks for bread, will give him a stone? Or if he asks for a fish, will give him a snake? If you, then, though you are evil, know how to give good gifts to your children, how much more will your Father in heaven give good gifts to those who ask him!'},
+        {ref:'Luke 11:11–13', text:'Which of you fathers, if your son asks for a fish, will give him a snake instead? Or if he asks for an egg, will give him a scorpion? If you then, though you are evil, know how to give good gifts to your children, how much more will your Father in heaven give the Holy Spirit to those who ask him!'},
+        {ref:'Romans 12', text:'Therefore, I urge you, brothers and sisters, in view of God’s mercy, to offer your bodies as a living sacrifice, holy and pleasing to God—this is your true and proper worship. Do not conform to the pattern of this world, but be transformed by the renewing of your mind.'},
+        {ref:'1 Corinthians 12', text:'There are different kinds of gifts, but the same Spirit distributes them. There are different kinds of service, but the same Lord. Now to each one the manifestation of the Spirit is given for the common good.'},
+        {ref:'2 Peter 1:4', text:'Through these he has given us his very great and precious promises, so that through them you may participate in the divine nature, having escaped the corruption in the world caused by evil desires.'},
+        {ref:'John 14:15–17', text:'If you love me, keep my commands. And I will ask the Father, and he will give you another advocate to help you and be with you forever—the Spirit of truth.'},
+        {ref:'Galatians 5:22–25', text:'But the fruit of the Spirit is love, joy, peace, forbearance, kindness, goodness, faithfulness, gentleness and self-control. Against such things there is no law. Since we live by the Spirit, let us keep in step with the Spirit.'},
+        {ref:'John 14:27', text:'Peace I leave with you; my peace I give you. I do not give to you as the world gives. Do not let your hearts be troubled and do not be afraid.'},
+        {ref:'Philippians 4:7', text:'And the peace of God, which transcends all understanding, will guard your hearts and your minds in Christ Jesus.'},
+        {ref:'Colossians 3:15', text:'Let the peace of Christ rule in your hearts, since as members of one body you were called to peace. And be thankful.'},
+        {ref:'Isaiah 41:10', text:'So do not fear, for I am with you; do not be dismayed, for I am your God. I will strengthen you and help you; I will uphold you with my righteous right hand.'},
+        {ref:'John 16:33', text:'I have told you these things, so that in me you may have peace. In this world you will have trouble. But take heart! I have overcome the world.'},
+        {ref:'Revelation 21:3–4', text:'God’s dwelling place is now among the people, and he will dwell with them. He will wipe every tear from their eyes. There will be no more death or mourning or crying or pain, for the old order of things has passed away.'},
+        {ref:'1 John 5:19', text:'We know that we are children of God, and that the whole world is under the control of the evil one.'},
+        {ref:'John 15:4', text:'Remain in me, as I also remain in you. No branch can bear fruit by itself; it must remain in the vine. Neither can you bear fruit unless you remain in me.'},
+        {ref:'1 John 3:24', text:'The one who keeps God’s commands lives in him, and he in them. And this is how we know that he lives in us: We know it by the Spirit he gave us.'},
+        {ref:'1 John 5:3', text:'In fact, this is love for God: to keep his commands. And his commands are not burdensome.'},
+        {ref:'Romans 8:12–13', text:'Therefore, brothers and sisters, we have an obligation—but it is not to the flesh, to live according to it. For if you live according to the flesh, you will die; but if by the Spirit you put to death the misdeeds of the body, you will live.'},
+        {ref:'James 1:22–25', text:'Do not merely listen to the word, and so deceive yourselves. Do what it says. Anyone who listens to the word but does not do what it says is like someone who looks at his face in a mirror and, after looking at himself, goes away and immediately forgets what he looks like.'},
+        {ref:'John 15:1–2', text:'I am the true vine, and my Father is the gardener. He cuts off every branch in me that bears no fruit, while every branch that does bear fruit he prunes so that it will be even more fruitful.'},
+        {ref:'The Book of Acts', text:'The story of the early church—how the Holy Spirit came at Pentecost and empowered ordinary people to do extraordinary things. The gifts God gave them are the same gifts He offers you.'}
+    ];
+
+    window.openMandyResources = function() {
+        var overlay = document.getElementById('mandy-resources-overlay');
+        if (!overlay) return;
+        overlay.style.display = 'block';
+        overlay.scrollTop = 0;
+        // Render verses if not already
+        var list = document.getElementById('mandy-scripture-list');
+        if (list && !list.children.length) {
+            list.innerHTML = MANDY_VERSES.map(function(v) {
+                var bgUrl = 'https://www.biblegateway.com/passage/?search=' + encodeURIComponent(v.ref) + '&version=NIV';
+                return '<a href="' + bgUrl + '" target="_blank" rel="noopener" style="display:block;padding:14px 16px;background:white;border-radius:12px;box-shadow:var(--shadow-sm);text-decoration:none;">' +
+                    '<div style="font-family:Playfair Display,serif;font-size:0.9rem;font-weight:700;color:var(--sage);margin-bottom:6px;">' + v.ref + '</div>' +
+                    '<div style="font-family:Georgia,serif;font-size:0.92rem;color:var(--dark-text);line-height:1.65;font-style:italic;">' + v.text + '</div>' +
+                '</a>';
+            }).join('');
+        }
+    };
+    window.closeMandyResources = function() {
+        var overlay = document.getElementById('mandy-resources-overlay');
+        if (overlay) overlay.style.display = 'none';
+    };
+})();
+</script>
 </body>
 </html>

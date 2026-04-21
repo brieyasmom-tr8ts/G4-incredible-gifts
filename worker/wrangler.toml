@@ -10,3 +10,7 @@ database_id = "5ba9e12c-4e13-4d87-9108-42cac3f3afed"
 [[r2_buckets]]
 binding = "VIDEOS"
 bucket_name = "g4-retreat-videos"
+
+# Cron triggers: Monday + Wednesday at 9:00 UTC (5:00 AM EDT)
+[triggers]
+crons = ["0 9 * * 1", "0 9 * * 3"]

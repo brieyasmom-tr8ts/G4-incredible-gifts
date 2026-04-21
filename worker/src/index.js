@@ -290,6 +290,54 @@ export default {
         return json(user || { error: 'not found' }, corsHeaders);
       }
 
+      // GET /api/admin/email/preview?type=devotion|secretsister — preview email HTML
+      if (path === '/api/admin/email/preview' && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        const type = url.searchParams.get('type') || 'devotion';
+        if (type === 'secretsister') {
+          return new Response(secretSisterEmailHtml('Heather', 'Janet S.'), {
+            headers: { 'Content-Type': 'text/html' }
+          });
+        }
+        const weekNum = getCurrentDevotionWeekNum() || 1;
+        const devotion = DEVOTION_WEEKS.find(d => d.week === weekNum) || DEVOTION_WEEKS[0];
+        return new Response(devotionEmailHtml('Heather', devotion), {
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
+
+      // POST /api/admin/email/test?type=devotion|secretsister — send a test email to yourself
+      if (path === '/api/admin/email/test' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        const body = await request.json();
+        const email = body.email;
+        if (!email) return json({ error: 'email required' }, corsHeaders, 400);
+        const type = url.searchParams.get('type') || 'devotion';
+        if (type === 'secretsister') {
+          await sendEmail(env, email, 'Your Secret Sister This Week 💌', secretSisterEmailHtml(body.name || 'Friend', 'Janet S.'));
+        } else {
+          const weekNum = getCurrentDevotionWeekNum() || 1;
+          const devotion = DEVOTION_WEEKS.find(d => d.week === weekNum) || DEVOTION_WEEKS[0];
+          await sendEmail(env, email, 'This Week\'s Gift: ' + devotion.gift + ' • Week ' + weekNum, devotionEmailHtml(body.name || 'Friend', devotion));
+        }
+        return json({ success: true, sent_to: email }, corsHeaders);
+      }
+
+      // POST /api/admin/email/send-now?type=devotion|secretsister — manually trigger the email blast
+      if (path === '/api/admin/email/send-now' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        const type = url.searchParams.get('type') || 'devotion';
+        if (type === 'secretsister') {
+          await sendSecretSisterEmail(env);
+        } else {
+          await sendDevotionEmail(env);
+        }
+        return json({ success: true, type }, corsHeaders);
+      }
+
       // GET /api/admin/stats — usage stats for admin dashboard
       if (path === '/api/admin/stats' && request.method === 'GET') {
         const authErr = requireAdmin(request);
@@ -4277,8 +4325,172 @@ Just the JSON array, nothing else.`;
     } catch (err) {
       return json({ error: err.message }, corsHeaders, 500);
     }
+  },
+
+  // ===== SCHEDULED (Cron Triggers) =====
+  // Monday 5 AM EDT: weekly devotion email
+  // Wednesday 5 AM EDT: secret sister reminder email
+  async scheduled(event, env, ctx) {
+    const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const dayOfWeek = etNow.getDay(); // 0=Sun, 1=Mon, 3=Wed
+
+    if (dayOfWeek === 1) {
+      // Monday — devotion email
+      await sendDevotionEmail(env);
+    } else if (dayOfWeek === 3) {
+      // Wednesday — secret sister email
+      await sendSecretSisterEmail(env);
+    }
   }
 };
+
+// ===== EMAIL HELPERS =====
+
+const DEVOTION_WEEKS = [
+  { week: 1,  gift: 'Peace',       ref: 'Philippians 4:6-7',   text: 'Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God.' },
+  { week: 2,  gift: 'Wisdom',      ref: 'Proverbs 2:6-7',      text: 'For the Lord gives wisdom; from his mouth come knowledge and understanding.' },
+  { week: 3,  gift: 'Rest',        ref: 'Psalm 23:1-3',        text: 'The Lord is my shepherd, I lack nothing. He makes me lie down in green pastures, he leads me beside quiet waters, he refreshes my soul.' },
+  { week: 4,  gift: 'Strength',    ref: '2 Corinthians 12:10', text: 'For when I am weak, then I am strong.' },
+  { week: 5,  gift: 'Joy',         ref: 'Nehemiah 8:10b',      text: 'Do not grieve, for the joy of the Lord is your strength.' },
+  { week: 6,  gift: 'Holy Spirit', ref: 'John 14:16-17',       text: 'And I will ask the Father, and he will give you another advocate to help you and be with you forever.' },
+  { week: 7,  gift: 'New Heart',   ref: '2 Corinthians 5:17',  text: 'Therefore, if anyone is in Christ, the new creation has come: The old has gone, the new is here!' },
+  { week: 8,  gift: 'Grace',       ref: 'Ephesians 2:8-9',     text: 'For it is by grace you have been saved, through faith — and this is not from yourselves, it is the gift of God.' },
+  { week: 9,  gift: 'Hope',        ref: 'Jeremiah 29:11',      text: 'For I know the plans I have for you, declares the Lord, plans to give you hope and a future.' },
+  { week: 10, gift: 'Provision',   ref: 'Matthew 6:26-27',     text: 'Look at the birds of the air; they do not sow or reap, and yet your heavenly Father feeds them. Are you not much more valuable than they?' },
+  { week: 11, gift: 'Freedom',     ref: 'Galatians 5:1',       text: 'It is for freedom that Christ has set us free. Stand firm, then, and do not let yourselves be burdened again by a yoke of slavery.' },
+  { week: 12, gift: 'Healing',     ref: 'Isaiah 53:5',         text: 'By his wounds we are healed.' },
+  { week: 13, gift: 'Eternal Life', ref: 'John 10:28-29',      text: 'I give them eternal life, and they shall never perish; no one will snatch them out of my hand.' },
+  { week: 14, gift: 'Good Gifts',  ref: 'James 1:17',          text: 'Every good and perfect gift is from above, coming down from the Father of the heavenly lights.' },
+  { week: 15, gift: 'Comfort',     ref: 'Isaiah 66:13',        text: 'As a mother comforts her child, so will I comfort you.' }
+];
+
+const DEVOTION_START_MS = Date.UTC(2026, 3, 13, 9, 0, 0); // April 13, 2026 5AM EDT = 9AM UTC
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+function getCurrentDevotionWeekNum() {
+  const now = Date.now();
+  if (now < DEVOTION_START_MS) return 0;
+  return (Math.floor((now - DEVOTION_START_MS) / WEEK_MS) % 15) + 1;
+}
+
+const APP_URL = 'https://g4retreatapp.org';
+const EMAIL_FROM = 'G4 Retreat <onboarding@resend.dev>';
+
+function devotionEmailHtml(firstName, devotion) {
+  return `
+<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px 20px;color:#3a3632;">
+  <div style="text-align:center;margin-bottom:20px;">
+    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.6rem;font-weight:700;color:#3a3632;">This Week's Gift</div>
+    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:2rem;font-weight:700;color:#8a9e7a;margin:8px 0;">${devotion.gift}</div>
+    <div style="font-size:0.85rem;color:#8b8680;font-style:italic;">Week ${devotion.week} of 15</div>
+  </div>
+  <div style="padding:18px 20px;background:#f8f6f3;border-radius:12px;border-left:4px solid #8a9e7a;margin-bottom:20px;">
+    <div style="font-style:italic;line-height:1.7;font-size:1rem;color:#3a3632;">“${devotion.text}”</div>
+    <div style="text-align:right;margin-top:8px;font-size:0.85rem;color:#8b8680;">— ${devotion.ref}</div>
+  </div>
+  <div style="font-size:0.95rem;line-height:1.6;color:#5a5650;margin-bottom:20px;">
+    ${firstName ? firstName + ', a' : 'A'} new devotion is waiting for you this week. It includes a personal letter, reflection prompts, and space to journal what God is saying to you.
+  </div>
+  <div style="text-align:center;margin:24px 0;">
+    <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#8a9e7a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Open Your Devotion</a>
+  </div>
+  <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
+    G4 Women's Retreat 2026 · Incredible Gifts
+  </div>
+</div>`;
+}
+
+function secretSisterEmailHtml(firstName, sisterName) {
+  return `
+<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px 20px;color:#3a3632;">
+  <div style="text-align:center;margin-bottom:20px;">
+    <div style="font-size:2rem;margin-bottom:6px;">💌</div>
+    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.4rem;font-weight:700;color:#c9908a;">Your Secret Sister This Week</div>
+  </div>
+  <div style="text-align:center;padding:20px;background:linear-gradient(135deg,#fdf0ed,#f8f6f3);border-radius:14px;border:1px solid rgba(201,144,138,0.25);margin-bottom:20px;">
+    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.8rem;font-weight:700;color:#3a3632;">${sisterName}</div>
+  </div>
+  <div style="font-size:0.95rem;line-height:1.6;color:#5a5650;margin-bottom:20px;">
+    ${firstName ? firstName + ', this' : 'This'} week you get to be a secret encourager for <strong>${sisterName}</strong>. Log in and write her a note she won't see until later. Even a few words can change someone's whole day.
+  </div>
+  <div style="text-align:center;margin:24px 0;">
+    <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#c9908a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Write Her a Note</a>
+  </div>
+  <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
+    G4 Women's Retreat 2026 · Incredible Gifts
+  </div>
+</div>`;
+}
+
+async function sendEmail(env, to, subject, html) {
+  if (!env.RESEND_API_KEY) return;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, html })
+    });
+  } catch (e) { /* best-effort */ }
+}
+
+async function sendDevotionEmail(env) {
+  const weekNum = getCurrentDevotionWeekNum();
+  if (weekNum === 0) return;
+  const devotion = DEVOTION_WEEKS.find(d => d.week === weekNum);
+  if (!devotion) return;
+
+  // Get all users with emails
+  let users = [];
+  try {
+    const { results } = await env.DB.prepare(
+      "SELECT first_name, email FROM users WHERE email IS NOT NULL AND email != '' AND TRIM(email) != ''"
+    ).all();
+    users = results || [];
+  } catch (e) { return; }
+
+  const subject = 'This Week’s Gift: ' + devotion.gift + ' • Week ' + weekNum;
+  for (const user of users) {
+    await sendEmail(env, user.email.trim(), subject, devotionEmailHtml(user.first_name, devotion));
+  }
+}
+
+async function sendSecretSisterEmail(env) {
+  const round = getCurrentSSRound();
+  if (round === 0) return;
+
+  await ensureWeeklySSTable(env.DB);
+  await ensureRoundPairings(env.DB, round);
+
+  let pairs = [];
+  try {
+    const { results } = await env.DB.prepare(
+      'SELECT giver_id, giver_name, receiver_name FROM secret_sister_pairings WHERE round_number = ?'
+    ).bind(round).all();
+    pairs = results || [];
+  } catch (e) { return; }
+
+  // Get emails for all givers
+  const giverIds = pairs.map(p => p.giver_id);
+  if (!giverIds.length) return;
+
+  let userEmails = {};
+  try {
+    const { results } = await env.DB.prepare(
+      "SELECT id, first_name, email FROM users WHERE email IS NOT NULL AND email != ''"
+    ).all();
+    (results || []).forEach(u => { userEmails[u.id] = { email: u.email.trim(), first_name: u.first_name }; });
+  } catch (e) { return; }
+
+  for (const pair of pairs) {
+    const user = userEmails[pair.giver_id];
+    if (!user || !user.email) continue;
+    const subject = 'Your Secret Sister This Week 💌';
+    await sendEmail(env, user.email, subject, secretSisterEmailHtml(user.first_name, pair.receiver_name));
+  }
+}
 
 function json(data, corsHeaders, status = 200) {
   return new Response(JSON.stringify(data), {

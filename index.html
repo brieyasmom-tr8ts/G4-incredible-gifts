@@ -3509,7 +3509,7 @@
 
 
                     <!-- Feedback Form -->
-                    <div id="feedback-form-wrap" style="margin:12px 16px 24px;padding:20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);">
+                    <div id="feedback-form-wrap" style="display:none;margin:12px 16px 24px;padding:20px;background:white;border-radius:14px;box-shadow:var(--shadow-sm);">
                         <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:600;color:var(--dark-text);text-align:center;margin-bottom:4px;">We'd Love Your Feedback</div>
                         <div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);text-align:center;font-style:italic;margin-bottom:20px;">Help us make the next retreat even better</div>
 
@@ -11015,9 +11015,6 @@
                 loadMyCelebrationStatus();
                 // Weekly Secret Sister card (starts Wed April 15 2026, runs forever)
                 loadWeeklySecretSisterCard();
-                // Quick-action buttons on post-retreat home, controlled by the
-                // same home_* admin toggles as the pre-retreat dashboard
-                renderHomeButtonsInto('post-retreat-buttons');
                 loadRegistrationCard();
                 // Honor ?/#survey URL deep links from email CTAs
                 handleSurveyDeepLink();
@@ -12058,16 +12055,17 @@
 
             // Check if already submitted — hide the entire form card so the
             // home page returns to normal once she's taken the survey.
+            const formWrap = document.getElementById('feedback-form-wrap');
+            if (!formWrap) return;
             if (localStorage.getItem('g4feedback_sent')) {
-                const wrap = document.getElementById('feedback-form-wrap');
-                if (wrap) wrap.style.display = 'none';
+                formWrap.style.display = 'none';
                 return;
             }
+            formWrap.style.display = 'block';
 
             // Idempotency guard: if we've already wired the form once this
             // session, don't re-attach listeners (that would double-fire).
-            const formWrap = document.getElementById('feedback-form-wrap');
-            if (!formWrap || formWrap.dataset.wired === '1') return;
+            if (formWrap.dataset.wired === '1') return;
             formWrap.dataset.wired = '1';
 
             // Star ratings for each category

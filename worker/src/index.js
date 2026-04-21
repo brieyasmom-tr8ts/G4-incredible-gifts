@@ -398,8 +398,8 @@ export default {
         }
         return new Response(
           '<html><body style="font-family:Georgia,serif;text-align:center;padding:60px 20px;color:#3a3632;">' +
-          '<h2>You’ve been unsubscribed</h2>' +
-          '<p style="color:#8b8680;">You won’t receive any more weekly emails from G4. You can still use the app anytime.</p>' +
+          '<h2>You've been unsubscribed</h2>' +
+          '<p style="color:#8b8680;">You won't receive any more weekly emails from G4. You can still use the app anytime.</p>' +
           '<p><a href="https://g4retreatapp.org" style="color:#8a9e7a;">Back to G4</a></p></body></html>',
           { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
         );
@@ -4475,7 +4475,7 @@ function devotionEmailHtml(firstName, devotion, userId) {
     <div style="font-size:0.85rem;color:#8b8680;font-style:italic;">Week ${devotion.week} of 15</div>
   </div>
   <div style="padding:18px 20px;background:#f8f6f3;border-radius:12px;border-left:4px solid #8a9e7a;margin-bottom:20px;">
-    <div style="font-style:italic;line-height:1.7;font-size:1rem;color:#3a3632;">“${devotion.text}”</div>
+    <div style="font-style:italic;line-height:1.7;font-size:1rem;color:#3a3632;">"${devotion.text}"</div>
     <div style="text-align:right;margin-top:8px;font-size:0.85rem;color:#8b8680;">— ${devotion.ref}</div>
   </div>
   <div style="font-size:0.95rem;line-height:1.6;color:#5a5650;margin-bottom:20px;">
@@ -4561,16 +4561,16 @@ async function sendDevotionEmail(env) {
   const devotion = DEVOTION_WEEKS.find(d => d.week === weekNum);
   if (!devotion) return;
 
-  try { await env.DB.prepare(‘ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0’).run(); } catch(e) {}
+  try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
   let users = [];
   try {
     const { results } = await env.DB.prepare(
-      "SELECT id, first_name, email FROM users WHERE email IS NOT NULL AND email != ‘’ AND TRIM(email) != ‘’ AND COALESCE(email_unsubscribed, 0) = 0"
+      "SELECT id, first_name, email FROM users WHERE email IS NOT NULL AND email != '' AND TRIM(email) != '' AND COALESCE(email_unsubscribed, 0) = 0"
     ).all();
     users = results || [];
   } catch (e) { return; }
 
-  const subject = "This Week’s Gift: " + devotion.gift + ‘ · Week ‘ + weekNum;
+  const subject = "This Week's Gift: " + devotion.gift + ' · Week ' + weekNum;
   for (const user of users) {
     await sendEmail(env, user.email.trim(), subject, devotionEmailHtml(user.first_name, devotion, user.id));
   }

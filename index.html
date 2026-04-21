@@ -4302,7 +4302,7 @@
             <p id="setup-subtitle">Tell us a little about yourself</p>
             <input type="text" class="modal-input" id="setup-first" placeholder="First name *" autocomplete="given-name" style="font-size:16px;">
             <input type="text" class="modal-input" id="setup-last-name" placeholder="Last name *" autocomplete="family-name" style="font-size:16px;">
-            <input type="email" class="modal-input" id="setup-email" placeholder="Email *" autocomplete="email" style="font-size:16px;display:none;">
+            <input type="email" class="modal-input" id="setup-email" placeholder="Email *" autocomplete="email" style="font-size:16px;">
             <div class="modal-hint" id="setup-hint">Your name will appear on prayers and encouragements</div>
             <button class="save-btn" id="setup-btn">Let's Go!</button>
         </div>
@@ -4760,7 +4760,6 @@
             if (IS_INVITE) {
                 document.getElementById('setup-title').textContent = 'Welcome to G4!';
                 document.getElementById('setup-subtitle').textContent = 'Join our community of sisters';
-                document.getElementById('setup-email').style.display = 'block';
                 document.getElementById('setup-hint').textContent = "We'll send you weekly devotions and encouragement";
                 document.getElementById('setup-btn').textContent = 'Join the Community';
             }
@@ -4773,10 +4772,10 @@
                 const emailEl = document.getElementById('setup-email');
                 const inviteEmail = emailEl ? emailEl.value.trim() : '';
 
-                if (!firstName || !lastName || (IS_INVITE && !inviteEmail)) {
+                if (!firstName || !lastName || !inviteEmail) {
                     if (!firstName) document.getElementById('setup-first').style.borderColor = 'var(--accent)';
                     if (!lastName) document.getElementById('setup-last-name').style.borderColor = 'var(--accent)';
-                    if (IS_INVITE && !inviteEmail && emailEl) emailEl.style.borderColor = 'var(--accent)';
+                    if (!inviteEmail && emailEl) emailEl.style.borderColor = 'var(--accent)';
                     return;
                 }
 
@@ -4791,11 +4790,9 @@
                         first_name: firstName,
                         last_initial: lastInitial,
                         last_name: lastName,
+                        email: inviteEmail,
                         retreat_year: 2027
                     };
-                    if (IS_INVITE) {
-                        payload.email = inviteEmail;
-                    }
                     const result = await apiPost('/api/users', payload);
 
                     if (result.error) {

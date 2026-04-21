@@ -595,7 +595,7 @@ export default {
         const cleanLastName = (last_name || '').trim();
         const cleanInitial = cleanLastName ? cleanLastName.charAt(0).toUpperCase() : (last_initial || '').trim().charAt(0).toUpperCase();
         const displayName = cleanInitial ? `${cleanName} ${cleanInitial}.` : cleanName;
-        const year = parseInt(retreat_year) || 2026;
+        const year = parseInt(retreat_year) || 2027;
 
         // Check for existing user — case-insensitive match
         const existing = await env.DB.prepare(

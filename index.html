@@ -4764,11 +4764,11 @@
                     const payload = {
                         first_name: firstName,
                         last_initial: lastInitial,
-                        last_name: lastName
+                        last_name: lastName,
+                        retreat_year: 2027
                     };
                     if (IS_INVITE) {
                         payload.email = inviteEmail;
-                        payload.retreat_year = 2027;
                     }
                     const result = await apiPost('/api/users', payload);
 
@@ -4788,15 +4788,15 @@
                     document.getElementById('video-section').style.display = 'block';
                     loadPeople();
                     launchConfetti();
+                    currentUser.retreat_year = 2027;
+                    saveUser(currentUser);
                     if (IS_INVITE) {
-                        currentUser.retreat_year = 2027;
-                        saveUser(currentUser);
                         showToast('Welcome to G4, ' + currentUser.first_name + '! \u2728');
                         setTimeout(function() {
                             if (typeof openProfile === 'function') openProfile();
                         }, 1200);
                     } else {
-                        showToast('Welcome to the retreat, ' + currentUser.first_name + '! \u2728');
+                        showToast('Welcome to G4, ' + currentUser.first_name + '! \u2728');
                     }
                 } catch (e) {
                     showToast('Could not connect: ' + (e.message || 'Check your connection'));

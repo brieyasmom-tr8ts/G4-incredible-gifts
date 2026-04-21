@@ -317,7 +317,10 @@ export default {
         if (!env.BREVO_API_KEY) return json({ error: 'BREVO_API_KEY secret not set' }, corsHeaders, 500);
         const type = url.searchParams.get('type') || 'devotion';
         let subject, html;
-        if (type === 'secretsister') {
+        if (type === 'custom') {
+          subject = body.subject || 'A message from G4';
+          html = customEmailHtml(body.name || 'Friend', body.message || '', body.button_text, body.button_url);
+        } else if (type === 'secretsister') {
           subject = 'Your Secret Sister This Week 💌';
           html = secretSisterEmailHtml(body.name || 'Friend', 'Janet S.');
         } else {
@@ -359,6 +362,31 @@ export default {
           await sendDevotionEmail(env);
         }
         return json({ success: true, type }, corsHeaders);
+      }
+
+      // POST /api/admin/email/custom — send a custom message to all sisters
+      // body: { subject, message, button_text?, button_url? }
+      if (path === '/api/admin/email/custom' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        if (!env.BREVO_API_KEY) return json({ error: 'BREVO_API_KEY not set' }, corsHeaders, 500);
+        const body = await request.json();
+        if (!body.subject || !body.message) return json({ error: 'subject and message required' }, corsHeaders, 400);
+        try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
+        let users = [];
+        try {
+          const { results } = await env.DB.prepare(
+            "SELECT id, first_name, email FROM users WHERE email IS NOT NULL AND email != '' AND TRIM(email) != '' AND COALESCE(email_unsubscribed, 0) = 0"
+          ).all();
+          users = results || [];
+        } catch (e) { return json({ error: e.message }, corsHeaders, 500); }
+        let sent = 0;
+        for (const user of users) {
+          const html = customEmailHtml(user.first_name, body.message, body.button_text, body.button_url, user.id);
+          await sendEmail(env, user.email.trim(), body.subject, html);
+          sent++;
+        }
+        return json({ success: true, sent }, corsHeaders);
       }
 
       // GET /api/email/unsubscribe?user_id=X — one-click unsubscribe from emails
@@ -4471,6 +4499,29 @@ function secretSisterEmailHtml(firstName, sisterName, userId) {
   <div style="text-align:center;margin:24px 0;">
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#c9908a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Write Her a Note</a>
   </div>
+  <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
+    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+  </div>
+</div>`;
+}
+
+function customEmailHtml(firstName, message, buttonText, buttonUrl, userId) {
+  const unsubUrl = userId ? API_BASE + '/api/email/unsubscribe?user_id=' + userId : '';
+  const greeting = firstName ? firstName + ',' : '';
+  const buttonHtml = buttonText && buttonUrl
+    ? `<div style="text-align:center;margin:24px 0;"><a href="${buttonUrl}" style="display:inline-block;padding:14px 32px;background:#8a9e7a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">${buttonText}</a></div>`
+    : `<div style="text-align:center;margin:24px 0;"><a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#8a9e7a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Open the App</a></div>`;
+  const paragraphs = message.split('\n').filter(l => l.trim()).map(p => `<p style="margin:0 0 12px;">${p}</p>`).join('');
+  return `
+<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px 20px;color:#3a3632;">
+  <div style="text-align:center;margin-bottom:20px;">
+    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.4rem;font-weight:700;color:#8a9e7a;">G4 Incredible Gifts</div>
+  </div>
+  <div style="font-size:1rem;line-height:1.7;color:#3a3632;">
+    ${greeting ? '<p style="margin:0 0 12px;font-weight:600;">' + greeting + '</p>' : ''}
+    ${paragraphs}
+  </div>
+  ${buttonHtml}
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
     G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>

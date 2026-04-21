@@ -1085,6 +1085,34 @@
                 <button class="btn btn-danger-outline" onclick="sendBlastEmail('secretsister')">Send Secret Sister to Everyone</button>
             </div>
             <div id="email-blast-status" style="margin-top:8px;font-size:0.85rem;color:var(--sage);display:none;"></div>
+
+            <h3 style="margin-top:2rem;">Send a Custom Email</h3>
+            <p style="color:var(--light-text);font-size:0.85rem;margin-bottom:0.75rem;">Write a personal message to all sisters. Each email is personalized with her first name.</p>
+            <div style="display:flex;flex-direction:column;gap:10px;max-width:520px;">
+                <div>
+                    <label style="font-size:0.78rem;font-weight:600;color:var(--taupe);display:block;margin-bottom:4px;">Subject line</label>
+                    <input type="text" id="custom-email-subject" placeholder="e.g. A quick note from Heather" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:8px;font-size:0.9rem;">
+                </div>
+                <div>
+                    <label style="font-size:0.78rem;font-weight:600;color:var(--taupe);display:block;margin-bottom:4px;">Message (each paragraph becomes its own block)</label>
+                    <textarea id="custom-email-message" rows="6" placeholder="Hey sisters! Just wanted to share..." style="width:100%;padding:10px 12px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <div style="flex:1;">
+                        <label style="font-size:0.78rem;font-weight:600;color:var(--taupe);display:block;margin-bottom:4px;">Button text (optional)</label>
+                        <input type="text" id="custom-email-btn-text" placeholder="Open the App" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:8px;font-size:0.9rem;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:0.78rem;font-weight:600;color:var(--taupe);display:block;margin-bottom:4px;">Button URL (optional)</label>
+                        <input type="text" id="custom-email-btn-url" placeholder="https://g4retreatapp.org" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:8px;font-size:0.9rem;">
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:4px;">
+                    <button class="btn btn-refresh" onclick="sendCustomEmail(false)">Preview to Me</button>
+                    <button class="btn btn-danger-outline" onclick="sendCustomEmail(true)">Send to Everyone</button>
+                </div>
+                <div id="custom-email-status" style="font-size:0.85rem;color:var(--sage);display:none;"></div>
+            </div>
         </div>
 
         <!-- Secret Sister -->
@@ -4114,6 +4142,49 @@ async function sendBlastEmail(type) {
     } catch (e) {
         status.textContent = 'Failed: ' + e.message;
         status.style.color = 'var(--accent)';
+    }
+}
+
+async function sendCustomEmail(toEveryone) {
+    const subject = document.getElementById('custom-email-subject').value.trim();
+    const message = document.getElementById('custom-email-message').value.trim();
+    const btnText = document.getElementById('custom-email-btn-text').value.trim();
+    const btnUrl = document.getElementById('custom-email-btn-url').value.trim();
+    const status = document.getElementById('custom-email-status');
+    if (!subject || !message) { showToast('Subject and message are required'); return; }
+    status.style.display = 'block';
+    status.style.color = 'var(--sage)';
+
+    if (toEveryone) {
+        if (!confirm('Send this email to ALL sisters with an email address?')) { status.style.display = 'none'; return; }
+        status.textContent = 'Sending to everyone...';
+        try {
+            const result = await apiFetch('/api/admin/email/custom', {
+                method: 'POST',
+                body: { subject, message, button_text: btnText || null, button_url: btnUrl || null }
+            });
+            status.textContent = 'Sent to ' + (result.sent || 0) + ' sisters ✓';
+        } catch (e) {
+            status.textContent = 'Failed: ' + e.message;
+            status.style.color = 'var(--accent)';
+        }
+    } else {
+        const testEmail = document.getElementById('email-test-address').value.trim();
+        if (!testEmail) { showToast('Enter your email in the Test Email field above first'); status.style.display = 'none'; return; }
+        status.textContent = 'Sending preview to ' + testEmail + '...';
+        try {
+            const resp = await fetch(API + '/api/admin/email/test?type=custom', {
+                method: 'POST',
+                headers: { 'X-Admin-Key': getKey(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: testEmail, name: 'Heather', subject, message, button_text: btnText || null, button_url: btnUrl || null })
+            });
+            const result = await resp.json();
+            if (!resp.ok) throw new Error(JSON.stringify(result));
+            status.textContent = 'Preview sent to ' + testEmail + ' ✓';
+        } catch (e) {
+            status.textContent = 'Failed: ' + e.message;
+            status.style.color = 'var(--accent)';
+        }
     }
 }
 

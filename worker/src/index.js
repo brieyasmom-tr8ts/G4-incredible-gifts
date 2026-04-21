@@ -314,15 +314,33 @@ export default {
         const body = await request.json();
         const email = body.email;
         if (!email) return json({ error: 'email required' }, corsHeaders, 400);
+        if (!env.RESEND_API_KEY) return json({ error: 'RESEND_API_KEY secret not set' }, corsHeaders, 500);
         const type = url.searchParams.get('type') || 'devotion';
+        let subject, html;
         if (type === 'secretsister') {
-          await sendEmail(env, email, 'Your Secret Sister This Week 💌', secretSisterEmailHtml(body.name || 'Friend', 'Janet S.'));
+          subject = 'Your Secret Sister This Week 💌';
+          html = secretSisterEmailHtml(body.name || 'Friend', 'Janet S.');
         } else {
           const weekNum = getCurrentDevotionWeekNum() || 1;
           const devotion = DEVOTION_WEEKS.find(d => d.week === weekNum) || DEVOTION_WEEKS[0];
-          await sendEmail(env, email, 'This Week\'s Gift: ' + devotion.gift + ' • Week ' + weekNum, devotionEmailHtml(body.name || 'Friend', devotion));
+          subject = "This Week's Gift: " + devotion.gift + ' • Week ' + weekNum;
+          html = devotionEmailHtml(body.name || 'Friend', devotion);
         }
-        return json({ success: true, sent_to: email }, corsHeaders);
+        try {
+          const resp = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ from: EMAIL_FROM, to: [email], subject, html })
+          });
+          const result = await resp.json();
+          if (!resp.ok) return json({ error: 'Resend error', detail: result }, corsHeaders, resp.status);
+          return json({ success: true, sent_to: email, resend: result }, corsHeaders);
+        } catch (e) {
+          return json({ error: 'Send failed', detail: e.message }, corsHeaders, 500);
+        }
       }
 
       // POST /api/admin/email/send-now?type=devotion|secretsister — manually trigger the email blast

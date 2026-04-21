@@ -4085,13 +4085,17 @@ async function sendTestEmail(type) {
     if (!email) { showToast('Enter your email address'); return; }
     const status = document.getElementById('email-test-status');
     status.style.display = 'block';
+    status.style.color = 'var(--sage)';
     status.textContent = 'Sending...';
     try {
-        await apiFetch('/api/admin/email/test?type=' + type, {
+        const result = await apiFetch('/api/admin/email/test?type=' + type, {
             method: 'POST',
             body: { email: email, name: 'Heather' }
         });
         status.textContent = 'Test sent to ' + email + ' ✓';
+        if (result && result.resend && result.resend.id) {
+            status.textContent += ' (ID: ' + result.resend.id + ')';
+        }
     } catch (e) {
         status.textContent = 'Failed: ' + e.message;
         status.style.color = 'var(--accent)';

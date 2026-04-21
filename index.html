@@ -3504,8 +3504,9 @@
                                     <div style="font-family:Cormorant Garamond,serif;font-size:0.88rem;color:var(--light-text);line-height:1.4;">New sisters are joining the app. Opt in to connect with them, show up in their directory, and be part of their Secret Sister rotation.</div>
                                 </div>
                             </div>
-                            <div style="text-align:center;margin-top:14px;">
+                            <div style="display:flex;justify-content:center;gap:12px;margin-top:14px;">
                                 <button type="button" id="opt-in-2027-btn" onclick="optIn2027()" style="padding:12px 28px;background:var(--sage);color:white;border:none;border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:700;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Count Me In</button>
+                                <button type="button" id="opt-out-2027-btn" onclick="optOut2027()" style="padding:12px 28px;background:white;color:var(--taupe);border:1px solid rgba(200,185,176,0.4);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:1rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Not right now</button>
                             </div>
                         </div>
                     </div>
@@ -5267,12 +5268,16 @@
                     list.innerHTML = '<div style="text-align:center;font-size:0.85rem;color:var(--light-text);font-style:italic;padding:20px 0;">No one has joined yet. Be the first!</div>';
                     return;
                 }
-                allDirectoryUsers = users;
-                updateConnectBadge(users.length);
+                // 2027 users: hide 2026 women who opted out (opted_in_2027 === -1)
+                const viewerIs2027 = currentUser && (currentUser.retreat_year || 2026) >= 2027;
+                allDirectoryUsers = viewerIs2027
+                    ? users.filter(u => !(u.retreat_year === 2026 && u.opted_in_2027 === -1))
+                    : users;
+                updateConnectBadge(allDirectoryUsers.length);
 
                 // Show count
                 const countEl = document.getElementById('sisters-count');
-                document.getElementById('sisters-num').textContent = users.length;
+                document.getElementById('sisters-num').textContent = allDirectoryUsers.length;
                 countEl.style.display = 'block';
 
                 // Search
@@ -14969,9 +14974,9 @@ function showStayConnectedCard() {
     if (!currentUser) return;
     var card = document.getElementById('stay-connected-2027-card');
     if (!card) return;
-    // Only show to 2026 women who have NOT yet opted in
+    // Only show to 2026 women who have NOT yet chosen yes or no
     if ((currentUser.retreat_year || 2026) !== 2026) { card.style.display = 'none'; return; }
-    if (currentUser.opted_in_2027) { card.style.display = 'none'; return; }
+    if (currentUser.opted_in_2027 === 1 || currentUser.opted_in_2027 === -1) { card.style.display = 'none'; return; }
     card.style.display = 'block';
 }
 
@@ -14990,6 +14995,22 @@ async function optIn2027() {
     } catch(e) {
         showToast('Could not save — try again');
         if (btn) { btn.disabled = false; btn.textContent = 'Count Me In'; }
+    }
+}
+
+async function optOut2027() {
+    if (!currentUser) return;
+    var btn = document.getElementById('opt-out-2027-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+    try {
+        await apiPost('/api/users/' + currentUser.id + '/profile', { opted_in_2027: -1 });
+        currentUser.opted_in_2027 = -1;
+        saveUser(currentUser);
+        var card = document.getElementById('stay-connected-2027-card');
+        if (card) card.innerHTML = '<div style="padding:18px 20px;background:rgba(200,185,176,0.08);border-radius:14px;border:1px solid rgba(200,185,176,0.20);text-align:center;"><div style="font-family:Cormorant Garamond,serif;font-size:0.9rem;color:var(--light-text);">No worries! You can always change your mind from your profile.</div></div>';
+    } catch(e) {
+        showToast('Could not save — try again');
+        if (btn) { btn.disabled = false; btn.textContent = 'Not right now'; }
     }
 }
 

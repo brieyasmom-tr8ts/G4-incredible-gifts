@@ -2084,7 +2084,7 @@ function renderUsersTable() {
             <td>${fmtDate(u.birthday)}</td>
             <td>${u.instagram ? `<a href="https://instagram.com/${esc(u.instagram)}" target="_blank">@${esc(u.instagram)}</a>` : ''}</td>
             <td>${esc(u.facebook)}</td>
-            <td><span style="display:inline-block;padding:2px 8px;border-radius:8px;font-size:0.75rem;font-weight:600;background:${(u.retreat_year || 2026) >= 2027 ? 'var(--sage)' : 'rgba(200,185,176,0.25)'};color:${(u.retreat_year || 2026) >= 2027 ? 'white' : 'var(--taupe)'}">${u.retreat_year || 2026}</span></td>
+            <td><span style="display:inline-block;padding:2px 8px;border-radius:8px;font-size:0.75rem;font-weight:600;background:${(u.retreat_year || 2026) >= 2027 ? 'var(--sage)' : 'rgba(200,185,176,0.25)'};color:${(u.retreat_year || 2026) >= 2027 ? 'white' : 'var(--taupe)'}">${u.retreat_year || 2026}</span>${(u.retreat_year || 2026) === 2026 ? (u.opted_in_2027 === 1 ? ' <span style="font-size:0.7rem;color:var(--sage);font-weight:600;">+2027</span>' : u.opted_in_2027 === -1 ? ' <span style="font-size:0.7rem;color:var(--accent);font-weight:600;">no</span>' : '') : ''}</td>
             <td>${fmtDateTime(u.created_at)}</td>
             <td style="white-space:nowrap;">
                 <button class="btn" style="background:${u.is_team ? 'var(--sage)' : 'rgba(200,185,176,0.3)'};color:${u.is_team ? 'white' : 'var(--taupe)'};font-size:0.7rem;padding:0.2rem 0.5rem;margin-right:4px;" onclick="toggleTeam(${u.id}, ${u.is_team ? 0 : 1})">${u.is_team ? '⭐ Team' : 'Team'}</button>

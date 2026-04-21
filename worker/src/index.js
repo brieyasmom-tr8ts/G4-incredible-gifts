@@ -641,7 +641,7 @@ export default {
         let results;
         try {
           ({ results } = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, is_speaker, is_worship, retreat_year, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, is_speaker, is_worship, retreat_year, opted_in_2027, created_at FROM users ORDER BY created_at DESC'
           ).all());
         } catch (e) {
           try {
@@ -665,6 +665,8 @@ export default {
             `SELECT u.id, u.first_name, u.last_initial, u.last_name, u.photo_data, u.email, u.phone, u.birthday,
                     u.show_email, u.show_phone, u.show_birthday, u.show_about,
                     u.instagram, u.facebook, u.location, u.job, u.church, u.retreat_years, u.about,
+                    COALESCE(u.retreat_year, 2026) AS retreat_year,
+                    COALESCE(u.opted_in_2027, 0) AS opted_in_2027,
                     p.score as packing_score
              FROM users u LEFT JOIN packing_scores p ON u.id = p.user_id
              ORDER BY u.first_name ASC`
@@ -710,7 +712,9 @@ export default {
           packing_score: u.packing_score != null ? u.packing_score : null,
           is_team: u.is_team ? 1 : 0,
           is_speaker: u.is_speaker ? 1 : 0,
-          is_worship: u.is_worship ? 1 : 0
+          is_worship: u.is_worship ? 1 : 0,
+          retreat_year: u.retreat_year || 2026,
+          opted_in_2027: u.opted_in_2027 || 0
         }));
         return json(directory, corsHeaders);
       }

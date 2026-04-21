@@ -628,6 +628,7 @@
             <button class="nav-tab" data-section="quiz"><span class="nav-icon">🧠</span> Quiz</button>
             <button class="nav-tab" data-section="meme"><span class="nav-icon">😂</span> Meme</button>
             <button class="nav-tab" data-section="budget"><span class="nav-icon">💰</span> Budget &amp; Payments</button>
+            <button class="nav-tab" data-section="emails"><span class="nav-icon">📧</span> Weekly Emails</button>
         </nav>
         <div class="sidebar-footer">
             <button class="btn btn-danger" style="width:100%;font-size:0.82rem;padding:0.5rem;" onclick="confirmResetAll()">Delete All Test Data</button>
@@ -1098,6 +1099,45 @@
                 <div class="icon">&#x2728;</div>
                 <p>No stories in this view</p>
             </div>
+        </div>
+
+        <!-- Weekly Emails -->
+        <div class="section" id="section-emails">
+            <h2>Weekly Emails</h2>
+            <p style="color:var(--light-text);font-size:0.9rem;margin-bottom:1.5rem;">Preview and test the automated emails that go out each week. Monday = devotion, Wednesday = secret sister.</p>
+
+            <div style="display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap;">
+                <button class="btn btn-refresh" onclick="previewEmail('devotion')">Preview Devotion Email</button>
+                <button class="btn btn-refresh" onclick="previewEmail('secretsister')">Preview Secret Sister Email</button>
+            </div>
+
+            <div id="email-preview-frame" style="display:none;margin-bottom:1.5rem;background:white;border-radius:12px;box-shadow:var(--shadow-sm);overflow:hidden;">
+                <div style="padding:10px 14px;background:#f5f3f0;border-bottom:1px solid #e8e4df;display:flex;justify-content:space-between;align-items:center;">
+                    <span id="email-preview-label" style="font-size:0.82rem;font-weight:600;color:var(--taupe);">Preview</span>
+                    <button class="btn" style="font-size:0.75rem;padding:4px 10px;" onclick="document.getElementById('email-preview-frame').style.display='none'">Close</button>
+                </div>
+                <iframe id="email-preview-iframe" style="width:100%;height:500px;border:none;"></iframe>
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Send a Test Email</h3>
+            <p style="color:var(--light-text);font-size:0.85rem;margin-bottom:0.75rem;">Send a test to yourself to see exactly how it looks in your inbox.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+                <div style="flex:1;min-width:200px;">
+                    <label style="font-size:0.78rem;font-weight:600;color:var(--taupe);display:block;margin-bottom:4px;">Your email</label>
+                    <input type="email" id="email-test-address" placeholder="you@example.com" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:8px;font-size:0.9rem;">
+                </div>
+                <button class="btn btn-refresh" onclick="sendTestEmail('devotion')">Test Devotion</button>
+                <button class="btn btn-refresh" onclick="sendTestEmail('secretsister')">Test Secret Sister</button>
+            </div>
+            <div id="email-test-status" style="margin-top:8px;font-size:0.85rem;color:var(--sage);display:none;"></div>
+
+            <h3 style="margin-top:2rem;">Manual Send</h3>
+            <p style="color:var(--light-text);font-size:0.85rem;margin-bottom:0.75rem;">Manually trigger the email blast to all sisters right now (use sparingly — the cron handles this automatically).</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-danger-outline" onclick="sendBlastEmail('devotion')">Send Devotion to Everyone</button>
+                <button class="btn btn-danger-outline" onclick="sendBlastEmail('secretsister')">Send Secret Sister to Everyone</button>
+            </div>
+            <div id="email-blast-status" style="margin-top:8px;font-size:0.85rem;color:var(--sage);display:none;"></div>
         </div>
 
         <!-- Budget & Payments (password-gated) -->
@@ -4012,6 +4052,59 @@ const FEATURE_ITEMS = [
 
 // Every feature now has both nav_key and home_key — no dedup needed.
 const FEATURE_ITEMS_DEDUPED = FEATURE_ITEMS;
+
+// --- Weekly Emails ---
+async function previewEmail(type) {
+    const frame = document.getElementById('email-preview-frame');
+    const iframe = document.getElementById('email-preview-iframe');
+    const label = document.getElementById('email-preview-label');
+    if (!frame || !iframe) return;
+    label.textContent = type === 'secretsister' ? 'Secret Sister Email' : 'Devotion Email';
+    try {
+        const resp = await fetch(API + '/api/admin/email/preview?type=' + type, {
+            headers: { 'X-Admin-Key': getKey() }
+        });
+        if (!resp.ok) throw new Error(resp.status);
+        const html = await resp.text();
+        iframe.srcdoc = html;
+        frame.style.display = 'block';
+    } catch (e) {
+        showToast('Could not load preview: ' + e.message);
+    }
+}
+
+async function sendTestEmail(type) {
+    const email = document.getElementById('email-test-address').value.trim();
+    if (!email) { showToast('Enter your email address'); return; }
+    const status = document.getElementById('email-test-status');
+    status.style.display = 'block';
+    status.textContent = 'Sending...';
+    try {
+        await apiFetch('/api/admin/email/test?type=' + type, {
+            method: 'POST',
+            body: { email: email, name: 'Heather' }
+        });
+        status.textContent = 'Test sent to ' + email + ' ✓';
+    } catch (e) {
+        status.textContent = 'Failed: ' + e.message;
+        status.style.color = 'var(--accent)';
+    }
+}
+
+async function sendBlastEmail(type) {
+    const label = type === 'secretsister' ? 'secret sister' : 'devotion';
+    if (!confirm('Send the ' + label + ' email to ALL sisters with an email address right now?')) return;
+    const status = document.getElementById('email-blast-status');
+    status.style.display = 'block';
+    status.textContent = 'Sending to everyone...';
+    try {
+        await apiFetch('/api/admin/email/send-now?type=' + type, { method: 'POST', body: {} });
+        status.textContent = 'Sent ✓';
+    } catch (e) {
+        status.textContent = 'Failed: ' + e.message;
+        status.style.color = 'var(--accent)';
+    }
+}
 
 function renderVisibilityToggles() {
     const list = document.getElementById('visibility-toggles-list');

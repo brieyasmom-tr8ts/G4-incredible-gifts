@@ -297,13 +297,13 @@ export default {
         const type = url.searchParams.get('type') || 'devotion';
         if (type === 'secretsister') {
           return new Response(secretSisterEmailHtml('Heather', 'Janet S.'), {
-            headers: { 'Content-Type': 'text/html' }
+            headers: { ...corsHeaders, 'Content-Type': 'text/html' }
           });
         }
         const weekNum = getCurrentDevotionWeekNum() || 1;
         const devotion = DEVOTION_WEEKS.find(d => d.week === weekNum) || DEVOTION_WEEKS[0];
         return new Response(devotionEmailHtml('Heather', devotion), {
-          headers: { 'Content-Type': 'text/html' }
+          headers: { ...corsHeaders, 'Content-Type': 'text/html' }
         });
       }
 

@@ -356,6 +356,33 @@ export default {
         return json({ success: true, type }, corsHeaders);
       }
 
+      // GET /api/email/unsubscribe?user_id=X — one-click unsubscribe from emails
+      if (path === '/api/email/unsubscribe' && request.method === 'GET') {
+        const uid = parseInt(url.searchParams.get('user_id') || '0', 10);
+        if (uid) {
+          try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
+          await env.DB.prepare('UPDATE users SET email_unsubscribed = 1 WHERE id = ?').bind(uid).run();
+        }
+        return new Response(
+          '<html><body style="font-family:Georgia,serif;text-align:center;padding:60px 20px;color:#3a3632;">' +
+          '<h2>You’ve been unsubscribed</h2>' +
+          '<p style="color:#8b8680;">You won’t receive any more weekly emails from G4. You can still use the app anytime.</p>' +
+          '<p><a href="https://g4retreatapp.org" style="color:#8a9e7a;">Back to G4</a></p></body></html>',
+          { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
+        );
+      }
+
+      // POST /api/email/resubscribe — re-enable emails
+      if (path === '/api/email/resubscribe' && request.method === 'POST') {
+        const body = await request.json();
+        const uid = parseInt(body.user_id || 0);
+        if (uid) {
+          try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
+          await env.DB.prepare('UPDATE users SET email_unsubscribed = 0 WHERE id = ?').bind(uid).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
       // GET /api/admin/stats — usage stats for admin dashboard
       if (path === '/api/admin/stats' && request.method === 'GET') {
         const authErr = requireAdmin(request);
@@ -691,7 +718,8 @@ export default {
         for (const col of [
           ['anniversary', 'TEXT DEFAULT ""'],
           ['show_anniversary', 'INTEGER DEFAULT 0'],
-          ['secret_sister_opt_out', 'INTEGER DEFAULT 0']
+          ['secret_sister_opt_out', 'INTEGER DEFAULT 0'],
+          ['email_unsubscribed', 'INTEGER DEFAULT 0']
         ]) {
           try { await env.DB.prepare(`ALTER TABLE users ADD COLUMN ${col[0]} ${col[1]}`).run(); } catch(e) { /* exists */ }
         }
@@ -4392,9 +4420,11 @@ function getCurrentDevotionWeekNum() {
 }
 
 const APP_URL = 'https://g4retreatapp.org';
+const API_BASE = 'https://g4-retreat-api.brieyasmom.workers.dev';
 const EMAIL_FROM = 'G4 Retreat <onboarding@resend.dev>';
 
-function devotionEmailHtml(firstName, devotion) {
+function devotionEmailHtml(firstName, devotion, userId) {
+  const unsubUrl = userId ? API_BASE + '/api/email/unsubscribe?user_id=' + userId : '';
   return `
 <div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px 20px;color:#3a3632;">
   <div style="text-align:center;margin-bottom:20px;">
@@ -4413,12 +4443,13 @@ function devotionEmailHtml(firstName, devotion) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#8a9e7a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Open Your Devotion</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Women's Retreat 2026 · Incredible Gifts
+    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
 
-function secretSisterEmailHtml(firstName, sisterName) {
+function secretSisterEmailHtml(firstName, sisterName, userId) {
+  const unsubUrl = userId ? API_BASE + '/api/email/unsubscribe?user_id=' + userId : '';
   return `
 <div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px 20px;color:#3a3632;">
   <div style="text-align:center;margin-bottom:20px;">
@@ -4435,7 +4466,7 @@ function secretSisterEmailHtml(firstName, sisterName) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#c9908a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Write Her a Note</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Women's Retreat 2026 · Incredible Gifts
+    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -4460,18 +4491,18 @@ async function sendDevotionEmail(env) {
   const devotion = DEVOTION_WEEKS.find(d => d.week === weekNum);
   if (!devotion) return;
 
-  // Get all users with emails
+  try { await env.DB.prepare(‘ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0’).run(); } catch(e) {}
   let users = [];
   try {
     const { results } = await env.DB.prepare(
-      "SELECT first_name, email FROM users WHERE email IS NOT NULL AND email != '' AND TRIM(email) != ''"
+      "SELECT id, first_name, email FROM users WHERE email IS NOT NULL AND email != ‘’ AND TRIM(email) != ‘’ AND COALESCE(email_unsubscribed, 0) = 0"
     ).all();
     users = results || [];
   } catch (e) { return; }
 
-  const subject = 'This Week’s Gift: ' + devotion.gift + ' • Week ' + weekNum;
+  const subject = "This Week’s Gift: " + devotion.gift + ‘ · Week ‘ + weekNum;
   for (const user of users) {
-    await sendEmail(env, user.email.trim(), subject, devotionEmailHtml(user.first_name, devotion));
+    await sendEmail(env, user.email.trim(), subject, devotionEmailHtml(user.first_name, devotion, user.id));
   }
 }
 
@@ -4494,19 +4525,20 @@ async function sendSecretSisterEmail(env) {
   const giverIds = pairs.map(p => p.giver_id);
   if (!giverIds.length) return;
 
+  try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
   let userEmails = {};
   try {
     const { results } = await env.DB.prepare(
-      "SELECT id, first_name, email FROM users WHERE email IS NOT NULL AND email != ''"
+      "SELECT id, first_name, email, COALESCE(secret_sister_opt_out, 0) as ss_opt_out FROM users WHERE email IS NOT NULL AND email != '' AND COALESCE(email_unsubscribed, 0) = 0"
     ).all();
-    (results || []).forEach(u => { userEmails[u.id] = { email: u.email.trim(), first_name: u.first_name }; });
+    (results || []).forEach(u => { userEmails[u.id] = { email: u.email.trim(), first_name: u.first_name, ss_opt_out: u.ss_opt_out }; });
   } catch (e) { return; }
 
   for (const pair of pairs) {
     const user = userEmails[pair.giver_id];
-    if (!user || !user.email) continue;
+    if (!user || !user.email || user.ss_opt_out) continue;
     const subject = 'Your Secret Sister This Week 💌';
-    await sendEmail(env, user.email, subject, secretSisterEmailHtml(user.first_name, pair.receiver_name));
+    await sendEmail(env, user.email, subject, secretSisterEmailHtml(user.first_name, pair.receiver_name, pair.giver_id));
   }
 }
 

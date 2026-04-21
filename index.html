@@ -3378,9 +3378,8 @@
                 <div id="my-celebration-lookback" style="display:none;"></div>
                 <div id="my-celebrations-archive" style="display:none;"></div>
 
-                <!-- Post-retreat home (shown immediately via inline script if past retreat end) -->
+                <!-- Post-retreat home (hidden until checkPostRetreat builds all cards) -->
                 <div id="post-retreat-home" style="display:none;">
-                <script>if(new Date()>=new Date('2026-04-11T12:00:00-04:00'))document.getElementById('post-retreat-home').style.display='block';</script>
 
                     <!-- This Week's Devotion (everyone) -->
                     <div id="devotion-week-card" style="display:none;margin:12px 16px;padding:22px 22px 20px;background:linear-gradient(135deg,rgba(138,158,122,0.14),rgba(201,144,138,0.08));border-radius:16px;border:1.5px solid rgba(138,158,122,0.25);box-shadow:0 4px 16px rgba(138,158,122,0.10);cursor:pointer;">
@@ -3468,7 +3467,7 @@
                     </div>
 
                     <!-- Resources from Mandy -->
-                    <button type="button" id="mandy-resources-card" onclick="openMandyResources()" style="display:block;width:calc(100% - 32px);margin:12px 16px;padding:16px 20px;background:linear-gradient(135deg,rgba(138,158,122,0.12),rgba(201,144,138,0.06));border-radius:14px;border:1.5px solid rgba(138,158,122,0.22);box-shadow:var(--shadow-sm);cursor:pointer;text-align:left;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
+                    <button type="button" id="mandy-resources-card" onclick="openMandyResources()" style="display:none;width:calc(100% - 32px);margin:12px 16px;padding:16px 20px;background:linear-gradient(135deg,rgba(138,158,122,0.12),rgba(201,144,138,0.06));border-radius:14px;border:1.5px solid rgba(138,158,122,0.22);box-shadow:var(--shadow-sm);cursor:pointer;text-align:left;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
                         <div style="display:flex;align-items:center;gap:14px;">
                             <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--sage),#a8c296);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.4rem;">&#x1f4d6;</div>
                             <div style="flex:1;min-width:0;">
@@ -3493,7 +3492,7 @@
                     </div>
 
                     <!-- Quick action buttons — controlled by admin home_* toggles -->
-                    <div id="post-retreat-buttons" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 16px;"></div>
+                    <div id="post-retreat-buttons" style="display:none;grid-template-columns:1fr 1fr;gap:8px;margin:12px 16px;"></div>
 
                     <!-- Moments Slideshow -->
                     <div id="post-retreat-slideshow-wrap" style="margin:16px;display:none;">
@@ -7093,6 +7092,7 @@
                 if (settings && typeof settings === 'object') {
                     navSettings = settings;
                     gameSettings = settings;
+                    _lastNavJson = JSON.stringify(settings);
                     buildNav();
                     // Rebuild home buttons if dashboard is visible
                     if (document.getElementById('retreat-dashboard') && document.getElementById('retreat-dashboard').style.display !== 'none') {
@@ -7105,13 +7105,17 @@
                     // missing until this function caught up.
                     if (typeof renderHomeButtonsInto === 'function' && document.getElementById('post-retreat-buttons')) {
                         renderHomeButtonsInto('post-retreat-buttons');
+                        var btnsEl = document.getElementById('post-retreat-buttons');
+                        if (btnsEl && btnsEl.children.length) btnsEl.style.display = 'grid';
                     }
                 }
+                // Now that settings are loaded, show the post-retreat home
+                revealPostRetreatHome();
             } catch(e) {
                 console.error('Failed to load nav settings:', e);
-                // Fallback: show default nav
                 navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1', nav_gratitude: '1', nav_sendlove: '1' };
                 buildNav();
+                revealPostRetreatHome();
             }
         }
 
@@ -9862,7 +9866,24 @@
         // Load nav settings from server (updates nav dynamically)
         loadNavSettings();
         // Re-check nav settings periodically so admin changes show up live
-        setInterval(loadNavSettings, 15000);
+        var _lastNavJson = '';
+        setInterval(async function() {
+            try {
+                var s = await apiGet('/api/games/settings');
+                if (s && typeof s === 'object') {
+                    var j = JSON.stringify(s);
+                    if (j !== _lastNavJson) {
+                        _lastNavJson = j;
+                        navSettings = s;
+                        gameSettings = s;
+                        buildNav();
+                        if (typeof renderHomeButtonsInto === 'function' && document.getElementById('post-retreat-buttons')) {
+                            renderHomeButtonsInto('post-retreat-buttons');
+                        }
+                    }
+                }
+            } catch(e) {}
+        }, 15000);
 
         buildSchedule();
         buildPrayerCountdown();
@@ -10995,6 +11016,16 @@
                 }
                 localStorage.setItem('g4_last_devotion_week_seen', String(currentWeek));
             }
+        }
+
+        function revealPostRetreatHome() {
+            var now = new Date();
+            var retreatEnd = new Date('2026-04-11T12:00:00-04:00');
+            if (now < retreatEnd) return;
+            var el = document.getElementById('post-retreat-home');
+            if (el) el.style.display = 'block';
+            var mandy = document.getElementById('mandy-resources-card');
+            if (mandy) mandy.style.display = 'block';
         }
 
         function checkPostRetreat() {

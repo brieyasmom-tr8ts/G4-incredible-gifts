@@ -3389,6 +3389,31 @@
         <div class="content-area">
             <!-- HOME TAB -->
             <div id="home-tab" class="tab-content active">
+                <!-- Welcome guide for 2027 women -->
+                <div id="welcome-2027-card" style="display:none;margin:12px 16px 8px;padding:22px 20px 18px;background:linear-gradient(135deg,rgba(138,158,122,0.12),rgba(201,144,138,0.06));border-radius:16px;border:1.5px solid rgba(138,158,122,0.22);box-shadow:0 4px 16px rgba(138,158,122,0.08);">
+                    <div style="font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--dark-text);margin-bottom:4px;">Welcome, sister!</div>
+                    <div style="font-family:'Cormorant Garamond',serif;font-size:0.95rem;color:var(--light-text);line-height:1.5;margin-bottom:16px;">We're so glad you're here. Here's how to get started with the G4 community:</div>
+                    <div style="display:flex;flex-direction:column;gap:12px;">
+                        <button type="button" onclick="switchToTab('connect')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
+                            <span style="font-size:1.3rem;flex-shrink:0;">&#x1f49b;</span>
+                            <div><div style="font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:700;color:var(--dark-text);">Connect</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);line-height:1.3;">Meet your sisters and fill out your profile so others can find you</div></div>
+                        </button>
+                        <button type="button" onclick="switchToTab('uplift')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
+                            <span style="font-size:1.3rem;flex-shrink:0;">&#x1f64f;</span>
+                            <div><div style="font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:700;color:var(--dark-text);">Uplift</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);line-height:1.3;">Share prayer requests and encourage one another</div></div>
+                        </button>
+                        <button type="button" onclick="switchToTab('journey')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
+                            <span style="font-size:1.3rem;flex-shrink:0;">&#x1f381;</span>
+                            <div><div style="font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:700;color:var(--dark-text);">Journey</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);line-height:1.3;">Explore 20 incredible gifts from God and reflect on where you are with each one</div></div>
+                        </button>
+                        <button type="button" onclick="switchToTab('stories')" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:12px;cursor:pointer;text-align:left;font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">
+                            <span style="font-size:1.3rem;flex-shrink:0;">&#x2728;</span>
+                            <div><div style="font-family:'Playfair Display',serif;font-size:0.9rem;font-weight:700;color:var(--dark-text);">Stories</div><div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);line-height:1.3;">Read and share testimonies of how God is moving in our lives</div></div>
+                        </button>
+                    </div>
+                    <button type="button" id="dismiss-welcome-2027" style="display:block;margin:16px auto 0;padding:8px 20px;background:none;border:1px solid rgba(138,158,122,0.3);border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--sage);font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Got it!</button>
+                </div>
+
                 <!-- One-time announcement: new gifts were added to Journey -->
                 <div id="journey-new-gifts-card" style="display:none;"></div>
 
@@ -4812,6 +4837,18 @@
             banner.style.visibility = 'visible';
             setTimeout(() => banner.classList.add('animate-in'), 100);
 
+            // Welcome guide for 2027+ women (dismissible, one-time)
+            if ((currentUser.retreat_year || 2026) >= 2027 && !localStorage.getItem('g4_welcome_2027_dismissed')) {
+                var wCard = document.getElementById('welcome-2027-card');
+                if (wCard) {
+                    wCard.style.display = 'block';
+                    var dismissBtn = document.getElementById('dismiss-welcome-2027');
+                    if (dismissBtn) dismissBtn.onclick = function() {
+                        wCard.style.display = 'none';
+                        localStorage.setItem('g4_welcome_2027_dismissed', '1');
+                    };
+                }
+            }
 
             // Header profile button
             const profileBtn = document.getElementById('header-profile-btn');

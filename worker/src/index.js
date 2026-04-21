@@ -641,7 +641,7 @@ export default {
         let results;
         try {
           ({ results } = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, is_speaker, is_worship, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, is_speaker, is_worship, retreat_year, created_at FROM users ORDER BY created_at DESC'
           ).all());
         } catch (e) {
           try {

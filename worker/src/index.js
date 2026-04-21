@@ -2838,6 +2838,81 @@ export default {
         }
       }
 
+      // ===== USAGE ANALYTICS =====
+
+      const ensureActivityTable = async () => {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS user_activity (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            name TEXT DEFAULT '',
+            action TEXT DEFAULT 'login',
+            detail TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now'))
+          )`).run();
+        } catch(e) {}
+      };
+
+      // POST /api/activity — log a user action (login, tab view, etc.)
+      if (path === '/api/activity' && request.method === 'POST') {
+        await ensureActivityTable();
+        try {
+          const body = await request.json();
+          await env.DB.prepare(
+            'INSERT INTO user_activity (user_id, name, action, detail) VALUES (?, ?, ?, ?)'
+          ).bind(
+            body.user_id ? parseInt(body.user_id) : null,
+            (body.name || '').slice(0, 100),
+            (body.action || 'login').slice(0, 50),
+            (body.detail || '').slice(0, 200)
+          ).run();
+        } catch(e) {}
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/admin/analytics — usage stats dashboard
+      if (path === '/api/admin/analytics' && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensureActivityTable();
+        try {
+          const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+          const todayStr = etNow.getFullYear() + '-' + String(etNow.getMonth()+1).padStart(2,'0') + '-' + String(etNow.getDate()).padStart(2,'0');
+          const weekAgo = new Date(etNow); weekAgo.setDate(weekAgo.getDate() - 7);
+          const weekStr = weekAgo.getFullYear() + '-' + String(weekAgo.getMonth()+1).padStart(2,'0') + '-' + String(weekAgo.getDate()).padStart(2,'0');
+
+          const [totalUsers, loginsToday, loginsWeek, uniqueToday, uniqueWeek, tabViews, recentLogins] = await Promise.all([
+            env.DB.prepare('SELECT COUNT(*) as c FROM users').first(),
+            env.DB.prepare("SELECT COUNT(*) as c FROM user_activity WHERE action = 'login' AND created_at >= ?").bind(todayStr).first(),
+            env.DB.prepare("SELECT COUNT(*) as c FROM user_activity WHERE action = 'login' AND created_at >= ?").bind(weekStr).first(),
+            env.DB.prepare("SELECT COUNT(DISTINCT user_id) as c FROM user_activity WHERE action = 'login' AND created_at >= ?").bind(todayStr).first(),
+            env.DB.prepare("SELECT COUNT(DISTINCT user_id) as c FROM user_activity WHERE action = 'login' AND created_at >= ?").bind(weekStr).first(),
+            env.DB.prepare("SELECT detail, COUNT(*) as c FROM user_activity WHERE action = 'tab' AND created_at >= ? GROUP BY detail ORDER BY c DESC LIMIT 15").bind(weekStr).all(),
+            env.DB.prepare("SELECT name, MAX(created_at) as last_seen FROM user_activity WHERE action = 'login' AND user_id IS NOT NULL GROUP BY user_id ORDER BY last_seen DESC LIMIT 30").all()
+          ]);
+
+          // Daily login counts for the past 14 days
+          const twoWeeksAgo = new Date(etNow); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+          const twoWeekStr = twoWeeksAgo.getFullYear() + '-' + String(twoWeeksAgo.getMonth()+1).padStart(2,'0') + '-' + String(twoWeeksAgo.getDate()).padStart(2,'0');
+          const { results: dailyRaw } = await env.DB.prepare(
+            "SELECT DATE(created_at) as day, COUNT(DISTINCT user_id) as c FROM user_activity WHERE action = 'login' AND created_at >= ? GROUP BY DATE(created_at) ORDER BY day"
+          ).bind(twoWeekStr).all();
+
+          return json({
+            total_users: totalUsers ? totalUsers.c : 0,
+            logins_today: loginsToday ? loginsToday.c : 0,
+            logins_week: loginsWeek ? loginsWeek.c : 0,
+            unique_today: uniqueToday ? uniqueToday.c : 0,
+            unique_week: uniqueWeek ? uniqueWeek.c : 0,
+            tab_views: (tabViews && tabViews.results) || [],
+            recent_logins: (recentLogins && recentLogins.results) || [],
+            daily_logins: dailyRaw || []
+          }, corsHeaders);
+        } catch(e) {
+          return json({ error: e.message }, corsHeaders, 500);
+        }
+      }
+
       // ===== JOURNAL SYNC (cross-device) =====
 
       const ensureJournalEntriesTable = async () => {

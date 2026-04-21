@@ -613,6 +613,7 @@
         </div>
         <nav class="sidebar-nav">
             <button class="nav-tab active" data-section="stats"><span class="nav-icon">📊</span> Stats</button>
+            <button class="nav-tab" data-section="analytics"><span class="nav-icon">📊</span> Analytics</button>
             <button class="nav-tab" data-section="users"><span class="nav-icon">👥</span> Users <span class="badge" id="count-users">0</span></button>
             <button class="nav-tab" data-section="churches"><span class="nav-icon">⛪</span> Churches</button>
             <button class="nav-tab" data-section="news"><span class="nav-icon">📰</span> News / Reminders</button>
@@ -694,6 +695,38 @@
         </div>
 
         <!-- Users -->
+        <!-- Analytics -->
+        <div class="section" id="section-analytics">
+            <h2>Usage Analytics</h2>
+            <p style="color:var(--light-text);font-size:0.9rem;margin-bottom:1rem;">How your sisters are using the app. Data starts tracking from when this update deploys.</p>
+            <button class="btn btn-refresh" onclick="loadAnalytics()" style="margin-bottom:1rem;">Refresh</button>
+
+            <div id="analytics-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.75rem;margin-bottom:1.5rem;">
+                <div style="padding:14px;background:rgba(138,158,122,0.08);border-radius:12px;text-align:center;"><div style="font-family:Playfair Display,serif;font-size:1.8rem;font-weight:700;color:var(--sage);" id="a-total-users">-</div><div style="font-size:0.72rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Total Sisters</div></div>
+                <div style="padding:14px;background:rgba(201,144,138,0.08);border-radius:12px;text-align:center;"><div style="font-family:Playfair Display,serif;font-size:1.8rem;font-weight:700;color:var(--accent);" id="a-unique-today">-</div><div style="font-size:0.72rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Active Today</div></div>
+                <div style="padding:14px;background:rgba(138,158,122,0.08);border-radius:12px;text-align:center;"><div style="font-family:Playfair Display,serif;font-size:1.8rem;font-weight:700;color:var(--sage);" id="a-unique-week">-</div><div style="font-size:0.72rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Active This Week</div></div>
+                <div style="padding:14px;background:rgba(201,144,138,0.08);border-radius:12px;text-align:center;"><div style="font-family:Playfair Display,serif;font-size:1.8rem;font-weight:700;color:var(--accent);" id="a-logins-week">-</div><div style="font-size:0.72rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.05em;">Visits This Week</div></div>
+            </div>
+
+            <!-- Daily chart -->
+            <div style="margin-bottom:1.5rem;">
+                <div style="font-family:Playfair Display,serif;font-size:0.82rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Daily Active Users (14 days)</div>
+                <div id="a-daily-chart" style="display:flex;align-items:flex-end;gap:4px;height:120px;padding:8px 0;border-bottom:1px solid rgba(200,185,176,0.3);"></div>
+            </div>
+
+            <!-- Popular tabs -->
+            <div style="margin-bottom:1.5rem;">
+                <div style="font-family:Playfair Display,serif;font-size:0.82rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Most Visited Tabs (This Week)</div>
+                <div id="a-tab-views" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+            </div>
+
+            <!-- Recent logins -->
+            <div>
+                <div style="font-family:Playfair Display,serif;font-size:0.82rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px;">Recently Active</div>
+                <div id="a-recent-logins" style="display:flex;flex-direction:column;gap:4px;max-height:300px;overflow-y:auto;"></div>
+            </div>
+        </div>
+
         <div class="section" id="section-users">
             <div class="table-wrap">
                 <table id="users-table">
@@ -1490,7 +1523,8 @@ const SECTION_TITLES = {
     moments: 'Moments', prayers: 'Prayer Wall', feedback: 'Feedback',
     topics: 'Theme Suggestions', stories: 'Stories',
     polls: 'Polls / Q&A', games: 'Games', quiz: 'Quiz', meme: 'Meme',
-    budget: 'Budget & Payments'
+    budget: 'Budget & Payments', analytics: 'Analytics',
+    secretsister: 'Secret Sister', emails: 'Weekly Emails'
 };
 
 function toggleSidebar() {
@@ -1516,6 +1550,10 @@ function activateAdminSection(sectionName, opts) {
     }
     // Clear notification badge when section is viewed
     markAdminSectionSeen(sectionName);
+    // Load analytics when section is shown
+    if (sectionName === 'analytics' && typeof loadAnalytics === 'function') {
+        loadAnalytics();
+    }
     // Lazy-init the budget section (password gate + calculator) when shown
     if (sectionName === 'budget' && typeof initBudgetSection === 'function') {
         initBudgetSection();
@@ -4108,6 +4146,64 @@ const FEATURE_ITEMS = [
 
 // Every feature now has both nav_key and home_key — no dedup needed.
 const FEATURE_ITEMS_DEDUPED = FEATURE_ITEMS;
+
+// --- Analytics ---
+async function loadAnalytics() {
+    try {
+        const data = await apiFetch('/api/admin/analytics');
+        if (!data) return;
+        document.getElementById('a-total-users').textContent = data.total_users || 0;
+        document.getElementById('a-unique-today').textContent = data.unique_today || 0;
+        document.getElementById('a-unique-week').textContent = data.unique_week || 0;
+        document.getElementById('a-logins-week').textContent = data.logins_week || 0;
+
+        // Daily chart
+        const chart = document.getElementById('a-daily-chart');
+        const daily = Array.isArray(data.daily_logins) ? data.daily_logins : [];
+        if (daily.length) {
+            const maxC = Math.max(...daily.map(d => d.c), 1);
+            chart.innerHTML = daily.map(d => {
+                const pct = Math.max(8, (d.c / maxC) * 100);
+                const dayLabel = new Date(d.day + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
+                return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;" title="' + dayLabel + ': ' + d.c + ' users">' +
+                    '<div style="font-size:0.65rem;color:var(--taupe);font-weight:600;">' + d.c + '</div>' +
+                    '<div style="width:100%;max-width:32px;height:' + pct + '%;background:linear-gradient(to top,var(--sage),rgba(138,158,122,0.5));border-radius:4px 4px 0 0;min-height:4px;"></div>' +
+                    '<div style="font-size:0.58rem;color:var(--light-text);white-space:nowrap;">' + dayLabel.split(',')[0] + '</div>' +
+                '</div>';
+            }).join('');
+        } else {
+            chart.innerHTML = '<div style="color:var(--light-text);font-size:0.85rem;font-style:italic;padding:20px 0;width:100%;text-align:center;">No data yet. Check back after sisters start visiting.</div>';
+        }
+
+        // Tab views
+        const tabs = document.getElementById('a-tab-views');
+        const tabData = Array.isArray(data.tab_views) ? data.tab_views : [];
+        if (tabData.length) {
+            tabs.innerHTML = tabData.map(t =>
+                '<span style="display:inline-block;padding:5px 12px;background:rgba(138,158,122,0.1);color:var(--sage);border-radius:12px;font-size:0.8rem;font-weight:600;">' + esc(t.detail) + ' &middot; ' + t.c + '</span>'
+            ).join('');
+        } else {
+            tabs.innerHTML = '<div style="color:var(--light-text);font-size:0.85rem;font-style:italic;">No tab data yet.</div>';
+        }
+
+        // Recent logins
+        const recent = document.getElementById('a-recent-logins');
+        const logins = Array.isArray(data.recent_logins) ? data.recent_logins : [];
+        if (logins.length) {
+            recent.innerHTML = logins.map(u => {
+                const when = u.last_seen ? new Date(u.last_seen).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(138,158,122,0.04);border-radius:8px;font-size:0.85rem;">' +
+                    '<span style="font-weight:600;color:var(--dark-text);">' + esc(u.name || 'Unknown') + '</span>' +
+                    '<span style="color:var(--light-text);font-size:0.75rem;">' + when + '</span>' +
+                '</div>';
+            }).join('');
+        } else {
+            recent.innerHTML = '<div style="color:var(--light-text);font-size:0.85rem;font-style:italic;">No login data yet.</div>';
+        }
+    } catch(e) {
+        document.getElementById('a-total-users').textContent = '!';
+    }
+}
 
 // --- Weekly Emails ---
 async function previewEmail(type) {

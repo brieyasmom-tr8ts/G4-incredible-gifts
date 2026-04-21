@@ -314,7 +314,7 @@ export default {
         const body = await request.json();
         const email = body.email;
         if (!email) return json({ error: 'email required' }, corsHeaders, 400);
-        if (!env.RESEND_API_KEY) return json({ error: 'RESEND_API_KEY secret not set' }, corsHeaders, 500);
+        if (!env.BREVO_API_KEY) return json({ error: 'BREVO_API_KEY secret not set' }, corsHeaders, 500);
         const type = url.searchParams.get('type') || 'devotion';
         let subject, html;
         if (type === 'secretsister') {
@@ -323,21 +323,26 @@ export default {
         } else {
           const weekNum = getCurrentDevotionWeekNum() || 1;
           const devotion = DEVOTION_WEEKS.find(d => d.week === weekNum) || DEVOTION_WEEKS[0];
-          subject = "This Week's Gift: " + devotion.gift + ' • Week ' + weekNum;
+          subject = "This Week's Gift: " + devotion.gift + ' · Week ' + weekNum;
           html = devotionEmailHtml(body.name || 'Friend', devotion);
         }
         try {
-          const resp = await fetch('https://api.resend.com/emails', {
+          const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
             headers: {
-              'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+              'api-key': env.BREVO_API_KEY,
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ from: EMAIL_FROM, to: [email], subject, html })
+            body: JSON.stringify({
+              sender: { name: EMAIL_FROM_NAME, email: EMAIL_FROM_EMAIL },
+              to: [{ email }],
+              subject,
+              htmlContent: html
+            })
           });
           const result = await resp.json();
-          if (!resp.ok) return json({ error: 'Resend error', detail: result }, corsHeaders, resp.status);
-          return json({ success: true, sent_to: email, resend: result }, corsHeaders);
+          if (!resp.ok) return json({ error: 'Brevo error', detail: result }, corsHeaders, resp.status);
+          return json({ success: true, sent_to: email, brevo: result }, corsHeaders);
         } catch (e) {
           return json({ error: 'Send failed', detail: e.message }, corsHeaders, 500);
         }
@@ -4421,7 +4426,8 @@ function getCurrentDevotionWeekNum() {
 
 const APP_URL = 'https://g4retreatapp.org';
 const API_BASE = 'https://g4-retreat-api.brieyasmom.workers.dev';
-const EMAIL_FROM = 'G4 Retreat <onboarding@resend.dev>';
+const EMAIL_FROM_NAME = 'Heather Wilson';
+const EMAIL_FROM_EMAIL = 'heather@heatherlynwilson.com';
 
 function devotionEmailHtml(firstName, devotion, userId) {
   const unsubUrl = userId ? API_BASE + '/api/email/unsubscribe?user_id=' + userId : '';
@@ -4472,15 +4478,20 @@ function secretSisterEmailHtml(firstName, sisterName, userId) {
 }
 
 async function sendEmail(env, to, subject, html) {
-  if (!env.RESEND_API_KEY) return;
+  if (!env.BREVO_API_KEY) return;
   try {
-    await fetch('https://api.resend.com/emails', {
+    await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + env.RESEND_API_KEY,
+        'api-key': env.BREVO_API_KEY,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ from: EMAIL_FROM, to: [to], subject, html })
+      body: JSON.stringify({
+        sender: { name: EMAIL_FROM_NAME, email: EMAIL_FROM_EMAIL },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html
+      })
     });
   } catch (e) { /* best-effort */ }
 }

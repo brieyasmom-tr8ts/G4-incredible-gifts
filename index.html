@@ -4829,7 +4829,7 @@
             try {
                 const data = await apiGet('/api/users/' + currentUser.id + '?owner=1');
                 if (data && !data.error) {
-                    const fields = ['photo_data', 'email', 'phone', 'birthday', 'anniversary', 'show_email', 'show_phone', 'show_birthday', 'show_anniversary', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about'];
+                    const fields = ['photo_data', 'email', 'phone', 'birthday', 'anniversary', 'show_email', 'show_phone', 'show_birthday', 'show_anniversary', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about', 'retreat_year', 'opted_in_2027'];
                     fields.forEach(f => { if (data[f] !== undefined) currentUser[f] = data[f]; });
                     saveUser(currentUser);
                     showWelcome();
@@ -11160,7 +11160,8 @@
             // The CSS transition is 0.6s; if we swap earlier the old image is
             // still partially visible and a portrait can ghost over a landscape.
             setTimeout(() => {
-                img.src = moment.photo_data;
+                var src = (moment.photo_data && moment.photo_data.startsWith('data:')) ? moment.photo_data : (moment.image_url || moment.photo_data || (API_URL + '/api/moments/' + moment.id + '/image'));
+                img.src = src;
                 caption.textContent = moment.caption || '';
                 img.style.opacity = '1';
             }, 650);

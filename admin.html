@@ -624,6 +624,7 @@
             <button class="nav-tab" data-section="topics"><span class="nav-icon">💡</span> Theme Ideas <span class="badge" id="count-topics">0</span></button>
             <button class="nav-tab" data-section="stories"><span class="nav-icon">✨</span> Stories <span class="badge" id="count-stories">0</span></button>
             <button class="nav-tab" data-section="polls"><span class="nav-icon">💬</span> Polls/Q&A <span class="badge" id="count-polls">0</span></button>
+            <button class="nav-tab" data-section="secretsister"><span class="nav-icon">💌</span> Secret Sister</button>
             <button class="nav-tab" data-section="games"><span class="nav-icon">🎮</span> Games</button>
             <button class="nav-tab" data-section="quiz"><span class="nav-icon">🧠</span> Quiz</button>
             <button class="nav-tab" data-section="meme"><span class="nav-icon">😂</span> Meme</button>
@@ -919,61 +920,7 @@
                 <div id="ai-wyr-suggestions" style="display:none;margin-bottom:1rem;"></div>
                 <div id="wyr-questions-list"></div>
             </div>
-            <!-- Secret Sister -->
-            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-                    <div>
-                        <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;">💌 Secret Sister Compliment Drop</div>
-                        <div style="font-size:0.85rem;color:var(--light-text);margin-top:4px;">Randomly assign sisters, they write anonymous encouraging notes to each other.</div>
-                    </div>
-                    <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;margin-left:1rem;">
-                        <input type="checkbox" id="toggle-secret-sister" style="opacity:0;width:0;height:0;" onchange="toggleGame('secret_sister', this.checked)">
-                        <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
-                    </label>
-                </div>
-                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
-                    <button class="btn btn-refresh" onclick="assignSecretSisters()">Assign Sisters</button>
-                    <button class="btn btn-refresh" onclick="loadSecretSisters()">Refresh</button>
-                    <button class="btn btn-danger-outline" onclick="clearSecretSisters()">Clear All</button>
-                    <button class="btn" style="background:var(--blush);color:white;" onclick="openTestLink('secretsister')">📋 Test Link</button>
-                </div>
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(201,144,138,0.08);border-radius:10px;margin-bottom:0.75rem;">
-                    <span style="font-size:0.9rem;color:var(--taupe);">Reveal notes to recipients</span>
-                    <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
-                        <input type="checkbox" id="toggle-ss-reveal" style="opacity:0;width:0;height:0;" onchange="toggleGame('secret_sister_reveal', this.checked)">
-                        <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
-                    </label>
-                </div>
-                <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.5rem;">Pairs: <strong id="ss-count">0</strong> | Notes written: <strong id="ss-notes-count">0</strong></div>
-                <div id="ss-pairs-list" style="margin-top:0.5rem;max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
-                <!-- Weekly Rotation (Post-Retreat) -->
-                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px dashed rgba(200,185,176,0.5);">
-                    <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;margin-bottom:0.35rem;">Weekly Rotation (Post-Retreat)</div>
-                    <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.75rem;">Auto-assigned every Wednesday 5am EDT starting April 15, 2026. Pairings are generated lazily the first time anyone opens the app after the rollover.</div>
-                    <div style="font-size:0.88rem;color:var(--taupe);margin-bottom:0.6rem;line-height:1.8;">
-                        Current round: <strong id="weekly-ss-round">—</strong> &nbsp;|&nbsp;
-                        Pairs: <strong id="weekly-ss-pair-count">—</strong> &nbsp;|&nbsp;
-                        Notes written: <strong id="weekly-ss-written-count">—</strong> &nbsp;|&nbsp;
-                        Opted out: <strong id="weekly-ss-optout-count">—</strong>
-                    </div>
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem;">
-                        <button class="btn btn-refresh" onclick="loadWeeklySSStatus()">Refresh</button>
-                        <button class="btn btn-refresh" onclick="forceWeeklySSRound()">Run This Week's Assignment Now</button>
-                    </div>
-                    <div id="weekly-ss-pair-list" style="max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
-                </div>
-                <!-- Participation Analytics -->
-                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px dashed rgba(200,185,176,0.5);">
-                    <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;margin-bottom:0.35rem;">Participation (metadata only)</div>
-                    <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.75rem;">Who has written, who has received, who's been overlooked. Tap "Send note" to drop an anonymous encouragement note on any woman\u2019s scrapbook — she\u2019ll see it as a normal secret sister note, never knowing it came from admin.</div>
-                    <div id="ss-participation-needs-note" style="margin-bottom:0.75rem;"></div>
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem;">
-                        <button class="btn btn-refresh" onclick="loadSSParticipation()">Refresh Participation</button>
-                    </div>
-                    <div id="ss-participation-list" style="max-height:480px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
-                </div>
-            </div>
-            <!-- Scavenger Hunt -->
+                        <!-- Scavenger Hunt -->
             <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
                 <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;">📸 Scavenger Hunt</div>
                 <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:0.75rem;">Photo scavenger hunt with voting. Hunt tab replaces Journey at 12:00 PM Friday.</div>
@@ -1140,7 +1087,67 @@
             <div id="email-blast-status" style="margin-top:8px;font-size:0.85rem;color:var(--sage);display:none;"></div>
         </div>
 
-        <!-- Budget & Payments (password-gated) -->
+        <!-- Secret Sister -->
+        <div class="section" id="section-secretsister">
+            <h2>Secret Sister Compliment Drop</h2>
+            <!-- Secret Sister -->
+            <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-top:1.25rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+                    <div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.1rem;font-weight:700;">💌 Secret Sister Compliment Drop</div>
+                        <div style="font-size:0.85rem;color:var(--light-text);margin-top:4px;">Randomly assign sisters, they write anonymous encouraging notes to each other.</div>
+                    </div>
+                    <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;margin-left:1rem;">
+                        <input type="checkbox" id="toggle-secret-sister" style="opacity:0;width:0;height:0;" onchange="toggleGame('secret_sister', this.checked)">
+                        <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                    </label>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+                    <button class="btn btn-refresh" onclick="assignSecretSisters()">Assign Sisters</button>
+                    <button class="btn btn-refresh" onclick="loadSecretSisters()">Refresh</button>
+                    <button class="btn btn-danger-outline" onclick="clearSecretSisters()">Clear All</button>
+                    <button class="btn" style="background:var(--blush);color:white;" onclick="openTestLink('secretsister')">📋 Test Link</button>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(201,144,138,0.08);border-radius:10px;margin-bottom:0.75rem;">
+                    <span style="font-size:0.9rem;color:var(--taupe);">Reveal notes to recipients</span>
+                    <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;">
+                        <input type="checkbox" id="toggle-ss-reveal" style="opacity:0;width:0;height:0;" onchange="toggleGame('secret_sister_reveal', this.checked)">
+                        <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                    </label>
+                </div>
+                <div style="font-size:0.9rem;color:var(--taupe);margin-bottom:0.5rem;">Pairs: <strong id="ss-count">0</strong> | Notes written: <strong id="ss-notes-count">0</strong></div>
+                <div id="ss-pairs-list" style="margin-top:0.5rem;max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
+                <!-- Weekly Rotation (Post-Retreat) -->
+                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px dashed rgba(200,185,176,0.5);">
+                    <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;margin-bottom:0.35rem;">Weekly Rotation (Post-Retreat)</div>
+                    <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.75rem;">Auto-assigned every Wednesday 5am EDT starting April 15, 2026. Pairings are generated lazily the first time anyone opens the app after the rollover.</div>
+                    <div style="font-size:0.88rem;color:var(--taupe);margin-bottom:0.6rem;line-height:1.8;">
+                        Current round: <strong id="weekly-ss-round">—</strong> &nbsp;|&nbsp;
+                        Pairs: <strong id="weekly-ss-pair-count">—</strong> &nbsp;|&nbsp;
+                        Notes written: <strong id="weekly-ss-written-count">—</strong> &nbsp;|&nbsp;
+                        Opted out: <strong id="weekly-ss-optout-count">—</strong>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem;">
+                        <button class="btn btn-refresh" onclick="loadWeeklySSStatus()">Refresh</button>
+                        <button class="btn btn-refresh" onclick="forceWeeklySSRound()">Run This Week's Assignment Now</button>
+                    </div>
+                    <div id="weekly-ss-pair-list" style="max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
+                </div>
+                <!-- Participation Analytics -->
+                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px dashed rgba(200,185,176,0.5);">
+                    <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;margin-bottom:0.35rem;">Participation (metadata only)</div>
+                    <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.75rem;">Who has written, who has received, who's been overlooked. Tap "Send note" to drop an anonymous encouragement note on any woman\u2019s scrapbook — she\u2019ll see it as a normal secret sister note, never knowing it came from admin.</div>
+                    <div id="ss-participation-needs-note" style="margin-bottom:0.75rem;"></div>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem;">
+                        <button class="btn btn-refresh" onclick="loadSSParticipation()">Refresh Participation</button>
+                    </div>
+                    <div id="ss-participation-list" style="max-height:480px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
+                </div>
+            </div>
+
+        </div>
+
+                <!-- Budget & Payments (password-gated) -->
         <div class="section" id="section-budget">
             <!-- Password gate: either "set password" (first run) or "enter password" -->
             <div id="budget-gate" style="max-width:440px;margin:3rem auto;padding:2rem;background:white;border-radius:14px;box-shadow:var(--shadow-md);text-align:center;">

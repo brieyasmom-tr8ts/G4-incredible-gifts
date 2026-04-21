@@ -7019,8 +7019,11 @@
             // devotion hub. Hardcoded off so existing '1' settings in the
             // DB get ignored without needing a migration.
             const NAV_FORCE_OFF = ['nav_secretsister', 'nav_journal'];
+            // Features that only apply to 2026 retreat attendees
+            const NAV_2026_ONLY = ['nav_whoami', 'nav_survey'];
             const navKeyEnabled = (key) => {
                 if (NAV_FORCE_OFF.indexOf(key) !== -1) return false;
+                if (NAV_2026_ONLY.indexOf(key) !== -1 && currentUser && (currentUser.retreat_year || 2026) >= 2027) return false;
                 if (navSettings[key] === '1') return true;
                 if (navSettings[key] === '0') return false;
                 return DEFAULT_NAV_ON.indexOf(key) !== -1;
@@ -11045,7 +11048,7 @@
             if (!el || el.classList.contains('revealed')) return;
             el.style.display = 'block';
             var mandy = document.getElementById('mandy-resources-card');
-            if (mandy) mandy.style.display = 'block';
+            if (mandy && !(currentUser && (currentUser.retreat_year || 2026) >= 2027)) mandy.style.display = 'block';
             // Trigger CSS fade-in on next frame
             requestAnimationFrame(function() {
                 requestAnimationFrame(function() {
@@ -11077,7 +11080,7 @@
                     loadRegistrationCard()
                 ]).catch(function(){});
 
-                if (!localStorage.getItem('g4feedback_sent')) {
+                if (!localStorage.getItem('g4feedback_sent') && !(currentUser && (currentUser.retreat_year || 2026) >= 2027)) {
                     setTimeout(function() {
                         if (!localStorage.getItem('g4feedback_sent')) {
                             showToast('Please take a moment to share your feedback \ud83d\udcdd');
@@ -11332,9 +11335,10 @@
         }
 
         function updateFeedbackUIState() {
+            const is2027 = currentUser && (currentUser.retreat_year || 2026) >= 2027;
             const submitted = !!localStorage.getItem('g4feedback_sent');
             const banner = document.getElementById('feedback-banner');
-            if (banner) banner.style.display = submitted ? 'none' : 'block';
+            if (banner) banner.style.display = (submitted || is2027) ? 'none' : 'block';
             // buildNav auto-shows the Survey button post-retreat until submitted
             if (typeof buildNav === 'function' && navBuilt) buildNav();
         }
@@ -12090,6 +12094,8 @@
         }
 
         function initFeedbackForm() {
+            // 2027+ users don't see the 2026 feedback survey
+            if (currentUser && (currentUser.retreat_year || 2026) >= 2027) return;
             // Wire banner button (always works, even after submit the button is gone)
             const bannerBtn = document.getElementById('feedback-banner-btn');
             if (bannerBtn && !bannerBtn.dataset.wired) {
@@ -12359,7 +12365,10 @@
             if (!btnContainer) return;
             const btnStyle = 'padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;';
             const s = gameSettings || {};
+            const HOME_2026_ONLY = ['home_whoami', 'home_survey'];
+            const is2027 = currentUser && (currentUser.retreat_year || 2026) >= 2027;
             const visible = HOME_BUTTONS_ALL.filter(b => {
+                if (HOME_2026_ONLY.indexOf(b.key) !== -1 && is2027) return false;
                 if (s[b.key] === '1') return true;
                 if (s[b.key] === '0') return false;
                 return DEFAULT_HOME_BUTTONS.indexOf(b.key) !== -1;

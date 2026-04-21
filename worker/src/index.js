@@ -96,33 +96,49 @@ async function ensureSSRoundExists(db, roundNumber) {
     return true;
   }
   // We won the lock. Fetch eligible users (opted in, have a real profile).
-  const { results: users } = await db.prepare(
-    `SELECT id, first_name, COALESCE(last_initial, '') AS last_initial
+  // Lazy migration for year columns
+  try { await db.prepare('ALTER TABLE users ADD COLUMN retreat_year INTEGER DEFAULT 2026').run(); } catch(e) {}
+  try { await db.prepare('ALTER TABLE users ADD COLUMN opted_in_2027 INTEGER DEFAULT 0').run(); } catch(e) {}
+
+  const { results: allUsers } = await db.prepare(
+    `SELECT id, first_name, COALESCE(last_initial, '') AS last_initial,
+            COALESCE(retreat_year, 2026) AS retreat_year,
+            COALESCE(opted_in_2027, 0) AS opted_in_2027
      FROM users
      WHERE COALESCE(secret_sister_opt_out, 0) = 0
        AND first_name IS NOT NULL AND first_name != ''
      ORDER BY id`
   ).all();
-  if (!users || users.length < 2) return false;
-  // Shuffle
-  const shuffled = [...users];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  // Cyclic pairings: giver[i] → receiver[(i+1) % n]. Guarantees no
-  // self-pairings and gives every woman exactly one giver and one receiver.
-  for (let i = 0; i < shuffled.length; i++) {
-    const giver = shuffled[i];
-    const receiver = shuffled[(i + 1) % shuffled.length];
-    const giverName = giver.last_initial ? `${giver.first_name} ${giver.last_initial}.` : giver.first_name;
-    const receiverName = receiver.last_initial ? `${receiver.first_name} ${receiver.last_initial}.` : receiver.first_name;
-    try {
-      await db.prepare(
-        'INSERT INTO secret_sister_pairings (round_number, giver_id, receiver_id, giver_name, receiver_name) VALUES (?, ?, ?, ?, ?)'
-      ).bind(roundNumber, giver.id, receiver.id, giverName, receiverName).run();
-    } catch (e) { /* concurrent insert lost race, ignore */ }
-  }
+  if (!allUsers || allUsers.length < 2) return false;
+
+  // Split into two pools:
+  // Pool 2026: retreat_year=2026 AND NOT opted_in_2027 (pure 2026)
+  // Pool 2027: retreat_year=2027 OR opted_in_2027=1 (new women + opted-in 2026)
+  const pool2026 = allUsers.filter(u => u.retreat_year === 2026 && !u.opted_in_2027);
+  const pool2027 = allUsers.filter(u => u.retreat_year === 2027 || u.opted_in_2027);
+
+  const createPairings = async (pool) => {
+    if (pool.length < 2) return;
+    const shuffled = [...pool];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    for (let i = 0; i < shuffled.length; i++) {
+      const giver = shuffled[i];
+      const receiver = shuffled[(i + 1) % shuffled.length];
+      const giverName = giver.last_initial ? `${giver.first_name} ${giver.last_initial}.` : giver.first_name;
+      const receiverName = receiver.last_initial ? `${receiver.first_name} ${receiver.last_initial}.` : receiver.first_name;
+      try {
+        await db.prepare(
+          'INSERT INTO secret_sister_pairings (round_number, giver_id, receiver_id, giver_name, receiver_name) VALUES (?, ?, ?, ?, ?)'
+        ).bind(roundNumber, giver.id, receiver.id, giverName, receiverName).run();
+      } catch (e) {}
+    }
+  };
+
+  await createPairings(pool2026);
+  await createPairings(pool2027);
   return true;
 }
 
@@ -561,7 +577,11 @@ export default {
 
       // POST /api/users - create or retrieve user
       if (path === '/api/users' && request.method === 'POST') {
-        const { first_name, last_initial, last_name, attendee_id } = await request.json();
+        // Lazy migration for year columns
+        try { await env.DB.prepare('ALTER TABLE users ADD COLUMN retreat_year INTEGER DEFAULT 2026').run(); } catch(e) {}
+        try { await env.DB.prepare('ALTER TABLE users ADD COLUMN opted_in_2027 INTEGER DEFAULT 0').run(); } catch(e) {}
+
+        const { first_name, last_initial, last_name, attendee_id, email, retreat_year } = await request.json();
 
         if (!first_name || !first_name.trim()) {
           return json({ error: 'First name is required' }, corsHeaders, 400);
@@ -573,10 +593,11 @@ export default {
         const cleanLastName = (last_name || '').trim();
         const cleanInitial = cleanLastName ? cleanLastName.charAt(0).toUpperCase() : (last_initial || '').trim().charAt(0).toUpperCase();
         const displayName = cleanInitial ? `${cleanName} ${cleanInitial}.` : cleanName;
+        const year = parseInt(retreat_year) || 2026;
 
         // Check for existing user — case-insensitive match
         const existing = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, last_name FROM users WHERE LOWER(first_name) = LOWER(?) AND UPPER(last_initial) = UPPER(?)'
+          'SELECT id, first_name, last_initial, last_name, retreat_year FROM users WHERE LOWER(first_name) = LOWER(?) AND UPPER(last_initial) = UPPER(?)'
         ).bind(cleanName, cleanInitial).first();
 
         if (existing) {
@@ -584,18 +605,23 @@ export default {
           if (cleanLastName && !existing.last_name) {
             await env.DB.prepare('UPDATE users SET last_name = ? WHERE id = ?').bind(cleanLastName, existing.id).run();
           }
+          // Update email if provided
+          if (email && email.trim()) {
+            await env.DB.prepare('UPDATE users SET email = ? WHERE id = ?').bind(email.trim(), existing.id).run();
+          }
           return json({
             id: existing.id,
             first_name: existing.first_name,
             last_initial: existing.last_initial,
             display_name: existing.last_initial ? `${existing.first_name} ${existing.last_initial}.` : existing.first_name,
+            retreat_year: existing.retreat_year || 2026,
             returning: true
           }, corsHeaders);
         }
 
         const result = await env.DB.prepare(
-          'INSERT INTO users (first_name, last_initial, last_name, attendee_id) VALUES (?, ?, ?, ?)'
-        ).bind(cleanName, cleanInitial, cleanLastName, attendee_id || null).run();
+          'INSERT INTO users (first_name, last_initial, last_name, attendee_id, email, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(cleanName, cleanInitial, cleanLastName, attendee_id || null, (email || '').trim() || null, year).run();
 
         const userId = result.meta.last_row_id;
 
@@ -603,7 +629,8 @@ export default {
           id: userId,
           first_name: cleanName,
           last_initial: cleanInitial,
-          display_name: displayName
+          display_name: displayName,
+          retreat_year: year
         }, corsHeaders);
       }
 
@@ -737,6 +764,8 @@ export default {
           is_team: user.is_team || 0,
           is_speaker: user.is_speaker || 0,
           secret_sister_opt_out: user.secret_sister_opt_out || 0,
+          retreat_year: user.retreat_year || 2026,
+          opted_in_2027: user.opted_in_2027 || 0,
           created_at: user.created_at
         }, corsHeaders);
       }
@@ -747,16 +776,18 @@ export default {
         const userId = parseInt(profileMatch[1]);
         const body = await request.json();
 
-        // Lazy migration: ensure anniversary + weekly SS opt-out columns exist
+        // Lazy migration: ensure new columns exist
         for (const col of [
           ['anniversary', 'TEXT DEFAULT ""'],
           ['show_anniversary', 'INTEGER DEFAULT 0'],
           ['secret_sister_opt_out', 'INTEGER DEFAULT 0'],
-          ['email_unsubscribed', 'INTEGER DEFAULT 0']
+          ['email_unsubscribed', 'INTEGER DEFAULT 0'],
+          ['retreat_year', 'INTEGER DEFAULT 2026'],
+          ['opted_in_2027', 'INTEGER DEFAULT 0']
         ]) {
           try { await env.DB.prepare(`ALTER TABLE users ADD COLUMN ${col[0]} ${col[1]}`).run(); } catch(e) { /* exists */ }
         }
-        const allowed = ['email', 'phone', 'birthday', 'anniversary', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'show_anniversary', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about', 'secret_sister_opt_out'];
+        const allowed = ['email', 'phone', 'birthday', 'anniversary', 'photo_data', 'show_email', 'show_phone', 'show_birthday', 'show_anniversary', 'show_about', 'instagram', 'facebook', 'location', 'job', 'church', 'retreat_years', 'about', 'secret_sister_opt_out', 'opted_in_2027'];
         const fields = [];
         const values = [];
         for (const key of allowed) {

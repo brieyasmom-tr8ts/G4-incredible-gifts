@@ -2183,12 +2183,20 @@ export default {
         const optOut = await env.DB.prepare(
           "SELECT COUNT(*) AS c FROM users WHERE COALESCE(secret_sister_opt_out, 0) = 1"
         ).first();
+        let optedOutNames = [];
+        try {
+          const { results: oon } = await env.DB.prepare(
+            "SELECT first_name, last_initial FROM users WHERE COALESCE(secret_sister_opt_out, 0) = 1 ORDER BY first_name"
+          ).all();
+          optedOutNames = (oon || []).map(u => (u.first_name || '') + (u.last_initial ? ' ' + u.last_initial + '.' : ''));
+        } catch(e) {}
         return json({
           round,
           starts_at: new Date(SS_ANCHOR_UTC_MS).toISOString(),
           pair_count: pairs ? pairs.length : 0,
           written_count: writtenCount,
           opted_out_count: optOut ? optOut.c : 0,
+          opted_out_names: optedOutNames,
           pairs: pairs || []
         }, corsHeaders);
       }

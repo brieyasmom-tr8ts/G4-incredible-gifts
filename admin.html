@@ -3284,7 +3284,28 @@ async function loadWeeklySSStatus() {
         document.getElementById('weekly-ss-round').textContent = data.round === 0 ? 'Not started' : data.round;
         document.getElementById('weekly-ss-pair-count').textContent = data.pair_count != null ? data.pair_count : 0;
         document.getElementById('weekly-ss-written-count').textContent = data.written_count != null ? data.written_count : 0;
-        document.getElementById('weekly-ss-optout-count').textContent = data.opted_out_count != null ? data.opted_out_count : 0;
+        const optCount = data.opted_out_count != null ? data.opted_out_count : 0;
+        const optNames = Array.isArray(data.opted_out_names) ? data.opted_out_names : [];
+        const optEl = document.getElementById('weekly-ss-optout-count');
+        optEl.textContent = optCount;
+        if (optNames.length) {
+            optEl.title = optNames.join(', ');
+            optEl.style.cursor = 'help';
+            optEl.style.textDecoration = 'underline dotted';
+        }
+        // Show opted-out names list
+        let optListEl = document.getElementById('weekly-ss-optout-names');
+        if (!optListEl) {
+            optListEl = document.createElement('div');
+            optListEl.id = 'weekly-ss-optout-names';
+            optListEl.style.cssText = 'font-size:0.82rem;color:var(--light-text);margin-top:4px;margin-bottom:8px;';
+            optEl.closest('div').after(optListEl);
+        }
+        if (optNames.length) {
+            optListEl.innerHTML = '<span style="font-weight:600;color:var(--taupe);">Opted out:</span> ' + optNames.map(n => esc(n)).join(', ');
+        } else {
+            optListEl.innerHTML = '';
+        }
         const list = document.getElementById('weekly-ss-pair-list');
         const pairs = Array.isArray(data.pairs) ? data.pairs : [];
         if (!pairs.length) {

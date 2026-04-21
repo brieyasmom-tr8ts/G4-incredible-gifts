@@ -198,6 +198,11 @@ export default {
     // should be configured in the dashboard.
 
     try {
+      // Ensure 2027 columns exist on every request (cheap no-op once created)
+      try { await env.DB.prepare('ALTER TABLE users ADD COLUMN retreat_year INTEGER DEFAULT 2026').run(); } catch(e) {}
+      try { await env.DB.prepare('ALTER TABLE users ADD COLUMN opted_in_2027 INTEGER DEFAULT 0').run(); } catch(e) {}
+      try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
+
       // ===== DB MIGRATION (one-time) =====
       if (path === '/api/admin/migrate' && request.method === 'POST') {
         const authErr = requireAdmin(request);
@@ -577,9 +582,6 @@ export default {
 
       // POST /api/users - create or retrieve user
       if (path === '/api/users' && request.method === 'POST') {
-        // Lazy migration for year columns
-        try { await env.DB.prepare('ALTER TABLE users ADD COLUMN retreat_year INTEGER DEFAULT 2026').run(); } catch(e) {}
-        try { await env.DB.prepare('ALTER TABLE users ADD COLUMN opted_in_2027 INTEGER DEFAULT 0').run(); } catch(e) {}
 
         const { first_name, last_initial, last_name, attendee_id, email, retreat_year } = await request.json();
 
@@ -734,7 +736,7 @@ export default {
           ).bind(userId).first();
         } catch (e) {
           user = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, email, phone, birthday, anniversary, show_anniversary, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, retreat_year, opted_in_2027, created_at FROM users WHERE id = ?'
+            'SELECT id, first_name, last_initial, email, phone, birthday, anniversary, show_anniversary, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, created_at FROM users WHERE id = ?'
           ).bind(userId).first();
         }
         if (!user) return json({ error: 'User not found' }, corsHeaders, 404);

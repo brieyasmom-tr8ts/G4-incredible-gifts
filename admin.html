@@ -1121,6 +1121,9 @@
 
             <h3 style="margin-top:2rem;">Send a Custom Email</h3>
             <p style="color:var(--light-text);font-size:0.85rem;margin-bottom:0.75rem;">Write a personal message to all sisters. Each email is personalized with her first name.</p>
+            <div style="margin-bottom:12px;">
+                <button class="btn btn-refresh" onclick="loadEmailTemplate()">Load "What's New" Template</button>
+            </div>
             <div style="display:flex;flex-direction:column;gap:10px;max-width:520px;">
                 <div>
                     <label style="font-size:0.78rem;font-weight:600;color:var(--taupe);display:block;margin-bottom:4px;">Subject line</label>
@@ -4260,6 +4263,14 @@ async function sendBlastEmail(type) {
         status.textContent = 'Failed: ' + e.message;
         status.style.color = 'var(--accent)';
     }
+}
+
+function loadEmailTemplate() {
+    document.getElementById('custom-email-subject').value = "New things are happening in the G4 app";
+    document.getElementById('custom-email-message').value = "Remember that little app from the retreat? It's still going and it's been getting some love.\n\nYour weekly devotion is waiting. Every Monday a new gift lands with a personal letter, scripture, and reflection prompts. Open it up and spend a few quiet minutes with it.\n\nResources from Mandy. She put together a list of books, podcasts, apps, and every scripture she referenced at the retreat. All in one spot, easy to tap through.\n\nSecret Sister is still going. Every Wednesday you get a new sister to encourage anonymously. Have you been checking yours?\n\nStay Connected for 2027. New women are starting to join the app. Tap \"Count Me In\" on your home page if you want to welcome them into the community and be part of their Secret Sister rotation.\n\nWe'd love to hear from you. If you haven't filled out the retreat feedback survey yet, it takes about 2 minutes and helps us make next year even better.\n\nWe miss your face. Open the app when you get a minute.\n\nLove,\nHeather";
+    document.getElementById('custom-email-btn-text').value = "Open the App";
+    document.getElementById('custom-email-btn-url').value = "https://g4retreatapp.org";
+    showToast('Template loaded — preview it first, then send!');
 }
 
 async function sendCustomEmail(toEveryone) {

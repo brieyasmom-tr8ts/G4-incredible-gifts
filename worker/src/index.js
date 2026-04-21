@@ -398,8 +398,8 @@ export default {
         }
         return new Response(
           '<html><body style="font-family:Georgia,serif;text-align:center;padding:60px 20px;color:#3a3632;">' +
-          '<h2>You've been unsubscribed</h2>' +
-          '<p style="color:#8b8680;">You won't receive any more weekly emails from G4. You can still use the app anytime.</p>' +
+          "<h2>You've been unsubscribed</h2>" +
+          "<p style=\"color:#8b8680;\">You won't receive any more weekly emails from G4. You can still use the app anytime.</p>" +
           '<p><a href="https://g4retreatapp.org" style="color:#8a9e7a;">Back to G4</a></p></body></html>',
           { headers: { ...corsHeaders, 'Content-Type': 'text/html' } }
         );

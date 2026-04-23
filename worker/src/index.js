@@ -4534,13 +4534,19 @@ Just the JSON array, nothing else.`;
   async scheduled(event, env, ctx) {
     const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
     const dayOfWeek = etNow.getDay(); // 0=Sun, 1=Mon, 3=Wed
+    console.log('[cron] scheduled run', { cron: event.cron, etDay: dayOfWeek, hasBrevoKey: !!env.BREVO_API_KEY });
 
-    if (dayOfWeek === 1) {
-      // Monday — devotion email
-      await sendDevotionEmail(env);
-    } else if (dayOfWeek === 3) {
-      // Wednesday — secret sister email
-      await sendSecretSisterEmail(env);
+    try {
+      if (dayOfWeek === 1) {
+        await sendDevotionEmail(env);
+      } else if (dayOfWeek === 3) {
+        await sendSecretSisterEmail(env);
+      } else {
+        console.log('[cron] no job for day', dayOfWeek);
+      }
+    } catch (e) {
+      console.error('[cron] scheduled run failed', e && e.stack || e);
+      throw e;
     }
   }
 };
@@ -4651,9 +4657,12 @@ function customEmailHtml(firstName, message, buttonText, buttonUrl, userId) {
 }
 
 async function sendEmail(env, to, subject, html) {
-  if (!env.BREVO_API_KEY) return;
+  if (!env.BREVO_API_KEY) {
+    console.error('[email] BREVO_API_KEY not set, skipping send to', to);
+    return false;
+  }
   try {
-    await fetch('https://api.brevo.com/v3/smtp/email', {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
         'api-key': env.BREVO_API_KEY,
@@ -4666,14 +4675,29 @@ async function sendEmail(env, to, subject, html) {
         htmlContent: html
       })
     });
-  } catch (e) { /* best-effort */ }
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      console.error('[email] Brevo rejected send', { to, status: res.status, body: body.slice(0, 500) });
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[email] fetch threw', { to, err: e && e.message || String(e) });
+    return false;
+  }
 }
 
 async function sendDevotionEmail(env) {
   const weekNum = getCurrentDevotionWeekNum();
-  if (weekNum === 0) return;
+  if (weekNum === 0) {
+    console.log('[devotion-email] before start date, skipping');
+    return;
+  }
   const devotion = DEVOTION_WEEKS.find(d => d.week === weekNum);
-  if (!devotion) return;
+  if (!devotion) {
+    console.error('[devotion-email] no devotion for week', weekNum);
+    return;
+  }
 
   try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
   let users = [];
@@ -4682,20 +4706,30 @@ async function sendDevotionEmail(env) {
       "SELECT id, first_name, email FROM users WHERE email IS NOT NULL AND email != '' AND TRIM(email) != '' AND COALESCE(email_unsubscribed, 0) = 0"
     ).all();
     users = results || [];
-  } catch (e) { return; }
-
-  const subject = "This Week's Gift: " + devotion.gift + ' · Week ' + weekNum;
-  for (const user of users) {
-    await sendEmail(env, user.email.trim(), subject, devotionEmailHtml(user.first_name, devotion, user.id));
+  } catch (e) {
+    console.error('[devotion-email] user query failed', e && e.message || String(e));
+    return;
   }
+
+  console.log('[devotion-email] sending', { week: weekNum, gift: devotion.gift, recipients: users.length });
+  const subject = "This Week's Gift: " + devotion.gift + ' · Week ' + weekNum;
+  let sent = 0, failed = 0;
+  for (const user of users) {
+    const ok = await sendEmail(env, user.email.trim(), subject, devotionEmailHtml(user.first_name, devotion, user.id));
+    if (ok) sent++; else failed++;
+  }
+  console.log('[devotion-email] done', { sent, failed });
 }
 
 async function sendSecretSisterEmail(env) {
   const round = getCurrentSSRound();
-  if (round === 0) return;
+  if (round === 0) {
+    console.log('[ss-email] before anchor date, skipping');
+    return;
+  }
 
   await ensureWeeklySSTable(env.DB);
-  await ensureRoundPairings(env.DB, round);
+  await ensureSSRoundExists(env.DB, round);
 
   let pairs = [];
   try {
@@ -4703,11 +4737,15 @@ async function sendSecretSisterEmail(env) {
       'SELECT giver_id, giver_name, receiver_name FROM secret_sister_pairings WHERE round_number = ?'
     ).bind(round).all();
     pairs = results || [];
-  } catch (e) { return; }
+  } catch (e) {
+    console.error('[ss-email] pairings query failed', e && e.message || String(e));
+    return;
+  }
 
-  // Get emails for all givers
-  const giverIds = pairs.map(p => p.giver_id);
-  if (!giverIds.length) return;
+  if (!pairs.length) {
+    console.error('[ss-email] no pairings for round', round);
+    return;
+  }
 
   try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
   let userEmails = {};
@@ -4716,14 +4754,21 @@ async function sendSecretSisterEmail(env) {
       "SELECT id, first_name, email, COALESCE(secret_sister_opt_out, 0) as ss_opt_out FROM users WHERE email IS NOT NULL AND email != '' AND COALESCE(email_unsubscribed, 0) = 0"
     ).all();
     (results || []).forEach(u => { userEmails[u.id] = { email: u.email.trim(), first_name: u.first_name, ss_opt_out: u.ss_opt_out }; });
-  } catch (e) { return; }
+  } catch (e) {
+    console.error('[ss-email] user email query failed', e && e.message || String(e));
+    return;
+  }
 
+  console.log('[ss-email] sending', { round, pairs: pairs.length, usersWithEmail: Object.keys(userEmails).length });
+  let sent = 0, failed = 0, skipped = 0;
   for (const pair of pairs) {
     const user = userEmails[pair.giver_id];
-    if (!user || !user.email || user.ss_opt_out) continue;
+    if (!user || !user.email || user.ss_opt_out) { skipped++; continue; }
     const subject = 'Your Secret Sister This Week 💌';
-    await sendEmail(env, user.email, subject, secretSisterEmailHtml(user.first_name, pair.receiver_name, pair.giver_id));
+    const ok = await sendEmail(env, user.email, subject, secretSisterEmailHtml(user.first_name, pair.receiver_name, pair.giver_id));
+    if (ok) sent++; else failed++;
   }
+  console.log('[ss-email] done', { sent, failed, skipped });
 }
 
 function json(data, corsHeaders, status = 200) {

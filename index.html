@@ -4292,7 +4292,7 @@
             </div>
         </div>
 
-        <div class="bottom-nav" id="bottom-nav"></div>
+        <div class="bottom-nav" id="bottom-nav" style="visibility:hidden;"></div>
     </div>
 
     <!-- Welcome Setup Modal -->
@@ -7147,6 +7147,23 @@
             }
         }
 
+        const NAV_SETTINGS_CACHE_KEY = 'g4_nav_settings_v1';
+        function revealBottomNav() {
+            var el = document.getElementById('bottom-nav');
+            if (el) el.style.visibility = 'visible';
+        }
+        function saveNavSettingsCache(settings) {
+            try { localStorage.setItem(NAV_SETTINGS_CACHE_KEY, JSON.stringify(settings)); } catch(e) {}
+        }
+        function readNavSettingsCache() {
+            try {
+                var raw = localStorage.getItem(NAV_SETTINGS_CACHE_KEY);
+                if (!raw) return null;
+                var parsed = JSON.parse(raw);
+                return (parsed && typeof parsed === 'object') ? parsed : null;
+            } catch(e) { return null; }
+        }
+
         async function loadNavSettings() {
             try {
                 const settings = await apiGet('/api/games/settings');
@@ -7154,7 +7171,9 @@
                     navSettings = settings;
                     gameSettings = settings;
                     _lastNavJson = JSON.stringify(settings);
+                    saveNavSettingsCache(settings);
                     buildNav();
+                    revealBottomNav();
                     // Rebuild home buttons if dashboard is visible
                     if (document.getElementById('retreat-dashboard') && document.getElementById('retreat-dashboard').style.display !== 'none') {
                         loadDashboard();
@@ -7174,16 +7193,28 @@
                 revealPostRetreatHome();
             } catch(e) {
                 console.error('Failed to load nav settings:', e);
-                navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1', nav_gratitude: '1', nav_sendlove: '1' };
-                buildNav();
+                // Only fall back to hardcoded defaults if we didn't already
+                // render from cache — otherwise we'd wipe the correct cached
+                // nav with a wrong default set on flaky networks.
+                if (!readNavSettingsCache()) {
+                    navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1', nav_gratitude: '1', nav_sendlove: '1' };
+                    buildNav();
+                }
+                revealBottomNav();
                 revealPostRetreatHome();
             }
         }
 
         function initTabs() {
-            // Build default nav first (will be updated when settings load)
-            navSettings = { nav_moments: '1', nav_connect: '1', nav_journey: '1', nav_journal: '1', nav_photobooth: '1', nav_gratitude: '1', nav_sendlove: '1' };
-            buildNav();
+            // Render immediately from cached settings so repeat visits don't
+            // flash a default nav before the server responds. First-time
+            // visitors leave the nav hidden until loadNavSettings resolves.
+            const cached = readNavSettingsCache();
+            if (cached) {
+                navSettings = cached;
+                buildNav();
+                revealBottomNav();
+            }
         }
 
         function buildSchedule() {
@@ -9937,7 +9968,9 @@
                         _lastNavJson = j;
                         navSettings = s;
                         gameSettings = s;
+                        saveNavSettingsCache(s);
                         buildNav();
+                        revealBottomNav();
                         if (typeof renderHomeButtonsInto === 'function' && document.getElementById('post-retreat-buttons')) {
                             renderHomeButtonsInto('post-retreat-buttons');
                         }

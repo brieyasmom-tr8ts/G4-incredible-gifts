@@ -4532,17 +4532,19 @@ Just the JSON array, nothing else.`;
   // Monday 5 AM EDT: weekly devotion email
   // Wednesday 5 AM EDT: secret sister reminder email
   async scheduled(event, env, ctx) {
-    const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    const dayOfWeek = etNow.getDay(); // 0=Sun, 1=Mon, 3=Wed
-    console.log('[cron] scheduled run', { cron: event.cron, etDay: dayOfWeek, hasBrevoKey: !!env.BREVO_API_KEY });
+    // Use the cron expression to decide what to send — don't rely on
+    // toLocaleString timezone conversion which can be flaky in Workers.
+    const isMondayCron = event.cron === '0 9 * * 1';
+    const isWednesdayCron = event.cron === '0 9 * * 3';
+    console.log('[cron] scheduled run', { cron: event.cron, isMondayCron, isWednesdayCron, hasBrevoKey: !!env.BREVO_API_KEY });
 
     try {
-      if (dayOfWeek === 1) {
+      if (isMondayCron) {
         await sendDevotionEmail(env);
-      } else if (dayOfWeek === 3) {
+      } else if (isWednesdayCron) {
         await sendSecretSisterEmail(env);
       } else {
-        console.log('[cron] no job for day', dayOfWeek);
+        console.log('[cron] unrecognized cron expression', event.cron);
       }
     } catch (e) {
       console.error('[cron] scheduled run failed', e && e.stack || e);

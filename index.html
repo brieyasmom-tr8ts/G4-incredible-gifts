@@ -14306,25 +14306,66 @@
                     cloud.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--light-text);font-family:Cormorant Garamond,serif;font-size:1rem;font-style:italic;">Be the first to share what you\u2019re grateful for!</div>';
                     return;
                 }
+
+                // Merge duplicate phrases (case-insensitive, whitespace-normalized)
+                // so the more sisters write the same thing the bigger the word
+                // grows. Dedupe within a phrase by user_id (or name) so one
+                // person tapping Send twice doesn't inflate the size.
+                const groups = new Map();
+                gratitudeEntries.forEach(entry => {
+                    const raw = (entry.text || '').trim();
+                    const norm = raw.toLowerCase().replace(/\s+/g, ' ');
+                    if (!norm) return;
+                    let g = groups.get(norm);
+                    if (!g) {
+                        g = { display: raw, seen: new Set(), names: [], latest: entry.created_at };
+                        groups.set(norm, g);
+                    }
+                    const key = entry.user_id ? 'u:' + entry.user_id : 'n:' + (entry.name || 'Anonymous');
+                    if (!g.seen.has(key)) {
+                        g.seen.add(key);
+                        g.names.push(entry.name || 'Anonymous');
+                    }
+                    if ((entry.created_at || '') > (g.latest || '')) g.latest = entry.created_at;
+                });
+
+                const grouped = Array.from(groups.values()).sort((a, b) => {
+                    if (b.names.length !== a.names.length) return b.names.length - a.names.length;
+                    return (b.latest || '').localeCompare(a.latest || '');
+                });
+
                 const countEl = document.getElementById('gratitude-count');
                 countEl.textContent = gratitudeEntries.length + (gratitudeEntries.length === 1 ? ' grateful heart' : ' grateful hearts');
 
-                gratitudeEntries.forEach((entry, i) => {
+                grouped.forEach((entry, i) => {
                     const span = document.createElement('span');
                     span.className = 'gratitude-word';
-                    span.textContent = entry.text;
-                    const color = CLOUD_COLORS[(i * 3 + entry.text.length) % CLOUD_COLORS.length];
-                    const size = SIZES[(i * 7 + entry.text.length * 3) % SIZES.length];
+                    span.textContent = entry.display;
+                    const count = entry.names.length;
+                    const color = CLOUD_COLORS[(i * 3 + entry.display.length) % CLOUD_COLORS.length];
+                    // Log-scaled size \u2014 count 1 stays readable, first duplicate
+                    // gives a clear bump, very popular phrases dominate.
+                    const fontRem = Math.min(2.4, 0.95 + Math.log2(count) * 0.4);
+                    const padV = Math.max(5, Math.round(fontRem * 5));
+                    const padH = Math.max(12, Math.round(fontRem * 13));
                     span.style.background = color.bg;
                     span.style.color = color.fg;
-                    span.style.fontSize = size.font;
-                    span.style.padding = size.pad;
-                    // Gentle rotation
-                    const rotation = ((i * 13 + entry.text.length * 7) % 11) - 5;
+                    span.style.fontSize = fontRem.toFixed(2) + 'rem';
+                    span.style.padding = padV + 'px ' + padH + 'px';
+                    const rotation = ((i * 13 + entry.display.length * 7) % 11) - 5;
                     span.style.transform = 'rotate(' + rotation + 'deg)';
                     span.style.animationDelay = (i * 0.06) + 's';
                     span.addEventListener('click', () => {
-                        showGratTooltip(entry.name + ' \u00b7 ' + new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                        if (count === 1) {
+                            showGratTooltip(entry.names[0] + ' \u00b7 ' + new Date(entry.latest).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                        } else if (count === 2) {
+                            showGratTooltip(entry.names[0] + ' & ' + entry.names[1]);
+                        } else if (count <= 4) {
+                            showGratTooltip(entry.names.slice(0, -1).join(', ') + ' & ' + entry.names[count - 1]);
+                        } else {
+                            const others = count - 2;
+                            showGratTooltip(entry.names[0] + ', ' + entry.names[1] + ' + ' + others + ' more');
+                        }
                     });
                     cloud.appendChild(span);
                 });

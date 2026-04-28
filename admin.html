@@ -4169,11 +4169,13 @@ async function loadAnalytics() {
             const maxC = Math.max(...daily.map(d => d.c), 1);
             chart.innerHTML = daily.map(d => {
                 const pct = Math.max(8, (d.c / maxC) * 100);
-                const dayLabel = new Date(d.day + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' });
-                return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;" title="' + dayLabel + ': ' + d.c + ' users">' +
+                const dt = new Date(d.day + 'T12:00:00');
+                const weekday = dt.toLocaleDateString('en-US', { weekday: 'short' });
+                const dateStr = (dt.getMonth()+1) + '/' + dt.getDate();
+                return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;" title="' + weekday + ' ' + dateStr + ': ' + d.c + ' users">' +
                     '<div style="font-size:0.65rem;color:var(--taupe);font-weight:600;">' + d.c + '</div>' +
                     '<div style="width:100%;max-width:32px;height:' + pct + '%;background:linear-gradient(to top,var(--sage),rgba(138,158,122,0.5));border-radius:4px 4px 0 0;min-height:4px;"></div>' +
-                    '<div style="font-size:0.58rem;color:var(--light-text);white-space:nowrap;">' + dayLabel.split(',')[0] + '</div>' +
+                    '<div style="font-size:0.58rem;color:var(--light-text);white-space:nowrap;text-align:center;line-height:1.2;">' + weekday + '<br>' + dateStr + '</div>' +
                 '</div>';
             }).join('');
         } else {
@@ -4196,7 +4198,7 @@ async function loadAnalytics() {
         const logins = Array.isArray(data.recent_logins) ? data.recent_logins : [];
         if (logins.length) {
             recent.innerHTML = logins.map(u => {
-                const when = u.last_seen ? new Date(u.last_seen).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+                const when = u.last_seen ? new Date(u.last_seen + 'Z').toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
                 return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(138,158,122,0.04);border-radius:8px;font-size:0.85rem;">' +
                     '<span style="font-weight:600;color:var(--dark-text);">' + esc(u.name || 'Unknown') + '</span>' +
                     '<span style="color:var(--light-text);font-size:0.75rem;">' + when + '</span>' +

@@ -2910,42 +2910,47 @@ export default {
       }
 
       // GET /api/admin/analytics — usage stats dashboard
+      // All timestamps in user_activity are UTC. We shift to Eastern (UTC-4
+      // during EDT, which covers April–July) in SQL so "today" and "this week"
+      // align with what the women actually experience.
       if (path === '/api/admin/analytics' && request.method === 'GET') {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
         await ensureActivityTable();
         try {
-          const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-          const todayStr = etNow.getFullYear() + '-' + String(etNow.getMonth()+1).padStart(2,'0') + '-' + String(etNow.getDate()).padStart(2,'0');
-          const weekAgo = new Date(etNow); weekAgo.setDate(weekAgo.getDate() - 7);
-          const weekStr = weekAgo.getFullYear() + '-' + String(weekAgo.getMonth()+1).padStart(2,'0') + '-' + String(weekAgo.getDate()).padStart(2,'0');
+          // Eastern = UTC-4 during EDT (covers the entire retreat season)
+          const ET = "datetime(created_at, '-4 hours')";
+          const etNow = new Date(Date.now() - 4 * 60 * 60 * 1000);
+          const todayStr = etNow.toISOString().slice(0, 10);
+          const weekAgo = new Date(etNow - 7 * 24 * 60 * 60 * 1000);
+          const weekStr = weekAgo.toISOString().slice(0, 10);
 
-          const [totalUsers, loginsToday, loginsWeek, uniqueToday, uniqueWeek, tabViews, recentLogins] = await Promise.all([
+          const [totalUsers, loginsToday, loginsWeek, uniqueToday, uniqueWeek, tabViews, recentLogins] = await Promise.allSettled([
             env.DB.prepare('SELECT COUNT(*) as c FROM users').first(),
-            env.DB.prepare("SELECT COUNT(*) as c FROM user_activity WHERE action = 'login' AND created_at >= ?").bind(todayStr).first(),
-            env.DB.prepare("SELECT COUNT(*) as c FROM user_activity WHERE action = 'login' AND created_at >= ?").bind(weekStr).first(),
-            env.DB.prepare("SELECT COUNT(DISTINCT user_id) as c FROM user_activity WHERE action = 'login' AND created_at >= ?").bind(todayStr).first(),
-            env.DB.prepare("SELECT COUNT(DISTINCT user_id) as c FROM user_activity WHERE action = 'login' AND created_at >= ?").bind(weekStr).first(),
-            env.DB.prepare("SELECT detail, COUNT(*) as c FROM user_activity WHERE action = 'tab' AND created_at >= ? GROUP BY detail ORDER BY c DESC LIMIT 15").bind(weekStr).all(),
+            env.DB.prepare("SELECT COUNT(*) as c FROM user_activity WHERE action = 'login' AND " + ET + " >= ?").bind(todayStr).first(),
+            env.DB.prepare("SELECT COUNT(*) as c FROM user_activity WHERE action = 'login' AND " + ET + " >= ?").bind(weekStr).first(),
+            env.DB.prepare("SELECT COUNT(DISTINCT user_id) as c FROM user_activity WHERE action = 'login' AND " + ET + " >= ?").bind(todayStr).first(),
+            env.DB.prepare("SELECT COUNT(DISTINCT user_id) as c FROM user_activity WHERE action = 'login' AND " + ET + " >= ?").bind(weekStr).first(),
+            env.DB.prepare("SELECT detail, COUNT(*) as c FROM user_activity WHERE action = 'tab' AND " + ET + " >= ? GROUP BY detail ORDER BY c DESC LIMIT 15").bind(weekStr).all(),
             env.DB.prepare("SELECT name, MAX(created_at) as last_seen FROM user_activity WHERE action = 'login' AND user_id IS NOT NULL GROUP BY user_id ORDER BY last_seen DESC LIMIT 30").all()
           ]);
 
-          // Daily login counts for the past 14 days
-          const twoWeeksAgo = new Date(etNow); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-          const twoWeekStr = twoWeeksAgo.getFullYear() + '-' + String(twoWeeksAgo.getMonth()+1).padStart(2,'0') + '-' + String(twoWeeksAgo.getDate()).padStart(2,'0');
-          const { results: dailyRaw } = await env.DB.prepare(
-            "SELECT DATE(created_at) as day, COUNT(DISTINCT user_id) as c FROM user_activity WHERE action = 'login' AND created_at >= ? GROUP BY DATE(created_at) ORDER BY day"
-          ).bind(twoWeekStr).all();
+          // Daily unique users for the past 14 days (shifted to Eastern)
+          const twoWeekStr = new Date(etNow - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+          const dailyResult = await env.DB.prepare(
+            "SELECT DATE(" + ET + ") as day, COUNT(DISTINCT user_id) as c FROM user_activity WHERE action = 'login' AND " + ET + " >= ? GROUP BY DATE(" + ET + ") ORDER BY day"
+          ).bind(twoWeekStr).all().catch(() => ({ results: [] }));
 
+          const v = (r) => r.status === 'fulfilled' ? r.value : null;
           return json({
-            total_users: totalUsers ? totalUsers.c : 0,
-            logins_today: loginsToday ? loginsToday.c : 0,
-            logins_week: loginsWeek ? loginsWeek.c : 0,
-            unique_today: uniqueToday ? uniqueToday.c : 0,
-            unique_week: uniqueWeek ? uniqueWeek.c : 0,
-            tab_views: (tabViews && tabViews.results) || [],
-            recent_logins: (recentLogins && recentLogins.results) || [],
-            daily_logins: dailyRaw || []
+            total_users: v(totalUsers) ? v(totalUsers).c : 0,
+            logins_today: v(loginsToday) ? v(loginsToday).c : 0,
+            logins_week: v(loginsWeek) ? v(loginsWeek).c : 0,
+            unique_today: v(uniqueToday) ? v(uniqueToday).c : 0,
+            unique_week: v(uniqueWeek) ? v(uniqueWeek).c : 0,
+            tab_views: v(tabViews) ? (v(tabViews).results || []) : [],
+            recent_logins: v(recentLogins) ? (v(recentLogins).results || []) : [],
+            daily_logins: dailyResult.results || []
           }, corsHeaders);
         } catch(e) {
           return json({ error: e.message }, corsHeaders, 500);
@@ -4532,17 +4537,19 @@ Just the JSON array, nothing else.`;
   // Monday 5 AM EDT: weekly devotion email
   // Wednesday 5 AM EDT: secret sister reminder email
   async scheduled(event, env, ctx) {
-    const etNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    const dayOfWeek = etNow.getDay(); // 0=Sun, 1=Mon, 3=Wed
-    console.log('[cron] scheduled run', { cron: event.cron, etDay: dayOfWeek, hasBrevoKey: !!env.BREVO_API_KEY });
+    // Use the cron expression to decide what to send — don't rely on
+    // toLocaleString timezone conversion which can be flaky in Workers.
+    const isMondayCron = event.cron === '0 9 * * 1';
+    const isWednesdayCron = event.cron === '0 9 * * 3';
+    console.log('[cron] scheduled run', { cron: event.cron, isMondayCron, isWednesdayCron, hasBrevoKey: !!env.BREVO_API_KEY });
 
     try {
-      if (dayOfWeek === 1) {
+      if (isMondayCron) {
         await sendDevotionEmail(env);
-      } else if (dayOfWeek === 3) {
+      } else if (isWednesdayCron) {
         await sendSecretSisterEmail(env);
       } else {
-        console.log('[cron] no job for day', dayOfWeek);
+        console.log('[cron] unrecognized cron expression', event.cron);
       }
     } catch (e) {
       console.error('[cron] scheduled run failed', e && e.stack || e);

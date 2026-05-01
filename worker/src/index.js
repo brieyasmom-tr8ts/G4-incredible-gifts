@@ -143,7 +143,7 @@ async function ensureSSRoundExists(db, roundNumber) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -1994,9 +1994,29 @@ export default {
           return json({ error: 'Please keep it kind and uplifting!' }, corsHeaders, 400);
         }
 
+        // Lazy migration: dedup column for the receiver-notification email
+        try { await env.DB.prepare('ALTER TABLE secret_sister ADD COLUMN received_notified_at TEXT').run(); } catch(e) {}
+
         await env.DB.prepare(
           'UPDATE secret_sister SET note = ? WHERE giver_id = ?'
         ).bind(note.trim(), user_id).run();
+
+        // Notify the receiver — once per pairing.
+        try {
+          const pairing = await env.DB.prepare(
+            'SELECT id, receiver_id, received_notified_at FROM secret_sister WHERE giver_id = ?'
+          ).bind(user_id).first();
+          if (pairing && pairing.receiver_id && !pairing.received_notified_at) {
+            await env.DB.prepare(
+              "UPDATE secret_sister SET received_notified_at = datetime('now') WHERE id = ?"
+            ).bind(pairing.id).run();
+            const receiverId = pairing.receiver_id;
+            if (ctx && ctx.waitUntil) ctx.waitUntil(sendSecretSisterReceivedEmail(env, receiverId));
+            else await sendSecretSisterReceivedEmail(env, receiverId);
+          }
+        } catch (e) {
+          console.error('[ss-note] receiver email trigger failed', e && e.message || String(e));
+        }
 
         return json({ success: true }, corsHeaders);
       }
@@ -2120,6 +2140,8 @@ export default {
           return json({ error: 'Please keep it kind and uplifting' }, corsHeaders, 400);
         }
         await ensureWeeklySSTable(env.DB);
+        // Lazy migration: dedup column for the receiver-notification email
+        try { await env.DB.prepare('ALTER TABLE secret_sister_pairings ADD COLUMN received_notified_at TEXT').run(); } catch(e) {}
         const round = getCurrentSSRound();
         if (round === 0) {
           return json({ error: "Secret Sister rounds haven't started yet" }, corsHeaders, 400);
@@ -2132,6 +2154,23 @@ export default {
         ).bind(note.trim(), round, user_id).run();
         if (!result.meta || result.meta.changes === 0) {
           return json({ error: 'No assignment found for you this week' }, corsHeaders, 400);
+        }
+        // Notify the receiver — once per pairing. Stamp received_notified_at
+        // first so concurrent edits / retries can't trigger duplicate emails.
+        try {
+          const pairing = await env.DB.prepare(
+            'SELECT id, receiver_id, received_notified_at FROM secret_sister_pairings WHERE round_number = ? AND giver_id = ?'
+          ).bind(round, user_id).first();
+          if (pairing && pairing.receiver_id && !pairing.received_notified_at) {
+            await env.DB.prepare(
+              "UPDATE secret_sister_pairings SET received_notified_at = datetime('now') WHERE id = ?"
+            ).bind(pairing.id).run();
+            const receiverId = pairing.receiver_id;
+            if (ctx && ctx.waitUntil) ctx.waitUntil(sendSecretSisterReceivedEmail(env, receiverId));
+            else await sendSecretSisterReceivedEmail(env, receiverId);
+          }
+        } catch (e) {
+          console.error('[ss-write] receiver email trigger failed', e && e.message || String(e));
         }
         return json({ success: true, round }, corsHeaders);
       }
@@ -2368,6 +2407,14 @@ export default {
           `INSERT INTO secret_sister_admin_notes (round_number, recipient_user_id, recipient_name, note)
            VALUES (?, ?, ?, ?)`
         ).bind(round, recipient_user_id, recipientName, note.trim()).run();
+        // Notify the recipient — admin-sent notes look like any other secret
+        // sister note in her scrapbook, so the email reads identically.
+        try {
+          if (ctx && ctx.waitUntil) ctx.waitUntil(sendSecretSisterReceivedEmail(env, recipient_user_id));
+          else await sendSecretSisterReceivedEmail(env, recipient_user_id);
+        } catch (e) {
+          console.error('[ss-admin-send] receiver email trigger failed', e && e.message || String(e));
+        }
         return json({ success: true, round, recipient: recipientName }, corsHeaders);
       }
 
@@ -4638,6 +4685,50 @@ function secretSisterEmailHtml(firstName, sisterName, userId) {
     G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
+}
+
+function secretSisterReceivedEmailHtml(firstName, userId) {
+  const unsubUrl = userId ? API_BASE + '/api/email/unsubscribe?user_id=' + userId : '';
+  const greeting = firstName ? firstName + ', ' : '';
+  return `
+<div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px 20px;color:#3a3632;">
+  <div style="text-align:center;margin-bottom:20px;">
+    <div style="font-size:2rem;margin-bottom:6px;">💌</div>
+    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.4rem;font-weight:700;color:#c9908a;">Who is loved?</div>
+    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:2rem;font-weight:700;color:#3a3632;margin-top:6px;">You are.</div>
+  </div>
+  <div style="font-size:1rem;line-height:1.7;color:#5a5650;margin:24px 0;text-align:center;">
+    ${greeting}someone wrote you a message.<br>Log in and see what she said.
+  </div>
+  <div style="text-align:center;margin:28px 0;">
+    <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#c9908a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Open Your Note</a>
+  </div>
+  <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
+    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+  </div>
+</div>`;
+}
+
+async function sendSecretSisterReceivedEmail(env, receiverId) {
+  if (!receiverId) return false;
+  try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
+  let u;
+  try {
+    u = await env.DB.prepare(
+      "SELECT id, first_name, email, COALESCE(secret_sister_opt_out, 0) as ss_opt_out, COALESCE(email_unsubscribed, 0) as unsub FROM users WHERE id = ?"
+    ).bind(receiverId).first();
+  } catch (e) {
+    console.error('[ss-received-email] user lookup failed', e && e.message || String(e));
+    return false;
+  }
+  if (!u || !u.email || !u.email.trim() || u.unsub || u.ss_opt_out) {
+    console.log('[ss-received-email] skipping', { receiverId, hasEmail: !!(u && u.email && u.email.trim()), unsub: u && u.unsub, opt_out: u && u.ss_opt_out });
+    return false;
+  }
+  const subject = 'Who is loved? You are 💌';
+  const ok = await sendEmail(env, u.email.trim(), subject, secretSisterReceivedEmailHtml(u.first_name, u.id));
+  console.log('[ss-received-email] sent', { receiverId, ok });
+  return ok;
 }
 
 function customEmailHtml(firstName, message, buttonText, buttonUrl, userId) {

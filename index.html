@@ -4801,6 +4801,25 @@
             });
         }
 
+        // Normalize whatever a sister types in the Facebook field — full URL,
+        // username, @handle, m.facebook.com link, profile.php?id=N, with or
+        // without trailing path/query. Returns '' when the input clearly
+        // isn't a Facebook handle (e.g. she typed her real name) so the
+        // display layer can hide the broken button instead of linking to
+        // a 404 page.
+        function normalizeFacebook(input) {
+            let s = (input || '').trim();
+            if (!s) return '';
+            s = s.replace(/^https?:\/\//i, '');
+            s = s.replace(/^(www\.|m\.|web\.|mobile\.)?facebook\.com\//i, '');
+            s = s.replace(/^@/, '');
+            const profileMatch = s.match(/^(profile\.php\?id=\d+)/i);
+            if (profileMatch) return profileMatch[1];
+            s = s.split(/[/?#]/)[0];
+            if (/\s/.test(s)) return '';
+            return s;
+        }
+
         function showWelcome() {
             const banner = document.getElementById('welcome-banner');
             banner.textContent = getTimeGreeting() + ', ' + currentUser.first_name + ' \u2728';
@@ -4947,7 +4966,8 @@
 
                 let socialHTML = '';
                 if (user.instagram) socialHTML += `<a href="https://instagram.com/${user.instagram}" target="_blank" rel="noopener" style="${btnStyle}background:linear-gradient(135deg,#E1306C,#F77737);color:white;">📸 Instagram</a>`;
-                if (user.facebook) socialHTML += `<a href="https://facebook.com/${user.facebook}" target="_blank" rel="noopener" style="${btnStyle}background:#1877F2;color:white;">👤 Facebook</a>`;
+                const fbHandle = normalizeFacebook(user.facebook);
+                if (fbHandle) socialHTML += `<a href="https://facebook.com/${fbHandle}" target="_blank" rel="noopener" style="${btnStyle}background:#1877F2;color:white;">👤 Facebook</a>`;
 
                 // Packing tier badge (only if admin toggled show_packing_names on)
                 const dirUser = allDirectoryUsers.find(u => u.id === userId);
@@ -5405,8 +5425,9 @@
                 <div class="profile-field" style="margin-bottom:10px;">
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span style="font-size:1.1rem;">👤</span>
-                        <input type="text" id="profile-facebook" placeholder="Facebook name" value="${currentUser.facebook || ''}" style="flex:1;padding:10px 14px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:white;">
+                        <input type="text" id="profile-facebook" placeholder="Paste your Facebook link or username" value="${currentUser.facebook || ''}" style="flex:1;padding:10px 14px;border:1px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:white;">
                     </div>
+                    <div style="font-size:0.75rem;color:var(--light-text);font-style:italic;margin:4px 0 0 30px;">e.g. <strong>sarah.smith</strong> or <strong>facebook.com/sarah.smith</strong></div>
                 </div>
 
                 <div style="font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;margin-bottom:14px;">Social links are always visible to your sisters</div>
@@ -5517,7 +5538,7 @@
                     retreat_years: sheet.querySelector('#profile-retreat-years').value,
                     about: sheet.querySelector('#profile-about').value.trim(),
                     instagram: sheet.querySelector('#profile-instagram').value.trim().replace(/^@/, '').replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/\/.*/, ''),
-                    facebook: sheet.querySelector('#profile-facebook').value.trim().replace(/^https?:\/\/(www\.)?facebook\.com\//i, '').replace(/\/.*/, ''),
+                    facebook: normalizeFacebook(sheet.querySelector('#profile-facebook').value),
                     show_email: sheet.querySelector('#toggle-email').classList.contains('on') ? 1 : 0,
                     show_phone: sheet.querySelector('#toggle-phone').classList.contains('on') ? 1 : 0,
                     show_birthday: sheet.querySelector('#toggle-birthday').classList.contains('on') ? 1 : 0,

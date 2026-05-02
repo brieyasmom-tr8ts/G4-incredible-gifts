@@ -597,25 +597,8 @@ export default {
         const displayName = cleanInitial ? `${cleanName} ${cleanInitial}.` : cleanName;
         const year = parseInt(retreat_year) || 2027;
 
-        // Bump an existing sister's year-of-record if she's re-signing up
-        // under a higher retreat_year. Profile data stays put (it's keyed
-        // to user_id), she just shifts into the new retreat's directory
-        // and feature set. Honors an explicit opt-out (-1).
-        async function maybeBumpRetreatYear(matched) {
-          const currentYear = matched.retreat_year || 2026;
-          if (year <= currentYear) return matched;
-          const upd = await env.DB.prepare(
-            'UPDATE users SET retreat_year = ?, opted_in_2027 = 1 WHERE id = ? AND COALESCE(opted_in_2027, 0) <> -1'
-          ).bind(year, matched.id).run();
-          if (upd.meta && upd.meta.changes > 0) {
-            matched.retreat_year = year;
-            matched.opted_in_2027 = 1;
-          }
-          return matched;
-        }
-
         // Check for existing user — case-insensitive match
-        let existing = await env.DB.prepare(
+        const existing = await env.DB.prepare(
           'SELECT id, first_name, last_initial, last_name, retreat_year, COALESCE(opted_in_2027, 0) AS opted_in_2027 FROM users WHERE LOWER(first_name) = LOWER(?) AND UPPER(last_initial) = UPPER(?)'
         ).bind(cleanName, cleanInitial).first();
 
@@ -628,7 +611,11 @@ export default {
           if (email && email.trim()) {
             await env.DB.prepare('UPDATE users SET email = ? WHERE id = ?').bind(email.trim(), existing.id).run();
           }
-          existing = await maybeBumpRetreatYear(existing);
+          // Don't change retreat_year or opted_in_2027 here — the signup
+          // payload always sends retreat_year=2027 regardless of intent
+          // (she might have just typed "Florence" instead of "Flo"). 2026
+          // sisters who want to opt in for 2027 do that deliberately via
+          // the "Stay Connected for 2027" home card.
           return json({
             id: existing.id,
             first_name: existing.first_name,
@@ -647,14 +634,13 @@ export default {
         // share a family email address.
         const cleanEmail = (email || '').trim().toLowerCase();
         if (cleanEmail) {
-          let byEmail = await env.DB.prepare(
+          const byEmail = await env.DB.prepare(
             "SELECT id, first_name, last_initial, last_name, retreat_year, COALESCE(opted_in_2027, 0) AS opted_in_2027 FROM users WHERE LOWER(TRIM(email)) = ? AND UPPER(COALESCE(last_initial, '')) = UPPER(?)"
           ).bind(cleanEmail, cleanInitial).first();
           if (byEmail) {
             if (cleanLastName && !byEmail.last_name) {
               await env.DB.prepare('UPDATE users SET last_name = ? WHERE id = ?').bind(cleanLastName, byEmail.id).run();
             }
-            byEmail = await maybeBumpRetreatYear(byEmail);
             return json({
               id: byEmail.id,
               first_name: byEmail.first_name,

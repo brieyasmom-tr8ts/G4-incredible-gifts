@@ -621,6 +621,32 @@ export default {
           }, corsHeaders);
         }
 
+        // No name match — fall back to email match so a sister who signs
+        // back in with a different spelling (Florence vs Flo) gets her
+        // existing account instead of a duplicate. Require matching last-
+        // initial so we don't collapse two different women who happen to
+        // share a family email address.
+        const cleanEmail = (email || '').trim().toLowerCase();
+        if (cleanEmail) {
+          const byEmail = await env.DB.prepare(
+            "SELECT id, first_name, last_initial, last_name, retreat_year FROM users WHERE LOWER(TRIM(email)) = ? AND UPPER(COALESCE(last_initial, '')) = UPPER(?)"
+          ).bind(cleanEmail, cleanInitial).first();
+          if (byEmail) {
+            if (cleanLastName && !byEmail.last_name) {
+              await env.DB.prepare('UPDATE users SET last_name = ? WHERE id = ?').bind(cleanLastName, byEmail.id).run();
+            }
+            return json({
+              id: byEmail.id,
+              first_name: byEmail.first_name,
+              last_initial: byEmail.last_initial,
+              display_name: byEmail.last_initial ? `${byEmail.first_name} ${byEmail.last_initial}.` : byEmail.first_name,
+              retreat_year: byEmail.retreat_year || 2026,
+              returning: true,
+              matched_by: 'email'
+            }, corsHeaders);
+          }
+        }
+
         const result = await env.DB.prepare(
           'INSERT INTO users (first_name, last_initial, last_name, attendee_id, email, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
         ).bind(cleanName, cleanInitial, cleanLastName, attendee_id || null, (email || '').trim() || null, year).run();

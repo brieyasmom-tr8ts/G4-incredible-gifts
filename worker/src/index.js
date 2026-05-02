@@ -674,7 +674,9 @@ export default {
         let results;
         try {
           ({ results } = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, is_speaker, is_worship, retreat_year, opted_in_2027, created_at FROM users ORDER BY created_at DESC'
+            `SELECT id, first_name, last_initial, last_name, email, phone, birthday, instagram, facebook, is_team, is_speaker, is_worship, retreat_year, opted_in_2027, created_at,
+                    (SELECT MAX(created_at) FROM user_activity ua WHERE ua.user_id = users.id AND ua.action = 'login') AS last_login
+             FROM users ORDER BY created_at DESC`
           ).all());
         } catch (e) {
           try {

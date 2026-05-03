@@ -4694,7 +4694,10 @@ const DEVOTION_START_MS = Date.UTC(2026, 3, 13, 9, 0, 0); // April 13, 2026 5AM 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getCurrentDevotionWeekNum() {
-  const now = Date.now();
+  // +1h cushion so the calc isn't sensitive to clock skew at the exact
+  // Monday 9 UTC boundary. A week is a week — sub-second precision around
+  // the rollover should not change the answer.
+  const now = Date.now() + 60 * 60 * 1000;
   if (now < DEVOTION_START_MS) return 0;
   return (Math.floor((now - DEVOTION_START_MS) / WEEK_MS) % 15) + 1;
 }

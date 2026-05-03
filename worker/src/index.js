@@ -372,17 +372,22 @@ export default {
         }
       }
 
-      // POST /api/admin/email/send-now?type=devotion|secretsister — manually trigger the email blast
+      // POST /api/admin/email/send-now?type=devotion|secretsister[&week=N] — manually trigger the email blast
+      // Optional week override for devotion sends so admin can push a
+      // specific week (e.g. when the cron sent the wrong one or they want
+      // to re-send a past week).
       if (path === '/api/admin/email/send-now' && request.method === 'POST') {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
         const type = url.searchParams.get('type') || 'devotion';
         if (type === 'secretsister') {
           await sendSecretSisterEmail(env);
-        } else {
-          await sendDevotionEmail(env);
+          return json({ success: true, type }, corsHeaders);
         }
-        return json({ success: true, type }, corsHeaders);
+        const weekParam = parseInt(url.searchParams.get('week') || '', 10);
+        const weekOverride = Number.isInteger(weekParam) && weekParam >= 1 && weekParam <= 15 ? weekParam : null;
+        await sendDevotionEmail(env, weekOverride);
+        return json({ success: true, type, week: weekOverride || 'auto' }, corsHeaders);
       }
 
       // POST /api/admin/email/custom — send a custom message to all sisters
@@ -4626,8 +4631,33 @@ Just the JSON array, nothing else.`;
     console.log('[cron] scheduled run', { cron: event.cron, isMondayCron, isWednesdayCron, hasBrevoKey: !!env.BREVO_API_KEY });
 
     try {
+      // Day-of-week guard against cron mis-fires. The cron expressions are
+      // configured to fire only on Monday (1) and Wednesday (3) UTC, but
+      // belt-and-suspenders here so a scheduling oddity can't blast the
+      // wrong day of the week.
+      const scheduledTime = (event && event.scheduledTime) || Date.now();
+      const dow = new Date(scheduledTime).getUTCDay(); // 0 Sun, 1 Mon ... 6 Sat
+      if (isMondayCron && dow !== 1) {
+        console.error('[cron] expected Monday but scheduledTime dow=' + dow + ', skipping devotion send');
+        return;
+      }
+      if (isWednesdayCron && dow !== 3) {
+        console.error('[cron] expected Wednesday but scheduledTime dow=' + dow + ', skipping ss send');
+        return;
+      }
+
       if (isMondayCron) {
-        await sendDevotionEmail(env);
+        // Compute week from the cron's scheduledTime, not Date.now(), so a
+        // worker that runs even a millisecond before the exact Monday 9 UTC
+        // boundary doesn't Math.floor itself into the previous week's gift.
+        // +5min cushion absorbs any platform-side scheduling quirks.
+        const adjustedNow = scheduledTime + 5 * 60 * 1000;
+        let weekNum = 0;
+        if (adjustedNow >= DEVOTION_START_MS) {
+          weekNum = (Math.floor((adjustedNow - DEVOTION_START_MS) / WEEK_MS) % 15) + 1;
+        }
+        console.log('[cron] devotion week computed', { scheduledTime, weekNum });
+        await sendDevotionEmail(env, weekNum);
       } else if (isWednesdayCron) {
         await sendSecretSisterEmail(env);
       } else {
@@ -4664,7 +4694,10 @@ const DEVOTION_START_MS = Date.UTC(2026, 3, 13, 9, 0, 0); // April 13, 2026 5AM 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getCurrentDevotionWeekNum() {
-  const now = Date.now();
+  // +1h cushion so the calc isn't sensitive to clock skew at the exact
+  // Monday 9 UTC boundary. A week is a week — sub-second precision around
+  // the rollover should not change the answer.
+  const now = Date.now() + 60 * 60 * 1000;
   if (now < DEVOTION_START_MS) return 0;
   return (Math.floor((now - DEVOTION_START_MS) / WEEK_MS) % 15) + 1;
 }
@@ -4820,8 +4853,18 @@ async function sendEmail(env, to, subject, html) {
   }
 }
 
-async function sendDevotionEmail(env) {
-  const weekNum = getCurrentDevotionWeekNum();
+async function sendDevotionEmail(env, weekOverride) {
+  // weekOverride lets the cron handler pass a deterministic week number
+  // computed from event.scheduledTime instead of relying on Date.now() at
+  // execution moment. Without it, a cron firing even sub-millisecond
+  // before the Monday 9 UTC boundary makes Math.floor drop the week — so
+  // the rollover email goes out with the previous week's gift.
+  let weekNum;
+  if (weekOverride && Number.isInteger(weekOverride) && weekOverride >= 1 && weekOverride <= 15) {
+    weekNum = weekOverride;
+  } else {
+    weekNum = getCurrentDevotionWeekNum();
+  }
   if (weekNum === 0) {
     console.log('[devotion-email] before start date, skipping');
     return;
@@ -4844,7 +4887,7 @@ async function sendDevotionEmail(env) {
     return;
   }
 
-  console.log('[devotion-email] sending', { week: weekNum, gift: devotion.gift, recipients: users.length });
+  console.log('[devotion-email] sending', { week: weekNum, gift: devotion.gift, recipients: users.length, override: !!weekOverride });
   const subject = "This Week's Gift: " + devotion.gift + ' · Week ' + weekNum;
   let sent = 0, failed = 0;
   for (const user of users) {

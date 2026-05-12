@@ -372,10 +372,9 @@ export default {
         }
       }
 
-      // POST /api/admin/email/send-now?type=devotion|secretsister[&week=N] — manually trigger the email blast
-      // Optional week override for devotion sends so admin can push a
-      // specific week (e.g. when the cron sent the wrong one or they want
-      // to re-send a past week).
+      // POST /api/admin/email/send-now?type=devotion|secretsister[&week=N][&force=1]
+      // Optional week override for devotion sends (1-15). force=1 bypasses
+      // the "this week already sent" dedup so admin can re-send any week.
       if (path === '/api/admin/email/send-now' && request.method === 'POST') {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
@@ -386,8 +385,9 @@ export default {
         }
         const weekParam = parseInt(url.searchParams.get('week') || '', 10);
         const weekOverride = Number.isInteger(weekParam) && weekParam >= 1 && weekParam <= 15 ? weekParam : null;
-        await sendDevotionEmail(env, weekOverride);
-        return json({ success: true, type, week: weekOverride || 'auto' }, corsHeaders);
+        const force = url.searchParams.get('force') === '1';
+        const result = await sendDevotionEmail(env, weekOverride, { force });
+        return json({ success: true, type, week: weekOverride || 'auto', force, result }, corsHeaders);
       }
 
       // POST /api/admin/email/custom — send a custom message to all sisters
@@ -4624,39 +4624,27 @@ Just the JSON array, nothing else.`;
   // Monday 5 AM EDT: weekly devotion email
   // Wednesday 5 AM EDT: secret sister reminder email
   async scheduled(event, env, ctx) {
-    // Use the cron expression to decide what to send — don't rely on
-    // toLocaleString timezone conversion which can be flaky in Workers.
     const isMondayCron = event.cron === '0 9 * * 1';
     const isWednesdayCron = event.cron === '0 9 * * 3';
     console.log('[cron] scheduled run', { cron: event.cron, isMondayCron, isWednesdayCron, hasBrevoKey: !!env.BREVO_API_KEY });
 
     try {
-      // Day-of-week guard against cron mis-fires. The cron expressions are
-      // configured to fire only on Monday (1) and Wednesday (3) UTC, but
-      // belt-and-suspenders here so a scheduling oddity can't blast the
-      // wrong day of the week.
-      const scheduledTime = (event && event.scheduledTime) || Date.now();
-      const dow = new Date(scheduledTime).getUTCDay(); // 0 Sun, 1 Mon ... 6 Sat
-      if (isMondayCron && dow !== 1) {
-        console.error('[cron] expected Monday but scheduledTime dow=' + dow + ', skipping devotion send');
-        return;
-      }
-      if (isWednesdayCron && dow !== 3) {
-        console.error('[cron] expected Wednesday but scheduledTime dow=' + dow + ', skipping ss send');
-        return;
-      }
-
       if (isMondayCron) {
-        // Compute week from the cron's scheduledTime, not Date.now(), so a
-        // worker that runs even a millisecond before the exact Monday 9 UTC
-        // boundary doesn't Math.floor itself into the previous week's gift.
-        // +5min cushion absorbs any platform-side scheduling quirks.
-        const adjustedNow = scheduledTime + 5 * 60 * 1000;
+        // Compute the week as "the Monday at or after scheduledTime". If
+        // Cloudflare ever fires the cron slightly early (Sunday in past
+        // observed cases), we still send the correct upcoming Monday's
+        // gift instead of the previous week's. If it fires exactly on
+        // Monday, we send that Monday's gift.
+        const scheduledTime = (event && event.scheduledTime) || Date.now();
+        const sched = new Date(scheduledTime);
+        const dow = sched.getUTCDay(); // 0 Sun, 1 Mon ... 6 Sat
+        const daysUntilMonday = dow === 1 ? 0 : (1 + 7 - dow) % 7;
+        const mondayTime = scheduledTime + daysUntilMonday * 24 * 60 * 60 * 1000 + 5 * 60 * 1000;
         let weekNum = 0;
-        if (adjustedNow >= DEVOTION_START_MS) {
-          weekNum = (Math.floor((adjustedNow - DEVOTION_START_MS) / WEEK_MS) % 15) + 1;
+        if (mondayTime >= DEVOTION_START_MS) {
+          weekNum = (Math.floor((mondayTime - DEVOTION_START_MS) / WEEK_MS) % 15) + 1;
         }
-        console.log('[cron] devotion week computed', { scheduledTime, weekNum });
+        console.log('[cron] devotion week computed', { scheduledTime, dow, daysUntilMonday, weekNum });
         await sendDevotionEmail(env, weekNum);
       } else if (isWednesdayCron) {
         await sendSecretSisterEmail(env);
@@ -4853,12 +4841,9 @@ async function sendEmail(env, to, subject, html) {
   }
 }
 
-async function sendDevotionEmail(env, weekOverride) {
-  // weekOverride lets the cron handler pass a deterministic week number
-  // computed from event.scheduledTime instead of relying on Date.now() at
-  // execution moment. Without it, a cron firing even sub-millisecond
-  // before the Monday 9 UTC boundary makes Math.floor drop the week — so
-  // the rollover email goes out with the previous week's gift.
+async function sendDevotionEmail(env, weekOverride, opts) {
+  // weekOverride lets the cron handler pass a deterministic week number.
+  // opts.force = true skips the dedup log (admin re-send).
   let weekNum;
   if (weekOverride && Number.isInteger(weekOverride) && weekOverride >= 1 && weekOverride <= 15) {
     weekNum = weekOverride;
@@ -4867,12 +4852,29 @@ async function sendDevotionEmail(env, weekOverride) {
   }
   if (weekNum === 0) {
     console.log('[devotion-email] before start date, skipping');
-    return;
+    return { skipped: 'before_start' };
   }
   const devotion = DEVOTION_WEEKS.find(d => d.week === weekNum);
   if (!devotion) {
     console.error('[devotion-email] no devotion for week', weekNum);
-    return;
+    return { skipped: 'no_devotion' };
+  }
+
+  // Dedup: never send the same week twice unless the caller forces it.
+  // This makes the cron safe to fire on any day — only the first fire
+  // for a given week actually emails. Admin Send Now can force re-send.
+  try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS devotion_email_log (week_number INTEGER PRIMARY KEY, sent_at TEXT DEFAULT (datetime('now')))`).run(); } catch (e) {}
+  const force = !!(opts && opts.force);
+  if (!force) {
+    try {
+      const existing = await env.DB.prepare('SELECT sent_at FROM devotion_email_log WHERE week_number = ?').bind(weekNum).first();
+      if (existing) {
+        console.log('[devotion-email] week already sent, skipping', { week: weekNum, sent_at: existing.sent_at });
+        return { skipped: 'already_sent', week: weekNum, sent_at: existing.sent_at };
+      }
+    } catch (e) {
+      console.error('[devotion-email] dedup check failed', e && e.message || String(e));
+    }
   }
 
   try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
@@ -4884,10 +4886,17 @@ async function sendDevotionEmail(env, weekOverride) {
     users = results || [];
   } catch (e) {
     console.error('[devotion-email] user query failed', e && e.message || String(e));
-    return;
+    return { skipped: 'user_query_failed' };
   }
 
-  console.log('[devotion-email] sending', { week: weekNum, gift: devotion.gift, recipients: users.length, override: !!weekOverride });
+  // Stamp the log BEFORE sending so a concurrent retry can't double-blast.
+  try {
+    await env.DB.prepare("INSERT OR REPLACE INTO devotion_email_log (week_number, sent_at) VALUES (?, datetime('now'))").bind(weekNum).run();
+  } catch (e) {
+    console.error('[devotion-email] log stamp failed', e && e.message || String(e));
+  }
+
+  console.log('[devotion-email] sending', { week: weekNum, gift: devotion.gift, recipients: users.length, override: !!weekOverride, force });
   const subject = "This Week's Gift: " + devotion.gift + ' · Week ' + weekNum;
   let sent = 0, failed = 0;
   for (const user of users) {
@@ -4895,6 +4904,7 @@ async function sendDevotionEmail(env, weekOverride) {
     if (ok) sent++; else failed++;
   }
   console.log('[devotion-email] done', { sent, failed });
+  return { week: weekNum, gift: devotion.gift, sent, failed };
 }
 
 async function sendSecretSisterEmail(env) {

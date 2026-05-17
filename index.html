@@ -6694,12 +6694,18 @@
         // every Monday at 5 AM thereafter. Returns 0 if devotions haven't started yet,
         // otherwise the current week (1..15), looping back to 1 after week 15.
         const DEVOTIONS_START = new Date('2026-04-13T05:00:00-04:00');
+        // The Cloudflare cron currently fires Sunday mornings and the worker
+        // shifts the computed week forward to the upcoming Monday (so sisters
+        // receive Monday's gift email Sunday). Match that here so the app
+        // shows the same gift the email talks about, instead of lagging by a
+        // day. If/when the cron is moved back to Mondays this offset comes out.
+        const CLIENT_ROLLOVER_OFFSET_MS = 24 * 60 * 60 * 1000;
 
         function getCurrentDevotionWeek() {
             const now = new Date();
             if (now < DEVOTIONS_START) return 0;
             const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-            const weeksElapsed = Math.floor((now - DEVOTIONS_START) / msPerWeek);
+            const weeksElapsed = Math.floor((now - DEVOTIONS_START + CLIENT_ROLLOVER_OFFSET_MS) / msPerWeek);
             return ((weeksElapsed) % 15) + 1;
         }
 
@@ -6708,8 +6714,8 @@
             const now = new Date();
             if (now < DEVOTIONS_START) return DEVOTIONS_START;
             const msPerWeek = 7 * 24 * 60 * 60 * 1000;
-            const weeksElapsed = Math.floor((now - DEVOTIONS_START) / msPerWeek);
-            return new Date(DEVOTIONS_START.getTime() + (weeksElapsed + 1) * msPerWeek);
+            const weeksElapsed = Math.floor((now - DEVOTIONS_START + CLIENT_ROLLOVER_OFFSET_MS) / msPerWeek);
+            return new Date(DEVOTIONS_START.getTime() + (weeksElapsed + 1) * msPerWeek - CLIENT_ROLLOVER_OFFSET_MS);
         }
 
         function getDevotionByWeek(weekNum) {

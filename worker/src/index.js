@@ -2342,9 +2342,12 @@ export default {
         const currentRound = getCurrentSSRound();
 
         // Fetch all users
+        // photo_data is base64 image bytes per user — the participation
+        // table doesn't render photos so we skip selecting/returning them
+        // to keep this response small (was several MB for ~100 users,
+        // making each refresh after an admin-send feel slow).
         const { results: users } = await env.DB.prepare(
           `SELECT id, first_name, COALESCE(last_initial, '') AS last_initial,
-                  COALESCE(photo_data, '') AS photo_data,
                   COALESCE(secret_sister_opt_out, 0) AS opted_out
            FROM users
            WHERE first_name IS NOT NULL AND first_name != ''
@@ -2406,7 +2409,6 @@ export default {
           return {
             user_id: u.id,
             name: displayName,
-            photo_data: u.photo_data || '',
             opted_out: !!u.opted_out,
             rounds_paired: given.length,
             notes_written: writtenNotes.length,

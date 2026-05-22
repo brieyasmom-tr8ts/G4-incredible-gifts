@@ -1672,9 +1672,11 @@ async function refreshAll() {
     ]);
 }
 
-// Secret Sister data is heavier and barely changes — keep it on a much
-// slower cadence than the 30s refreshAll. Manual "Refresh" buttons next
-// to each list still work for on-demand re-pulls.
+// Secret Sister sections (participation, weekly status, pairings list)
+// load once on page init and don't auto-refresh — the data barely
+// changes between rounds and the auto-poll was making the participation
+// table feel jumpy. Manual "Refresh" buttons next to each list still
+// work for on-demand re-pulls.
 async function refreshSecretSisterAll() {
     await Promise.allSettled([
         loadSecretSisters(),
@@ -1686,11 +1688,8 @@ async function refreshSecretSisterAll() {
 function startAutoRefresh() {
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(refreshAll, 30000);
-    // Kick off the slower secret sister loop in parallel. First run pulls
-    // immediately so the page isn't empty, then every 15 minutes after.
+    // One-shot pull for SS sections — no recurring interval.
     refreshSecretSisterAll();
-    if (window._ssRefreshTimer) clearInterval(window._ssRefreshTimer);
-    window._ssRefreshTimer = setInterval(refreshSecretSisterAll, 15 * 60 * 1000);
 }
 
 function esc(str) {

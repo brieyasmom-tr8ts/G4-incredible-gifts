@@ -3459,84 +3459,113 @@ function ssDateBadge(sqliteTs) {
     return `<span style="display:inline-block;padding:2px 8px;background:${color.bg};color:${color.fg};font-size:0.72rem;font-weight:600;border-radius:10px;">${label}</span>`;
 }
 
-async function loadSSParticipation() {
+// Module-level cache so the participation table can update in place after
+// each admin-send instead of refetching the whole list every time.
+let _ssParticipationUsers = null;
+
+function renderSSParticipation() {
     const list = document.getElementById('ss-participation-list');
     const needs = document.getElementById('ss-participation-needs-note');
     if (!list || !needs) return;
-    list.innerHTML = '<div style="color:var(--light-text);font-size:0.85rem;padding:8px 0;">Loading...</div>';
-    needs.innerHTML = '';
-    try {
-        const data = await apiFetch('/api/secretsister/participation');
-        const users = (data && Array.isArray(data.users)) ? data.users : [];
-        if (!users.length) {
-            list.innerHTML = '<div style="color:var(--light-text);font-size:0.88rem;padding:8px 0;">No users yet.</div>';
-            return;
-        }
+    const users = Array.isArray(_ssParticipationUsers) ? _ssParticipationUsers : [];
+    if (!users.length) {
+        list.innerHTML = '<div style="color:var(--light-text);font-size:0.88rem;padding:8px 0;">No users yet.</div>';
+        needs.innerHTML = '';
+        return;
+    }
 
-        // Needs a note this week: women with drought ≥ 3 weeks, excluding
-        // those who've already received an admin-sent note this round, sorted
-        // by "most lonely first" (never → oldest → newest). Top 5 shown.
-        const needsList = users
-            .filter(u => !u.opted_out && !u.admin_sent_this_round && (() => {
-                const w = weeksSince(u.last_received_at);
-                return w === null || w >= SS_DROUGHT_WEEKS;
-            })())
-            .sort((a, b) => {
-                const wa = weeksSince(a.last_received_at);
-                const wb = weeksSince(b.last_received_at);
-                if (wa === null && wb === null) return 0;
-                if (wa === null) return -1; // never first
-                if (wb === null) return 1;
-                return wb - wa; // larger drought first
-            })
-            .slice(0, 5);
-
-        if (needsList.length > 0) {
-            needs.innerHTML = `
-                <div style="padding:10px 14px;background:rgba(192,57,43,0.06);border:1px solid rgba(192,57,43,0.18);border-radius:10px;">
-                    <div style="font-family:Playfair Display,serif;font-size:0.82rem;font-weight:700;color:#a13224;margin-bottom:6px;">&#x1f494; Needs a note this week (${needsList.length})</div>
-                    <div style="display:flex;flex-direction:column;gap:6px;">
-                    ${needsList.map(u => `
-                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;background:white;border-radius:8px;">
-                            <div style="font-size:0.88rem;color:var(--taupe);"><strong>${esc(u.name)}</strong> &middot; <span style="color:#a13224;font-size:0.78rem;">${u.last_received_at ? Math.floor(weeksSince(u.last_received_at)) + ' weeks ago' : 'never'}</span></div>
-                            <button class="btn btn-refresh" style="font-size:0.75rem;padding:0.2rem 0.6rem;" onclick="openSSAdminSendModal(${u.user_id}, '${esc(u.name).replace(/'/g, '&#39;')}')">&#x1f48c; Send</button>
-                        </div>
-                    `).join('')}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Full participation table, sorted by last_received ASC (lonely first)
-        const sorted = [...users].sort((a, b) => {
+    // Needs a note this week: women with drought ≥ 3 weeks, excluding
+    // those who've already received an admin-sent note this round, sorted
+    // by "most lonely first" (never → oldest → newest). Top 5 shown.
+    const needsList = users
+        .filter(u => !u.opted_out && !u.admin_sent_this_round && (() => {
+            const w = weeksSince(u.last_received_at);
+            return w === null || w >= SS_DROUGHT_WEEKS;
+        })())
+        .sort((a, b) => {
             const wa = weeksSince(a.last_received_at);
             const wb = weeksSince(b.last_received_at);
             if (wa === null && wb === null) return 0;
-            if (wa === null) return -1;
+            if (wa === null) return -1; // never first
             if (wb === null) return 1;
-            return wb - wa;
-        });
+            return wb - wa; // larger drought first
+        })
+        .slice(0, 5);
 
-        list.innerHTML = `
-            <div style="display:grid;grid-template-columns:1.4fr 0.6fr 0.6fr 1fr 1fr auto;gap:6px;padding:6px 10px;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);position:sticky;top:0;background:white;z-index:2;">
-                <div>Name</div><div>Paired</div><div>Written</div><div>Last Written</div><div>Last Received</div><div></div>
-            </div>
-            ${sorted.map(u => `
-                <div style="display:grid;grid-template-columns:1.4fr 0.6fr 0.6fr 1fr 1fr auto;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
-                    <div style="font-size:0.88rem;">
-                        <strong>${esc(u.name)}</strong>
-                        ${u.opted_out ? '<span style="display:inline-block;margin-left:4px;padding:1px 6px;background:#e5e5e5;color:#777;font-size:0.68rem;font-weight:600;border-radius:8px;">opted out</span>' : ''}
-                        ${u.admin_sent_this_round ? '<span style="display:inline-block;margin-left:4px;padding:1px 6px;background:rgba(138,158,122,0.18);color:#5a7a48;font-size:0.68rem;font-weight:600;border-radius:8px;" title="You already sent her an anonymous note this round">&#x2713; admin</span>' : ''}
+    if (needsList.length > 0) {
+        needs.innerHTML = `
+            <div style="padding:10px 14px;background:rgba(192,57,43,0.06);border:1px solid rgba(192,57,43,0.18);border-radius:10px;">
+                <div style="font-family:Playfair Display,serif;font-size:0.82rem;font-weight:700;color:#a13224;margin-bottom:6px;">&#x1f494; Needs a note this week (${needsList.length})</div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                ${needsList.map(u => `
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;background:white;border-radius:8px;">
+                        <div style="font-size:0.88rem;color:var(--taupe);"><strong>${esc(u.name)}</strong> &middot; <span style="color:#a13224;font-size:0.78rem;">${u.last_received_at ? Math.floor(weeksSince(u.last_received_at)) + ' weeks ago' : 'never'}</span></div>
+                        <button class="btn btn-refresh" style="font-size:0.75rem;padding:0.2rem 0.6rem;" onclick="openSSAdminSendModal(${u.user_id}, '${esc(u.name).replace(/'/g, '&#39;')}')">&#x1f48c; Send</button>
                     </div>
-                    <div style="font-size:0.85rem;color:var(--taupe);">${u.rounds_paired}</div>
-                    <div style="font-size:0.85rem;color:var(--taupe);">${u.notes_written}</div>
-                    <div>${ssDateBadge(u.last_written_at)}</div>
-                    <div>${ssDateBadge(u.last_received_at)}</div>
-                    <div><button class="btn btn-refresh" style="font-size:0.72rem;padding:0.2rem 0.6rem;" onclick="openSSAdminSendModal(${u.user_id}, '${esc(u.name).replace(/'/g, '&#39;')}')">&#x1f48c;</button></div>
+                `).join('')}
                 </div>
-            `).join('')}
+            </div>
         `;
+    } else {
+        needs.innerHTML = '';
+    }
+
+    // Full participation table, sorted by last_received ASC (lonely first)
+    const sorted = [...users].sort((a, b) => {
+        const wa = weeksSince(a.last_received_at);
+        const wb = weeksSince(b.last_received_at);
+        if (wa === null && wb === null) return 0;
+        if (wa === null) return -1;
+        if (wb === null) return 1;
+        return wb - wa;
+    });
+
+    list.innerHTML = `
+        <div style="display:grid;grid-template-columns:1.4fr 0.6fr 0.6fr 1fr 1fr auto;gap:6px;padding:6px 10px;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--light-text);font-weight:600;border-bottom:1px solid rgba(200,185,176,0.4);position:sticky;top:0;background:white;z-index:2;">
+            <div>Name</div><div>Paired</div><div>Written</div><div>Last Written</div><div>Last Received</div><div></div>
+        </div>
+        ${sorted.map(u => `
+            <div style="display:grid;grid-template-columns:1.4fr 0.6fr 0.6fr 1fr 1fr auto;gap:6px;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
+                <div style="font-size:0.88rem;">
+                    <strong>${esc(u.name)}</strong>
+                    ${u.opted_out ? '<span style="display:inline-block;margin-left:4px;padding:1px 6px;background:#e5e5e5;color:#777;font-size:0.68rem;font-weight:600;border-radius:8px;">opted out</span>' : ''}
+                    ${u.admin_sent_this_round ? '<span style="display:inline-block;margin-left:4px;padding:1px 6px;background:rgba(138,158,122,0.18);color:#5a7a48;font-size:0.68rem;font-weight:600;border-radius:8px;" title="You already sent her an anonymous note this round">&#x2713; admin</span>' : ''}
+                </div>
+                <div style="font-size:0.85rem;color:var(--taupe);">${u.rounds_paired}</div>
+                <div style="font-size:0.85rem;color:var(--taupe);">${u.notes_written}</div>
+                <div>${ssDateBadge(u.last_written_at)}</div>
+                <div>${ssDateBadge(u.last_received_at)}</div>
+                <div><button class="btn btn-refresh" style="font-size:0.72rem;padding:0.2rem 0.6rem;" onclick="openSSAdminSendModal(${u.user_id}, '${esc(u.name).replace(/'/g, '&#39;')}')">&#x1f48c;</button></div>
+            </div>
+        `).join('')}
+    `;
+}
+
+async function loadSSParticipation() {
+    const list = document.getElementById('ss-participation-list');
+    if (!list) return;
+    if (!Array.isArray(_ssParticipationUsers)) {
+        list.innerHTML = '<div style="color:var(--light-text);font-size:0.85rem;padding:8px 0;">Loading...</div>';
+    }
+    try {
+        const data = await apiFetch('/api/secretsister/participation');
+        _ssParticipationUsers = (data && Array.isArray(data.users)) ? data.users : [];
+        renderSSParticipation();
     } catch (e) { list.innerHTML = '<div style="color:var(--accent);padding:8px 0;">Could not load participation.</div>'; }
+}
+
+// Called by the admin-send flow on success. Mutates the cached
+// participation row for the recipient so the "Needs a note" list updates
+// and the row gets the "✓ admin" chip immediately, without re-pulling
+// the whole table from the server.
+function markSSParticipationSent(userId) {
+    if (!Array.isArray(_ssParticipationUsers)) return;
+    const row = _ssParticipationUsers.find(u => u.user_id === userId);
+    if (!row) return;
+    row.admin_sent_this_round = true;
+    row.notes_received = (row.notes_received || 0) + 1;
+    row.last_received_at = new Date().toISOString();
+    renderSSParticipation();
 }
 
 function openSSAdminSendModal(userId, name) {
@@ -3574,7 +3603,8 @@ function openSSAdminSendModal(userId, name) {
             }
             showToast('Sent with love');
             closeSSAdminSendModal();
-            loadSSParticipation();
+            // Optimistic local update — no API refetch between sends.
+            markSSParticipationSent(userId);
         } catch (e) {
             showToast('Error: ' + (e.message || 'Could not send'));
             confirmBtn.disabled = false;

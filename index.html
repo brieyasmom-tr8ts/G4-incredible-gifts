@@ -4613,6 +4613,8 @@
         const API_URL = 'https://g4-retreat-api.brieyasmom.workers.dev';
 
         let currentUser = null;
+        var viewingYear = 2027;
+        var activeYear = 2027;
         let selectedPostType = 'prayer';
         let prayedPosts = JSON.parse(localStorage.getItem('g4prayed') || '[]');
 
@@ -4787,7 +4789,9 @@
         }
 
         async function apiGet(path) {
-            const res = await fetch(API_URL + path);
+            var sep = path.indexOf('?') !== -1 ? '&' : '?';
+            var yearPath = (viewingYear && viewingYear !== activeYear) ? path + sep + 'year=' + viewingYear : path;
+            const res = await fetch(API_URL + yearPath);
             return res.json();
         }
 
@@ -4837,6 +4841,40 @@
             if (appContainer) appContainer.style.display = '';
             var setupModal = document.getElementById('setup-modal');
             if (setupModal) setupModal.style.display = 'none';
+        }
+
+        function switchYear() {
+            // Show/hide archive banner
+            var banner = document.getElementById('archive-banner');
+            if (viewingYear !== activeYear) {
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'archive-banner';
+                    banner.style.cssText = 'background:var(--taupe);color:white;text-align:center;padding:10px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:1000;';
+                    document.body.insertBefore(banner, document.body.firstChild);
+                }
+                banner.innerHTML = 'Viewing your ' + viewingYear + ' memories <button type="button" id="archive-back-btn" style="margin-left:10px;padding:4px 12px;background:white;color:var(--taupe);border:none;border-radius:12px;font-size:12px;cursor:pointer;touch-action:manipulation;">Back to ' + activeYear + '</button>';
+                banner.style.display = 'block';
+                document.getElementById('archive-back-btn').addEventListener('click', function() {
+                    viewingYear = activeYear;
+                    switchYear();
+                });
+            } else {
+                if (banner) banner.style.display = 'none';
+            }
+
+            // Hide write actions in archive mode
+            var writeEls = document.querySelectorAll('#prayer-compose, #moments-upload, #video-section');
+            writeEls.forEach(function(el) {
+                el.style.display = (viewingYear !== activeYear) ? 'none' : 'block';
+            });
+
+            // Reload data for the selected year
+            if (typeof loadMoments === 'function') loadMoments();
+            if (typeof initPrayerWall === 'function') initPrayerWall();
+            if (typeof loadStoryFeed === 'function') loadStoryFeed();
+            if (typeof loadCelebrationsHomeCard === 'function') loadCelebrationsHomeCard();
+            if (typeof initSlideshow === 'function') initSlideshow();
         }
 
         function initLandingPage() {
@@ -5589,6 +5627,11 @@
 
                 <div style="font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;margin-bottom:14px;">Social links are always visible to your sisters</div>
 
+                ${currentUser.returning ? `<div style="margin-top:4px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06);">
+                    <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Past Retreats</div>
+                    <button type="button" id="toggle-year-btn" style="padding:10px 20px;background:${viewingYear === 2026 ? 'var(--accent)' : 'var(--taupe)'};color:white;border:none;border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">${viewingYear === 2026 ? 'Back to 2027' : 'View 2026 Memories'}</button>
+                </div>` : ''}
+
                 <div style="margin-top:4px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06);">
                     <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Personal Password</div>
                     <div style="font-size:0.75rem;color:var(--light-text);margin-bottom:10px;">Set a personal password so you don't need the access code every time you log in.</div>
@@ -5599,6 +5642,7 @@
                 <button class="save-btn" id="profile-save-btn" style="width:100%;margin-top:8px;">Save Profile</button>
                 ${gameSettings && gameSettings.packing_points === '1' ? `<button id="profile-packing-btn" style="width:100%;margin-top:8px;padding:12px;border:1.5px solid rgba(201,144,138,0.3);background:rgba(255,255,255,0.6);color:var(--accent);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:0.92rem;font-weight:600;cursor:pointer;">🧳 Replay Packing Points</button>` : ''}
                 <button style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-size:0.85rem;cursor:pointer;margin-top:8px;" id="profile-close-btn">Close</button>
+                <button style="width:100%;padding:10px;border:none;background:none;color:var(--accent);font-size:0.8rem;cursor:pointer;margin-top:4px;" id="profile-logout-btn">Log Out</button>
             `;
 
             overlay.appendChild(sheet);
@@ -5747,6 +5791,20 @@
                 });
             }
 
+            // Year toggle
+            var toggleYearBtn = sheet.querySelector('#toggle-year-btn');
+            if (toggleYearBtn) {
+                toggleYearBtn.addEventListener('click', function() {
+                    if (viewingYear === 2026) {
+                        viewingYear = activeYear;
+                    } else {
+                        viewingYear = 2026;
+                    }
+                    overlay.remove();
+                    switchYear();
+                });
+            }
+
             // Personal password save
             var savePwBtn = sheet.querySelector('#save-password-btn');
             if (savePwBtn) {
@@ -5774,6 +5832,16 @@
 
             // Close
             sheet.querySelector('#profile-close-btn').addEventListener('click', () => overlay.remove());
+            sheet.querySelector('#profile-logout-btn').addEventListener('click', function() {
+                localStorage.removeItem('g4user');
+                document.cookie = 'g4user=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                currentUser = null;
+                overlay.remove();
+                document.querySelector('.app-container').style.display = 'none';
+                var landing = document.getElementById('landing-page');
+                if (landing) { landing.style.display = 'block'; initLandingPage(); }
+                else { location.reload(); }
+            });
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) overlay.remove();
             });

@@ -202,6 +202,15 @@ export default {
       try { await env.DB.prepare('ALTER TABLE users ADD COLUMN retreat_year INTEGER DEFAULT 2026').run(); } catch(e) {}
       try { await env.DB.prepare('ALTER TABLE users ADD COLUMN opted_in_2027 INTEGER DEFAULT 0').run(); } catch(e) {}
       try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
+      try { await env.DB.prepare('ALTER TABLE users ADD COLUMN password_hash TEXT').run(); } catch(e) {}
+
+      // Helper: get active retreat year from settings
+      async function getActiveYear(db) {
+        try {
+          const row = await db.prepare("SELECT value FROM game_settings WHERE key = 'active_retreat_year'").first();
+          return parseInt(row && row.value) || 2027;
+        } catch(e) { return 2027; }
+      }
 
       // ===== DB MIGRATION (one-time) =====
       if (path === '/api/admin/migrate' && request.method === 'POST') {
@@ -581,6 +590,108 @@ export default {
           'SELECT id, first_name, last_name FROM attendees ORDER BY first_name, last_name'
         ).all();
         return json(results, corsHeaders);
+      }
+
+      // ===== AUTH (access-code gated entry) =====
+
+      // POST /api/auth/enter — validate universal access code (or personal password), create/match user
+      if (path === '/api/auth/enter' && request.method === 'POST') {
+        const body = await request.json().catch(() => null);
+        if (!body) return json({ error: 'Invalid request' }, corsHeaders, 400);
+
+        const firstName = (body.first_name || '').trim();
+        const lastName = (body.last_name || '').trim();
+        const code = (body.code || '').trim();
+
+        if (!firstName || !lastName) {
+          return json({ error: 'First and last name are required' }, corsHeaders, 400);
+        }
+        if (!code) {
+          return json({ error: 'Access code is required' }, corsHeaders, 400);
+        }
+
+        // Check universal access code
+        const storedCode = await env.DB.prepare(
+          "SELECT value FROM game_settings WHERE key = 'registration_access_code'"
+        ).first().catch(() => null);
+
+        const universalMatch = storedCode && storedCode.value && code === storedCode.value;
+
+        const cleanFirst = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+        const cleanLast = lastName;
+        const cleanInitial = cleanLast.charAt(0).toUpperCase();
+        const displayName = `${cleanFirst} ${cleanInitial}.`;
+
+        // Try to match existing user by name
+        const existing = await env.DB.prepare(
+          'SELECT id, first_name, last_initial, last_name, retreat_year, COALESCE(opted_in_2027, 0) AS opted_in_2027, password_hash FROM users WHERE LOWER(first_name) = LOWER(?) AND UPPER(last_initial) = UPPER(?)'
+        ).bind(cleanFirst, cleanInitial).first();
+
+        // If not universal code, check personal password
+        if (!universalMatch) {
+          if (!existing || !existing.password_hash) {
+            return json({ error: "That code doesn't match. Check your confirmation email and try again." }, corsHeaders, 401);
+          }
+          const encoder = new TextEncoder();
+          const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(code));
+          const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+          if (hashHex !== existing.password_hash) {
+            return json({ error: "That code doesn't match. Check your confirmation email and try again." }, corsHeaders, 401);
+          }
+        }
+
+        if (existing) {
+          // Returning sister — update and grant 2027 access
+          const updates = [];
+          const binds = [];
+          if (cleanLast && !existing.last_name) {
+            updates.push('last_name = ?');
+            binds.push(cleanLast);
+          }
+          updates.push('retreat_year = 2027');
+          updates.push('reg_registered = 1');
+          binds.push(existing.id);
+          await ensureRegColumns(env.DB);
+          await env.DB.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).bind(...binds).run();
+
+          return json({
+            id: existing.id,
+            first_name: existing.first_name,
+            last_initial: existing.last_initial,
+            display_name: existing.last_initial ? `${existing.first_name} ${existing.last_initial}.` : existing.first_name,
+            retreat_year: 2027,
+            opted_in_2027: existing.opted_in_2027 || 0,
+            returning: true
+          }, corsHeaders);
+        }
+
+        // New user
+        await ensureRegColumns(env.DB);
+        const result = await env.DB.prepare(
+          'INSERT INTO users (first_name, last_initial, last_name, retreat_year, reg_registered) VALUES (?, ?, ?, 2027, 1)'
+        ).bind(cleanFirst, cleanInitial, cleanLast).run();
+
+        return json({
+          id: result.meta.last_row_id,
+          first_name: cleanFirst,
+          last_initial: cleanInitial,
+          display_name: displayName,
+          retreat_year: 2027
+        }, corsHeaders);
+      }
+
+      // POST /api/users/:id/password — set personal password
+      if (path.match(/^\/api\/users\/(\d+)\/password$/) && request.method === 'POST') {
+        const userId = path.match(/^\/api\/users\/(\d+)\/password$/)[1];
+        const body = await request.json().catch(() => null);
+        if (!body || !body.password || body.password.trim().length < 4) {
+          return json({ error: 'Password must be at least 4 characters' }, corsHeaders, 400);
+        }
+        const encoder = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(body.password.trim()));
+        const hashHex = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        await env.DB.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(hashHex, userId).run();
+        return json({ success: true }, corsHeaders);
       }
 
       // ===== USERS (simple setup) =====
@@ -2793,10 +2904,13 @@ export default {
           )`).run();
         } catch (e) { /* exists */ }
         const { results } = await env.DB.prepare(
-          "SELECT key, value FROM game_settings WHERE key LIKE 'registration_%'"
+          "SELECT key, value FROM game_settings WHERE key LIKE 'registration_%' OR key = 'active_retreat_year'"
         ).all();
         const settings = {};
         (results || []).forEach(r => { settings[r.key] = r.value; });
+        // Don't leak the actual access code to unauthenticated clients
+        settings.code_required = !!(settings.registration_access_code);
+        delete settings.registration_access_code;
         return json(settings, corsHeaders);
       }
 
@@ -2816,7 +2930,7 @@ export default {
           )`).run();
         } catch (e) { /* exists */ }
         for (const key of Object.keys(body)) {
-          if (!key.startsWith('registration_')) continue;
+          if (!key.startsWith('registration_') && key !== 'active_retreat_year') continue;
           const value = body[key] == null ? '' : String(body[key]);
           await env.DB.prepare(
             "INSERT INTO game_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"

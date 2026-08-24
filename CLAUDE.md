@@ -241,18 +241,42 @@ Key admin functions in `admin.html`:
 - `loadTopics` / `toggleStarTopic` / `downloadTopicsCsv`
 - `loadStories` / `renderStoriesList` / `updateStory` /
   `deleteStory` / `downloadStoriesCsv` / `setStoryFilter`
+- `loadRegistrationSettings` / `saveRegistrationSettings` /
+  `loadRegistrationsList` / `handleRegCsvUpload` / `previewRegMatches` /
+  `commitRegImport` / `openAddRegistrationModal` — Registrations tab
+  inside Budget & Payments (see below)
 
-## Roadmap & open threads
+## Year rollover & registration (shipped, not a roadmap item anymore)
 
-Not yet built, deferred by agreement:
+- `retreat_year` (per-user, default 2026) and `opted_in_2027` (2026
+  sisters opting into the 2027 directory/Secret Sister pool) are live.
+  New signups default to `retreat_year: 2027`. Matching on returning
+  sisters is by name, falling back to email — see `POST /api/users`
+  in `worker/src/index.js`.
+- **Registration is NOT processed in this app.** G4's church runs its
+  own registration/payment form (Heather provides the URL in Admin →
+  Budget & Payments → Registration Link). The app only: (1) shows a
+  "Register for G4 2027" home card linking out to that form, with an
+  admin-set price string and open/closed toggle, and (2) tracks who
+  has actually registered/paid, reconciled from a CSV export of the
+  church's form (the same way Heather used to keep an Excel sheet) or
+  added by hand — never a live payment integration.
+- Reconciliation lives on `users`: `reg_registered`, `reg_amount_paid`,
+  `reg_paid_date`, `reg_source` (`csv_import` | `manual`), `reg_notes`.
+  CSV import is a two-step flow: `POST /api/admin/registrations/match`
+  (fuzzy name-match against the roster, nothing written) then
+  `POST /api/admin/registrations/commit` (admin has reviewed/fixed
+  every match first). A CSV row with no roster match can create a new
+  `users` row on commit — she'll be merged into it by name once she
+  opens the app herself.
+  Both admin routes require `X-Admin-Key`.
+- Once she's marked registered, her own "Register for G4 2027" home
+  card switches to a confirmation state instead of the outbound link.
+- **Not built / explicitly deferred**: in-app Stripe/Checkout payment
+  processing (the church form is the payment surface by design, per
+  Heather); date parsing/normalization on the CSV's date column (it's
+  stored as free text — fine for display, not for date-range queries).
 
-- **Year rollover to G4 2027** — add `retreat_year` column to year-
-  specific tables, `retreat_years` config table, admin "active year"
-  setting, preview mode. Build in late June / early July, invisible
-  to 2026 women.
-- **Stripe registration for 2027** — price + early bird + scholarship
-  option, Checkout session flow, webhook to mark registered status.
-  Build after rollover groundwork lands.
 - **Session audio archive** — upload MP3 per session for women to
   re-listen. Highest-impact post-retreat feature; needs audio files
   from Heather first.

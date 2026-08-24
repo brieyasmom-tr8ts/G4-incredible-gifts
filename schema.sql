@@ -39,6 +39,16 @@ CREATE TABLE users (
 -- ALTER TABLE users ADD COLUMN retreat_years TEXT DEFAULT '';
 -- ALTER TABLE users ADD COLUMN about TEXT DEFAULT '';
 -- ALTER TABLE users ADD COLUMN last_name TEXT DEFAULT '';
+-- ALTER TABLE users ADD COLUMN retreat_year INTEGER DEFAULT 2026;
+-- ALTER TABLE users ADD COLUMN opted_in_2027 INTEGER DEFAULT 0;
+-- Registration/payment tracking, reconciled from the church's registration
+-- form (CSV import or manual entry in admin) — see worker/src/index.js
+-- /api/admin/registrations/* routes.
+-- ALTER TABLE users ADD COLUMN reg_registered INTEGER DEFAULT 0;
+-- ALTER TABLE users ADD COLUMN reg_amount_paid REAL DEFAULT 0;
+-- ALTER TABLE users ADD COLUMN reg_paid_date TEXT DEFAULT '';
+-- ALTER TABLE users ADD COLUMN reg_source TEXT DEFAULT '';
+-- ALTER TABLE users ADD COLUMN reg_notes TEXT DEFAULT '';
 
 CREATE TABLE journey_responses (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

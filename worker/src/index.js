@@ -769,14 +769,17 @@ export default {
           ['show_anniversary', 'INTEGER DEFAULT 0'],
           ['secret_sister_opt_out', 'INTEGER DEFAULT 0'],
           ['retreat_year', 'INTEGER DEFAULT 2026'],
-          ['opted_in_2027', 'INTEGER DEFAULT 0']
+          ['opted_in_2027', 'INTEGER DEFAULT 0'],
+          ['reg_registered', 'INTEGER DEFAULT 0'],
+          ['reg_amount_paid', 'REAL DEFAULT 0'],
+          ['reg_paid_date', "TEXT DEFAULT ''"]
         ]) {
           try { await env.DB.prepare(`ALTER TABLE users ADD COLUMN ${col[0]} ${col[1]}`).run(); } catch(e) { /* exists */ }
         }
         let user;
         try {
           user = await env.DB.prepare(
-            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, anniversary, show_anniversary, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, is_speaker, secret_sister_opt_out, retreat_year, opted_in_2027, created_at FROM users WHERE id = ?'
+            'SELECT id, first_name, last_initial, last_name, email, phone, birthday, anniversary, show_anniversary, photo_data, show_email, show_phone, show_birthday, show_about, instagram, facebook, location, job, church, retreat_years, about, is_team, is_speaker, secret_sister_opt_out, retreat_year, opted_in_2027, reg_registered, reg_amount_paid, reg_paid_date, created_at FROM users WHERE id = ?'
           ).bind(userId).first();
         } catch (e) {
           user = await env.DB.prepare(
@@ -814,6 +817,9 @@ export default {
           secret_sister_opt_out: user.secret_sister_opt_out || 0,
           retreat_year: user.retreat_year || 2026,
           opted_in_2027: user.opted_in_2027 || 0,
+          reg_registered: user.reg_registered || 0,
+          reg_amount_paid: user.reg_amount_paid || 0,
+          reg_paid_date: user.reg_paid_date || '',
           created_at: user.created_at
         }, corsHeaders);
       }
@@ -2746,6 +2752,184 @@ export default {
         if (!row || !row.value) return json({ ok: false, error: 'No password set' }, corsHeaders, 400);
         const ok = row.value === password_hash;
         return json({ ok }, corsHeaders);
+      }
+
+      // ===== REGISTRATION (G4 2027 sign-up + payment tracking) =====
+      // The actual charge happens on the church's own registration/payment
+      // form (linked from the app, not processed here). This section tracks
+      // WHO has registered/paid, reconciled from a CSV export of that form
+      // the same way Heather used to keep an Excel sheet — plus the settings
+      // that drive the "Register for G4 2027" home card.
+
+      async function ensureRegColumns(db) {
+        for (const col of [
+          ['reg_registered', 'INTEGER DEFAULT 0'],
+          ['reg_amount_paid', 'REAL DEFAULT 0'],
+          ["reg_paid_date", "TEXT DEFAULT ''"],
+          ["reg_source", "TEXT DEFAULT ''"],
+          ["reg_notes", "TEXT DEFAULT ''"]
+        ]) {
+          try { await db.prepare(`ALTER TABLE users ADD COLUMN ${col[0]} ${col[1]}`).run(); } catch (e) { /* exists */ }
+        }
+      }
+
+      // GET /api/registration/settings - public read, used by the app's home card
+      if (path === '/api/registration/settings' && request.method === 'GET') {
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT DEFAULT ''
+          )`).run();
+        } catch (e) { /* exists */ }
+        const { results } = await env.DB.prepare(
+          "SELECT key, value FROM game_settings WHERE key LIKE 'registration_%'"
+        ).all();
+        const settings = {};
+        (results || []).forEach(r => { settings[r.key] = r.value; });
+        return json(settings, corsHeaders);
+      }
+
+      // POST /api/admin/registration/settings - admin batch upsert (form URL,
+      // price display text, fundraising goal, open/closed toggle)
+      if (path === '/api/admin/registration/settings' && request.method === 'POST') {
+        const unauthorized = requireAdmin(request);
+        if (unauthorized) return unauthorized;
+        const body = await request.json();
+        if (!body || typeof body !== 'object') {
+          return json({ error: 'Expected object body' }, corsHeaders, 400);
+        }
+        try {
+          await env.DB.prepare(`CREATE TABLE IF NOT EXISTS game_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT DEFAULT ''
+          )`).run();
+        } catch (e) { /* exists */ }
+        for (const key of Object.keys(body)) {
+          if (!key.startsWith('registration_')) continue;
+          const value = body[key] == null ? '' : String(body[key]);
+          await env.DB.prepare(
+            "INSERT INTO game_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+          ).bind(key, value).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // Loose name matching for CSV → roster reconciliation. Scores first
+      // name + last name/initial agreement; exact beats prefix beats nothing.
+      function normalizeRegName(s) {
+        return (s || '').toString().toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      function scoreNameMatch(inputName, candidateFirst, candidateLast) {
+        const inParts = normalizeRegName(inputName).split(' ').filter(Boolean);
+        if (!inParts.length) return 0;
+        const first = (candidateFirst || '').toLowerCase();
+        const last = (candidateLast || '').toLowerCase();
+        let score = 0;
+        if (inParts[0] === first) score += 50;
+        else if (first && (first.startsWith(inParts[0]) || inParts[0].startsWith(first))) score += 20;
+        if (inParts.length > 1 && last) {
+          const inLast = inParts[inParts.length - 1];
+          if (inLast === last) score += 50;
+          else if (last.startsWith(inLast) || inLast.startsWith(last)) score += 25;
+        }
+        return score;
+      }
+
+      // POST /api/admin/registrations/match - fuzzy-match CSV rows against
+      // the roster. Doesn't write anything — admin reviews before commit.
+      if (path === '/api/admin/registrations/match' && request.method === 'POST') {
+        const unauthorized = requireAdmin(request);
+        if (unauthorized) return unauthorized;
+        const body = await request.json();
+        const rows = Array.isArray(body && body.rows) ? body.rows : [];
+        const { results: allUsers } = await env.DB.prepare(
+          'SELECT id, first_name, last_initial, last_name FROM users'
+        ).all();
+        const matched = rows.map(row => {
+          const name = (row.name || '').toString().trim();
+          const candidates = allUsers
+            .map(u => ({
+              user_id: u.id,
+              display_name: u.last_name ? `${u.first_name} ${u.last_name}` : (u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name),
+              score: scoreNameMatch(name, u.first_name, u.last_name || u.last_initial)
+            }))
+            .filter(c => c.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 5);
+          return {
+            name,
+            amount: row.amount || '',
+            date: row.date || '',
+            candidates,
+            best_match_id: (candidates.length && candidates[0].score >= 50) ? candidates[0].user_id : null
+          };
+        });
+        return json({ matched }, corsHeaders);
+      }
+
+      // POST /api/admin/registrations/commit - apply registration/payment
+      // data. Each entry is either { user_id, amount, date, notes, source }
+      // to update an existing sister, or { name, amount, date, notes, source }
+      // to create a fresh roster record for a woman who hasn't opened the
+      // app yet (she'll be matched into it by name when she signs up).
+      if (path === '/api/admin/registrations/commit' && request.method === 'POST') {
+        const unauthorized = requireAdmin(request);
+        if (unauthorized) return unauthorized;
+        const body = await request.json();
+        const entries = Array.isArray(body && body.entries) ? body.entries : [];
+        if (!entries.length) return json({ error: 'No entries to import' }, corsHeaders, 400);
+        await ensureRegColumns(env.DB);
+        let applied = 0;
+        for (const entry of entries) {
+          const amount = parseFloat(entry.amount) || 0;
+          const date = (entry.date || '').toString().trim();
+          const notes = (entry.notes || '').toString().trim();
+          const source = (entry.source || 'csv_import').toString();
+          let userId = parseInt(entry.user_id, 10);
+          if (!userId) {
+            const rawName = (entry.name || '').toString().trim();
+            if (!rawName) continue;
+            const parts = rawName.split(/\s+/);
+            const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+            const lastName = parts.slice(1).join(' ');
+            const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
+            const result = await env.DB.prepare(
+              'INSERT INTO users (first_name, last_initial, last_name, retreat_year) VALUES (?, ?, ?, 2027)'
+            ).bind(first, lastInitial, lastName).run();
+            userId = result.meta.last_row_id;
+          }
+          await env.DB.prepare(
+            'UPDATE users SET reg_registered = 1, reg_amount_paid = ?, reg_paid_date = ?, reg_source = ?, reg_notes = ? WHERE id = ?'
+          ).bind(amount, date, source, notes, userId).run();
+          applied++;
+        }
+        return json({ success: true, applied }, corsHeaders);
+      }
+
+      // GET /api/admin/registrations - registered roster + totals
+      if (path === '/api/admin/registrations' && request.method === 'GET') {
+        const unauthorized = requireAdmin(request);
+        if (unauthorized) return unauthorized;
+        await ensureRegColumns(env.DB);
+        const { results } = await env.DB.prepare(
+          `SELECT id, first_name, last_initial, last_name, email, reg_amount_paid, reg_paid_date, reg_source, reg_notes
+           FROM users WHERE reg_registered = 1 ORDER BY reg_paid_date DESC, first_name ASC`
+        ).all();
+        const total = (results || []).reduce((sum, r) => sum + (Number(r.reg_amount_paid) || 0), 0);
+        return json({ registrations: results || [], summary: { count: (results || []).length, total_collected: total } }, corsHeaders);
+      }
+
+      // DELETE /api/admin/registrations/:userId - clear a registration (undo a bad import)
+      const regDeleteMatch = path.match(/^\/api\/admin\/registrations\/(\d+)$/);
+      if (regDeleteMatch && request.method === 'DELETE') {
+        const unauthorized = requireAdmin(request);
+        if (unauthorized) return unauthorized;
+        const userId = parseInt(regDeleteMatch[1], 10);
+        await ensureRegColumns(env.DB);
+        await env.DB.prepare(
+          "UPDATE users SET reg_registered = 0, reg_amount_paid = 0, reg_paid_date = '', reg_source = '', reg_notes = '' WHERE id = ?"
+        ).bind(userId).run();
+        return json({ success: true }, corsHeaders);
       }
 
       // ===== FEEDBACK =====

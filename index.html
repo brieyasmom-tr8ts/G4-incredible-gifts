@@ -3502,7 +3502,7 @@
                             <div style="flex:1;min-width:0;">
                                 <div style="font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;">Next Retreat</div>
                                 <div style="font-family:'Playfair Display',serif;font-size:1.0rem;font-weight:700;color:var(--dark-text);line-height:1.3;">Register for G4 2027</div>
-                                <div style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);line-height:1.4;margin-top:2px;">Tap to sign up for next year's retreat</div>
+                                <div id="registration-card-sub" style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);line-height:1.4;margin-top:2px;">Tap to sign up for next year's retreat</div>
                             </div>
                             <div style="font-size:1.2rem;color:var(--sage);flex-shrink:0;margin-left:4px;">&rarr;</div>
                         </a>
@@ -10132,19 +10132,42 @@
         // per round as a delight moment about an hour after a sister writes.
         let _weeklySSLastState = null; // Cached so the scrapbook can reuse it
 
-        // Registration card — shows on home page when admin has set a registration URL
+        // Registration card — shows on home page once admin sets a form URL
+        // and opens registration. Swaps to a confirmation state once her own
+        // profile shows she's paid (reconciled server-side from the church's
+        // CSV export, not tracked here).
         async function loadRegistrationCard() {
+            const wrap = document.getElementById('registration-card-wrap');
+            if (!wrap || !currentUser) return;
             try {
-                const data = await apiFetch('/api/budget/calculator/state');
-                const state = (data && data.state) || {};
-                const url = state.retreat_calc_registration_url || '';
-                if (!url) return;
-                const wrap = document.getElementById('registration-card-wrap');
-                const link = document.getElementById('registration-card-link');
-                if (wrap && link) {
-                    link.href = url;
+                const settings = await apiGet('/api/registration/settings');
+                const url = (settings && settings.registration_form_url) || '';
+                const isOpen = !settings || settings.registration_open !== '0';
+                if (!url || !isOpen) { wrap.style.display = 'none'; return; }
+
+                let registered = false;
+                try {
+                    const profile = await apiGet('/api/users/' + currentUser.id + '?owner=1');
+                    registered = !!(profile && profile.reg_registered);
+                } catch (e) { /* assume not registered if this fetch fails */ }
+
+                if (registered) {
+                    wrap.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(135deg,rgba(138,158,122,0.14),rgba(138,158,122,0.05));border:1.5px solid rgba(138,158,122,0.25);border-radius:14px;">' +
+                        '<div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--sage),#a8c296);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem;">&#x2713;</div>' +
+                        '<div style="flex:1;min-width:0;">' +
+                        '<div style="font-family:\'Playfair Display\',serif;font-size:0.72rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;">Next Retreat</div>' +
+                        '<div style="font-family:\'Playfair Display\',serif;font-size:1.0rem;font-weight:700;color:var(--dark-text);line-height:1.3;">You&#39;re registered for G4 2027!</div>' +
+                        '<div style="font-family:\'Cormorant Garamond\',serif;font-size:0.85rem;color:var(--light-text);line-height:1.4;margin-top:2px;">We cannot wait to see you there.</div>' +
+                        '</div></div>';
                     wrap.style.display = 'block';
+                    return;
                 }
+
+                const link = document.getElementById('registration-card-link');
+                const sub = document.getElementById('registration-card-sub');
+                if (link) link.href = url;
+                if (sub) sub.textContent = (settings && settings.registration_price_text) || "Tap to sign up for next year's retreat";
+                wrap.style.display = 'block';
             } catch (e) { /* silent — card just stays hidden */ }
         }
 

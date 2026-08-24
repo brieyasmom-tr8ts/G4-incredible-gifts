@@ -1360,14 +1360,119 @@
                     </div>
                 </div>
 
-                <!-- Coming Soon placeholder for later phases -->
+                <!-- Registration Link settings -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Registration Link</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1.25rem;">Point the app's "Register for G4 2027" home card at your church's sign-up/payment form. The actual charge happens there — this just tells the app where to send her and what to show.</div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;margin-bottom:1rem;">
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Registration form URL</label>
+                            <input type="url" id="reg-form-url" placeholder="https://yourchurch.org/g4-2027" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Price to display</label>
+                            <input type="text" id="reg-price-text" placeholder="$275 &middot; early bird $250 through Jan 1" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Fundraising goal (optional)</label>
+                            <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="reg-goal" placeholder="15000" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                        </div>
+                    </div>
+                    <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--dark-text);cursor:pointer;">
+                        <input type="checkbox" id="reg-open-toggle" style="width:16px;height:16px;" /> Registration is open (show the card on home)
+                    </label>
+                    <button class="btn btn-refresh" onclick="saveRegistrationSettings()" style="margin-top:1rem;">Save</button>
+                </div>
+
+                <!-- Registration overview -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:1.5rem;">
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--sage);">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Registered</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--sage);" id="reg-ov-count">0</div>
+                    </div>
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--accent);">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Actually Collected</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--accent);" id="reg-ov-collected">$0</div>
+                    </div>
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--rose);">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Goal</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--rose);" id="reg-ov-goal">&mdash;</div>
+                    </div>
+                </div>
+
+                <!-- CSV import -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Import Payments from CSV</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">Export your roster/payments from the church platform the way you used to for Excel, then upload it here. You'll review every match before anything is saved.</div>
+                    <input type="file" id="reg-csv-file" accept=".csv,text/csv" onchange="handleRegCsvUpload(event)" />
+
+                    <div id="reg-csv-mapping" style="display:none;margin-top:1.25rem;">
+                        <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Which columns are which?</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:1rem;">
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Name column</label>
+                                <select id="reg-col-name" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"></select>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Amount paid column</label>
+                                <select id="reg-col-amount" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"></select>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Date column</label>
+                                <select id="reg-col-date" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"></select>
+                            </div>
+                        </div>
+                        <button class="btn btn-refresh" onclick="previewRegMatches()">Preview Matches</button>
+                        <span id="reg-csv-rowcount" style="font-size:0.8rem;color:var(--light-text);margin-left:10px;"></span>
+                    </div>
+
+                    <div id="reg-csv-preview" style="display:none;margin-top:1.25rem;">
+                        <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Review before importing</div>
+                        <div style="font-size:0.8rem;color:var(--light-text);margin-bottom:0.75rem;">Nothing is saved yet. Fix any wrong matches below, then import.</div>
+                        <div id="reg-csv-preview-body" style="overflow-x:auto;"></div>
+                        <button class="btn btn-refresh" onclick="commitRegImport()" style="margin-top:1rem;" id="reg-import-btn">Import</button>
+                    </div>
+                </div>
+
+                <!-- Registered sisters -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
-                    <div style="font-family:Playfair Display,serif;font-size:1rem;font-weight:700;margin-bottom:0.3rem;">Coming next</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);line-height:1.6;">Attendee payment tracking &middot; expense log with receipts &middot; email reminders (Resend). Ship one phase at a time.</div>
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.3rem;">
+                        <div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Registered Sisters</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Everyone marked registered, from CSV import or added by hand.</div>
+                        </div>
+                    </div>
+                    <div id="reg-list-body" style="margin-top:1rem;overflow-x:auto;">
+                        <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
+                    </div>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;">
+                        <button class="btn btn-refresh" onclick="openAddRegistrationModal()">+ Add manually</button>
+                        <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="loadRegistrationsList()">Refresh</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    </div>
+</div>
+
+<!-- Add Registration modal -->
+<div class="modal-overlay" id="add-registration-modal">
+    <div class="modal-box" style="max-width:440px;">
+        <h2 style="font-family:Playfair Display,serif;font-size:1.2rem;margin-bottom:12px;">Add Registration</h2>
+        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Sister</label>
+        <input type="text" id="add-reg-name" list="add-reg-users-list" placeholder="Start typing a name..." style="width:100%;padding:10px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;margin-bottom:10px;" />
+        <datalist id="add-reg-users-list"></datalist>
+        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Amount paid</label>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="add-reg-amount" step="0.01" min="0" style="flex:1;padding:10px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Date paid</label>
+        <input type="date" id="add-reg-date" style="width:100%;padding:10px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;margin-bottom:10px;" />
+        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Notes (optional)</label>
+        <input type="text" id="add-reg-notes" placeholder="Scholarship, payment plan, etc." style="width:100%;padding:10px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;margin-bottom:14px;" />
+        <div class="modal-actions">
+            <button class="btn btn-cancel" onclick="closeAddRegistrationModal()">Cancel</button>
+            <button class="btn btn-refresh" onclick="submitAddRegistration()">Save</button>
+        </div>
     </div>
 </div>
 
@@ -3714,8 +3819,8 @@ function showBudgetContent() {
     document.getElementById('budget-content').style.display = 'block';
     initRetreatCalculator();
     loadBudgetCategories();
-    // Phases 3-5 will populate the overview cards with real data. For now
-    // they stay at $0 so the shape of the page is in place.
+    loadRegistrationSettings();
+    loadRegistrationsList();
 }
 
 // --- Budget by Category ---
@@ -4175,6 +4280,242 @@ function recalcRetreatCalculator() {
     `;
 
     refreshBudgetOverview();
+}
+
+// --- Registrations (G4 2027 sign-up + payment tracking) ---
+// The church's own form handles the actual charge. This reconciles who's
+// registered/paid, either via a CSV export (the same routine Heather used
+// to keep in Excel) or added by hand.
+
+async function loadRegistrationSettings() {
+    try {
+        const settings = await apiFetch('/api/registration/settings');
+        document.getElementById('reg-form-url').value = settings.registration_form_url || '';
+        document.getElementById('reg-price-text').value = settings.registration_price_text || '';
+        document.getElementById('reg-goal').value = settings.registration_goal || '';
+        document.getElementById('reg-open-toggle').checked = settings.registration_open !== '0';
+        document.getElementById('reg-ov-goal').textContent = settings.registration_goal ? fmtMoney(parseFloat(settings.registration_goal) || 0) : '—';
+    } catch (e) {
+        showToast('Could not load registration settings: ' + (e.message || ''));
+    }
+}
+
+async function saveRegistrationSettings() {
+    const payload = {
+        registration_form_url: document.getElementById('reg-form-url').value.trim(),
+        registration_price_text: document.getElementById('reg-price-text').value.trim(),
+        registration_goal: document.getElementById('reg-goal').value,
+        registration_open: document.getElementById('reg-open-toggle').checked ? '1' : '0'
+    };
+    try {
+        await apiFetch('/api/admin/registration/settings', { method: 'POST', body: payload });
+        showToast('Registration settings saved ✓');
+        document.getElementById('reg-ov-goal').textContent = payload.registration_goal ? fmtMoney(parseFloat(payload.registration_goal) || 0) : '—';
+    } catch (e) {
+        showToast('Could not save: ' + (e.message || ''));
+    }
+}
+
+let _regList = [];
+async function loadRegistrationsList() {
+    const body = document.getElementById('reg-list-body');
+    try {
+        const data = await apiFetch('/api/admin/registrations');
+        _regList = data.registrations || [];
+        document.getElementById('reg-ov-count').textContent = (data.summary && data.summary.count) || 0;
+        document.getElementById('reg-ov-collected').textContent = fmtMoney((data.summary && data.summary.total_collected) || 0);
+        if (!_regList.length) {
+            body.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">No one registered yet.</div>';
+            return;
+        }
+        body.innerHTML = `
+            <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+                <thead><tr style="text-align:left;color:var(--taupe);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">
+                    <th style="padding:6px 8px;">Name</th><th style="padding:6px 8px;">Amount</th><th style="padding:6px 8px;">Date</th><th style="padding:6px 8px;">Source</th><th style="padding:6px 8px;">Notes</th><th style="padding:6px 8px;"></th>
+                </tr></thead>
+                <tbody>${_regList.map(r => `
+                    <tr style="border-top:1px solid rgba(200,185,176,0.2);">
+                        <td style="padding:6px 8px;">${esc(r.last_name ? r.first_name + ' ' + r.last_name : (r.last_initial ? r.first_name + ' ' + r.last_initial + '.' : r.first_name))}</td>
+                        <td style="padding:6px 8px;">${fmtMoney(Number(r.reg_amount_paid) || 0)}</td>
+                        <td style="padding:6px 8px;">${esc(r.reg_paid_date || '—')}</td>
+                        <td style="padding:6px 8px;color:var(--light-text);">${esc(r.reg_source || '—')}</td>
+                        <td style="padding:6px 8px;color:var(--light-text);">${esc(r.reg_notes || '')}</td>
+                        <td style="padding:6px 8px;text-align:right;"><button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);padding:4px 10px;font-size:0.78rem;" onclick="removeRegistration(${r.id}, '${esc(r.first_name)}')">Remove</button></td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>`;
+    } catch (e) {
+        body.innerHTML = '<div style="color:#a13224;font-size:0.85rem;">Could not load: ' + esc(e.message || '') + '</div>';
+    }
+}
+
+async function removeRegistration(userId, name) {
+    if (!confirm('Remove ' + name + "'s registration? This clears her paid amount and status.")) return;
+    try {
+        await apiFetch('/api/admin/registrations/' + userId, { method: 'DELETE' });
+        loadRegistrationsList();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+// --- CSV import ---
+function parseRegCsv(text) {
+    const rows = [];
+    let row = [], field = '', inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQuotes) {
+            if (c === '"') {
+                if (text[i + 1] === '"') { field += '"'; i++; }
+                else inQuotes = false;
+            } else field += c;
+        } else {
+            if (c === '"') inQuotes = true;
+            else if (c === ',') { row.push(field); field = ''; }
+            else if (c === '\n' || c === '\r') {
+                if (c === '\r' && text[i + 1] === '\n') i++;
+                row.push(field); field = '';
+                if (row.length > 1 || row[0] !== '') rows.push(row);
+                row = [];
+            } else field += c;
+        }
+    }
+    if (field !== '' || row.length) { row.push(field); rows.push(row); }
+    if (!rows.length) return { headers: [], rows: [] };
+    return { headers: rows[0], rows: rows.slice(1).filter(r => r.some(f => f !== '')) };
+}
+
+let _regCsv = { headers: [], rows: [] };
+function handleRegCsvUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        _regCsv = parseRegCsv(reader.result);
+        if (!_regCsv.headers.length) { showToast('Could not read that file — is it a CSV?'); return; }
+        const guess = (needles) => _regCsv.headers.findIndex(h => needles.some(n => h.toLowerCase().includes(n)));
+        const nameIdx = guess(['name']);
+        const amountIdx = guess(['amount', 'paid', 'total', 'price']);
+        const dateIdx = guess(['date']);
+        const optionsHtml = _regCsv.headers.map((h, i) => `<option value="${i}">${esc(h || '(column ' + (i + 1) + ')')}</option>`).join('');
+        ['reg-col-name', 'reg-col-amount', 'reg-col-date'].forEach(id => { document.getElementById(id).innerHTML = optionsHtml; });
+        if (nameIdx >= 0) document.getElementById('reg-col-name').value = nameIdx;
+        if (amountIdx >= 0) document.getElementById('reg-col-amount').value = amountIdx;
+        if (dateIdx >= 0) document.getElementById('reg-col-date').value = dateIdx;
+        document.getElementById('reg-csv-rowcount').textContent = _regCsv.rows.length + ' rows found';
+        document.getElementById('reg-csv-mapping').style.display = 'block';
+        document.getElementById('reg-csv-preview').style.display = 'none';
+    };
+    reader.readAsText(file);
+}
+
+let _regPreview = [];
+async function previewRegMatches() {
+    const nameCol = parseInt(document.getElementById('reg-col-name').value, 10);
+    const amountCol = parseInt(document.getElementById('reg-col-amount').value, 10);
+    const dateCol = parseInt(document.getElementById('reg-col-date').value, 10);
+    const rows = _regCsv.rows.map(r => ({
+        name: (r[nameCol] || '').trim(),
+        amount: (r[amountCol] || '').replace(/[^0-9.-]/g, ''),
+        date: (r[dateCol] || '').trim()
+    })).filter(r => r.name);
+    if (!rows.length) { showToast('No named rows to match'); return; }
+    try {
+        const data = await apiFetch('/api/admin/registrations/match', { method: 'POST', body: { rows } });
+        _regPreview = data.matched || [];
+        renderRegPreview();
+    } catch (e) { showToast('Error matching: ' + (e.message || '')); }
+}
+
+function renderRegPreview() {
+    const el = document.getElementById('reg-csv-preview-body');
+    el.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:0.86rem;">
+            <thead><tr style="text-align:left;color:var(--taupe);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">
+                <th style="padding:6px 8px;">CSV name</th><th style="padding:6px 8px;">Amount</th><th style="padding:6px 8px;">Date</th><th style="padding:6px 8px;">Match</th>
+            </tr></thead>
+            <tbody>${_regPreview.map((row, i) => `
+                <tr style="border-top:1px solid rgba(200,185,176,0.2);">
+                    <td style="padding:6px 8px;">${esc(row.name)}</td>
+                    <td style="padding:6px 8px;">$${esc(row.amount)}</td>
+                    <td style="padding:6px 8px;">${esc(row.date)}</td>
+                    <td style="padding:6px 8px;">
+                        <select id="reg-match-${i}" style="padding:4px 6px;border:1px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.82rem;">
+                            <option value="skip">— Skip —</option>
+                            <option value="new">Create new: "${esc(row.name)}"</option>
+                            ${row.candidates.map(c => `<option value="${c.user_id}" ${row.best_match_id === c.user_id ? 'selected' : ''}>${esc(c.display_name)} (${c.score}%)</option>`).join('')}
+                        </select>
+                    </td>
+                </tr>`).join('')}
+            </tbody>
+        </table>`;
+    document.getElementById('reg-csv-preview').style.display = 'block';
+}
+
+async function commitRegImport() {
+    const entries = [];
+    _regPreview.forEach((row, i) => {
+        const sel = document.getElementById('reg-match-' + i);
+        if (!sel || sel.value === 'skip') return;
+        const entry = { amount: row.amount, date: row.date, source: 'csv_import' };
+        if (sel.value === 'new') entry.name = row.name;
+        else entry.user_id = parseInt(sel.value, 10);
+        entries.push(entry);
+    });
+    if (!entries.length) { showToast('Nothing selected to import'); return; }
+    const btn = document.getElementById('reg-import-btn');
+    btn.disabled = true; btn.textContent = 'Importing...';
+    try {
+        const data = await apiFetch('/api/admin/registrations/commit', { method: 'POST', body: { entries } });
+        showToast('Imported ' + (data.applied || entries.length) + ' registrations ✓');
+        document.getElementById('reg-csv-mapping').style.display = 'none';
+        document.getElementById('reg-csv-preview').style.display = 'none';
+        document.getElementById('reg-csv-file').value = '';
+        loadRegistrationsList();
+    } catch (e) {
+        showToast('Import failed: ' + (e.message || ''));
+    } finally {
+        btn.disabled = false; btn.textContent = 'Import';
+    }
+}
+
+// --- Manual add ---
+let _regUsersCache = null;
+async function openAddRegistrationModal() {
+    document.getElementById('add-reg-name').value = '';
+    document.getElementById('add-reg-amount').value = '';
+    document.getElementById('add-reg-date').value = '';
+    document.getElementById('add-reg-notes').value = '';
+    document.getElementById('add-registration-modal').classList.add('show');
+    if (!_regUsersCache) {
+        try {
+            const data = await apiFetch('/api/users');
+            _regUsersCache = Array.isArray(data) ? data : (data.users || data.data || []);
+            const list = document.getElementById('add-reg-users-list');
+            list.innerHTML = _regUsersCache.map(u => `<option value="${esc(regUserDisplayName(u))}">`).join('');
+        } catch (e) { _regUsersCache = []; }
+    }
+}
+function closeAddRegistrationModal() {
+    document.getElementById('add-registration-modal').classList.remove('show');
+}
+function regUserDisplayName(u) {
+    return u.last_name ? u.first_name + ' ' + u.last_name : (u.last_initial ? u.first_name + ' ' + u.last_initial + '.' : u.first_name);
+}
+async function submitAddRegistration() {
+    const name = document.getElementById('add-reg-name').value.trim();
+    if (!name) { showToast('Enter a name first'); return; }
+    const amount = document.getElementById('add-reg-amount').value;
+    const date = document.getElementById('add-reg-date').value;
+    const notes = document.getElementById('add-reg-notes').value.trim();
+    const match = (_regUsersCache || []).find(u => regUserDisplayName(u).toLowerCase() === name.toLowerCase());
+    const entry = { amount, date, notes, source: 'manual' };
+    if (match) entry.user_id = match.id; else entry.name = name;
+    try {
+        await apiFetch('/api/admin/registrations/commit', { method: 'POST', body: { entries: [entry] } });
+        showToast('Registration saved ✓');
+        closeAddRegistrationModal();
+        loadRegistrationsList();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
 
 // --- Scavenger Hunt ---

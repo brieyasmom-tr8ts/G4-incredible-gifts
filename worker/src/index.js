@@ -2754,6 +2754,17 @@ export default {
         return json({ ok }, corsHeaders);
       }
 
+      // POST /api/admin/budget/auth/reset - clear a forgotten budget password.
+      // Gated by the main X-Admin-Key (not the budget password itself) so an
+      // admin who's locked out of the budget gate but still holds the admin
+      // key can get back in and set a fresh one.
+      if (path === '/api/admin/budget/auth/reset' && request.method === 'POST') {
+        const unauthorized = requireAdmin(request);
+        if (unauthorized) return unauthorized;
+        await env.DB.prepare("DELETE FROM game_settings WHERE key = 'budget_password_hash'").run();
+        return json({ success: true }, corsHeaders);
+      }
+
       // ===== REGISTRATION (G4 2027 sign-up + payment tracking) =====
       // The actual charge happens on the church's own registration/payment
       // form (linked from the app, not processed here). This section tracks

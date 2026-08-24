@@ -1232,6 +1232,7 @@
                 <input type="password" id="budget-gate-password-confirm" placeholder="Confirm password" autocomplete="new-password" style="display:none;width:100%;padding:10px 14px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;margin-bottom:10px;" />
                 <button id="budget-gate-submit" class="btn btn-refresh" style="width:100%;padding:10px;">Unlock</button>
                 <div id="budget-gate-error" style="margin-top:10px;color:#a13224;font-size:0.82rem;display:none;"></div>
+                <button type="button" id="budget-gate-forgot" onclick="budgetForgotPassword()" style="display:none;margin-top:10px;background:none;border:none;color:var(--taupe);font-size:0.8rem;text-decoration:underline;cursor:pointer;font-family:inherit;">Forgot the budget password?</button>
                 <div style="margin-top:14px;font-size:0.78rem;color:var(--light-text);font-style:italic;">Your team shares one password. Only admins should see this section.</div>
             </div>
 
@@ -3744,6 +3745,7 @@ async function initBudgetSection() {
     const confirmField = document.getElementById('budget-gate-password-confirm');
     const errorEl = document.getElementById('budget-gate-error');
     const passInput = document.getElementById('budget-gate-password');
+    const forgotBtn = document.getElementById('budget-gate-forgot');
     errorEl.style.display = 'none';
     passInput.value = '';
     confirmField.value = '';
@@ -3757,12 +3759,14 @@ async function initBudgetSection() {
             confirmField.style.display = 'none';
             passInput.placeholder = 'Password';
             gateSubmit.onclick = budgetCheckPassword;
+            forgotBtn.style.display = 'inline';
         } else {
             gateSubtitle.textContent = 'No password set yet. Create one now — your whole team will share it.';
             gateSubmit.textContent = 'Create Password';
             confirmField.style.display = 'block';
             passInput.placeholder = 'New password';
             gateSubmit.onclick = budgetSetPassword;
+            forgotBtn.style.display = 'none';
         }
         // Press Enter to submit
         passInput.onkeydown = (e) => { if (e.key === 'Enter') gateSubmit.click(); };
@@ -3811,6 +3815,21 @@ async function budgetCheckPassword() {
         budgetGateError('Wrong password. Try again.');
     } catch (e) {
         budgetGateError('Could not verify: ' + (e.message || ''));
+    }
+}
+
+// Clears the forgotten budget password using the main admin key (already
+// sent with every apiFetch call), then re-runs the gate so it drops into
+// the "create a new password" flow.
+async function budgetForgotPassword() {
+    if (!confirm("This clears the current budget password for everyone on the team. You'll set a new one right after. Continue?")) return;
+    try {
+        await apiFetch('/api/admin/budget/auth/reset', { method: 'POST' });
+        localStorage.removeItem('g4_budget_unlocked');
+        showToast('Budget password cleared — set a new one below.');
+        initBudgetSection();
+    } catch (e) {
+        budgetGateError('Could not reset: ' + (e.message || ''));
     }
 }
 

@@ -130,9 +130,12 @@ async function ensureSSRoundExists(db, roundNumber) {
       const giverName = giver.last_initial ? `${giver.first_name} ${giver.last_initial}.` : giver.first_name;
       const receiverName = receiver.last_initial ? `${receiver.first_name} ${receiver.last_initial}.` : receiver.first_name;
       try {
+        // Tag pairing with current active year (read from settings, fallback 2027)
+        let pairingYear = 2027;
+        try { const yr = await db.prepare("SELECT value FROM game_settings WHERE key = 'active_retreat_year'").first(); if (yr && yr.value) pairingYear = parseInt(yr.value) || 2027; } catch(e) {}
         await db.prepare(
-          'INSERT INTO secret_sister_pairings (round_number, giver_id, receiver_id, giver_name, receiver_name) VALUES (?, ?, ?, ?, ?)'
-        ).bind(roundNumber, giver.id, receiver.id, giverName, receiverName).run();
+          'INSERT INTO secret_sister_pairings (round_number, giver_id, receiver_id, giver_name, receiver_name, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(roundNumber, giver.id, receiver.id, giverName, receiverName, pairingYear).run();
       } catch (e) {}
     }
   };
@@ -210,6 +213,20 @@ export default {
           const row = await db.prepare("SELECT value FROM game_settings WHERE key = 'active_retreat_year'").first();
           return parseInt(row && row.value) || 2027;
         } catch(e) { return 2027; }
+      }
+
+      // Helper: get requested year from query param, fallback to active year
+      async function getRequestedYear(request, db) {
+        const url = new URL(request.url);
+        const y = parseInt(url.searchParams.get('year'));
+        if (y && y >= 2026 && y <= 2099) return y;
+        return await getActiveYear(db);
+      }
+
+      // Year separation: add retreat_year to all content tables (once, cheap no-op after)
+      const yearTables = ['moments', 'moment_reactions', 'moment_comments', 'messages', 'feedback', 'gratitude', 'journal_activity', 'quiz_scores', 'poll_responses', 'wyr_votes', 'testimonies', 'testimony_hearts', 'testimony_comments', 'celebration_messages', 'secret_sister_pairings'];
+      for (const tbl of yearTables) {
+        try { await env.DB.prepare(`ALTER TABLE ${tbl} ADD COLUMN retreat_year INTEGER DEFAULT 2026`).run(); } catch(e) {}
       }
 
       // ===== DB MIGRATION (one-time) =====
@@ -1082,14 +1099,16 @@ export default {
         // join column doesn't exist on legacy schemas.
         let results;
         try {
+        const reqYear = await getRequestedYear(request, env.DB);
           ({ results } = await env.DB.prepare(
             `SELECT m.id, m.user_id, m.author_name, m.type, m.tagged_name, m.message,
                     m.prayer_count, m.created_at,
                     u.first_name, u.last_name, u.last_initial
              FROM messages m
              LEFT JOIN users u ON m.user_id = u.id
+             WHERE COALESCE(m.retreat_year, 2026) = ?
              ORDER BY m.created_at DESC LIMIT 200`
-          ).all());
+          ).bind(reqYear).all());
           for (const r of results) {
             if (r.first_name) {
               if (r.last_name) {
@@ -1107,8 +1126,8 @@ export default {
         } catch (e) {
           ({ results } = await env.DB.prepare(
             `SELECT id, user_id, author_name, type, tagged_name, message, prayer_count, created_at
-             FROM messages ORDER BY created_at DESC LIMIT 200`
-          ).all());
+             FROM messages WHERE COALESCE(retreat_year, 2026) = ? ORDER BY created_at DESC LIMIT 200`
+          ).bind(reqYear).all());
         }
         return json(results, corsHeaders);
       }
@@ -1133,9 +1152,10 @@ export default {
           return json({ error: 'Message must be 500 characters or less.' }, corsHeaders, 400);
         }
 
+        const activeYear = await getActiveYear(env.DB);
         const result = await env.DB.prepare(
-          'INSERT INTO messages (user_id, author_name, type, tagged_name, message) VALUES (?, ?, ?, ?, ?)'
-        ).bind(user_id, author_name, type, tagged_name || null, message).run();
+          'INSERT INTO messages (user_id, author_name, type, tagged_name, message, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(user_id, author_name, type, tagged_name || null, message, activeYear).run();
 
         return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
       }
@@ -1304,10 +1324,11 @@ export default {
 
       // GET /api/moments/latest - just metadata for slideshow (no photo data)
       if (path === '/api/moments/latest' && request.method === 'GET') {
+        const reqYear = await getRequestedYear(request, env.DB);
         const { results } = await env.DB.prepare(
           `SELECT id, author_name, caption, created_at
-           FROM moments ORDER BY created_at DESC LIMIT 15`
-        ).all();
+           FROM moments WHERE COALESCE(retreat_year, 2026) = ? ORDER BY created_at DESC LIMIT 15`
+        ).bind(reqYear).all();
         return json(results, corsHeaders);
       }
 
@@ -1387,17 +1408,18 @@ export default {
       // GET /api/moments - get all moments
       if (path === '/api/moments' && request.method === 'GET') {
         await ensureMomentInteractionTables();
+        const reqYear = await getRequestedYear(request, env.DB);
         let results;
         try {
           ({ results } = await env.DB.prepare(
             `SELECT id, user_id, author_name, photo_data, caption, gift_tag, r2_key, created_at
-             FROM moments ORDER BY created_at DESC LIMIT 200`
-          ).all());
+             FROM moments WHERE COALESCE(retreat_year, 2026) = ? ORDER BY created_at DESC LIMIT 200`
+          ).bind(reqYear).all());
         } catch(e) {
           ({ results } = await env.DB.prepare(
             `SELECT id, user_id, author_name, photo_data, caption, gift_tag, created_at
-             FROM moments ORDER BY created_at DESC LIMIT 200`
-          ).all());
+             FROM moments WHERE COALESCE(retreat_year, 2026) = ? ORDER BY created_at DESC LIMIT 200`
+          ).bind(reqYear).all());
         }
         // Aggregate reaction counts per emoji per moment
         const reactionCounts = {};
@@ -1462,9 +1484,10 @@ export default {
           await env.DB.prepare('DELETE FROM moment_reactions WHERE id = ?').bind(existing.id).run();
           return json({ reacted: false }, corsHeaders);
         }
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
-          'INSERT INTO moment_reactions (moment_id, user_id, emoji) VALUES (?, ?, ?)'
-        ).bind(momentId, parseInt(user_id), emoji).run();
+          'INSERT INTO moment_reactions (moment_id, user_id, emoji, retreat_year) VALUES (?, ?, ?, ?)'
+        ).bind(momentId, parseInt(user_id), emoji, activeYear).run();
         return json({ reacted: true }, corsHeaders);
       }
 
@@ -1487,13 +1510,15 @@ export default {
         const text = (body.text || '').trim();
         if (!text) return json({ error: 'text required' }, corsHeaders, 400);
         if (text.length > 300) return json({ error: 'comment too long' }, corsHeaders, 400);
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
-          'INSERT INTO moment_comments (moment_id, user_id, name, text) VALUES (?, ?, ?, ?)'
+          'INSERT INTO moment_comments (moment_id, user_id, name, text, retreat_year) VALUES (?, ?, ?, ?, ?)'
         ).bind(
           momentId,
           body.user_id ? parseInt(body.user_id) : null,
           (body.name || 'A G4 sister').slice(0, 80),
-          text
+          text,
+          activeYear
         ).run();
         return json({ success: true }, corsHeaders);
       }
@@ -1557,9 +1582,10 @@ export default {
         }
 
         // Save to DB — store r2_key, and photo_data as fallback only if R2 failed
+        const activeYear = await getActiveYear(env.DB);
         const result = await env.DB.prepare(
-          'INSERT INTO moments (user_id, author_name, photo_data, caption, gift_tag, r2_key) VALUES (?, ?, ?, ?, ?, ?)'
-        ).bind(user_id, author_name, r2Key ? '' : photo_data, caption || '', gift_tag || '', r2Key).run();
+          'INSERT INTO moments (user_id, author_name, photo_data, caption, gift_tag, r2_key, retreat_year) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).bind(user_id, author_name, r2Key ? '' : photo_data, caption || '', gift_tag || '', r2Key, activeYear).run();
 
         return json({ success: true, id: result.meta.last_row_id }, corsHeaders);
       }
@@ -1995,9 +2021,10 @@ export default {
         if (choice !== 'A' && choice !== 'B') return json({ error: 'choice must be A or B' }, corsHeaders, 400);
 
         // Upsert — one vote per user per question
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
-          'INSERT INTO wyr_votes (user_id, question_id, choice) VALUES (?, ?, ?) ON CONFLICT(user_id, question_id) DO UPDATE SET choice = excluded.choice'
-        ).bind(user_id, question_id, choice).run();
+          'INSERT INTO wyr_votes (user_id, question_id, choice, retreat_year) VALUES (?, ?, ?, ?) ON CONFLICT(user_id, question_id) DO UPDATE SET choice = excluded.choice'
+        ).bind(user_id, question_id, choice, activeYear).run();
 
         // Return updated results
         const { results: votes } = await env.DB.prepare(
@@ -3121,8 +3148,9 @@ export default {
           try { await env.DB.prepare(`ALTER TABLE feedback ADD COLUMN ${col} ${type}`).run(); } catch(e) { /* exists */ }
         }
 
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
-          'INSERT INTO feedback (user_id, name, rating, favorite, improve, come_again, other, liked_most, liked_least, ratings, rating_comments, more_of, invite_friend, final_thoughts, speakers, app_feedback) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          'INSERT INTO feedback (user_id, name, rating, favorite, improve, come_again, other, liked_most, liked_least, ratings, rating_comments, more_of, invite_friend, final_thoughts, speakers, app_feedback, retreat_year) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         ).bind(
           body.user_id || null,
           body.name || 'Anonymous',
@@ -3139,7 +3167,8 @@ export default {
           body.invite_friend || '',
           body.final_thoughts || '',
           body.speakers || '',
-          body.app_feedback || ''
+          body.app_feedback || '',
+          activeYear
         ).run();
 
         return json({ success: true }, corsHeaders);
@@ -3208,13 +3237,15 @@ export default {
       if (path === '/api/journal/activity' && request.method === 'POST') {
         await ensureJournalActivityTable();
         const body = await request.json();
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
-          'INSERT INTO journal_activity (user_id, name, gift_tag, char_count) VALUES (?, ?, ?, ?)'
+          'INSERT INTO journal_activity (user_id, name, gift_tag, char_count, retreat_year) VALUES (?, ?, ?, ?, ?)'
         ).bind(
           body.user_id ? parseInt(body.user_id) : null,
           (body.name || '').slice(0, 100),
           (body.gift_tag || '').slice(0, 50),
-          parseInt(body.char_count || 0) || 0
+          parseInt(body.char_count || 0) || 0,
+          activeYear
         ).run();
         return json({ success: true }, corsHeaders);
       }
@@ -3565,12 +3596,14 @@ export default {
           return json({ error: 'Keep it short — 60 characters max' }, corsHeaders, 400);
         }
 
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
-          'INSERT INTO gratitude (user_id, name, text) VALUES (?, ?, ?)'
+          'INSERT INTO gratitude (user_id, name, text, retreat_year) VALUES (?, ?, ?, ?)'
         ).bind(
           body.user_id || null,
           body.name || 'Anonymous',
-          body.text.trim()
+          body.text.trim(),
+          activeYear
         ).run();
 
         return json({ success: true }, corsHeaders);
@@ -3580,9 +3613,10 @@ export default {
       if (path === '/api/gratitude' && request.method === 'GET') {
         try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS gratitude (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, name TEXT DEFAULT 'Anonymous', text TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now')))`).run(); } catch(e) { /* exists */ }
 
+        const reqYear = await getRequestedYear(request, env.DB);
         const { results } = await env.DB.prepare(
-          'SELECT id, user_id, name, text, created_at FROM gratitude ORDER BY created_at ASC'
-        ).all();
+          'SELECT id, user_id, name, text, created_at FROM gratitude WHERE COALESCE(retreat_year, 2026) = ? ORDER BY created_at ASC'
+        ).bind(reqYear).all();
         return json(results, corsHeaders);
       }
 
@@ -3816,10 +3850,11 @@ export default {
           }
         }
 
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
           `INSERT INTO celebration_messages
-            (recipient_user_id, sender_user_id, sender_name, sender_anonymous, occasion, occasion_date, message_text, has_heart)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+            (recipient_user_id, sender_user_id, sender_name, sender_anonymous, occasion, occasion_date, message_text, has_heart, retreat_year)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
         ).bind(
           parseInt(body.recipient_user_id),
           body.sender_user_id ? parseInt(body.sender_user_id) : null,
@@ -3828,7 +3863,8 @@ export default {
           body.occasion,
           body.occasion_date,
           (body.message_text || '').trim(),
-          1
+          1,
+          activeYear
         ).run();
         return json({ success: true }, corsHeaders);
       }
@@ -3996,9 +4032,10 @@ export default {
           return json({ error: 'Please write at least a few sentences' }, corsHeaders, 400);
         }
 
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
-          `INSERT INTO testimonies (user_id, name, anonymous, kind, text, video_key, gift_tag, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`
+          `INSERT INTO testimonies (user_id, name, anonymous, kind, text, video_key, gift_tag, status, retreat_year)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)`
         ).bind(
           user_id || null,
           name || 'A G4 sister',
@@ -4006,7 +4043,8 @@ export default {
           kind,
           text,
           videoKey,
-          gift_tag || ''
+          gift_tag || '',
+          activeYear
         ).run();
         return json({ success: true }, corsHeaders);
       }
@@ -4048,10 +4086,11 @@ export default {
           created_at TEXT DEFAULT (datetime('now'))
         )`).run(); } catch(e) {}
         const requesterId = parseInt(url.searchParams.get('user_id') || '0', 10);
+        const reqYear = await getRequestedYear(request, env.DB);
         const { results } = await env.DB.prepare(
-          `SELECT * FROM testimonies WHERE status IN ('approved', 'featured')
+          `SELECT * FROM testimonies WHERE status IN ('approved', 'featured') AND COALESCE(retreat_year, 2026) = ?
            ORDER BY featured DESC, created_at DESC LIMIT 200`
-        ).all();
+        ).bind(reqYear).all();
         // Mark which stories the requester has hearted
         let heartedSet = new Set();
         if (requesterId) {
@@ -4137,13 +4176,15 @@ export default {
         const text = (body.text || '').trim();
         if (!text) return json({ error: 'text required' }, corsHeaders, 400);
         if (text.length > 500) return json({ error: 'comment too long' }, corsHeaders, 400);
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
-          'INSERT INTO testimony_comments (testimony_id, user_id, name, text) VALUES (?, ?, ?, ?)'
+          'INSERT INTO testimony_comments (testimony_id, user_id, name, text, retreat_year) VALUES (?, ?, ?, ?, ?)'
         ).bind(
           tid,
           body.user_id ? parseInt(body.user_id) : null,
           (body.name || 'A G4 sister').slice(0, 80),
-          text
+          text,
+          activeYear
         ).run();
         return json({ success: true }, corsHeaders);
       }
@@ -4238,9 +4279,10 @@ export default {
           return json({ error: 'Already completed this quiz', already_done: true }, corsHeaders, 400);
         }
 
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
-          'INSERT INTO quiz_scores (user_id, user_name, day, score, total, time_seconds) VALUES (?, ?, ?, ?, ?, ?)'
-        ).bind(user_id, user_name, day, score, total, time_seconds || 0).run();
+          'INSERT INTO quiz_scores (user_id, user_name, day, score, total, time_seconds, retreat_year) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).bind(user_id, user_name, day, score, total, time_seconds || 0, activeYear).run();
 
         return json({ success: true }, corsHeaders);
       }
@@ -4398,9 +4440,10 @@ export default {
           return json({ error: 'Please keep responses kind and uplifting.' }, corsHeaders, 400);
         }
 
+        const activeYear = await getActiveYear(env.DB);
         await env.DB.prepare(
-          'INSERT INTO poll_responses (poll_id, user_id, user_name, response) VALUES (?, ?, ?, ?) ON CONFLICT(poll_id, user_id) DO UPDATE SET response = excluded.response'
-        ).bind(poll_id, user_id, user_name || '', response.trim()).run();
+          'INSERT INTO poll_responses (poll_id, user_id, user_name, response, retreat_year) VALUES (?, ?, ?, ?, ?) ON CONFLICT(poll_id, user_id) DO UPDATE SET response = excluded.response'
+        ).bind(poll_id, user_id, user_name || '', response.trim(), activeYear).run();
 
         return json({ success: true }, corsHeaders);
       }

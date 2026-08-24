@@ -2909,8 +2909,11 @@ export default {
         const settings = {};
         (results || []).forEach(r => { settings[r.key] = r.value; });
         // Don't leak the actual access code to unauthenticated clients
+        // (admin callers get the full value via X-Admin-Key header)
         settings.code_required = !!(settings.registration_access_code);
-        delete settings.registration_access_code;
+        if (!isAdmin(request)) {
+          delete settings.registration_access_code;
+        }
         return json(settings, corsHeaders);
       }
 

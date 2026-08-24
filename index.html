@@ -3341,7 +3341,123 @@
         </div>
     </div>
 
-    <div class="app-container">
+    <!-- ===== LANDING PAGE (visible when not authenticated) ===== -->
+    <div id="landing-page" style="display:none;min-height:100vh;background:var(--cream);">
+      <!-- Hero -->
+      <div style="text-align:center;padding:60px 24px 40px;background:linear-gradient(180deg,rgba(138,158,122,0.12) 0%,var(--cream) 100%);">
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:15px;color:var(--sage);letter-spacing:1px;margin-bottom:8px;">APRIL 8&ndash;10, 2027 &middot; OCEAN CITY, MD</div>
+        <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(32px,8vw,48px);color:var(--dark-text);margin:0 0 8px;line-height:1.15;">G4 Women's Retreat</h1>
+        <div style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(18px,4.5vw,24px);color:var(--sage);margin-bottom:6px;">2027</div>
+        <div id="landing-theme" style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:17px;color:var(--rose);margin-top:12px;display:none;"></div>
+        <div style="width:60px;height:2px;background:var(--sage);margin:20px auto 0;border-radius:2px;"></div>
+      </div>
+
+      <!-- What's Included -->
+      <div style="padding:32px 24px;max-width:500px;margin:0 auto;">
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:var(--dark-text);margin:0 0 16px;text-align:center;">What's Included</h2>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> 2 nights at the Hyatt Place Oceanfront</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> Retreat sessions &amp; speakers</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> Gift bags</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> Hot buffet breakfast Friday &amp; Saturday</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> Friday night party</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> Rooms with 2 queen beds + pull-out sofa</div>
+        </div>
+      </div>
+
+      <!-- Room Pricing -->
+      <div style="padding:0 24px 32px;max-width:500px;margin:0 auto;">
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:var(--dark-text);margin:0 0 16px;text-align:center;">Room Pricing</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div style="background:white;border-radius:12px;padding:16px;text-align:center;box-shadow:var(--shadow-sm);">
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--sage);font-weight:700;">$430</div>
+            <div style="font-size:13px;color:var(--dark-text);margin-top:4px;">per person</div>
+            <div style="font-size:12px;color:#888;margin-top:2px;">1 person room</div>
+          </div>
+          <div style="background:white;border-radius:12px;padding:16px;text-align:center;box-shadow:var(--shadow-sm);">
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--sage);font-weight:700;">$280</div>
+            <div style="font-size:13px;color:var(--dark-text);margin-top:4px;">per person</div>
+            <div style="font-size:12px;color:#888;margin-top:2px;">2 person room</div>
+          </div>
+          <div style="background:white;border-radius:12px;padding:16px;text-align:center;box-shadow:var(--shadow-sm);">
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--sage);font-weight:700;">$230</div>
+            <div style="font-size:13px;color:var(--dark-text);margin-top:4px;">per person</div>
+            <div style="font-size:12px;color:#888;margin-top:2px;">3 person room</div>
+          </div>
+          <div style="background:white;border-radius:12px;padding:16px;text-align:center;box-shadow:var(--shadow-sm);">
+            <div style="font-family:'Playfair Display',Georgia,serif;font-size:24px;color:var(--sage);font-weight:700;">$190</div>
+            <div style="font-size:13px;color:var(--dark-text);margin-top:4px;">per person</div>
+            <div style="font-size:12px;color:#888;margin-top:2px;">4 person room</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Snapshot -->
+      <div style="padding:0 24px 32px;max-width:500px;margin:0 auto;">
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:var(--dark-text);margin:0 0 16px;text-align:center;">Schedule</h2>
+        <div style="background:white;border-radius:12px;padding:20px;box-shadow:var(--shadow-sm);">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.06);">
+            <span style="font-weight:600;color:var(--dark-text);font-size:14px;">Thursday</span>
+            <span style="color:#888;font-size:13px;">Check-in 5 PM &middot; Session 1 at 7 PM</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.06);">
+            <span style="font-weight:600;color:var(--dark-text);font-size:14px;">Friday</span>
+            <span style="color:#888;font-size:13px;">Breakfast &middot; Sessions &middot; Party</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+            <span style="font-weight:600;color:var(--dark-text);font-size:14px;">Saturday</span>
+            <span style="color:#888;font-size:13px;">Breakfast &middot; Final Session &middot; Ends 12 PM</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hotel -->
+      <div style="padding:0 24px 32px;max-width:500px;margin:0 auto;text-align:center;">
+        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:var(--dark-text);margin:0 0 8px;">Our Home for the Weekend</h2>
+        <p style="font-size:15px;color:var(--dark-text);margin:0 0 8px;">Hyatt Place Oceanfront, Ocean City, MD</p>
+        <a href="https://www.hyatt.com/hyatt-place/en-US/occzn-hyatt-place-ocean-city-oceanfront" target="_blank" rel="noopener" style="font-size:14px;color:var(--sage);text-decoration:underline;">View hotel &amp; amenities</a>
+      </div>
+
+      <!-- Register CTA -->
+      <div style="padding:0 24px 32px;max-width:500px;margin:0 auto;text-align:center;">
+        <div style="background:linear-gradient(135deg,rgba(138,158,122,0.15),rgba(138,158,122,0.05));border:1.5px solid rgba(138,158,122,0.3);border-radius:16px;padding:28px 24px;">
+          <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:var(--dark-text);margin:0 0 8px;">Register Now</h2>
+          <p style="font-size:14px;color:#888;margin:0 0 4px;">Registration &amp; full payment due by January 30, 2027</p>
+          <p style="font-size:14px;color:var(--accent);font-weight:600;margin:0 0 16px;">Limited space available. Don't wait!</p>
+          <a id="landing-register-btn" href="https://graceseaford.ccbchurch.com/goto/forms/189/responses/new" target="_blank" rel="noopener"
+             style="display:inline-block;padding:14px 36px;background:var(--sage);color:white;font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:600;border-radius:28px;text-decoration:none;letter-spacing:0.5px;box-shadow:var(--shadow-md);transition:var(--transition);">
+            Register for G4 2027
+          </a>
+        </div>
+      </div>
+
+      <!-- Already Registered — Code Entry -->
+      <div style="padding:0 24px 48px;max-width:500px;margin:0 auto;">
+        <div style="background:white;border-radius:16px;padding:28px 24px;box-shadow:var(--shadow-sm);text-align:center;">
+          <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:20px;color:var(--dark-text);margin:0 0 6px;">Already Registered?</h2>
+          <p style="font-size:13px;color:#888;margin:0 0 16px;">Check your registration confirmation email for your access code</p>
+          <div id="landing-error" style="display:none;color:var(--accent);font-size:13px;margin-bottom:10px;"></div>
+          <input type="text" id="landing-first" placeholder="First name" autocomplete="given-name"
+                 style="width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:16px;margin-bottom:10px;box-sizing:border-box;font-family:Georgia,serif;">
+          <input type="text" id="landing-last" placeholder="Last name" autocomplete="family-name"
+                 style="width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:16px;margin-bottom:10px;box-sizing:border-box;font-family:Georgia,serif;">
+          <input type="text" id="landing-code" placeholder="Access code" autocomplete="off"
+                 style="width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:16px;margin-bottom:16px;box-sizing:border-box;font-family:Georgia,serif;">
+          <button type="button" id="landing-enter-btn"
+                  style="width:100%;padding:14px;background:var(--sage);color:white;border:none;border-radius:28px;font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:var(--transition);">
+            Enter the App
+          </button>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="text-align:center;padding:0 24px 40px;font-size:12px;color:#aaa;">
+        G4 Women's Retreat &middot; Grace Community Church, Seaford, DE
+      </div>
+    </div>
+    <!-- ===== END LANDING PAGE ===== -->
+
+    <div class="app-container" style="display:none;">
         <div class="header" style="position:relative;">
 <button id="header-profile-btn" style="display:none;position:absolute;top:calc(12px + max(env(safe-area-inset-top,0px),24px));right:16px;background:none;border:none;cursor:pointer;padding:0;z-index:10;" aria-label="My Profile">
                 <div id="header-avatar" class="welcome-avatar-placeholder" style="width:32px;height:32px;font-size:0.75rem;">?</div>
@@ -4711,94 +4827,135 @@
             setCookie('g4user', json, 30);
         }
 
-        // ===== User Setup =====
+        // ===== Landing Page + User Setup =====
         const IS_INVITE = window.location.search.indexOf('invite=1') !== -1;
 
-        function initSetup() {
-            const saved = localStorage.getItem('g4user') || getCookie('g4user');
-            if (saved) {
-                currentUser = JSON.parse(saved);
-                // Sync both storage methods
-                localStorage.setItem('g4user', saved);
-                setCookie('g4user', saved, 30);
-                showWelcome();
-                document.getElementById('prayer-compose').style.display = 'block';
-                document.getElementById('moments-upload').style.display = 'block';
-                document.getElementById('video-section').style.display = 'block';
-                loadPeople();
-                return;
-            }
-            const modal = document.getElementById('setup-modal');
-            if (IS_INVITE) {
-                document.getElementById('setup-title').textContent = 'Welcome to G4!';
-                document.getElementById('setup-subtitle').textContent = 'Join our community of sisters';
-                document.getElementById('setup-hint').textContent = "We'll send you weekly devotions and encouragement";
-                document.getElementById('setup-btn').textContent = 'Join the Community';
-            }
-            modal.style.display = 'flex';
-            modal.classList.add('animate-in');
+        function unlockApp() {
+            var landing = document.getElementById('landing-page');
+            if (landing) landing.style.display = 'none';
+            var appContainer = document.querySelector('.app-container');
+            if (appContainer) appContainer.style.display = '';
+            var setupModal = document.getElementById('setup-modal');
+            if (setupModal) setupModal.style.display = 'none';
+        }
 
-            document.getElementById('setup-btn').addEventListener('click', async () => {
-                const firstName = document.getElementById('setup-first').value.trim();
-                const lastName = document.getElementById('setup-last-name').value.trim();
-                const emailEl = document.getElementById('setup-email');
-                const inviteEmail = emailEl ? emailEl.value.trim() : '';
+        function initLandingPage() {
+            // Load dynamic registration URL from settings
+            fetch(API_URL + '/api/registration/settings')
+                .then(function(r) { return r.json(); })
+                .then(function(settings) {
+                    var regBtn = document.getElementById('landing-register-btn');
+                    if (regBtn && settings.registration_form_url) {
+                        regBtn.href = settings.registration_form_url;
+                    }
+                })
+                .catch(function() {});
 
-                if (!firstName || !lastName || !inviteEmail) {
-                    if (!firstName) document.getElementById('setup-first').style.borderColor = 'var(--accent)';
-                    if (!lastName) document.getElementById('setup-last-name').style.borderColor = 'var(--accent)';
-                    if (!inviteEmail && emailEl) emailEl.style.borderColor = 'var(--accent)';
+            // Code entry handler
+            var enterBtn = document.getElementById('landing-enter-btn');
+            if (!enterBtn) return;
+            enterBtn.addEventListener('click', async function() {
+                var firstName = document.getElementById('landing-first').value.trim();
+                var lastName = document.getElementById('landing-last').value.trim();
+                var code = document.getElementById('landing-code').value.trim();
+                var errorEl = document.getElementById('landing-error');
+
+                if (!firstName || !lastName || !code) {
+                    errorEl.textContent = 'Please fill in all fields.';
+                    errorEl.style.display = 'block';
+                    if (!firstName) document.getElementById('landing-first').style.borderColor = 'var(--accent)';
+                    if (!lastName) document.getElementById('landing-last').style.borderColor = 'var(--accent)';
+                    if (!code) document.getElementById('landing-code').style.borderColor = 'var(--accent)';
                     return;
                 }
 
-                const lastInitial = lastName.charAt(0).toUpperCase();
-
-                const btn = document.getElementById('setup-btn');
-                btn.disabled = true;
-                btn.textContent = 'Setting up...';
+                enterBtn.disabled = true;
+                enterBtn.textContent = 'Checking...';
+                errorEl.style.display = 'none';
 
                 try {
-                    const payload = {
-                        first_name: firstName,
-                        last_initial: lastInitial,
-                        last_name: lastName,
-                        email: inviteEmail,
-                        retreat_year: 2027
-                    };
-                    const result = await apiPost('/api/users', payload);
+                    var resp = await fetch(API_URL + '/api/auth/enter', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ first_name: firstName, last_name: lastName, code: code })
+                    });
+                    var result = await resp.json();
 
-                    if (result.error) {
-                        showToast(result.error);
-                        btn.disabled = false;
-                        btn.textContent = "Let's Go!";
+                    if (!resp.ok || result.error) {
+                        errorEl.textContent = result.error || 'Something went wrong. Please try again.';
+                        errorEl.style.display = 'block';
+                        enterBtn.disabled = false;
+                        enterBtn.textContent = 'Enter the App';
                         return;
                     }
 
                     currentUser = result;
                     saveUser(currentUser);
-                    document.getElementById('setup-modal').style.display = 'none';
+                    unlockApp();
                     showWelcome();
                     document.getElementById('prayer-compose').style.display = 'block';
-                        document.getElementById('moments-upload').style.display = 'block';
+                    document.getElementById('moments-upload').style.display = 'block';
                     document.getElementById('video-section').style.display = 'block';
                     loadPeople();
                     launchConfetti();
-                    currentUser.retreat_year = 2027;
-                    saveUser(currentUser);
-                    if (IS_INVITE) {
-                        showToast('Welcome to G4, ' + currentUser.first_name + '! \u2728');
-                        setTimeout(function() {
-                            if (typeof openProfile === 'function') openProfile();
-                        }, 1200);
-                    } else {
-                        showToast('Welcome to G4, ' + currentUser.first_name + '! \u2728');
-                    }
-                } catch (e) {
-                    showToast('Could not connect: ' + (e.message || 'Check your connection'));
-                    btn.disabled = false;
-                    btn.textContent = "Let's Go!";
+                    showToast('Welcome to G4, ' + currentUser.first_name + '! \u2728');
+                } catch(e) {
+                    errorEl.textContent = 'Could not connect. Check your internet and try again.';
+                    errorEl.style.display = 'block';
+                    enterBtn.disabled = false;
+                    enterBtn.textContent = 'Enter the App';
                 }
             });
+
+            // Also handle Enter key on code field
+            var codeField = document.getElementById('landing-code');
+            if (codeField) {
+                codeField.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        document.getElementById('landing-enter-btn').click();
+                    }
+                });
+            }
+        }
+
+        function initSetup() {
+            const saved = localStorage.getItem('g4user') || getCookie('g4user');
+            if (saved) {
+                try {
+                    currentUser = JSON.parse(saved);
+                    // Sync both storage methods
+                    localStorage.setItem('g4user', saved);
+                    setCookie('g4user', saved, 30);
+                    unlockApp();
+                    showWelcome();
+                    document.getElementById('prayer-compose').style.display = 'block';
+                    document.getElementById('moments-upload').style.display = 'block';
+                    document.getElementById('video-section').style.display = 'block';
+                    loadPeople();
+                    return;
+                } catch(e) {
+                    localStorage.removeItem('g4user');
+                }
+            }
+            // No valid user — show landing page
+            var landing = document.getElementById('landing-page');
+            if (landing) {
+                landing.style.display = 'block';
+                document.querySelector('.app-container').style.display = 'none';
+                initLandingPage();
+            } else {
+                // Fallback to old setup modal if landing page doesn't exist
+                const modal = document.getElementById('setup-modal');
+                if (IS_INVITE) {
+                    document.getElementById('setup-title').textContent = 'Welcome to G4!';
+                    document.getElementById('setup-subtitle').textContent = 'Join our community of sisters';
+                    document.getElementById('setup-hint').textContent = "We'll send you weekly devotions and encouragement";
+                    document.getElementById('setup-btn').textContent = 'Join the Community';
+                }
+                modal.style.display = 'flex';
+                modal.classList.add('animate-in');
+            }
         }
 
         // Normalize whatever a sister types in the Facebook field — full URL,
@@ -5432,6 +5589,13 @@
 
                 <div style="font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;margin-bottom:14px;">Social links are always visible to your sisters</div>
 
+                <div style="margin-top:4px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06);">
+                    <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Personal Password</div>
+                    <div style="font-size:0.75rem;color:var(--light-text);margin-bottom:10px;">Set a personal password so you don't need the access code every time you log in.</div>
+                    <input type="password" id="profile-password" placeholder="New password (4+ characters)" style="width:100%;padding:10px 14px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:Georgia,serif;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;margin-bottom:8px;">
+                    <button type="button" id="save-password-btn" style="padding:8px 20px;background:var(--sage);color:white;border:none;border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Save Password</button>
+                </div>
+
                 <button class="save-btn" id="profile-save-btn" style="width:100%;margin-top:8px;">Save Profile</button>
                 ${gameSettings && gameSettings.packing_points === '1' ? `<button id="profile-packing-btn" style="width:100%;margin-top:8px;padding:12px;border:1.5px solid rgba(201,144,138,0.3);background:rgba(255,255,255,0.6);color:var(--accent);border-radius:12px;font-family:Cormorant Garamond,serif;font-size:0.92rem;font-weight:600;cursor:pointer;">🧳 Replay Packing Points</button>` : ''}
                 <button style="width:100%;padding:12px;border:none;background:none;color:var(--light-text);font-size:0.85rem;cursor:pointer;margin-top:8px;" id="profile-close-btn">Close</button>
@@ -5580,6 +5744,31 @@
                 packingBtn.addEventListener('click', () => {
                     overlay.remove();
                     showPackingModal({ manual: true });
+                });
+            }
+
+            // Personal password save
+            var savePwBtn = sheet.querySelector('#save-password-btn');
+            if (savePwBtn) {
+                savePwBtn.addEventListener('click', async function() {
+                    var pw = sheet.querySelector('#profile-password').value.trim();
+                    if (pw.length < 4) { showToast('Password must be at least 4 characters'); return; }
+                    try {
+                        var resp = await fetch(API_URL + '/api/users/' + currentUser.id + '/password', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password: pw })
+                        });
+                        if (resp.ok) {
+                            showToast('Password saved! You can use it next time you log in.');
+                            sheet.querySelector('#profile-password').value = '';
+                        } else {
+                            var err = await resp.json();
+                            showToast(err.error || 'Could not save password');
+                        }
+                    } catch(e) {
+                        showToast('Could not save password. Check your connection.');
+                    }
                 });
             }
 

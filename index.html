@@ -4929,6 +4929,7 @@
 
                     currentUser = result;
                     saveUser(currentUser);
+                    localStorage.setItem('g4_code_year', '2027');
                     unlockApp();
                     showWelcome();
                     document.getElementById('prayer-compose').style.display = 'block';
@@ -4959,7 +4960,9 @@
 
         function initSetup() {
             const saved = localStorage.getItem('g4user') || getCookie('g4user');
-            if (saved) {
+            const codeYear = localStorage.getItem('g4_code_year');
+            // Only skip landing page if user has validated the code for 2027
+            if (saved && codeYear === '2027') {
                 try {
                     currentUser = JSON.parse(saved);
                     // Sync both storage methods
@@ -4976,11 +4979,21 @@
                     localStorage.removeItem('g4user');
                 }
             }
-            // No valid user — show landing page
+            // No valid user (or hasn't entered 2027 code) — show landing page
             var landing = document.getElementById('landing-page');
             if (landing) {
                 landing.style.display = 'block';
                 document.querySelector('.app-container').style.display = 'none';
+                // Pre-fill name if we have cached user data (returning sister)
+                if (saved) {
+                    try {
+                        var cachedUser = JSON.parse(saved);
+                        var firstField = document.getElementById('landing-first');
+                        var lastField = document.getElementById('landing-last');
+                        if (firstField && cachedUser.first_name) firstField.value = cachedUser.first_name;
+                        if (lastField && cachedUser.last_name) lastField.value = cachedUser.last_name;
+                    } catch(e) {}
+                }
                 initLandingPage();
             } else {
                 // Fallback to old setup modal if landing page doesn't exist

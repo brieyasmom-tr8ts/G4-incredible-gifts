@@ -4293,7 +4293,7 @@ function recalcRetreatCalculator() {
     const confPerWoman = totalWomen > 0 ? (confCost / totalWomen) : null;
 
     // Per-occupancy breakdown: no hotel, 1, 2, 3, 4 women per room
-    const rows = [0, 1, 2, 3, 4].map(occ => {
+    const rows = [1, 2, 3, 4, 0].map(occ => {
         if (occ === 0) {
             // No hotel — only food + conference + tax
             const subtotal = foodCost + (confPerWoman || 0);

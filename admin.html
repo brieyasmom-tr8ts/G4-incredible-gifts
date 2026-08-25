@@ -1251,9 +1251,14 @@
                         <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">For the rooms</div>
                     </div>
                     <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--sage);">
-                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Taken In</div>
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Projected Revenue</div>
                         <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--sage);" id="ov-revenue">$0</div>
-                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;" id="ov-revenue-sub">Projected from calculator</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Based on room counts &times; prices</div>
+                    </div>
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid #5b9a6f;">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Actual Revenue</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:#5b9a6f;" id="ov-actual-revenue">$0</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Payments received</div>
                     </div>
                     <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--blush);">
                         <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Budget Spent</div>
@@ -1353,7 +1358,7 @@
                         </div>
                         <div>
                             <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">No hotel</label>
-                            <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="calc-charge-0" placeholder="100" step="0.01" min="0" style="flex:1;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                            <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="calc-charge-0" placeholder="130" step="0.01" min="0" style="flex:1;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                         </div>
                     </div>
                     <!-- Hidden legacy field for backward compat with save/load -->
@@ -4106,6 +4111,7 @@ const _budgetOverview = {
     rooms: 0,
     hotelCost: 0,
     revenue: 0,
+    actualRevenue: 0,
     budgetSpent: 0
 };
 
@@ -4120,7 +4126,11 @@ function refreshBudgetOverview() {
     hotelEl.textContent = fmtMoney(_budgetOverview.hotelCost || 0);
     revEl.textContent = fmtMoney(_budgetOverview.revenue || 0);
     spentEl.textContent = fmtMoney(_budgetOverview.budgetSpent || 0);
-    const remaining = (_budgetOverview.revenue || 0) - (_budgetOverview.hotelCost || 0) - (_budgetOverview.budgetSpent || 0);
+    var actualRevEl = document.getElementById('ov-actual-revenue');
+    if (actualRevEl) actualRevEl.textContent = fmtMoney(_budgetOverview.actualRevenue || 0);
+    // "What's Left" uses actual revenue if there is any, otherwise projected
+    const revenueForCalc = (_budgetOverview.actualRevenue > 0) ? _budgetOverview.actualRevenue : (_budgetOverview.revenue || 0);
+    const remaining = revenueForCalc - (_budgetOverview.hotelCost || 0) - (_budgetOverview.budgetSpent || 0);
     leftEl.textContent = fmtMoney(remaining);
     leftEl.style.color = remaining >= 0 ? 'var(--rose)' : '#a13224';
 }
@@ -4409,6 +4419,8 @@ async function loadRegistrationsList() {
         _regList = data.registrations || [];
         document.getElementById('reg-ov-count').textContent = (data.summary && data.summary.count) || 0;
         document.getElementById('reg-ov-collected').textContent = fmtMoney((data.summary && data.summary.total_collected) || 0);
+        _budgetOverview.actualRevenue = (data.summary && data.summary.total_collected) || 0;
+        refreshBudgetOverview();
         if (!_regList.length) {
             body.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">No one registered yet.</div>';
             return;

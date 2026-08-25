@@ -70,21 +70,7 @@ async function sendMonthlyPaymentReminders(env) {
     if (balance <= 0) continue;
     if (sentIds.has(u.id)) continue;
 
-    const html = `
-      <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px;">
-        <h1 style="font-family:Georgia,serif;font-size:24px;color:#3a3330;margin:0 0 16px;">G4 Women's Retreat 2027</h1>
-        <p style="font-size:16px;color:#3a3330;line-height:1.7;">Hey ${u.first_name || 'friend'},</p>
-        <p style="font-size:16px;color:#3a3330;line-height:1.7;">Just a friendly reminder that you have a remaining balance for the G4 retreat.</p>
-        <div style="background:#f5f1ed;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
-          <div style="font-size:14px;color:#8a817a;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Balance</div>
-          <div style="font-size:32px;font-weight:700;color:#b5706a;">$${balance.toFixed(2)}</div>
-          ${dueDate ? '<div style="font-size:14px;color:#8a817a;margin-top:8px;">Due by ' + dueDate + '</div>' : ''}
-        </div>
-        <p style="font-size:16px;color:#3a3330;line-height:1.7;">You can make your payment through the church registration form. If you have any questions, just reply to this email.</p>
-        <p style="font-size:16px;color:#3a3330;line-height:1.7;">We can't wait to see you in Ocean City!</p>
-        <p style="font-size:16px;color:#3a3330;line-height:1.7;">With love,<br>Heather &amp; the G4 Team</p>
-      </div>
-    `;
+    const html = buildPaymentReminderHtml(u.first_name, balance, dueDate);
     const sent = await brevoSendEmail(env, u.email, 'G4 Retreat — Payment Reminder', html);
     if (sent) {
       await env.DB.prepare('INSERT INTO reminder_log (user_id, email, type, retreat_year) VALUES (?, ?, ?, ?)').bind(u.id, u.email, 'payment', activeYear).run();
@@ -92,6 +78,28 @@ async function sendMonthlyPaymentReminders(env) {
     }
   }
   console.log('[cron] monthly payment reminders sent:', count);
+}
+
+function buildPaymentReminderHtml(firstName, balance, dueDate) {
+  return `
+    <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px;">
+      <h1 style="font-family:Georgia,serif;font-size:24px;color:#3a3330;margin:0 0 16px;">G4 Women's Retreat 2027</h1>
+      <p style="font-size:16px;color:#3a3330;line-height:1.7;">Hey ${firstName || 'friend'}!</p>
+      <p style="font-size:16px;color:#3a3330;line-height:1.7;">We are SO excited you're joining us this year. Seriously, this retreat is going to be incredible and we cannot wait to be together in Ocean City.</p>
+      <p style="font-size:16px;color:#3a3330;line-height:1.7;">Just wanted to give you a quick heads up on where things stand with your balance:</p>
+      <div style="background:#f5f1ed;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
+        <div style="font-size:14px;color:#8a817a;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Remaining Balance</div>
+        <div style="font-size:32px;font-weight:700;color:#b5706a;">$${balance.toFixed(2)}</div>
+        ${dueDate ? '<div style="font-size:14px;color:#8a817a;margin-top:8px;">Due by ' + dueDate + '</div>' : ''}
+      </div>
+      <p style="font-size:16px;color:#3a3330;line-height:1.7;">You can make your payment through the church registration form. If you need to work out a payment plan or have any questions at all, just hit reply. We'll figure it out together.</p>
+      <p style="font-size:16px;color:#3a3330;line-height:1.7;font-style:italic;color:#7a8f6a;">"For I know the plans I have for you," declares the Lord, "plans to prosper you and not to harm you, plans to give you hope and a future." - Jeremiah 29:11</p>
+      <p style="font-size:16px;color:#3a3330;line-height:1.7;">See you at the beach!</p>
+      <p style="font-size:16px;color:#3a3330;line-height:1.7;">The G4 Team</p>
+      <hr style="border:none;border-top:1px solid #e0d8d0;margin:24px 0;">
+      <p style="font-size:12px;color:#8a817a;">G4 Women's Retreat &middot; April 8-10, 2027 &middot; Ocean City, MD</p>
+    </div>
+  `;
 }
 
 // Blocked words filter
@@ -3508,26 +3516,6 @@ export default {
             retreat_year INTEGER DEFAULT 2027
           )`).run();
         } catch(e) {}
-      }
-
-      function buildPaymentReminderHtml(firstName, balance, dueDate) {
-        return `
-          <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px;">
-            <h1 style="font-family:Georgia,serif;font-size:24px;color:#3a3330;margin:0 0 16px;">G4 Women's Retreat 2027</h1>
-            <p style="font-size:16px;color:#3a3330;line-height:1.7;">Hey ${firstName || 'friend'},</p>
-            <p style="font-size:16px;color:#3a3330;line-height:1.7;">Just a friendly reminder that you have a remaining balance for the G4 retreat.</p>
-            <div style="background:#f5f1ed;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
-              <div style="font-size:14px;color:#8a817a;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Balance</div>
-              <div style="font-size:32px;font-weight:700;color:#b5706a;">$${balance.toFixed(2)}</div>
-              ${dueDate ? `<div style="font-size:14px;color:#8a817a;margin-top:8px;">Due by ${dueDate}</div>` : ''}
-            </div>
-            <p style="font-size:16px;color:#3a3330;line-height:1.7;">You can make your payment through the church registration form. If you have any questions or need to set up a payment plan, just reply to this email.</p>
-            <p style="font-size:16px;color:#3a3330;line-height:1.7;">We can't wait to see you in Ocean City!</p>
-            <p style="font-size:16px;color:#3a3330;line-height:1.7;">With love,<br>Heather &amp; the G4 Team</p>
-            <hr style="border:none;border-top:1px solid #e0d8d0;margin:24px 0;">
-            <p style="font-size:12px;color:#8a817a;">G4 Women's Retreat &middot; April 8-10, 2027 &middot; Ocean City, MD</p>
-          </div>
-        `;
       }
 
       // POST /api/admin/reminders/send/:userId - send reminder to one participant

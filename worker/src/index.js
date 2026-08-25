@@ -3087,6 +3087,307 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // ===== PAYMENTS & ROOMS =====
+
+      async function ensurePaymentTables(db) {
+        await Promise.allSettled([
+          db.prepare(`CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            amount REAL NOT NULL,
+            method TEXT DEFAULT '',
+            date TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now')),
+            retreat_year INTEGER DEFAULT 2027
+          )`).run(),
+          db.prepare(`CREATE TABLE IF NOT EXISTS budget_expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            budgeted REAL DEFAULT 0,
+            spent REAL DEFAULT 0,
+            notes TEXT DEFAULT '',
+            retreat_year INTEGER DEFAULT 2027
+          )`).run(),
+          db.prepare(`CREATE TABLE IF NOT EXISTS room_assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            room_number INTEGER NOT NULL,
+            room_label TEXT DEFAULT '',
+            user_id INTEGER NOT NULL,
+            retreat_year INTEGER DEFAULT 2027,
+            UNIQUE(user_id, retreat_year)
+          )`).run()
+        ]);
+        // Extra columns on users for room/payment tracking
+        for (const col of [
+          ['total_owed', 'REAL DEFAULT 0'],
+          ['room_size_preference', 'INTEGER DEFAULT 0'],
+          ['roommate_requests', "TEXT DEFAULT ''"],
+          ['participant_status', "TEXT DEFAULT 'active'"],
+          ['payment_due_date', "TEXT DEFAULT ''"]
+        ]) {
+          try { await db.prepare(`ALTER TABLE users ADD COLUMN ${col[0]} ${col[1]}`).run(); } catch(e) {}
+        }
+      }
+
+      // GET /api/admin/participants - full roster with payment summaries
+      if (path === '/api/admin/participants' && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        await ensureRegColumns(env.DB);
+        const activeYear = await getActiveYear(env.DB);
+
+        const { results: users } = await env.DB.prepare(
+          `SELECT u.id, u.first_name, u.last_name, u.last_initial, u.email, u.phone,
+                  u.church, u.total_owed, u.room_size_preference, u.roommate_requests,
+                  u.participant_status, u.payment_due_date, u.reg_registered,
+                  COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?), 0) as total_paid,
+                  (SELECT MAX(p.date) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?) as last_payment_date,
+                  (SELECT COUNT(*) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?) as payment_count
+           FROM users u
+           WHERE u.retreat_year = ? OR u.reg_registered = 1
+           ORDER BY u.first_name ASC`
+        ).bind(activeYear, activeYear, activeYear, activeYear).all();
+
+        // Get shared due date from settings
+        let dueDate = '';
+        try {
+          const row = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'payment_due_date'").first();
+          dueDate = (row && row.value) || '';
+        } catch(e) {}
+
+        const summary = { total_expected: 0, total_collected: 0, total_outstanding: 0, participant_count: 0 };
+        for (const u of (users || [])) {
+          if (u.participant_status === 'inactive') continue;
+          summary.participant_count++;
+          summary.total_expected += u.total_owed || 0;
+          summary.total_collected += u.total_paid || 0;
+        }
+        summary.total_outstanding = summary.total_expected - summary.total_collected;
+
+        return json({ participants: users || [], summary, due_date: dueDate }, corsHeaders);
+      }
+
+      // POST /api/admin/participants/:id - update participant fields
+      const participantMatch = path.match(/^\/api\/admin\/participants\/(\d+)$/);
+      if (participantMatch && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        const userId = parseInt(participantMatch[1]);
+        const body = await request.json();
+        const allowed = ['total_owed', 'room_size_preference', 'roommate_requests', 'participant_status', 'payment_due_date'];
+        const updates = [];
+        const binds = [];
+        for (const key of allowed) {
+          if (body[key] !== undefined) {
+            updates.push(`${key} = ?`);
+            binds.push(body[key] === null ? '' : body[key]);
+          }
+        }
+        if (updates.length) {
+          binds.push(userId);
+          await env.DB.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).bind(...binds).run();
+        }
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/admin/payments/:userId - payment history for one user
+      const paymentsGetMatch = path.match(/^\/api\/admin\/payments\/(\d+)$/);
+      if (paymentsGetMatch && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        const userId = parseInt(paymentsGetMatch[1]);
+        const activeYear = await getActiveYear(env.DB);
+        const { results } = await env.DB.prepare(
+          'SELECT * FROM payments WHERE user_id = ? AND retreat_year = ? ORDER BY date DESC, created_at DESC'
+        ).bind(userId, activeYear).all();
+        return json(results || [], corsHeaders);
+      }
+
+      // POST /api/admin/payments - add a payment
+      if (path === '/api/admin/payments' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        const body = await request.json();
+        if (!body.user_id || !body.amount) return json({ error: 'user_id and amount required' }, corsHeaders, 400);
+        const activeYear = await getActiveYear(env.DB);
+        await env.DB.prepare(
+          'INSERT INTO payments (user_id, amount, method, date, notes, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
+        ).bind(
+          parseInt(body.user_id),
+          parseFloat(body.amount) || 0,
+          body.method || 'manual',
+          body.date || new Date().toISOString().split('T')[0],
+          body.notes || '',
+          activeYear
+        ).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/admin/payments/:id - remove a payment
+      const paymentDeleteMatch = path.match(/^\/api\/admin\/payments\/(\d+)$/);
+      if (paymentDeleteMatch && request.method === 'DELETE') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        const payId = parseInt(paymentDeleteMatch[1]);
+        await env.DB.prepare('DELETE FROM payments WHERE id = ?').bind(payId).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/admin/participants/import - import church form CSV data
+      // Maps church form fields to participants + payments
+      if (path === '/api/admin/participants/import' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        await ensureRegColumns(env.DB);
+        const body = await request.json();
+        const rows = body.rows || [];
+        const activeYear = await getActiveYear(env.DB);
+        let imported = 0;
+        let created = 0;
+
+        for (const row of rows) {
+          const firstName = (row.first_name || '').trim();
+          const lastName = (row.last_name || '').trim();
+          if (!firstName) continue;
+
+          const cleanFirst = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+          const cleanInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
+          const email = (row.email || '').trim().toLowerCase();
+          const phone = (row.phone || '').trim();
+          const church = (row.church || '').trim();
+          const roomPref = parseInt(row.room_size_preference) || 0;
+          const roommateReqs = (row.roommate_requests || '').trim();
+          const formTotal = parseFloat(row.form_total) || 0;
+          const paymentAmount = parseFloat(row.payment_amount) || 0;
+          const paymentDate = (row.payment_date || '').trim();
+          const paymentStatus = (row.payment_status || '').trim();
+
+          // Match existing user by name or email
+          let user = await env.DB.prepare(
+            'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND UPPER(last_initial) = UPPER(?)'
+          ).bind(cleanFirst, cleanInitial).first();
+
+          if (!user && email) {
+            user = await env.DB.prepare(
+              "SELECT id FROM users WHERE LOWER(TRIM(email)) = ?"
+            ).bind(email).first();
+          }
+
+          if (!user) {
+            // Create new user
+            const result = await env.DB.prepare(
+              'INSERT INTO users (first_name, last_initial, last_name, email, phone, church, retreat_year, reg_registered, total_owed, room_size_preference, roommate_requests) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)'
+            ).bind(cleanFirst, cleanInitial, lastName, email || null, phone || null, church || null, activeYear, formTotal, roomPref, roommateReqs).run();
+            user = { id: result.meta.last_row_id };
+            created++;
+          } else {
+            // Update existing user
+            const updates = ['reg_registered = 1', 'retreat_year = ?'];
+            const binds = [activeYear];
+            if (formTotal > 0) { updates.push('total_owed = ?'); binds.push(formTotal); }
+            if (roomPref > 0) { updates.push('room_size_preference = ?'); binds.push(roomPref); }
+            if (roommateReqs) { updates.push('roommate_requests = ?'); binds.push(roommateReqs); }
+            if (email) { updates.push('email = ?'); binds.push(email); }
+            if (phone) { updates.push('phone = ?'); binds.push(phone); }
+            if (church) { updates.push('church = ?'); binds.push(church); }
+            if (lastName) { updates.push('last_name = ?'); binds.push(lastName); }
+            binds.push(user.id);
+            await env.DB.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).bind(...binds).run();
+          }
+
+          // Add payment if there's an amount
+          if (paymentAmount > 0) {
+            // Check for duplicate (same user, same amount, same date)
+            const existing = await env.DB.prepare(
+              'SELECT id FROM payments WHERE user_id = ? AND amount = ? AND date = ? AND retreat_year = ?'
+            ).bind(user.id, paymentAmount, paymentDate, activeYear).first();
+            if (!existing) {
+              await env.DB.prepare(
+                'INSERT INTO payments (user_id, amount, method, date, notes, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
+              ).bind(user.id, paymentAmount, 'csv_import', paymentDate, paymentStatus || '', activeYear).run();
+            }
+          }
+
+          imported++;
+        }
+
+        return json({ success: true, imported, created }, corsHeaders);
+      }
+
+      // GET /api/admin/rooms - room assignments for active year
+      if (path === '/api/admin/rooms' && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        const activeYear = await getActiveYear(env.DB);
+        const { results } = await env.DB.prepare(
+          `SELECT r.id, r.room_number, r.room_label, r.user_id,
+                  u.first_name, u.last_name, u.last_initial, u.room_size_preference, u.roommate_requests
+           FROM room_assignments r
+           JOIN users u ON r.user_id = u.id
+           WHERE r.retreat_year = ?
+           ORDER BY r.room_number ASC`
+        ).bind(activeYear).all();
+        return json(results || [], corsHeaders);
+      }
+
+      // POST /api/admin/rooms - assign user to a room
+      if (path === '/api/admin/rooms' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        const body = await request.json();
+        if (!body.user_id || !body.room_number) return json({ error: 'user_id and room_number required' }, corsHeaders, 400);
+        const activeYear = await getActiveYear(env.DB);
+        // Upsert — one room per user per year
+        await env.DB.prepare(
+          `INSERT INTO room_assignments (room_number, room_label, user_id, retreat_year) VALUES (?, ?, ?, ?)
+           ON CONFLICT(user_id, retreat_year) DO UPDATE SET room_number = excluded.room_number, room_label = excluded.room_label`
+        ).bind(parseInt(body.room_number), body.room_label || '', parseInt(body.user_id), activeYear).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // DELETE /api/admin/rooms/:userId - remove user from room
+      const roomDeleteMatch = path.match(/^\/api\/admin\/rooms\/(\d+)$/);
+      if (roomDeleteMatch && request.method === 'DELETE') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        const userId = parseInt(roomDeleteMatch[1]);
+        const activeYear = await getActiveYear(env.DB);
+        await env.DB.prepare('DELETE FROM room_assignments WHERE user_id = ? AND retreat_year = ?').bind(userId, activeYear).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // POST /api/admin/rooms/create - create a new empty room
+      if (path === '/api/admin/rooms/create' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        const body = await request.json();
+        const activeYear = await getActiveYear(env.DB);
+        // Find next room number
+        const max = await env.DB.prepare('SELECT MAX(room_number) as mx FROM room_assignments WHERE retreat_year = ?').bind(activeYear).first();
+        const nextRoom = ((max && max.mx) || 0) + 1;
+        return json({ success: true, room_number: body.room_number || nextRoom }, corsHeaders);
+      }
+
+      // POST /api/admin/settings/payment-due-date - set shared due date
+      if (path === '/api/admin/settings/payment-due-date' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        const body = await request.json();
+        await env.DB.prepare(
+          "INSERT INTO game_settings (key, value) VALUES ('payment_due_date', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+        ).bind(body.date || '').run();
+        return json({ success: true }, corsHeaders);
+      }
+
       // ===== FEEDBACK =====
 
       // POST /api/feedback - submit retreat feedback

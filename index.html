@@ -3345,163 +3345,212 @@
         </div>
     </div>
 
-    <!-- ===== LANDING PAGE (visible when not authenticated) ===== -->
+    <!-- ===== LANDING PAGE ===== -->
     <style>
-      .lp-section { max-width:900px;margin:0 auto;padding:0 24px; }
-      .lp-two-col { display:grid;grid-template-columns:1fr;gap:24px; }
-      .lp-pricing-grid { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
-      .lp-cta-row { display:grid;grid-template-columns:1fr;gap:24px; }
-      @media(min-width:700px) {
-        .lp-two-col { grid-template-columns:1fr 1fr; }
-        .lp-pricing-grid { grid-template-columns:repeat(4,1fr); }
-        .lp-cta-row { grid-template-columns:1fr 1fr; }
+      /* ── Landing page design tokens ── */
+      .lp { --lp-primary:#7a8f6a; --lp-accent:#b5706a; --lp-bg:#f5f1ed; --lp-surface:#fff; --lp-text:#3a3330; --lp-muted:#8a817a; --lp-border:#e0d8d0; --lp-radius:16px; --lp-shadow:0 2px 12px rgba(58,51,48,0.06); --lp-shadow-lg:0 4px 24px rgba(58,51,48,0.10); --lp-gap:clamp(48px,8vw,80px); --lp-max:960px; --lp-ease:cubic-bezier(.4,0,.2,1); }
+      .lp * { box-sizing:border-box; }
+      .lp { font-family:Georgia,'Times New Roman',serif; font-size:16px; line-height:1.7; color:var(--lp-text); }
+      .lp h1,.lp h2,.lp h3 { font-family:'Playfair Display',Georgia,serif; font-weight:700; line-height:1.15; margin:0; }
+      .lp-wrap { max-width:var(--lp-max); margin:0 auto; padding:0 clamp(20px,5vw,40px); }
+      .lp section { padding-top:var(--lp-gap); }
+      .lp a { color:var(--lp-primary); text-decoration-thickness:1px; text-underline-offset:3px; transition:color .2s var(--lp-ease); }
+      .lp a:hover { color:var(--lp-accent); }
+      .lp a:focus-visible,.lp button:focus-visible,.lp input:focus-visible { outline:2px solid var(--lp-primary); outline-offset:2px; }
+
+      /* ── Photo strip ── */
+      .lp-photos-track { display:flex; gap:14px; animation:landingScroll 35s linear infinite; width:max-content; }
+      .lp-photos-track:hover { animation-play-state:paused; }
+      .lp-photo { width:clamp(200px,25vw,300px); height:clamp(140px,18vw,210px); object-fit:cover; border-radius:12px; flex-shrink:0; transition:transform .3s var(--lp-ease); }
+      .lp-photo:hover { transform:scale(1.03); }
+
+      /* ── Cards ── */
+      .lp-card { background:var(--lp-surface); border:1px solid var(--lp-border); border-radius:var(--lp-radius); padding:clamp(24px,4vw,36px); box-shadow:var(--lp-shadow); }
+
+      /* ── Buttons ── */
+      .lp-btn { display:inline-block; padding:16px 44px; background:var(--lp-primary); color:#fff; font-family:'Playfair Display',Georgia,serif; font-size:16px; font-weight:600; letter-spacing:.3px; border:none; border-radius:40px; text-decoration:none; cursor:pointer; transition:all .25s var(--lp-ease); touch-action:manipulation; -webkit-tap-highlight-color:transparent; box-shadow:var(--lp-shadow); }
+      .lp-btn:hover { background:#6b7f5c; color:#fff; transform:translateY(-1px); box-shadow:var(--lp-shadow-lg); }
+      .lp-btn:active { transform:translateY(0); }
+      .lp-btn-outline { background:transparent; color:var(--lp-primary); border:2px solid var(--lp-primary); box-shadow:none; }
+      .lp-btn-outline:hover { background:var(--lp-primary); color:#fff; }
+
+      /* ── Inputs ── */
+      .lp-input { width:100%; padding:14px 16px; border:1.5px solid var(--lp-border); border-radius:12px; font-family:Georgia,serif; font-size:16px; color:var(--lp-text); background:var(--lp-surface); transition:border-color .2s var(--lp-ease); }
+      .lp-input::placeholder { color:var(--lp-muted); }
+      .lp-input:focus { border-color:var(--lp-primary); outline:none; }
+
+      /* ── Grids ── */
+      .lp-grid-2 { display:grid; grid-template-columns:1fr; gap:clamp(20px,4vw,32px); }
+      .lp-grid-pricing { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+      @media(min-width:768px) {
+        .lp-grid-2 { grid-template-columns:1fr 1fr; }
+        .lp-grid-pricing { grid-template-columns:repeat(4,1fr); }
       }
+
+      /* ── Pricing card ── */
+      .lp-price-card { background:var(--lp-surface); border:1px solid var(--lp-border); border-radius:var(--lp-radius); padding:clamp(20px,3vw,28px) 16px; text-align:center; transition:transform .2s var(--lp-ease),box-shadow .2s var(--lp-ease); }
+      .lp-price-card:hover { transform:translateY(-3px); box-shadow:var(--lp-shadow-lg); }
+      .lp-price-card.popular { border-color:var(--lp-primary); border-width:2px; position:relative; }
+      .lp-price-card.popular::before { content:'BEST VALUE'; position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:var(--lp-primary); color:#fff; font-size:10px; font-weight:700; letter-spacing:1px; padding:3px 12px; border-radius:20px; font-family:Georgia,serif; }
+
+      /* ── Included list ── */
+      .lp-check-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:14px; }
+      .lp-check-list li { display:flex; align-items:flex-start; gap:12px; font-size:15px; line-height:1.5; }
+      .lp-check-list li::before { content:''; display:block; width:20px; height:20px; min-width:20px; margin-top:2px; border-radius:50%; background:var(--lp-primary); background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M8.5 13.5L5 10l1.1-1.1 2.4 2.4 5.4-5.4L15 7l-6.5 6.5z' fill='%23fff'/%3E%3C/svg%3E"); background-size:contain; flex-shrink:0; }
+
+      /* ── Schedule rows ── */
+      .lp-sched-row { display:flex; justify-content:space-between; align-items:baseline; padding:14px 0; border-bottom:1px solid var(--lp-border); gap:12px; }
+      .lp-sched-row:last-child { border-bottom:none; }
+      .lp-sched-day { font-family:'Playfair Display',Georgia,serif; font-weight:700; font-size:15px; white-space:nowrap; }
+      .lp-sched-detail { color:var(--lp-muted); font-size:14px; text-align:right; }
+
+      /* ── Divider ── */
+      .lp-divider { width:48px; height:2px; background:var(--lp-border); margin:0 auto; border-radius:2px; }
+
+      /* ── NEW badge ── */
+      .lp-badge-new { display:inline-block; background:var(--lp-accent); color:#fff; font-size:10px; font-weight:700; letter-spacing:.8px; padding:2px 8px; border-radius:20px; vertical-align:middle; margin-left:4px; }
     </style>
-    <div id="landing-page" style="display:none;min-height:100vh;background:var(--cream);position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:9999;">
 
-      <!-- Hero -->
-      <div style="text-align:center;padding:clamp(50px,10vw,100px) 24px clamp(30px,6vw,60px);background:linear-gradient(180deg,rgba(138,158,122,0.12) 0%,var(--cream) 100%);">
-        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:clamp(14px,2vw,18px);color:var(--sage);letter-spacing:1px;margin-bottom:10px;">APRIL 8&ndash;10, 2027 &middot; OCEAN CITY, MD</div>
-        <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(36px,6vw,64px);color:var(--dark-text);margin:0 0 10px;line-height:1.1;">G4 Women's Retreat</h1>
-        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(14px,2vw,18px);color:var(--taupe);letter-spacing:3px;margin-bottom:10px;">GATHER &middot; GROW &middot; GIVE &middot; GO</div>
-        <div style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(20px,3.5vw,32px);color:var(--sage);">2027</div>
-        <div id="landing-theme" style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:17px;color:var(--rose);margin-top:14px;display:none;"></div>
-        <div style="width:60px;height:2px;background:var(--sage);margin:24px auto 0;border-radius:2px;"></div>
-      </div>
+    <div id="landing-page" class="lp" style="display:none;min-height:100vh;background:var(--lp-bg);position:fixed;top:0;left:0;right:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:9999;">
 
-      <!-- Our Mission -->
-      <div class="lp-section" style="padding-top:40px;padding-bottom:32px;text-align:center;">
-        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(20px,3vw,28px);color:var(--dark-text);margin:0 0 14px;">Our Mission</h2>
-        <p style="font-family:Georgia,serif;font-size:clamp(15px,1.8vw,17px);color:var(--dark-text);line-height:1.8;margin:0 auto;max-width:680px;">The G4 Retreat is all about bringing women together to connect, laugh, and grow closer to God and each other. It's a chance to hit pause on the craziness of life, worship together, share stories, and just enjoy being in the moment. Whether it's through heartfelt conversations, joyful worship, or much-needed downtime, G4 is a weekend designed to fill your cup and send you back home refreshed and ready to shine.</p>
-      </div>
+      <!-- ── Hero ── -->
+      <header style="text-align:center;padding:clamp(60px,12vw,120px) 24px clamp(40px,8vw,72px);">
+        <p style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:clamp(13px,1.8vw,16px);color:var(--lp-muted);letter-spacing:1.5px;margin:0 0 16px;text-transform:uppercase;">April 8&ndash;10, 2027 &middot; Ocean City, MD</p>
+        <h1 style="font-size:clamp(38px,7vw,68px);color:var(--lp-text);letter-spacing:-0.5px;">G4 Women's Retreat</h1>
+        <p style="font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(15px,2vw,19px);color:var(--lp-primary);letter-spacing:4px;margin:14px 0 0;text-transform:uppercase;">Gather &middot; Grow &middot; Give &middot; Go</p>
+        <div id="landing-theme" style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:18px;color:var(--lp-accent);margin-top:18px;display:none;"></div>
+      </header>
 
-      <!-- Photo Gallery -->
-      <div style="padding:8px 0 32px;overflow:hidden;">
-        <div id="landing-photos" style="display:flex;gap:12px;animation:landingScroll 30s linear infinite;width:max-content;">
-          <img src="photos/g4-1.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-2.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-3.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-4.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-5.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-6.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-7.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-8.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-9.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-10.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-11.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-12.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-1.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-2.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-3.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-4.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-5.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
-          <img src="photos/g4-6.jpg" alt="" style="width:clamp(160px,22vw,260px);height:clamp(110px,15vw,180px);object-fit:cover;border-radius:14px;flex-shrink:0;">
+      <!-- ── Photo strip (full bleed) ── -->
+      <div style="overflow:hidden;padding:0 0 var(--lp-gap);" role="img" aria-label="Photos from past G4 retreats">
+        <div class="lp-photos-track">
+          <img src="photos/g4-1.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-7.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-3.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-8.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-5.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-10.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-2.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-11.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-4.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-9.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-6.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-12.jpg" alt="G4 retreat moment" class="lp-photo" loading="lazy">
+          <img src="photos/g4-1.jpg" alt="" class="lp-photo" loading="lazy" aria-hidden="true">
+          <img src="photos/g4-7.jpg" alt="" class="lp-photo" loading="lazy" aria-hidden="true">
+          <img src="photos/g4-3.jpg" alt="" class="lp-photo" loading="lazy" aria-hidden="true">
+          <img src="photos/g4-8.jpg" alt="" class="lp-photo" loading="lazy" aria-hidden="true">
+          <img src="photos/g4-5.jpg" alt="" class="lp-photo" loading="lazy" aria-hidden="true">
+          <img src="photos/g4-10.jpg" alt="" class="lp-photo" loading="lazy" aria-hidden="true">
         </div>
       </div>
 
-      <!-- What's Included + Schedule side by side on desktop -->
-      <div class="lp-section" style="padding-bottom:36px;">
-        <div class="lp-two-col">
-          <div>
-            <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(20px,3vw,26px);color:var(--dark-text);margin:0 0 16px;">What's Included</h2>
-            <div style="display:flex;flex-direction:column;gap:12px;">
-              <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> 2 nights at the Hyatt Place Oceanfront</div>
-              <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> Retreat sessions &amp; speakers</div>
-              <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> Gift bags</div>
-              <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> Hot buffet breakfast Friday &amp; Saturday</div>
-              <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> <strong style="color:var(--accent);font-size:12px;vertical-align:top;">NEW</strong> Thursday night welcome party</div>
-              <div style="display:flex;align-items:center;gap:10px;font-size:15px;color:var(--dark-text);"><span style="color:var(--sage);font-size:18px;">&#10003;</span> Rooms with 2 queen beds + pull-out sofa</div>
+      <!-- ── Mission ── -->
+      <section>
+        <div class="lp-wrap" style="text-align:center;">
+          <h2 style="font-size:clamp(22px,3.5vw,32px);margin-bottom:20px;">Our Mission</h2>
+          <p style="max-width:620px;margin:0 auto;font-size:clamp(15px,1.6vw,17px);color:var(--lp-text);line-height:1.85;">The G4 Retreat is all about bringing women together to connect, laugh, and grow closer to God and each other. It's a chance to hit pause on the craziness of life, worship together, share stories, and just enjoy being in the moment. Whether it's through heartfelt conversations, joyful worship, or much-needed downtime, G4 is a weekend designed to fill your cup and send you back home refreshed and ready to shine.</p>
+        </div>
+      </section>
+
+      <!-- ── What's Included + Schedule ── -->
+      <section>
+        <div class="lp-wrap">
+          <div class="lp-grid-2">
+            <!-- Included -->
+            <div class="lp-card">
+              <h2 style="font-size:clamp(20px,2.5vw,26px);margin-bottom:20px;">What's Included</h2>
+              <ul class="lp-check-list">
+                <li>2 nights at the Hyatt Place Oceanfront</li>
+                <li>Retreat sessions &amp; speakers</li>
+                <li>Gift bags</li>
+                <li>Hot buffet breakfast Friday &amp; Saturday</li>
+                <li>Thursday night welcome party <span class="lp-badge-new">NEW</span></li>
+                <li>Rooms with 2 queen beds + pull-out sofa</li>
+              </ul>
             </div>
-          </div>
-          <div>
-            <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(20px,3vw,26px);color:var(--dark-text);margin:0 0 16px;">Schedule</h2>
-            <div style="background:white;border-radius:12px;padding:20px;box-shadow:var(--shadow-sm);">
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.06);">
-                <span style="font-weight:600;color:var(--dark-text);font-size:15px;">Thursday</span>
-                <span style="color:#888;font-size:13px;">Check-in 5 PM &middot; Welcome Party at 7 PM</span>
+            <!-- Schedule -->
+            <div>
+              <div class="lp-card" style="margin-bottom:20px;">
+                <h2 style="font-size:clamp(20px,2.5vw,26px);margin-bottom:16px;">Schedule</h2>
+                <div class="lp-sched-row"><span class="lp-sched-day">Thursday</span><span class="lp-sched-detail">Check-in 5 PM &middot; Welcome Party 7 PM</span></div>
+                <div class="lp-sched-row"><span class="lp-sched-day">Friday</span><span class="lp-sched-detail">Session 1 &middot; Free Time &middot; Session 2</span></div>
+                <div class="lp-sched-row"><span class="lp-sched-day">Saturday</span><span class="lp-sched-detail">Breakfast &middot; Final Session &middot; Noon</span></div>
               </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.06);">
-                <span style="font-weight:600;color:var(--dark-text);font-size:15px;">Friday</span>
-                <span style="color:#888;font-size:13px;">Session 1 &middot; Free Time &middot; Session 2</span>
+              <div class="lp-card" style="text-align:center;padding:20px 24px;">
+                <p style="font-family:'Playfair Display',Georgia,serif;font-weight:700;font-size:16px;margin:0 0 4px;">Hyatt Place Oceanfront</p>
+                <p style="color:var(--lp-muted);font-size:14px;margin:0 0 8px;">Ocean City, MD</p>
+                <a href="https://www.hyatt.com/hyatt-place/en-US/occzn-hyatt-place-ocean-city-oceanfront" target="_blank" rel="noopener" style="font-size:14px;">View hotel &amp; amenities &rarr;</a>
               </div>
-              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;">
-                <span style="font-weight:600;color:var(--dark-text);font-size:15px;">Saturday</span>
-                <span style="color:#888;font-size:13px;">Breakfast &middot; Final Session &middot; Ends 12 PM</span>
-              </div>
-            </div>
-            <!-- Hotel -->
-            <div style="margin-top:20px;text-align:center;">
-              <p style="font-size:15px;color:var(--dark-text);margin:0 0 6px;font-weight:600;">Hyatt Place Oceanfront, Ocean City, MD</p>
-              <a href="https://www.hyatt.com/hyatt-place/en-US/occzn-hyatt-place-ocean-city-oceanfront" target="_blank" rel="noopener" style="font-size:14px;color:var(--sage);text-decoration:underline;">View hotel &amp; amenities</a>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Room Pricing -->
-      <div class="lp-section" style="padding-bottom:40px;">
-        <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(20px,3vw,26px);color:var(--dark-text);margin:0 0 16px;text-align:center;">Room Pricing</h2>
-        <div class="lp-pricing-grid">
-          <div style="background:white;border-radius:14px;padding:20px 16px;text-align:center;box-shadow:var(--shadow-sm);">
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(22px,3vw,30px);color:var(--sage);font-weight:700;">$430</div>
-            <div style="font-size:14px;color:var(--dark-text);margin-top:4px;">per person</div>
-            <div style="font-size:12px;color:#888;margin-top:2px;">1 person room</div>
-          </div>
-          <div style="background:white;border-radius:14px;padding:20px 16px;text-align:center;box-shadow:var(--shadow-sm);">
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(22px,3vw,30px);color:var(--sage);font-weight:700;">$280</div>
-            <div style="font-size:14px;color:var(--dark-text);margin-top:4px;">per person</div>
-            <div style="font-size:12px;color:#888;margin-top:2px;">2 person room</div>
-          </div>
-          <div style="background:white;border-radius:14px;padding:20px 16px;text-align:center;box-shadow:var(--shadow-sm);">
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(22px,3vw,30px);color:var(--sage);font-weight:700;">$230</div>
-            <div style="font-size:14px;color:var(--dark-text);margin-top:4px;">per person</div>
-            <div style="font-size:12px;color:#888;margin-top:2px;">3 person room</div>
-          </div>
-          <div style="background:white;border-radius:14px;padding:20px 16px;text-align:center;box-shadow:var(--shadow-sm);">
-            <div style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(22px,3vw,30px);color:var(--sage);font-weight:700;">$190</div>
-            <div style="font-size:14px;color:var(--dark-text);margin-top:4px;">per person</div>
-            <div style="font-size:12px;color:#888;margin-top:2px;">4 person room</div>
+      <!-- ── Pricing ── -->
+      <section>
+        <div class="lp-wrap" style="text-align:center;">
+          <h2 style="font-size:clamp(22px,3.5vw,32px);margin-bottom:8px;">Room Pricing</h2>
+          <p style="color:var(--lp-muted);font-size:14px;margin:0 0 clamp(20px,3vw,32px);">Per person &middot; includes everything above</p>
+          <div class="lp-grid-pricing">
+            <div class="lp-price-card">
+              <h3 style="font-size:clamp(28px,4vw,36px);color:var(--lp-primary);margin-bottom:4px;">$430</h3>
+              <p style="font-size:14px;margin:0;color:var(--lp-muted);">per person</p>
+              <p style="font-size:13px;margin:6px 0 0;color:var(--lp-text);font-weight:600;">Solo Room</p>
+            </div>
+            <div class="lp-price-card">
+              <h3 style="font-size:clamp(28px,4vw,36px);color:var(--lp-primary);margin-bottom:4px;">$280</h3>
+              <p style="font-size:14px;margin:0;color:var(--lp-muted);">per person</p>
+              <p style="font-size:13px;margin:6px 0 0;color:var(--lp-text);font-weight:600;">2 Per Room</p>
+            </div>
+            <div class="lp-price-card">
+              <h3 style="font-size:clamp(28px,4vw,36px);color:var(--lp-primary);margin-bottom:4px;">$230</h3>
+              <p style="font-size:14px;margin:0;color:var(--lp-muted);">per person</p>
+              <p style="font-size:13px;margin:6px 0 0;color:var(--lp-text);font-weight:600;">3 Per Room</p>
+            </div>
+            <div class="lp-price-card popular">
+              <h3 style="font-size:clamp(28px,4vw,36px);color:var(--lp-primary);margin-bottom:4px;">$190</h3>
+              <p style="font-size:14px;margin:0;color:var(--lp-muted);">per person</p>
+              <p style="font-size:13px;margin:6px 0 0;color:var(--lp-text);font-weight:600;">4 Per Room</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Register + Already Registered side by side on desktop -->
-      <div class="lp-section" style="padding-bottom:48px;">
-        <div class="lp-cta-row">
-          <!-- Register CTA -->
-          <div style="background:linear-gradient(135deg,rgba(138,158,122,0.15),rgba(138,158,122,0.05));border:1.5px solid rgba(138,158,122,0.3);border-radius:16px;padding:32px 28px;text-align:center;display:flex;flex-direction:column;justify-content:center;">
-            <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(20px,3vw,26px);color:var(--dark-text);margin:0 0 10px;">Register Now</h2>
-            <p style="font-size:14px;color:#888;margin:0 0 4px;">Registration &amp; full payment due by January 30, 2027</p>
-            <p style="font-size:14px;color:var(--accent);font-weight:600;margin:0 0 20px;">Limited space available. Don't wait!</p>
-            <a id="landing-register-btn" href="https://graceseaford.ccbchurch.com/goto/forms/189/responses/new" target="_blank" rel="noopener"
-               style="display:inline-block;padding:14px 40px;background:var(--sage);color:white;font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:600;border-radius:28px;text-decoration:none;letter-spacing:0.5px;box-shadow:var(--shadow-md);transition:var(--transition);">
-              Register for G4 2027
-            </a>
-          </div>
-
-          <!-- Already Registered — Code Entry -->
-          <div style="background:white;border-radius:16px;padding:32px 28px;box-shadow:var(--shadow-sm);text-align:center;">
-            <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(18px,2.5vw,22px);color:var(--dark-text);margin:0 0 6px;">Already Registered?</h2>
-            <p style="font-size:13px;color:#888;margin:0 0 16px;">Check your confirmation email for your access code</p>
-            <div id="landing-error" style="display:none;color:var(--accent);font-size:13px;margin-bottom:10px;"></div>
-            <input type="text" id="landing-first" placeholder="First name" autocomplete="given-name"
-                   style="width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:16px;margin-bottom:10px;box-sizing:border-box;font-family:Georgia,serif;">
-            <input type="text" id="landing-last" placeholder="Last name" autocomplete="family-name"
-                   style="width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:16px;margin-bottom:10px;box-sizing:border-box;font-family:Georgia,serif;">
-            <input type="text" id="landing-code" placeholder="Access code" autocomplete="off"
-                   style="width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:16px;margin-bottom:16px;box-sizing:border-box;font-family:Georgia,serif;">
-            <button type="button" id="landing-enter-btn"
-                    style="width:100%;padding:14px;background:var(--sage);color:white;border:none;border-radius:28px;font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:var(--transition);">
-              Enter the App
-            </button>
+      <!-- ── Register + Code Entry ── -->
+      <section style="padding-bottom:var(--lp-gap);">
+        <div class="lp-wrap">
+          <div class="lp-grid-2" style="align-items:stretch;">
+            <!-- Register -->
+            <div class="lp-card" style="text-align:center;display:flex;flex-direction:column;justify-content:center;background:linear-gradient(160deg,rgba(122,143,106,0.08),rgba(122,143,106,0.02));border-color:var(--lp-primary);border-width:1.5px;">
+              <h2 style="font-size:clamp(22px,3vw,28px);margin-bottom:12px;">Register Now</h2>
+              <p style="color:var(--lp-muted);font-size:15px;margin:0 0 6px;">Registration &amp; full payment due<br>January 30, 2027</p>
+              <p style="color:var(--lp-accent);font-weight:700;font-size:15px;margin:0 0 24px;">Limited space. Don't wait.</p>
+              <div>
+                <a id="landing-register-btn" href="https://graceseaford.ccbchurch.com/goto/forms/189/responses/new" target="_blank" rel="noopener" class="lp-btn">Register for G4 2027</a>
+              </div>
+            </div>
+            <!-- Code Entry -->
+            <div class="lp-card" style="text-align:center;">
+              <h2 style="font-size:clamp(20px,2.5vw,24px);margin-bottom:6px;">Already Registered?</h2>
+              <p style="color:var(--lp-muted);font-size:14px;margin:0 0 20px;">Enter the access code from your confirmation email</p>
+              <div id="landing-error" style="display:none;color:var(--lp-accent);font-size:14px;font-weight:600;margin-bottom:12px;" role="alert"></div>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+                <input type="text" id="landing-first" placeholder="First name" autocomplete="given-name" class="lp-input" aria-label="First name">
+                <input type="text" id="landing-last" placeholder="Last name" autocomplete="family-name" class="lp-input" aria-label="Last name">
+                <input type="text" id="landing-code" placeholder="Access code" autocomplete="off" class="lp-input" aria-label="Access code">
+              </div>
+              <button type="button" id="landing-enter-btn" class="lp-btn" style="width:100%;">Enter the App</button>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Footer -->
-      <div style="text-align:center;padding:0 24px 40px;font-size:13px;color:#aaa;">
-        G4 Women's Retreat &middot; Grace Community Church, Seaford, DE
-      </div>
+      <!-- ── Footer ── -->
+      <footer style="text-align:center;padding:0 24px clamp(32px,5vw,48px);">
+        <div class="lp-divider" style="margin-bottom:20px;"></div>
+        <p style="font-size:13px;color:var(--lp-muted);margin:0;">G4 Women's Retreat &middot; Grace Community Church &middot; Seaford, DE</p>
+      </footer>
     </div>
     <!-- ===== END LANDING PAGE ===== -->
 

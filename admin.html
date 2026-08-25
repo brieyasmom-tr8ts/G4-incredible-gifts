@@ -4324,8 +4324,8 @@ function recalcRetreatCalculator() {
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Food</span><span style="color:var(--taupe);">${fmtMoney(foodCost)}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Conference</span><span style="color:var(--taupe);">${confDisplay}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--light-text);margin-bottom:3px;"><span>Tax &amp; fees</span><span style="color:var(--taupe);">${fmtMoney(r.tax)}</span></div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:var(--dark-text);padding-top:4px;border-top:1px solid rgba(200,185,176,0.4);margin-top:4px;"><span>Total cost</span><span>${fmtMoney(r.total)}</span></div>
-                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--taupe);margin-top:2px;"><span>Ticket price</span><span>${r.charge > 0 ? fmtMoney(r.charge) : '—'}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--dark-text);padding-top:4px;border-top:1px solid rgba(200,185,176,0.4);margin-top:4px;"><span>Total cost</span><span>${fmtMoney(r.total)}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:var(--sage);margin-top:4px;"><span>Ticket price</span><span>${r.charge > 0 ? fmtMoney(r.charge) : '—'}</span></div>
                     <div style="display:flex;justify-content:space-between;font-size:0.85rem;font-weight:700;color:${profitColor};margin-top:2px;"><span>Profit / woman</span><span>${profitText}</span></div>
                 </div>
             `;}).join('')}

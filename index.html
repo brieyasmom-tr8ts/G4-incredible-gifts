@@ -3512,7 +3512,7 @@
               <p style="font-size:14px;margin:0;color:var(--lp-muted);">per person</p>
               <p style="font-size:13px;margin:6px 0 0;color:var(--lp-text);font-weight:600;">3 Per Room</p>
             </div>
-            <div class="lp-price-card popular">
+            <div class="lp-price-card">
               <h3 style="font-size:clamp(28px,4vw,36px);color:var(--lp-primary);margin-bottom:4px;">$190</h3>
               <p style="font-size:14px;margin:0;color:var(--lp-muted);">per person</p>
               <p style="font-size:13px;margin:6px 0 0;color:var(--lp-text);font-weight:600;">4 Per Room</p>
@@ -3542,6 +3542,7 @@
               <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
                 <input type="text" id="landing-first" placeholder="First name" autocomplete="given-name" class="lp-input" aria-label="First name">
                 <input type="text" id="landing-last" placeholder="Last name" autocomplete="family-name" class="lp-input" aria-label="Last name">
+                <input type="email" id="landing-email" placeholder="Email" autocomplete="email" class="lp-input" aria-label="Email">
                 <input type="text" id="landing-code" placeholder="Access code" autocomplete="off" class="lp-input" aria-label="Access code">
               </div>
               <button type="button" id="landing-enter-btn" class="lp-btn" style="width:100%;">Enter the App</button>
@@ -4999,15 +5000,16 @@
             enterBtn.addEventListener('click', async function() {
                 var firstName = document.getElementById('landing-first').value.trim();
                 var lastName = document.getElementById('landing-last').value.trim();
+                var email = document.getElementById('landing-email').value.trim();
                 var code = document.getElementById('landing-code').value.trim();
                 var errorEl = document.getElementById('landing-error');
 
                 if (!firstName || !lastName || !code) {
                     errorEl.textContent = 'Please fill in all fields.';
                     errorEl.style.display = 'block';
-                    if (!firstName) document.getElementById('landing-first').style.borderColor = 'var(--accent)';
-                    if (!lastName) document.getElementById('landing-last').style.borderColor = 'var(--accent)';
-                    if (!code) document.getElementById('landing-code').style.borderColor = 'var(--accent)';
+                    if (!firstName) document.getElementById('landing-first').style.borderColor = 'var(--lp-accent)';
+                    if (!lastName) document.getElementById('landing-last').style.borderColor = 'var(--lp-accent)';
+                    if (!code) document.getElementById('landing-code').style.borderColor = 'var(--lp-accent)';
                     return;
                 }
 
@@ -5019,7 +5021,7 @@
                     var resp = await fetch(API_URL + '/api/auth/enter', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ first_name: firstName, last_name: lastName, code: code })
+                        body: JSON.stringify({ first_name: firstName, last_name: lastName, email: email, code: code })
                     });
                     var result = await resp.json();
 

@@ -1504,6 +1504,7 @@
                             <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Track who's paid, who owes, and import from the church form.</div>
                         </div>
                         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+                            <button class="btn" style="font-size:0.78rem;padding:6px 14px;background:rgba(181,112,106,0.12);color:var(--accent);" onclick="sendAllReminders()">Send All Reminders</button>
                             <button class="btn btn-refresh" onclick="loadParticipants()" style="font-size:0.78rem;padding:6px 14px;">Refresh</button>
                         </div>
                     </div>
@@ -4784,7 +4785,10 @@ function renderParticipantsTable() {
                         <td style="padding:8px 6px;text-align:right;color:#5b9a6f;">${fmtMoney(p.total_paid || 0)}</td>
                         <td style="padding:8px 6px;text-align:right;font-weight:600;color:${balance > 0 ? 'var(--accent)' : '#5b9a6f'};">${fmtMoney(balance)}</td>
                         <td style="padding:8px 6px;"><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;background:${status.color}20;color:${status.color};">${status.label}</span></td>
-                        <td style="padding:8px 6px;"><button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.15);color:var(--sage);" onclick="openAddPaymentModal(${p.id},'${escHtml(name)}',${balance})">+ Pay</button></td>
+                        <td style="padding:8px 6px;white-space:nowrap;">
+                            <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.15);color:var(--sage);" onclick="openAddPaymentModal(${p.id},'${escHtml(name)}',${balance})">+ Pay</button>
+                            ${balance > 0 && p.email ? `<button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(181,112,106,0.12);color:var(--accent);margin-left:4px;" onclick="sendOneReminder(${p.id},'${escHtml(name)}')">Remind</button>` : ''}
+                        </td>
                     </tr>`;
                 }).join('')}
             </tbody>
@@ -4940,6 +4944,22 @@ function downloadParticipantsCsv() {
     const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'g4-participants.csv'; a.click();
+}
+
+async function sendOneReminder(userId, name) {
+    if (!confirm('Send payment reminder email to ' + name + '?')) return;
+    try {
+        await apiFetch('/api/admin/reminders/send/' + userId, { method: 'POST' });
+        showToast('Reminder sent to ' + name);
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+async function sendAllReminders() {
+    if (!confirm('Send payment reminder to everyone who still owes? (Skips anyone already reminded this month)')) return;
+    try {
+        const result = await apiFetch('/api/admin/reminders/send-all', { method: 'POST' });
+        showToast('Sent ' + (result.sent || 0) + ' reminders');
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
 
 // --- Room Assignment Board ---

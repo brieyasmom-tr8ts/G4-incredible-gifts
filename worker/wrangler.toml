@@ -13,4 +13,4 @@ bucket_name = "g4-retreat-videos"
 
 # Cron triggers: Monday + Wednesday at 9:00 UTC (5:00 AM EDT)
 [triggers]
-crons = ["0 9 * * 1", "0 9 * * 3"]
+crons = ["0 9 * * 1", "0 9 * * 3", "0 14 1 * *"]

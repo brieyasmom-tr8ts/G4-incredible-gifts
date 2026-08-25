@@ -1,4 +1,99 @@
 // G4 Retreat API Worker
+
+// Brevo email integration
+const BREVO_LIST_ID = 8;
+const BREVO_SENDER = { name: 'G4Retreat', email: 'Heather@HeatherLynWilson.com' };
+
+async function brevoAddContact(env, email, firstName, lastName) {
+  if (!env.BREVO_API_KEY || !email) return;
+  try {
+    await fetch('https://api.brevo.com/v3/contacts', {
+      method: 'POST',
+      headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        attributes: { FIRSTNAME: firstName || '', LASTNAME: lastName || '' },
+        listIds: [BREVO_LIST_ID],
+        updateEnabled: true
+      })
+    });
+  } catch(e) { console.warn('Brevo add contact failed:', e.message); }
+}
+
+async function brevoSendEmail(env, to, subject, htmlContent) {
+  if (!env.BREVO_API_KEY || !to) return false;
+  try {
+    const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender: BREVO_SENDER,
+        to: [{ email: to }],
+        subject,
+        htmlContent
+      })
+    });
+    return resp.ok;
+  } catch(e) { console.warn('Brevo send failed:', e.message); return false; }
+}
+
+async function sendMonthlyPaymentReminders(env) {
+  try {
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS reminder_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, email TEXT NOT NULL,
+      type TEXT DEFAULT 'payment', sent_at TEXT DEFAULT (datetime('now')), retreat_year INTEGER DEFAULT 2027
+    )`).run();
+  } catch(e) {}
+
+  let activeYear = 2027;
+  try { const row = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'active_retreat_year'").first(); if (row && row.value) activeYear = parseInt(row.value) || 2027; } catch(e) {}
+
+  let dueDate = '';
+  try { const row = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'payment_due_date'").first(); dueDate = (row && row.value) || ''; } catch(e) {}
+
+  const { results: users } = await env.DB.prepare(
+    `SELECT u.id, u.first_name, u.email, u.total_owed, u.participant_status,
+            COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?), 0) as total_paid
+     FROM users u WHERE u.retreat_year = ? AND u.email IS NOT NULL AND u.email != ''`
+  ).bind(activeYear, activeYear).all();
+
+  const monthKey = new Date().toISOString().substring(0, 7);
+  const { results: alreadySent } = await env.DB.prepare(
+    "SELECT user_id FROM reminder_log WHERE retreat_year = ? AND sent_at LIKE ? || '%'"
+  ).bind(activeYear, monthKey).all();
+  const sentIds = new Set((alreadySent || []).map(r => r.user_id));
+
+  let count = 0;
+  for (const u of (users || [])) {
+    if (u.participant_status === 'inactive') continue;
+    const balance = (u.total_owed || 0) - (u.total_paid || 0);
+    if (balance <= 0) continue;
+    if (sentIds.has(u.id)) continue;
+
+    const html = `
+      <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px;">
+        <h1 style="font-family:Georgia,serif;font-size:24px;color:#3a3330;margin:0 0 16px;">G4 Women's Retreat 2027</h1>
+        <p style="font-size:16px;color:#3a3330;line-height:1.7;">Hey ${u.first_name || 'friend'},</p>
+        <p style="font-size:16px;color:#3a3330;line-height:1.7;">Just a friendly reminder that you have a remaining balance for the G4 retreat.</p>
+        <div style="background:#f5f1ed;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
+          <div style="font-size:14px;color:#8a817a;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Balance</div>
+          <div style="font-size:32px;font-weight:700;color:#b5706a;">$${balance.toFixed(2)}</div>
+          ${dueDate ? '<div style="font-size:14px;color:#8a817a;margin-top:8px;">Due by ' + dueDate + '</div>' : ''}
+        </div>
+        <p style="font-size:16px;color:#3a3330;line-height:1.7;">You can make your payment through the church registration form. If you have any questions, just reply to this email.</p>
+        <p style="font-size:16px;color:#3a3330;line-height:1.7;">We can't wait to see you in Ocean City!</p>
+        <p style="font-size:16px;color:#3a3330;line-height:1.7;">With love,<br>Heather &amp; the G4 Team</p>
+      </div>
+    `;
+    const sent = await brevoSendEmail(env, u.email, 'G4 Retreat — Payment Reminder', html);
+    if (sent) {
+      await env.DB.prepare('INSERT INTO reminder_log (user_id, email, type, retreat_year) VALUES (?, ?, ?, ?)').bind(u.id, u.email, 'payment', activeYear).run();
+      count++;
+    }
+  }
+  console.log('[cron] monthly payment reminders sent:', count);
+}
+
 // Blocked words filter
 const BLOCKED_WORDS = [
   'damn', 'hell', 'shit', 'fuck', 'ass', 'bitch', 'crap',
@@ -671,6 +766,12 @@ export default {
           await ensureRegColumns(env.DB);
           await env.DB.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).bind(...binds).run();
 
+          // Add to Brevo list
+          const existingEmail = await env.DB.prepare('SELECT email FROM users WHERE id = ?').bind(existing.id).first();
+          if (existingEmail && existingEmail.email) {
+            ctx.waitUntil(brevoAddContact(env, existingEmail.email, existing.first_name, cleanLast || existing.last_name || ''));
+          }
+
           return json({
             id: existing.id,
             first_name: existing.first_name,
@@ -683,10 +784,16 @@ export default {
         }
 
         // New user
+        const email = (body.email || '').trim().toLowerCase();
         await ensureRegColumns(env.DB);
         const result = await env.DB.prepare(
-          'INSERT INTO users (first_name, last_initial, last_name, retreat_year, reg_registered) VALUES (?, ?, ?, 2027, 1)'
-        ).bind(cleanFirst, cleanInitial, cleanLast).run();
+          'INSERT INTO users (first_name, last_initial, last_name, email, retreat_year, reg_registered) VALUES (?, ?, ?, ?, 2027, 1)'
+        ).bind(cleanFirst, cleanInitial, cleanLast, email || null).run();
+
+        // Add to Brevo list
+        if (email) {
+          ctx.waitUntil(brevoAddContact(env, email, cleanFirst, cleanLast));
+        }
 
         return json({
           id: result.meta.last_row_id,
@@ -3388,6 +3495,124 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // --- Payment Reminder Emails ---
+
+      async function ensureReminderLog(db) {
+        try {
+          await db.prepare(`CREATE TABLE IF NOT EXISTS reminder_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            email TEXT NOT NULL,
+            type TEXT DEFAULT 'payment',
+            sent_at TEXT DEFAULT (datetime('now')),
+            retreat_year INTEGER DEFAULT 2027
+          )`).run();
+        } catch(e) {}
+      }
+
+      function buildPaymentReminderHtml(firstName, balance, dueDate) {
+        return `
+          <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px;">
+            <h1 style="font-family:Georgia,serif;font-size:24px;color:#3a3330;margin:0 0 16px;">G4 Women's Retreat 2027</h1>
+            <p style="font-size:16px;color:#3a3330;line-height:1.7;">Hey ${firstName || 'friend'},</p>
+            <p style="font-size:16px;color:#3a3330;line-height:1.7;">Just a friendly reminder that you have a remaining balance for the G4 retreat.</p>
+            <div style="background:#f5f1ed;border-radius:12px;padding:20px;margin:20px 0;text-align:center;">
+              <div style="font-size:14px;color:#8a817a;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Balance</div>
+              <div style="font-size:32px;font-weight:700;color:#b5706a;">$${balance.toFixed(2)}</div>
+              ${dueDate ? `<div style="font-size:14px;color:#8a817a;margin-top:8px;">Due by ${dueDate}</div>` : ''}
+            </div>
+            <p style="font-size:16px;color:#3a3330;line-height:1.7;">You can make your payment through the church registration form. If you have any questions or need to set up a payment plan, just reply to this email.</p>
+            <p style="font-size:16px;color:#3a3330;line-height:1.7;">We can't wait to see you in Ocean City!</p>
+            <p style="font-size:16px;color:#3a3330;line-height:1.7;">With love,<br>Heather &amp; the G4 Team</p>
+            <hr style="border:none;border-top:1px solid #e0d8d0;margin:24px 0;">
+            <p style="font-size:12px;color:#8a817a;">G4 Women's Retreat &middot; April 8-10, 2027 &middot; Ocean City, MD</p>
+          </div>
+        `;
+      }
+
+      // POST /api/admin/reminders/send/:userId - send reminder to one participant
+      const reminderSendMatch = path.match(/^\/api\/admin\/reminders\/send\/(\d+)$/);
+      if (reminderSendMatch && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        await ensureReminderLog(env.DB);
+        const userId = parseInt(reminderSendMatch[1]);
+        const activeYear = await getActiveYear(env.DB);
+
+        const user = await env.DB.prepare('SELECT first_name, last_name, email, total_owed FROM users WHERE id = ?').bind(userId).first();
+        if (!user || !user.email) return json({ error: 'No email address for this participant' }, corsHeaders, 400);
+
+        const paid = await env.DB.prepare('SELECT COALESCE(SUM(amount),0) as total FROM payments WHERE user_id = ? AND retreat_year = ?').bind(userId, activeYear).first();
+        const balance = (user.total_owed || 0) - ((paid && paid.total) || 0);
+        if (balance <= 0) return json({ error: 'This participant is paid in full' }, corsHeaders, 400);
+
+        let dueDate = '';
+        try { const row = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'payment_due_date'").first(); dueDate = (row && row.value) || ''; } catch(e) {}
+
+        const html = buildPaymentReminderHtml(user.first_name, balance, dueDate);
+        const sent = await brevoSendEmail(env, user.email, 'G4 Retreat — Payment Reminder', html);
+        if (!sent) return json({ error: 'Failed to send email' }, corsHeaders, 500);
+
+        await env.DB.prepare('INSERT INTO reminder_log (user_id, email, type, retreat_year) VALUES (?, ?, ?, ?)').bind(userId, user.email, 'payment', activeYear).run();
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/admin/reminders/log - reminder history
+      if (path === '/api/admin/reminders/log' && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensureReminderLog(env.DB);
+        const activeYear = await getActiveYear(env.DB);
+        const { results } = await env.DB.prepare(
+          `SELECT r.id, r.user_id, r.email, r.type, r.sent_at, u.first_name, u.last_name
+           FROM reminder_log r LEFT JOIN users u ON r.user_id = u.id
+           WHERE r.retreat_year = ? ORDER BY r.sent_at DESC LIMIT 200`
+        ).bind(activeYear).all();
+        return json(results || [], corsHeaders);
+      }
+
+      // POST /api/admin/reminders/send-all - send to all with balances
+      if (path === '/api/admin/reminders/send-all' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        await ensureReminderLog(env.DB);
+        const activeYear = await getActiveYear(env.DB);
+
+        let dueDate = '';
+        try { const row = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'payment_due_date'").first(); dueDate = (row && row.value) || ''; } catch(e) {}
+
+        const { results: users } = await env.DB.prepare(
+          `SELECT u.id, u.first_name, u.last_name, u.email, u.total_owed, u.participant_status,
+                  COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?), 0) as total_paid
+           FROM users u WHERE u.retreat_year = ? AND u.email IS NOT NULL AND u.email != ''`
+        ).bind(activeYear, activeYear).all();
+
+        // Don't double-email in same month
+        const monthKey = new Date().toISOString().substring(0, 7); // YYYY-MM
+        const { results: alreadySent } = await env.DB.prepare(
+          "SELECT user_id FROM reminder_log WHERE retreat_year = ? AND sent_at LIKE ? || '%'"
+        ).bind(activeYear, monthKey).all();
+        const sentIds = new Set((alreadySent || []).map(r => r.user_id));
+
+        let count = 0;
+        for (const u of (users || [])) {
+          if (u.participant_status === 'inactive') continue;
+          const balance = (u.total_owed || 0) - (u.total_paid || 0);
+          if (balance <= 0) continue;
+          if (sentIds.has(u.id)) continue;
+
+          const html = buildPaymentReminderHtml(u.first_name, balance, dueDate);
+          const sent = await brevoSendEmail(env, u.email, 'G4 Retreat — Payment Reminder', html);
+          if (sent) {
+            await env.DB.prepare('INSERT INTO reminder_log (user_id, email, type, retreat_year) VALUES (?, ?, ?, ?)').bind(u.id, u.email, 'payment', activeYear).run();
+            count++;
+          }
+        }
+        return json({ success: true, sent: count }, corsHeaders);
+      }
+
       // ===== FEEDBACK =====
 
       // POST /api/feedback - submit retreat feedback
@@ -5306,6 +5531,9 @@ Just the JSON array, nothing else.`;
         await sendDevotionEmail(env, weekNum);
       } else if (isWednesdayCron) {
         await sendSecretSisterEmail(env);
+      } else if (event.cron === '0 14 1 * *') {
+        // Monthly payment reminder — 1st of each month at 10 AM EDT
+        await sendMonthlyPaymentReminders(env);
       } else {
         console.log('[cron] unrecognized cron expression', event.cron);
       }

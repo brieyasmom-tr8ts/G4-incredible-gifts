@@ -1495,6 +1495,84 @@
                         <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="loadRegistrationsList()">Refresh</button>
                     </div>
                 </div>
+
+                <!-- Participants & Payments -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.5rem;">
+                        <div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Participants &amp; Payments</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Track who's paid, who owes, and import from the church form.</div>
+                        </div>
+                        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+                            <button class="btn btn-refresh" onclick="loadParticipants()" style="font-size:0.78rem;padding:6px 14px;">Refresh</button>
+                        </div>
+                    </div>
+                    <!-- Due date + filters -->
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.75rem;margin-bottom:1rem;padding:10px 14px;background:rgba(247,240,235,0.5);border-radius:10px;">
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <label style="font-size:0.78rem;font-weight:600;color:var(--taupe);white-space:nowrap;">Due date:</label>
+                            <input type="date" id="payment-due-date" style="padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;" onchange="savePaymentDueDate()">
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;">
+                            <label style="font-size:0.78rem;font-weight:600;color:var(--taupe);white-space:nowrap;">Show:</label>
+                            <select id="participant-filter" style="padding:6px 10px;border:1.5px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:14px;color:var(--dark-text);background:white;" onchange="renderParticipantsTable()">
+                                <option value="all">All</option>
+                                <option value="owes">Still owes</option>
+                                <option value="paid">Paid in full</option>
+                                <option value="overdue">Overdue</option>
+                                <option value="no_payment">No payment yet</option>
+                            </select>
+                        </div>
+                        <div style="margin-left:auto;display:flex;gap:0.5rem;">
+                            <label class="btn" style="background:rgba(138,158,122,0.15);color:var(--sage);font-size:0.78rem;padding:6px 14px;cursor:pointer;">
+                                Import CSV <input type="file" accept=".csv" style="display:none;" onchange="handleParticipantCsvUpload(event)">
+                            </label>
+                            <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);font-size:0.78rem;padding:6px 14px;" onclick="downloadParticipantsCsv()">Export</button>
+                        </div>
+                    </div>
+                    <!-- Summary cards -->
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0.5rem;margin-bottom:1rem;">
+                        <div style="padding:10px 14px;background:rgba(138,158,122,0.08);border-radius:10px;text-align:center;">
+                            <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Participants</div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--sage);" id="pt-count">0</div>
+                        </div>
+                        <div style="padding:10px 14px;background:rgba(138,158,122,0.08);border-radius:10px;text-align:center;">
+                            <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Expected</div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--taupe);" id="pt-expected">$0</div>
+                        </div>
+                        <div style="padding:10px 14px;background:rgba(138,158,122,0.08);border-radius:10px;text-align:center;">
+                            <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Collected</div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:#5b9a6f;" id="pt-collected">$0</div>
+                        </div>
+                        <div style="padding:10px 14px;background:rgba(138,158,122,0.08);border-radius:10px;text-align:center;">
+                            <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Outstanding</div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--accent);" id="pt-outstanding">$0</div>
+                        </div>
+                    </div>
+                    <!-- Table -->
+                    <div id="participants-table" style="overflow-x:auto;"></div>
+                </div>
+
+                <!-- Room Assignment Board -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem;">
+                        <div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Room Assignments</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Drag women into rooms. See roommate requests and unfilled spots.</div>
+                        </div>
+                        <button class="btn btn-refresh" onclick="addNewRoom()" style="font-size:0.78rem;padding:6px 14px;">+ New Room</button>
+                    </div>
+                    <!-- Unassigned pool -->
+                    <div style="margin-bottom:1rem;">
+                        <div style="font-size:0.78rem;font-weight:600;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Unassigned</div>
+                        <div id="room-unassigned" style="min-height:50px;padding:8px;background:rgba(247,240,235,0.5);border:2px dashed var(--warm-grey);border-radius:12px;display:flex;flex-wrap:wrap;gap:8px;" data-room="0">
+                        </div>
+                    </div>
+                    <!-- Room cards -->
+                    <div id="room-board" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;">
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -3884,6 +3962,7 @@ function showBudgetContent() {
     loadBudgetCategories();
     loadRegistrationSettings();
     loadRegistrationsList();
+    loadParticipants();
 }
 
 // --- Budget by Category ---
@@ -4617,6 +4696,411 @@ async function submitAddRegistration() {
         showToast('Registration saved ✓');
         closeAddRegistrationModal();
         loadRegistrationsList();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+// --- Participants & Payments ---
+let _participants = [];
+let _roomAssignments = [];
+
+async function loadParticipants() {
+    try {
+        const data = await apiFetch('/api/admin/participants');
+        _participants = data.participants || [];
+        const s = data.summary || {};
+        document.getElementById('pt-count').textContent = s.participant_count || 0;
+        document.getElementById('pt-expected').textContent = fmtMoney(s.total_expected || 0);
+        document.getElementById('pt-collected').textContent = fmtMoney(s.total_collected || 0);
+        document.getElementById('pt-outstanding').textContent = fmtMoney(s.total_outstanding || 0);
+
+        // Update budget overview actual revenue
+        _budgetOverview.actualRevenue = s.total_collected || 0;
+        refreshBudgetOverview();
+
+        if (data.due_date) {
+            document.getElementById('payment-due-date').value = data.due_date;
+        }
+        renderParticipantsTable();
+        loadRoomAssignments();
+    } catch (e) {
+        showToast('Could not load participants: ' + (e.message || ''));
+    }
+}
+
+function getPaymentStatus(p) {
+    const owed = p.total_owed || 0;
+    const paid = p.total_paid || 0;
+    const dueDate = document.getElementById('payment-due-date').value;
+    const overdue = dueDate && new Date() > new Date(dueDate + 'T23:59:59');
+    if (owed <= 0) return { label: 'Registered', color: 'var(--light-text)', key: 'registered' };
+    if (paid <= 0) return { label: overdue ? 'Overdue' : 'No Payment', color: overdue ? '#a13224' : 'var(--light-text)', key: 'no_payment' };
+    if (paid >= owed) return { label: 'Paid in Full', color: '#5b9a6f', key: 'paid' };
+    if (paid >= 50) return { label: overdue ? 'Overdue' : 'Partial', color: overdue ? '#a13224' : '#c4882d', key: 'owes' };
+    return { label: overdue ? 'Overdue' : 'Deposit Only', color: overdue ? '#a13224' : '#c4882d', key: 'owes' };
+}
+
+function renderParticipantsTable() {
+    const container = document.getElementById('participants-table');
+    const filter = document.getElementById('participant-filter').value;
+    let list = _participants.filter(p => p.participant_status !== 'inactive');
+
+    if (filter === 'owes') list = list.filter(p => (p.total_paid || 0) < (p.total_owed || 0) && (p.total_owed || 0) > 0);
+    else if (filter === 'paid') list = list.filter(p => (p.total_paid || 0) >= (p.total_owed || 0) && (p.total_owed || 0) > 0);
+    else if (filter === 'overdue') list = list.filter(p => { const s = getPaymentStatus(p); return s.key === 'no_payment' || s.label === 'Overdue'; });
+    else if (filter === 'no_payment') list = list.filter(p => (p.total_paid || 0) <= 0);
+
+    if (!list.length) {
+        container.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">No participants match this filter.</div>';
+        return;
+    }
+
+    const roomLabels = { 0: 'No hotel', 1: 'Solo', 2: '2-person', 3: '3-person', 4: '4-person' };
+    container.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+            <thead>
+                <tr style="border-bottom:2px solid var(--warm-grey);text-align:left;">
+                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Name</th>
+                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Room Pref</th>
+                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Roommates</th>
+                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Owed</th>
+                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Paid</th>
+                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Balance</th>
+                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Status</th>
+                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);"></th>
+                </tr>
+            </thead>
+            <tbody>
+                ${list.map(p => {
+                    const status = getPaymentStatus(p);
+                    const balance = (p.total_owed || 0) - (p.total_paid || 0);
+                    const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
+                    const roomPref = roomLabels[p.room_size_preference] || '—';
+                    const roommates = (p.roommate_requests || '').substring(0, 40) || '—';
+                    return `<tr style="border-bottom:1px solid rgba(200,185,176,0.2);">
+                        <td style="padding:8px 6px;font-weight:600;">${escHtml(name)}</td>
+                        <td style="padding:8px 6px;color:var(--light-text);">${roomPref}</td>
+                        <td style="padding:8px 6px;color:var(--light-text);font-size:0.78rem;" title="${escHtml(p.roommate_requests || '')}">${escHtml(roommates)}</td>
+                        <td style="padding:8px 6px;text-align:right;">${fmtMoney(p.total_owed || 0)}</td>
+                        <td style="padding:8px 6px;text-align:right;color:#5b9a6f;">${fmtMoney(p.total_paid || 0)}</td>
+                        <td style="padding:8px 6px;text-align:right;font-weight:600;color:${balance > 0 ? 'var(--accent)' : '#5b9a6f'};">${fmtMoney(balance)}</td>
+                        <td style="padding:8px 6px;"><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;background:${status.color}20;color:${status.color};">${status.label}</span></td>
+                        <td style="padding:8px 6px;"><button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.15);color:var(--sage);" onclick="openAddPaymentModal(${p.id},'${escHtml(name)}',${balance})">+ Pay</button></td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+function openAddPaymentModal(userId, name, balance) {
+    const existing = document.getElementById('add-payment-modal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'add-payment-modal';
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-box" style="max-width:400px;">
+            <h2 style="font-family:Playfair Display,serif;font-size:1.1rem;margin-bottom:4px;">Add Payment</h2>
+            <p style="font-size:0.85rem;color:var(--light-text);margin-bottom:14px;">${name} &middot; Balance: ${fmtMoney(balance)}</p>
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Amount</label>
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:10px;"><span style="color:var(--taupe);">$</span><input type="number" id="pay-amount" step="0.01" min="0" placeholder="50.00" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;"></div>
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Date</label>
+            <input type="date" id="pay-date" value="${new Date().toISOString().split('T')[0]}" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;margin-bottom:10px;">
+            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Notes (optional)</label>
+            <input type="text" id="pay-notes" placeholder="e.g. deposit, check #123" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;margin-bottom:14px;">
+            <div style="display:flex;gap:8px;">
+                <button class="btn btn-cancel" onclick="document.getElementById('add-payment-modal').remove()">Cancel</button>
+                <button class="btn btn-refresh" onclick="submitPayment(${userId})">Save Payment</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', function(e) { if (e.target === modal) modal.remove(); });
+}
+
+async function submitPayment(userId) {
+    const amount = parseFloat(document.getElementById('pay-amount').value);
+    if (!amount || amount <= 0) { showToast('Enter an amount'); return; }
+    try {
+        await apiFetch('/api/admin/payments', {
+            method: 'POST',
+            body: { user_id: userId, amount, date: document.getElementById('pay-date').value, notes: document.getElementById('pay-notes').value, method: 'manual' }
+        });
+        document.getElementById('add-payment-modal').remove();
+        showToast('Payment saved');
+        loadParticipants();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+async function savePaymentDueDate() {
+    const date = document.getElementById('payment-due-date').value;
+    try {
+        await apiFetch('/api/admin/settings/payment-due-date', { method: 'POST', body: { date } });
+        showToast('Due date saved');
+        renderParticipantsTable();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
+}
+
+// CSV import from church form
+async function handleParticipantCsvUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const text = await file.text();
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) { showToast('CSV appears empty'); return; }
+
+    const headers = lines[0].split('\t').length > 1 ? lines[0].split('\t') : lines[0].split(',');
+    const clean = h => h.replace(/['"]/g, '').trim().toLowerCase();
+    const headerMap = {};
+    headers.forEach((h, i) => { headerMap[clean(h)] = i; });
+
+    // Map church form field names to our fields
+    const fieldMap = {
+        first_name: ['first name', 'firstname'],
+        last_name: ['last name', 'lastname'],
+        email: ['email'],
+        phone: ['mobile phone', 'phone'],
+        church: ['do you attend a church? if so where?', 'church'],
+        form_total: ['form total', 'total'],
+        room_size_preference: ['how many people per room', 'people per room'],
+        roommate_requests: ['roommate preferences', 'roommate'],
+        payment_amount: ['form total'],
+        payment_date: ['date submitted'],
+        payment_status: ['payment status']
+    };
+
+    function findCol(keys) {
+        for (const k of keys) {
+            for (const h of Object.keys(headerMap)) {
+                if (h.includes(k)) return headerMap[h];
+            }
+        }
+        return -1;
+    }
+
+    const cols = {};
+    for (const [field, keys] of Object.entries(fieldMap)) {
+        cols[field] = findCol(keys);
+    }
+
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+        const parts = headers.length > 1 && lines[0].includes('\t') ? lines[i].split('\t') : lines[i].split(',');
+        const get = idx => (idx >= 0 && idx < parts.length) ? parts[idx].replace(/['"]/g, '').trim() : '';
+
+        const firstName = get(cols.first_name);
+        if (!firstName) continue;
+
+        // Determine room size from the payment columns or "how many" field
+        let roomPref = 0;
+        const roomField = get(cols.room_size_preference);
+        if (roomField) {
+            const num = parseInt(roomField);
+            if (num >= 1 && num <= 4) roomPref = num;
+        }
+
+        // Figure out payment amount from whichever payment column has a value
+        let payAmount = parseFloat(get(cols.payment_amount)) || 0;
+
+        rows.push({
+            first_name: firstName,
+            last_name: get(cols.last_name),
+            email: get(cols.email),
+            phone: get(cols.phone),
+            church: get(cols.church),
+            form_total: parseFloat(get(cols.form_total)) || payAmount,
+            room_size_preference: roomPref,
+            roommate_requests: get(cols.roommate_requests),
+            payment_amount: payAmount,
+            payment_date: get(cols.payment_date),
+            payment_status: get(cols.payment_status)
+        });
+    }
+
+    if (!rows.length) { showToast('No valid rows found in CSV'); return; }
+
+    try {
+        const result = await apiFetch('/api/admin/participants/import', { method: 'POST', body: { rows } });
+        showToast(`Imported ${result.imported} participants (${result.created} new)`);
+        loadParticipants();
+    } catch (e) { showToast('Import error: ' + (e.message || '')); }
+    event.target.value = '';
+}
+
+function downloadParticipantsCsv() {
+    if (!_participants.length) { showToast('No data to export'); return; }
+    const headers = ['Name', 'Email', 'Phone', 'Room Pref', 'Roommate Requests', 'Owed', 'Paid', 'Balance', 'Status'];
+    const roomLabels = { 0: 'No hotel', 1: 'Solo', 2: '2-person', 3: '3-person', 4: '4-person' };
+    const rows = _participants.map(p => {
+        const status = getPaymentStatus(p);
+        const name = p.last_name ? (p.first_name + ' ' + p.last_name) : p.first_name;
+        return [name, p.email || '', p.phone || '', roomLabels[p.room_size_preference] || '', p.roommate_requests || '', p.total_owed || 0, p.total_paid || 0, (p.total_owed || 0) - (p.total_paid || 0), status.label];
+    });
+    const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'g4-participants.csv'; a.click();
+}
+
+// --- Room Assignment Board ---
+async function loadRoomAssignments() {
+    try {
+        const assignments = await apiFetch('/api/admin/rooms');
+        _roomAssignments = assignments || [];
+        renderRoomBoard();
+    } catch (e) {
+        console.warn('Room load failed:', e);
+    }
+}
+
+function renderRoomBoard() {
+    const board = document.getElementById('room-board');
+    const unassigned = document.getElementById('room-unassigned');
+    if (!board || !unassigned) return;
+
+    // Build set of assigned user IDs
+    const assignedIds = new Set(_roomAssignments.map(a => a.user_id));
+
+    // Find max room number
+    let maxRoom = 0;
+    _roomAssignments.forEach(a => { if (a.room_number > maxRoom) maxRoom = a.room_number; });
+
+    // Render unassigned pool
+    const unassignedUsers = _participants.filter(p => !assignedIds.has(p.id) && p.participant_status !== 'inactive' && p.reg_registered);
+    unassigned.innerHTML = unassignedUsers.length
+        ? unassignedUsers.map(p => renderRoomChip(p)).join('')
+        : '<div style="font-size:0.82rem;color:var(--light-text);font-style:italic;padding:8px;">Everyone is assigned to a room.</div>';
+
+    // Group assignments by room
+    const rooms = {};
+    _roomAssignments.forEach(a => {
+        if (!rooms[a.room_number]) rooms[a.room_number] = [];
+        rooms[a.room_number].push(a);
+    });
+
+    // Render room cards
+    let html = '';
+    for (let r = 1; r <= maxRoom; r++) {
+        const members = rooms[r] || [];
+        const capacity = members.length >= 4 ? 4 : (members.length || 1);
+        const emptySlots = Math.max(0, 4 - members.length);
+        html += `
+            <div style="background:rgba(247,240,235,0.5);border:1.5px solid var(--warm-grey);border-radius:14px;padding:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div style="font-family:Playfair Display,serif;font-weight:700;font-size:0.95rem;">Room ${r}</div>
+                    <div style="font-size:0.72rem;color:var(--light-text);">${members.length}/4</div>
+                </div>
+                <div class="room-drop-zone" data-room="${r}" style="min-height:40px;display:flex;flex-direction:column;gap:6px;">
+                    ${members.map(m => {
+                        const user = _participants.find(p => p.id === m.user_id) || m;
+                        return renderRoomChip(user, r);
+                    }).join('')}
+                    ${emptySlots > 0 ? `<div style="padding:8px;border:1.5px dashed rgba(200,185,176,0.4);border-radius:8px;text-align:center;font-size:0.75rem;color:var(--light-text);">Drop here</div>` : ''}
+                </div>
+                <button class="btn" style="width:100%;margin-top:8px;font-size:0.72rem;padding:4px;background:rgba(200,185,176,0.2);color:var(--taupe);" onclick="deleteRoom(${r})">Remove Room</button>
+            </div>
+        `;
+    }
+    board.innerHTML = html;
+
+    // Wire up drag and drop
+    initRoomDragDrop();
+}
+
+function renderRoomChip(p, roomNum) {
+    const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
+    const roomPrefLabels = { 0: 'no hotel', 1: 'solo', 2: '2-ppl', 3: '3-ppl', 4: '4-ppl' };
+    const pref = roomPrefLabels[p.room_size_preference] || '';
+    const reqText = (p.roommate_requests || '').substring(0, 30);
+    const status = getPaymentStatus(p);
+    return `
+        <div class="room-chip" draggable="true" data-user-id="${p.id}" data-name="${escHtml(name)}"
+             style="padding:8px 10px;background:white;border:1px solid var(--warm-grey);border-radius:10px;cursor:grab;font-size:0.82rem;display:flex;flex-direction:column;gap:2px;"
+             title="Wants: ${escHtml(p.roommate_requests || 'no preference')}">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:600;">${escHtml(name)}</span>
+                <span style="font-size:0.68rem;padding:1px 6px;border-radius:8px;background:${status.color}20;color:${status.color};">${status.label}</span>
+            </div>
+            ${pref || reqText ? `<div style="font-size:0.72rem;color:var(--light-text);">${pref ? 'Wants ' + pref : ''}${pref && reqText ? ' · ' : ''}${reqText ? 'w/ ' + escHtml(reqText) : ''}</div>` : ''}
+        </div>
+    `;
+}
+
+function initRoomDragDrop() {
+    // Make chips draggable
+    document.querySelectorAll('.room-chip').forEach(chip => {
+        chip.addEventListener('dragstart', function(e) {
+            e.dataTransfer.setData('text/plain', chip.dataset.userId);
+            chip.style.opacity = '0.5';
+        });
+        chip.addEventListener('dragend', function() { chip.style.opacity = '1'; });
+    });
+
+    // Make drop zones accept drops
+    const zones = document.querySelectorAll('.room-drop-zone, #room-unassigned');
+    zones.forEach(zone => {
+        zone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            zone.style.background = 'rgba(138,158,122,0.12)';
+        });
+        zone.addEventListener('dragleave', function() {
+            zone.style.background = '';
+        });
+        zone.addEventListener('drop', async function(e) {
+            e.preventDefault();
+            zone.style.background = '';
+            const userId = parseInt(e.dataTransfer.getData('text/plain'));
+            const roomNum = parseInt(zone.dataset.room);
+            if (isNaN(userId)) return;
+
+            if (roomNum === 0) {
+                // Remove from room
+                try {
+                    await apiFetch('/api/admin/rooms/' + userId, { method: 'DELETE' });
+                    loadRoomAssignments();
+                } catch (err) { showToast('Error: ' + (err.message || '')); }
+            } else {
+                // Assign to room
+                try {
+                    await apiFetch('/api/admin/rooms', { method: 'POST', body: { user_id: userId, room_number: roomNum } });
+                    loadRoomAssignments();
+                } catch (err) { showToast('Error: ' + (err.message || '')); }
+            }
+        });
+    });
+}
+
+async function addNewRoom() {
+    // Just add to the next room number
+    let maxRoom = 0;
+    _roomAssignments.forEach(a => { if (a.room_number > maxRoom) maxRoom = a.room_number; });
+    // Create a placeholder — we need at least one room in the board to drag into
+    // Just re-render with one more room card
+    const board = document.getElementById('room-board');
+    const nextRoom = maxRoom + 1;
+    board.innerHTML += `
+        <div style="background:rgba(247,240,235,0.5);border:1.5px solid var(--warm-grey);border-radius:14px;padding:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-family:Playfair Display,serif;font-weight:700;font-size:0.95rem;">Room ${nextRoom}</div>
+                <div style="font-size:0.72rem;color:var(--light-text);">0/4</div>
+            </div>
+            <div class="room-drop-zone" data-room="${nextRoom}" style="min-height:40px;display:flex;flex-direction:column;gap:6px;">
+                <div style="padding:8px;border:1.5px dashed rgba(200,185,176,0.4);border-radius:8px;text-align:center;font-size:0.75rem;color:var(--light-text);">Drop here</div>
+            </div>
+            <button class="btn" style="width:100%;margin-top:8px;font-size:0.72rem;padding:4px;background:rgba(200,185,176,0.2);color:var(--taupe);" onclick="deleteRoom(${nextRoom})">Remove Room</button>
+        </div>
+    `;
+    initRoomDragDrop();
+}
+
+async function deleteRoom(roomNum) {
+    if (!confirm('Remove Room ' + roomNum + '? Women in it will go back to unassigned.')) return;
+    const inRoom = _roomAssignments.filter(a => a.room_number === roomNum);
+    try {
+        for (const a of inRoom) {
+            await apiFetch('/api/admin/rooms/' + a.user_id, { method: 'DELETE' });
+        }
+        loadRoomAssignments();
     } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
 

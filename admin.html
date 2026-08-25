@@ -1326,6 +1326,10 @@
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">4-woman rooms</label>
                             <input type="number" id="calc-n4" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
                         </div>
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">No hotel</label>
+                            <input type="number" id="calc-n0" min="0" step="1" placeholder="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        </div>
                     </div>
 
                     <!-- Pricing per room size -->
@@ -1346,6 +1350,10 @@
                         <div>
                             <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">4-person room</label>
                             <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="calc-charge-4" placeholder="190" step="0.01" min="0" style="flex:1;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
+                        </div>
+                        <div>
+                            <label style="display:block;font-size:0.72rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">No hotel</label>
+                            <div style="display:flex;align-items:center;gap:4px;"><span style="font-size:0.9rem;color:var(--taupe);">$</span><input type="number" id="calc-charge-0" placeholder="100" step="0.01" min="0" style="flex:1;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                         </div>
                     </div>
                     <!-- Hidden legacy field for backward compat with save/load -->
@@ -4144,10 +4152,12 @@ const _calcFieldMap = {
     'calc-n3':              'retreat_calc_n3',
     'calc-n4':              'retreat_calc_n4',
     'calc-charge':          'retreat_calc_charge',
+    'calc-charge-0':        'retreat_calc_charge_0',
     'calc-charge-1':        'retreat_calc_charge_1',
     'calc-charge-2':        'retreat_calc_charge_2',
     'calc-charge-3':        'retreat_calc_charge_3',
-    'calc-charge-4':        'retreat_calc_charge_4'
+    'calc-charge-4':        'retreat_calc_charge_4',
+    'calc-n0':              'retreat_calc_n0'
 };
 
 let _calcSaveTimer = null;
@@ -4236,13 +4246,15 @@ function recalcRetreatCalculator() {
     const n2 = parseInt(document.getElementById('calc-n2').value, 10) || 0;
     const n3 = parseInt(document.getElementById('calc-n3').value, 10) || 0;
     const n4 = parseInt(document.getElementById('calc-n4').value, 10) || 0;
+    const n0 = parseInt(document.getElementById('calc-n0').value, 10) || 0;
+    const charge0 = parseFloat(document.getElementById('calc-charge-0').value) || 0;
     const charge1 = parseFloat(document.getElementById('calc-charge-1').value) || 0;
     const charge2 = parseFloat(document.getElementById('calc-charge-2').value) || 0;
     const charge3 = parseFloat(document.getElementById('calc-charge-3').value) || 0;
     const charge4 = parseFloat(document.getElementById('calc-charge-4').value) || 0;
-    const charges = { 1: charge1, 2: charge2, 3: charge3, 4: charge4 };
+    const charges = { 0: charge0, 1: charge1, 2: charge2, 3: charge3, 4: charge4 };
 
-    const totalWomen = n1 + (n2 * 2) + (n3 * 3) + (n4 * 4);
+    const totalWomen = n0 + n1 + (n2 * 2) + (n3 * 3) + (n4 * 4);
     const perWomanEl = document.getElementById('calc-per-woman');
     const totalEl = document.getElementById('calc-total-summary');
 
@@ -4250,7 +4262,7 @@ function recalcRetreatCalculator() {
     // calculator (live projected values). The "What's Left" card combines
     // these with the budget-categories actual total.
     _budgetOverview.rooms = n1 + n2 + n3 + n4;
-    _budgetOverview.revenue = (n1 * charge1) + (n2 * 2 * charge2) + (n3 * 3 * charge3) + (n4 * 4 * charge4);
+    _budgetOverview.revenue = (n0 * charge0) + (n1 * charge1) + (n2 * 2 * charge2) + (n3 * 3 * charge3) + (n4 * 4 * charge4);
     // hotelCost is computed below for the projected total path; default 0
     _budgetOverview.hotelCost = 0;
 
@@ -4265,8 +4277,17 @@ function recalcRetreatCalculator() {
     // Conference split only makes sense when we know how many women.
     const confPerWoman = totalWomen > 0 ? (confCost / totalWomen) : null;
 
-    // Per-occupancy breakdown: 1, 2, 3, 4 women per room
-    const rows = [1, 2, 3, 4].map(occ => {
+    // Per-occupancy breakdown: no hotel, 1, 2, 3, 4 women per room
+    const rows = [0, 1, 2, 3, 4].map(occ => {
+        if (occ === 0) {
+            // No hotel — only food + conference + tax
+            const subtotal = foodCost + (confPerWoman || 0);
+            const tax = subtotal * taxRate;
+            const total = subtotal + tax;
+            const occCharge = charges[0] || 0;
+            const profit = occCharge > 0 ? (occCharge - total) : null;
+            return { occ: 0, roomTotal: 0, roomPerWoman: 0, tax, subtotal, total, profit, charge: occCharge };
+        }
         const roomTotal = roomCostForOccupancy(occ, baseNightly, extraNightly, nights);
         const roomPerWoman = roomTotal / occ;
         const subtotal = roomPerWoman + foodCost + (confPerWoman || 0);
@@ -4284,7 +4305,7 @@ function recalcRetreatCalculator() {
             ${rows.map(r => {
                 const profitColor = r.profit === null ? 'var(--light-text)' : (r.profit >= 0 ? 'var(--sage)' : '#a13224');
                 const profitText = r.profit === null ? '—' : fmtMoney(r.profit);
-                const occLabel = r.occ === 1 ? '1 woman per room' : (r.occ + ' women per room');
+                const occLabel = r.occ === 0 ? 'No hotel stay' : (r.occ === 1 ? '1 woman per room' : (r.occ + ' women per room'));
                 return `
                 <div style="padding:14px 16px;background:rgba(247,240,235,0.6);border:1px solid rgba(200,185,176,0.4);border-radius:10px;">
                     <div style="font-family:Playfair Display,serif;font-size:0.92rem;font-weight:700;color:var(--taupe);margin-bottom:2px;">${occLabel}</div>
@@ -4321,7 +4342,7 @@ function recalcRetreatCalculator() {
     const totalSubtotal = totalRoomCost + totalFoodCost + totalConfCost;
     const totalTax = totalSubtotal * taxRate;
     const totalCost = totalSubtotal + totalTax;
-    const totalRevenue = (n1 * charge1) + (n2 * 2 * charge2) + (n3 * 3 * charge3) + (n4 * 4 * charge4);
+    const totalRevenue = (n0 * charge0) + (n1 * charge1) + (n2 * 2 * charge2) + (n3 * 3 * charge3) + (n4 * 4 * charge4);
     const totalProfit = totalRevenue - totalCost;
     const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
     const profitColor = totalProfit >= 0 ? 'var(--sage)' : '#a13224';

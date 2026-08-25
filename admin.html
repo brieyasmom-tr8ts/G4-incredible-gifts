@@ -4201,6 +4201,9 @@ async function loadCalcState() {
             const key = _calcFieldMap[id];
             if (state[key] !== undefined && state[key] !== '') {
                 el.value = state[key];
+            } else if (!el.value && el.placeholder) {
+                // Use placeholder as default so ticket prices populate on first load
+                el.value = el.placeholder;
             }
         });
     } catch (e) {
@@ -4215,6 +4218,8 @@ async function initRetreatCalculator() {
     // Pull saved state from the server first so refreshed pages show the
     // values Heather last typed. Then wire up live-save on every keystroke.
     await loadCalcState();
+    recalcRetreatCalculator();
+    scheduleCalcStateSave();
     inputs.forEach(el => {
         if (!el.dataset.wired) {
             el.dataset.wired = '1';

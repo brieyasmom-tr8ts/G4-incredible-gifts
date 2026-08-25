@@ -1,12 +1,14 @@
-# G4 Incredible Gifts — Claude Code Instructions
+# G4 Retreat App — Claude Code Instructions
 
 ## Who you're working with
 
 - **Heather** is the primary contact and one of the retreat leaders. The
   repo handle `brieyasmom` comes from her (she is Brie's mom).
-- The app serves the women who attended **G4 2026 Women's Retreat —
-  "Incredible Gifts"**, held April 9-11, 2026 in Ocean City, MD.
-- The post-retreat devotions run Monday April 13, 2026 → 15 weeks forward.
+- The app now serves **G4 2027 Women's Retreat** (April 8-10, 2027,
+  Ocean City, MD). The 2026 retreat ("Incredible Gifts") data is
+  archived and accessible via the year toggle.
+- G4 stands for **Gather, Grow, Give, Go**.
+- 2027 theme: TBD (not yet decided).
 - Treat Heather like a product owner with strong instincts. Propose
   designs, flag tradeoffs, recommend a default, and ship. She prefers
   concrete options over open-ended questions.
@@ -41,6 +43,12 @@
   body text). Numbers use system font via `font-variant-numeric:
   tabular-nums` because Cormorant's old-style figures render "1" as
   a capital "I".
+- **Landing page** has its own design token system scoped to `.lp`:
+  `--lp-primary:#7a8f6a`, `--lp-accent:#b5706a`, `--lp-bg:#f5f1ed`,
+  `--lp-surface:#fff`, `--lp-text:#3a3330`, `--lp-muted:#8a817a`,
+  `--lp-border:#e0d8d0`. Max width 960px, 80px section rhythm.
+  Uses semantic HTML (header, section, footer, ul). Photos in
+  `photos/` directory (12 retreat photos, auto-scrolling strip).
 - API base URL used by the frontend: `https://g4-retreat-api.brieyasmom.workers.dev`
 - Standalone slideshow HTML files exist at repo root for TV display
   at the retreat (`slideshow.html`, `meme-slideshow.html`,
@@ -197,6 +205,8 @@
 
 Key functions and roughly where they live in `index.html`:
 
+- `unlockApp` / `initLandingPage` / `switchYear` — landing page,
+  access-code entry, year toggle
 - `initSetup` / `showWelcome` — user login and profile load
 - `buildNav` — bottom nav rendering (reads `navSettings`, uses
   `navKeyEnabled` helper)
@@ -246,46 +256,86 @@ Key admin functions in `admin.html`:
   `commitRegImport` / `openAddRegistrationModal` — Registrations tab
   inside Budget & Payments (see below)
 
-## Year rollover & registration (shipped, not a roadmap item anymore)
+## Landing page & access-code gating (shipped Aug 2024)
 
-- `retreat_year` (per-user, default 2026) and `opted_in_2027` (2026
-  sisters opting into the 2027 directory/Secret Sister pool) are live.
-  New signups default to `retreat_year: 2027`. Matching on returning
-  sisters is by name, falling back to email — see `POST /api/users`
-  in `worker/src/index.js`.
-- **Registration is NOT processed in this app.** G4's church runs its
-  own registration/payment form (Heather provides the URL in Admin →
-  Budget & Payments → Registration Link). The app only: (1) shows a
-  "Register for G4 2027" home card linking out to that form, with an
-  admin-set price string and open/closed toggle, and (2) tracks who
-  has actually registered/paid, reconciled from a CSV export of the
-  church's form (the same way Heather used to keep an Excel sheet) or
-  added by hand — never a live payment integration.
-- Reconciliation lives on `users`: `reg_registered`, `reg_amount_paid`,
+- **Everyone sees a public landing page** at g4retreatapp.org before
+  they can access the app. The landing page has retreat info, photos,
+  pricing, schedule, register button, and a code entry form.
+- **Universal access code** (`G4Women2027`) gates entry. Stored in
+  `game_settings` as `registration_access_code`. Admin can change it
+  anytime in Admin → Registration settings.
+- **`POST /api/auth/enter`** validates the code (or a personal
+  password), creates/matches the user, returns user object.
+- **Personal passwords** — women can set one in their profile so they
+  don't need the universal code on repeat visits. SHA-256 hashed,
+  stored in `users.password_hash`. Endpoint: `POST /api/users/:id/password`.
+- **`g4_code_year`** localStorage flag tracks whether the user has
+  validated the code for the current year. Cached sessions from 2026
+  see the landing page until they re-enter the code.
+- **Registration flows through the church form** at
+  `https://graceseaford.ccbchurch.com/goto/forms/189/responses/new`.
+  The app does NOT process payments. Heather includes the access code
+  in the church's confirmation email.
+- Church confirmation email should include the code and link to
+  g4retreatapp.org.
+
+## Year separation (shipped Aug 2024)
+
+- **`active_retreat_year`** in `game_settings` controls which year
+  the app is running (currently `2027`).
+- **`retreat_year` column** exists on all content tables: moments,
+  moment_reactions, moment_comments, messages, feedback, gratitude,
+  journal_activity, quiz_scores, poll_responses, wyr_votes,
+  testimonies, testimony_hearts, testimony_comments,
+  celebration_messages, secret_sister_pairings. Default is `2026`
+  so existing data is preserved.
+- All user-facing INSERTs tag with the active year. All user-facing
+  SELECTs filter by year (via `getRequestedYear()` helper which
+  reads `?year=` param or falls back to active year).
+- **`getActiveYear(db)`** helper reads `active_retreat_year` from
+  `game_settings`, defaults to 2027.
+- **Year toggle** in profile lets returning sisters view 2026
+  memories in read-only archive mode. `viewingYear` global controls
+  which year's data loads. `apiGet` auto-appends `?year=` when
+  viewing a past year. Archive mode hides write actions and shows
+  a sticky banner.
+- **Logout button** in profile clears auth and returns to landing page.
+
+## Registration & budget tracking
+
+- **Registration is NOT processed in this app.** Church runs the form.
+  App tracks who registered/paid via CSV import or manual entry.
+- Reconciliation on `users`: `reg_registered`, `reg_amount_paid`,
   `reg_paid_date`, `reg_source` (`csv_import` | `manual`), `reg_notes`.
-  CSV import is a two-step flow: `POST /api/admin/registrations/match`
-  (fuzzy name-match against the roster, nothing written) then
-  `POST /api/admin/registrations/commit` (admin has reviewed/fixed
-  every match first). A CSV row with no roster match can create a new
-  `users` row on commit — she'll be merged into it by name once she
-  opens the app herself.
-  Both admin routes require `X-Admin-Key`.
-- Once she's marked registered, her own "Register for G4 2027" home
-  card switches to a confirmation state instead of the outbound link.
-- **Not built / explicitly deferred**: in-app Stripe/Checkout payment
-  processing (the church form is the payment surface by design, per
-  Heather); date parsing/normalization on the CSV's date column (it's
-  stored as free text — fine for display, not for date-range queries).
+- CSV import: `POST /api/admin/registrations/match` (fuzzy name-match,
+  no writes) then `POST /api/admin/registrations/commit` (after review).
+- **Budget calculator** has 5 ticket price tiers: 1-person ($430),
+  2-person ($280), 3-person ($230), 4-person ($190), no-hotel ($130).
+  Revenue calculated per-tier. Overview cards show Projected Revenue
+  (from calculator) and Actual Revenue (from registration payments).
+  "What's Left" uses actual revenue when available.
+- Room pricing on landing page: $430/$280/$230/$190 with roommate
+  arrangement note. 4-person room marked "BEST VALUE".
 
+## Deployment
+
+- **Cloudflare Pages git integration is broken** (last auto-deploy was
+  May 2024). Deploy manually:
+  `npx wrangler pages deploy . --project-name g4-incredible-gifts`
+- Worker deploy: `cd worker && npx wrangler deploy`
+- Always deploy both after changes.
+
+## Roadmap & open threads
+
+- **2027 first-time experience polish** — header updated to 2027,
+  welcome card exists but needs review for 2027 content.
+- **2027 theme** — not decided yet. Landing page has a hidden
+  `#landing-theme` div ready to show it when set.
 - **Session audio archive** — upload MP3 per session for women to
-  re-listen. Highest-impact post-retreat feature; needs audio files
-  from Heather first.
-- **Monthly "Hey from Heather" video** — admin-recorded short video
-  drops on the 1st of each month, home card announces it.
-- **Sister Spotlight** — weekly featured sister rotation through
-  the whole roster over several months.
-- **Per-speaker CSV export of testimonies tagged to them** — if
-  speakers want just their related stories.
+  re-listen. Needs audio files from Heather.
+- **Monthly "Hey from Heather" video** — admin-recorded short video.
+- **Sister Spotlight** — weekly featured sister rotation.
+- **Per-speaker CSV export of testimonies**.
 
 ## What NOT to touch
 

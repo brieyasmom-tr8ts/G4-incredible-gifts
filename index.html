@@ -22,6 +22,10 @@
             0% { background-position: -200% 0; }
             100% { background-position: 200% 0; }
         }
+        @keyframes landingScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
         .skeleton-pulse {
             background: linear-gradient(90deg, #f0ece8 25%, #e8e4df 50%, #f0ece8 75%);
             background-size: 200% 100%;
@@ -3347,6 +3351,7 @@
       <div style="text-align:center;padding:60px 24px 40px;background:linear-gradient(180deg,rgba(138,158,122,0.12) 0%,var(--cream) 100%);">
         <div style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:15px;color:var(--sage);letter-spacing:1px;margin-bottom:8px;">APRIL 8&ndash;10, 2027 &middot; OCEAN CITY, MD</div>
         <h1 style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(32px,8vw,48px);color:var(--dark-text);margin:0 0 8px;line-height:1.15;">G4 Women's Retreat</h1>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:var(--taupe);letter-spacing:2px;margin-bottom:6px;">GATHER &middot; GROW &middot; GIVE &middot; GO</div>
         <div style="font-family:'Playfair Display',Georgia,serif;font-size:clamp(18px,4.5vw,24px);color:var(--sage);margin-bottom:6px;">2027</div>
         <div id="landing-theme" style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:17px;color:var(--rose);margin-top:12px;display:none;"></div>
         <div style="width:60px;height:2px;background:var(--sage);margin:20px auto 0;border-radius:2px;"></div>
@@ -3356,6 +3361,30 @@
       <div style="padding:32px 24px 0;max-width:500px;margin:0 auto;text-align:center;">
         <h2 style="font-family:'Playfair Display',Georgia,serif;font-size:22px;color:var(--dark-text);margin:0 0 12px;">Our Mission</h2>
         <p style="font-family:Georgia,serif;font-size:15px;color:var(--dark-text);line-height:1.7;margin:0;">The G4 Retreat is all about bringing women together to connect, laugh, and grow closer to God and each other. It's a chance to hit pause on the craziness of life, worship together, share stories, and just enjoy being in the moment. Whether it's through heartfelt conversations, joyful worship, or much-needed downtime, G4 is a weekend designed to fill your cup and send you back home refreshed and ready to shine.</p>
+      </div>
+
+      <!-- Photo Gallery -->
+      <div style="padding:28px 0 8px;overflow:hidden;">
+        <div id="landing-photos" style="display:flex;gap:10px;animation:landingScroll 30s linear infinite;width:max-content;">
+          <img src="photos/g4-1.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-2.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-3.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-4.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-5.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-6.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-7.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-8.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-9.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-10.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-11.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-12.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-1.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-2.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-3.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-4.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-5.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+          <img src="photos/g4-6.jpg" alt="" style="width:180px;height:130px;object-fit:cover;border-radius:12px;flex-shrink:0;">
+        </div>
       </div>
 
       <!-- What's Included -->

@@ -3421,6 +3421,7 @@
         <h1 style="font-size:clamp(38px,7vw,68px);color:var(--lp-text);letter-spacing:-0.5px;">G4 Women's Retreat</h1>
         <p style="font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(15px,2vw,19px);color:var(--lp-primary);letter-spacing:4px;margin:14px 0 0;text-transform:uppercase;">Gather &middot; Grow &middot; Give &middot; Go</p>
         <div id="landing-theme" style="font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:18px;color:var(--lp-accent);margin-top:18px;display:none;"></div>
+        <div style="margin-top:clamp(28px,4vw,40px);"><a id="landing-register-btn-top" href="https://graceseaford.ccbchurch.com/goto/forms/189/responses/new" target="_blank" rel="noopener" class="lp-btn">Register Now</a></div>
       </header>
 
       <!-- ── Photo strip (full bleed) ── -->
@@ -4984,8 +4985,10 @@
                 .then(function(r) { return r.json(); })
                 .then(function(settings) {
                     var regBtn = document.getElementById('landing-register-btn');
-                    if (regBtn && settings.registration_form_url) {
-                        regBtn.href = settings.registration_form_url;
+                    var regBtnTop = document.getElementById('landing-register-btn-top');
+                    if (settings.registration_form_url) {
+                        if (regBtn) regBtn.href = settings.registration_form_url;
+                        if (regBtnTop) regBtnTop.href = settings.registration_form_url;
                     }
                 })
                 .catch(function() {});

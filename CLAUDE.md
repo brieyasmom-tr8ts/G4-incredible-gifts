@@ -255,6 +255,12 @@ Key admin functions in `admin.html`:
   `loadRegistrationsList` / `handleRegCsvUpload` / `previewRegMatches` /
   `commitRegImport` / `openAddRegistrationModal` — Registrations tab
   inside Budget & Payments (see below)
+- `loadParticipants` / `renderParticipantsTable` / `getPaymentStatus` /
+  `openAddPaymentModal` / `submitPayment` / `handleParticipantCsvUpload` /
+  `downloadParticipantsCsv` — Participants & Payments section
+- `loadRoomAssignments` / `renderRoomBoard` / `renderRoomChip` /
+  `initRoomDragDrop` / `addNewRoom` / `deleteRoom` — Room board
+- `sendOneReminder` / `sendAllReminders` — Brevo email triggers
 
 ## Landing page & access-code gating (shipped Aug 2024)
 
@@ -315,7 +321,51 @@ Key admin functions in `admin.html`:
   (from calculator) and Actual Revenue (from registration payments).
   "What's Left" uses actual revenue when available.
 - Room pricing on landing page: $430/$280/$230/$190 with roommate
-  arrangement note. 4-person room marked "BEST VALUE".
+  arrangement note.
+
+## Payment tracking & room assignments (shipped Aug 25, 2026)
+
+- **Tables:** `payments` (individual entries per woman), `budget_expenses`,
+  `room_assignments`, `reminder_log`.
+- **User columns:** `total_owed`, `room_size_preference`,
+  `roommate_requests`, `participant_status`, `payment_due_date`.
+- **Payment status is derived**, never stored: No Payment, Deposit Only,
+  Partial, Paid in Full, Overdue. Deposit ($50) is part of total owed.
+- **Shared due date** for everyone (stored in `game_settings` as
+  `payment_due_date`).
+- **Participants table** in admin: name, room pref, roommate requests,
+  owed, paid, balance, status badge, + Pay button, Remind button.
+  Filterable by all/owes/paid/overdue/no payment.
+- **CSV import** from church form: maps first/last name, email, phone,
+  church, room preference, roommate requests, payment amount. Dedupes
+  payments by user+amount+date. Endpoint: `POST /api/admin/participants/import`.
+- **Room assignment board** in admin: drag-and-drop. Unassigned pool,
+  room cards (up to 4 per room). Chips show name, payment status,
+  room preference, roommate requests.
+- **Endpoints:** `GET/POST /api/admin/participants`,
+  `POST /api/admin/participants/:id`, `GET/POST/DELETE /api/admin/payments`,
+  `GET/POST/DELETE /api/admin/rooms`.
+
+## Brevo email integration (shipped Aug 25, 2026)
+
+- **Brevo List ID:** 8 (G4 2027 Retreat list).
+- **Sender:** `G4Retreat <Heather@HeatherLynWilson.com>`.
+- **Worker secret:** `BREVO_API_KEY` (same key as HeatherLynWilson.com).
+- **Contact sync:** women added to Brevo list on access code entry
+  (via `brevoAddContact` in `POST /api/auth/enter`).
+- **Payment reminder email:** warm personal tone, includes balance,
+  due date, Jeremiah 29:11, signs off as "The G4 Team". Template is
+  `buildPaymentReminderHtml()` (top-level function in worker).
+- **Manual reminders:** per-participant "Remind" button + "Send All
+  Reminders" bulk button in admin. Endpoints:
+  `POST /api/admin/reminders/send/:userId`,
+  `POST /api/admin/reminders/send-all`.
+- **Monthly cron:** 1st of each month at 10 AM EDT (`0 14 1 * *`).
+  Runs `sendMonthlyPaymentReminders()`. Skips paid-in-full, inactive,
+  and anyone already reminded this month (checked via `reminder_log`).
+- **Reminder log:** `GET /api/admin/reminders/log` shows history.
+- **Cron schedule:** Mon 5am EDT (devotions), Wed 5am EDT (secret
+  sister), 1st monthly 10am EDT (payment reminders).
 
 ## Deployment
 

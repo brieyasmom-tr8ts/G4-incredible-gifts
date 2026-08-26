@@ -4796,16 +4796,16 @@ function renderParticipantsTable() {
                     const roomPref = roomLabels[p.room_size_preference] || '—';
                     const roommates = (p.roommate_requests || '').substring(0, 40) || '—';
                     return `<tr style="border-bottom:1px solid rgba(200,185,176,0.2);">
-                        <td style="padding:8px 6px;font-weight:600;">${escHtml(name)}</td>
+                        <td style="padding:8px 6px;font-weight:600;">${esc(name)}</td>
                         <td style="padding:8px 6px;color:var(--light-text);">${roomPref}</td>
-                        <td style="padding:8px 6px;color:var(--light-text);font-size:0.78rem;" title="${escHtml(p.roommate_requests || '')}">${escHtml(roommates)}</td>
+                        <td style="padding:8px 6px;color:var(--light-text);font-size:0.78rem;" title="${esc(p.roommate_requests || '')}">${esc(roommates)}</td>
                         <td style="padding:8px 6px;text-align:right;">${fmtMoney(p.total_owed || 0)}</td>
                         <td style="padding:8px 6px;text-align:right;color:#5b9a6f;">${fmtMoney(p.total_paid || 0)}</td>
                         <td style="padding:8px 6px;text-align:right;font-weight:600;color:${balance > 0 ? 'var(--accent)' : '#5b9a6f'};">${fmtMoney(balance)}</td>
                         <td style="padding:8px 6px;"><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;background:${status.color}20;color:${status.color};">${status.label}</span></td>
                         <td style="padding:8px 6px;white-space:nowrap;">
-                            <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.15);color:var(--sage);" onclick="openAddPaymentModal(${p.id},'${escHtml(name)}',${balance})">+ Pay</button>
-                            ${balance > 0 && p.email ? `<button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(181,112,106,0.12);color:var(--accent);margin-left:4px;" onclick="sendOneReminder(${p.id},'${escHtml(name)}')">Remind</button>` : ''}
+                            <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.15);color:var(--sage);" onclick="openAddPaymentModal(${p.id},'${esc(name)}',${balance})">+ Pay</button>
+                            ${balance > 0 && p.email ? `<button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(181,112,106,0.12);color:var(--accent);margin-left:4px;" onclick="sendOneReminder(${p.id},'${esc(name)}')">Remind</button>` : ''}
                         </td>
                     </tr>`;
                 }).join('')}
@@ -5052,14 +5052,14 @@ function renderRoomChip(p, roomNum) {
     const reqText = (p.roommate_requests || '').substring(0, 30);
     const status = getPaymentStatus(p);
     return `
-        <div class="room-chip" draggable="true" data-user-id="${p.id}" data-name="${escHtml(name)}"
+        <div class="room-chip" draggable="true" data-user-id="${p.id}" data-name="${esc(name)}"
              style="padding:8px 10px;background:white;border:1px solid var(--warm-grey);border-radius:10px;cursor:grab;font-size:0.82rem;display:flex;flex-direction:column;gap:2px;"
-             title="Wants: ${escHtml(p.roommate_requests || 'no preference')}">
+             title="Wants: ${esc(p.roommate_requests || 'no preference')}">
             <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-weight:600;">${escHtml(name)}</span>
+                <span style="font-weight:600;">${esc(name)}</span>
                 <span style="font-size:0.68rem;padding:1px 6px;border-radius:8px;background:${status.color}20;color:${status.color};">${status.label}</span>
             </div>
-            ${pref || reqText ? `<div style="font-size:0.72rem;color:var(--light-text);">${pref ? 'Wants ' + pref : ''}${pref && reqText ? ' · ' : ''}${reqText ? 'w/ ' + escHtml(reqText) : ''}</div>` : ''}
+            ${pref || reqText ? `<div style="font-size:0.72rem;color:var(--light-text);">${pref ? 'Wants ' + pref : ''}${pref && reqText ? ' · ' : ''}${reqText ? 'w/ ' + esc(reqText) : ''}</div>` : ''}
         </div>
     `;
 }

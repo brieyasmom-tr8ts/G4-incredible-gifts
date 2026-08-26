@@ -3366,6 +3366,10 @@
       .lp-photo { width:clamp(200px,25vw,300px); height:clamp(140px,18vw,210px); object-fit:cover; border-radius:12px; flex-shrink:0; transition:transform .3s var(--lp-ease); }
       .lp-photo:hover { transform:scale(1.03); }
 
+      /* ── In-app pre-retreat photo strip (reuses landingScroll keyframe) ── */
+      .preretreat-photos-track { display:flex; gap:10px; animation:landingScroll 30s linear infinite; width:max-content; padding:4px 0; }
+      .preretreat-photo { width:clamp(140px,40vw,220px); height:clamp(95px,27vw,150px); object-fit:cover; border-radius:10px; flex-shrink:0; }
+
       /* ── Cards ── */
       .lp-card { background:var(--lp-surface); border:1px solid var(--lp-border); border-radius:var(--lp-radius); padding:clamp(24px,4vw,36px); box-shadow:var(--lp-shadow); }
 
@@ -3713,6 +3717,130 @@
                             <div style="font-size:1.1rem;color:var(--sage);flex-shrink:0;">&rarr;</div>
                         </div>
                     </button>
+
+                    <!-- ── 2027 Pre-Retreat Experience ── -->
+                    <!-- All sections hidden until load2027PreRetreatHome() shows them for 2027 users -->
+
+                    <!-- Photo strip (auto-scrolling, same style as landing page) -->
+                    <div id="preretreat-photos-wrap" style="display:none;overflow:hidden;margin:16px 0 8px;padding:0;">
+                        <div class="preretreat-photos-track">
+                            <img src="photos/g4-1.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-7.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-3.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-8.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-5.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-10.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-2.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-11.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-4.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-9.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-6.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <img src="photos/g4-12.jpg" alt="" class="preretreat-photo" loading="lazy">
+                            <!-- duplicated for seamless loop -->
+                            <img src="photos/g4-1.jpg" alt="" class="preretreat-photo" loading="lazy" aria-hidden="true">
+                            <img src="photos/g4-7.jpg" alt="" class="preretreat-photo" loading="lazy" aria-hidden="true">
+                            <img src="photos/g4-3.jpg" alt="" class="preretreat-photo" loading="lazy" aria-hidden="true">
+                            <img src="photos/g4-8.jpg" alt="" class="preretreat-photo" loading="lazy" aria-hidden="true">
+                            <img src="photos/g4-5.jpg" alt="" class="preretreat-photo" loading="lazy" aria-hidden="true">
+                            <img src="photos/g4-10.jpg" alt="" class="preretreat-photo" loading="lazy" aria-hidden="true">
+                        </div>
+                    </div>
+
+                    <!-- Countdown hero card -->
+                    <div id="preretreat-countdown-card" style="display:none;margin:8px 16px 4px;padding:20px 20px 18px;background:linear-gradient(135deg,rgba(138,158,122,0.14),rgba(201,144,138,0.08));border-radius:16px;border:1.5px solid rgba(138,158,122,0.25);box-shadow:0 4px 16px rgba(138,158,122,0.10);text-align:center;">
+                        <div style="font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;">G4 2027 Retreat</div>
+                        <div id="preretreat-countdown-number" style="font-family:'Playfair Display',serif;font-size:3rem;font-weight:700;color:var(--dark-text);line-height:1;"></div>
+                        <div id="preretreat-countdown-label" style="font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--light-text);font-style:italic;margin-top:4px;margin-bottom:12px;"></div>
+                        <div style="font-family:'Cormorant Garamond',serif;font-size:0.92rem;color:var(--sage);font-weight:600;">April 8&ndash;10, 2027 &middot; Ocean City, MD</div>
+                    </div>
+
+                    <!-- Hotel card -->
+                    <div id="preretreat-hotel-card" style="display:none;margin:10px 16px;padding:18px 20px;background:white;border-radius:14px;border:1px solid rgba(138,158,122,0.18);box-shadow:var(--shadow-sm);">
+                        <div style="display:flex;align-items:flex-start;gap:14px;">
+                            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--sage),#a8c296);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem;">&#127970;</div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:4px;">Where We're Staying</div>
+                                <div style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:var(--dark-text);margin-bottom:3px;">Hyatt Place Oceanfront</div>
+                                <div style="font-family:'Cormorant Garamond',serif;font-size:0.9rem;color:var(--light-text);line-height:1.4;margin-bottom:10px;">1 Wicomico St, Ocean City, MD 21842<br>April 8&ndash;10, 2027 &middot; Check-in 5 PM Thursday</div>
+                                <a href="https://maps.apple.com/?q=Hyatt+Place+Ocean+City+Oceanfront" target="_blank" rel="noopener" style="display:inline-block;padding:8px 16px;background:var(--sage);color:white;border-radius:8px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:700;text-decoration:none;margin-right:8px;">&#128205; Map It</a>
+                                <a href="https://maps.google.com/?q=Hyatt+Place+Ocean+City+Oceanfront" target="_blank" rel="noopener" style="display:inline-block;padding:8px 16px;background:transparent;color:var(--sage);border:1.5px solid rgba(138,158,122,0.4);border-radius:8px;font-family:'Cormorant Garamond',serif;font-size:0.9rem;font-weight:700;text-decoration:none;">Google Maps</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment card -->
+                    <div id="preretreat-payment-card" style="display:none;margin:10px 16px;padding:18px 20px;background:white;border-radius:14px;border:1px solid rgba(201,144,138,0.22);box-shadow:var(--shadow-sm);">
+                        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem;">&#128176;</div>
+                            <div>
+                                <div style="font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1.2px;">Your Payment</div>
+                                <div id="preretreat-payment-due-label" style="font-family:'Cormorant Garamond',serif;font-size:0.85rem;color:var(--light-text);margin-top:1px;"></div>
+                            </div>
+                        </div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+                            <div style="text-align:center;padding:10px 6px;background:rgba(138,158,122,0.08);border-radius:10px;">
+                                <div style="font-family:-apple-system,sans-serif;font-size:1.35rem;font-weight:700;color:var(--dark-text);font-variant-numeric:tabular-nums;" id="preretreat-total-owed">—</div>
+                                <div style="font-family:'Cormorant Garamond',serif;font-size:0.75rem;color:var(--light-text);margin-top:2px;">Total Owed</div>
+                            </div>
+                            <div style="text-align:center;padding:10px 6px;background:rgba(138,158,122,0.08);border-radius:10px;">
+                                <div style="font-family:-apple-system,sans-serif;font-size:1.35rem;font-weight:700;color:var(--sage);font-variant-numeric:tabular-nums;" id="preretreat-total-paid">—</div>
+                                <div style="font-family:'Cormorant Garamond',serif;font-size:0.75rem;color:var(--light-text);margin-top:2px;">Paid</div>
+                            </div>
+                            <div style="text-align:center;padding:10px 6px;background:rgba(201,144,138,0.10);border-radius:10px;">
+                                <div style="font-family:-apple-system,sans-serif;font-size:1.35rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;" id="preretreat-balance">—</div>
+                                <div style="font-family:'Cormorant Garamond',serif;font-size:0.75rem;color:var(--light-text);margin-top:2px;">Balance</div>
+                            </div>
+                        </div>
+                        <div id="preretreat-payment-action" style="text-align:center;"></div>
+                    </div>
+
+                    <!-- Schedule card -->
+                    <div id="preretreat-schedule-card" style="display:none;margin:10px 16px;padding:18px 20px;background:white;border-radius:14px;border:1px solid rgba(138,158,122,0.18);box-shadow:var(--shadow-sm);">
+                        <div style="font-family:'Playfair Display',serif;font-size:0.72rem;font-weight:700;color:var(--sage);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:14px;">Retreat Schedule</div>
+                        <div style="display:flex;flex-direction:column;gap:12px;">
+                            <div style="display:flex;gap:14px;align-items:flex-start;">
+                                <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,rgba(138,158,122,0.15),rgba(138,158,122,0.08));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <div style="font-family:'Playfair Display',serif;font-size:0.68rem;font-weight:700;color:var(--sage);text-align:center;line-height:1.2;">THU<br>APR 8</div>
+                                </div>
+                                <div>
+                                    <div style="font-family:'Playfair Display',serif;font-size:0.92rem;font-weight:700;color:var(--dark-text);">Arrival Day</div>
+                                    <div style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--light-text);line-height:1.5;margin-top:2px;">5 PM Check-in &nbsp;&middot;&nbsp; 7 PM Welcome Party</div>
+                                </div>
+                            </div>
+                            <div style="height:1px;background:rgba(138,158,122,0.12);"></div>
+                            <div style="display:flex;gap:14px;align-items:flex-start;">
+                                <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,rgba(201,144,138,0.15),rgba(201,144,138,0.08));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <div style="font-family:'Playfair Display',serif;font-size:0.68rem;font-weight:700;color:var(--accent);text-align:center;line-height:1.2;">FRI<br>APR 9</div>
+                                </div>
+                                <div>
+                                    <div style="font-family:'Playfair Display',serif;font-size:0.92rem;font-weight:700;color:var(--dark-text);">Full Day</div>
+                                    <div style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--light-text);line-height:1.5;margin-top:2px;">Morning Session &nbsp;&middot;&nbsp; Free Time &nbsp;&middot;&nbsp; Evening Session</div>
+                                </div>
+                            </div>
+                            <div style="height:1px;background:rgba(138,158,122,0.12);"></div>
+                            <div style="display:flex;gap:14px;align-items:flex-start;">
+                                <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,rgba(138,158,122,0.15),rgba(138,158,122,0.08));display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                    <div style="font-family:'Playfair Display',serif;font-size:0.68rem;font-weight:700;color:var(--sage);text-align:center;line-height:1.2;">SAT<br>APR 10</div>
+                                </div>
+                                <div>
+                                    <div style="font-family:'Playfair Display',serif;font-size:0.92rem;font-weight:700;color:var(--dark-text);">Closing Morning</div>
+                                    <div style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--light-text);line-height:1.5;margin-top:2px;">Breakfast &nbsp;&middot;&nbsp; Final Session &nbsp;&middot;&nbsp; Noon Send-Off</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invite / share card -->
+                    <div id="preretreat-invite-card" style="display:none;margin:10px 16px 4px;padding:18px 20px;background:linear-gradient(135deg,rgba(201,144,138,0.10),rgba(243,213,207,0.06));border-radius:14px;border:1.5px solid rgba(201,144,138,0.22);box-shadow:var(--shadow-sm);">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--blush),var(--rose));display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.3rem;">&#128140;</div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:var(--dark-text);margin-bottom:3px;">Invite a Sister</div>
+                                <div style="font-family:'Cormorant Garamond',serif;font-size:0.88rem;color:var(--light-text);line-height:1.4;">Know someone who should be there? Send them the link.</div>
+                            </div>
+                            <button type="button" id="preretreat-share-btn" onclick="shareRetreatInvite()" style="flex-shrink:0;padding:10px 16px;background:var(--accent);color:white;border:none;border-radius:10px;font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:700;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">Share</button>
+                        </div>
+                    </div>
 
                     <!-- Registration card (hidden unless admin sets a URL) -->
                     <div id="registration-card-wrap" style="display:none;margin:12px 16px 0;">
@@ -10534,6 +10662,96 @@
 
         // Registration card — shows on home page once admin sets a form URL
         // and opens registration. Swaps to a confirmation state once her own
+        // ── 2027 Pre-Retreat Home ──────────────────────────────────────────────
+
+        function shareRetreatInvite() {
+            const text = 'Join me at the G4 Women\'s Retreat! April 8–10, 2027 in Ocean City, MD. Sign up at g4retreatapp.org';
+            const url = 'https://g4retreatapp.org';
+            if (navigator.share) {
+                navigator.share({ title: 'G4 Women\'s Retreat 2027', text: text, url: url }).catch(function(){});
+            } else {
+                // Fallback: copy to clipboard
+                var el = document.createElement('textarea');
+                el.value = text + '\n' + url;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                showToast('Link copied! Share it with your friends.');
+            }
+        }
+
+        function renderCountdown() {
+            var retreat = new Date('2027-04-08T17:00:00-04:00');
+            var now = new Date();
+            var diffMs = retreat - now;
+            if (diffMs <= 0) return; // retreat started — don't show
+            var days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            var numEl = document.getElementById('preretreat-countdown-number');
+            var lblEl = document.getElementById('preretreat-countdown-label');
+            if (numEl) numEl.textContent = days;
+            if (lblEl) lblEl.textContent = days === 1 ? 'day until the retreat' : 'days until the retreat';
+        }
+
+        async function load2027PreRetreatHome() {
+            if (!currentUser) return;
+            // Only for 2027 users in pre-retreat window
+            var userYear = currentUser.retreat_year || 2026;
+            var retreatStart = new Date('2027-04-08T17:00:00-04:00');
+            var now = new Date();
+            var is2027User = userYear >= 2027 && viewingYear >= 2027;
+            var isPreRetreat2027 = now < retreatStart;
+            if (!is2027User || !isPreRetreat2027) return;
+
+            // Show photo strip
+            var photosWrap = document.getElementById('preretreat-photos-wrap');
+            if (photosWrap) photosWrap.style.display = 'block';
+
+            // Show & populate countdown
+            var countdownCard = document.getElementById('preretreat-countdown-card');
+            if (countdownCard) { countdownCard.style.display = 'block'; renderCountdown(); }
+
+            // Show hotel card
+            var hotelCard = document.getElementById('preretreat-hotel-card');
+            if (hotelCard) hotelCard.style.display = 'block';
+
+            // Show schedule card
+            var scheduleCard = document.getElementById('preretreat-schedule-card');
+            if (scheduleCard) scheduleCard.style.display = 'block';
+
+            // Show invite card
+            var inviteCard = document.getElementById('preretreat-invite-card');
+            if (inviteCard) inviteCard.style.display = 'block';
+
+            // Payment card — fetch user's payment data
+            try {
+                var pmtData = await apiGet('/api/me/payments?user_id=' + currentUser.id);
+                var pmtCard = document.getElementById('preretreat-payment-card');
+                if (pmtCard && pmtData) {
+                    var fmt = function(n) { return '$' + (Math.round(n * 100) / 100).toFixed(0); };
+                    var owedEl = document.getElementById('preretreat-total-owed');
+                    var paidEl = document.getElementById('preretreat-total-paid');
+                    var balEl = document.getElementById('preretreat-balance');
+                    var dueEl = document.getElementById('preretreat-payment-due-label');
+                    var actionEl = document.getElementById('preretreat-payment-action');
+                    if (owedEl) owedEl.textContent = pmtData.total_owed > 0 ? fmt(pmtData.total_owed) : '—';
+                    if (paidEl) paidEl.textContent = pmtData.total_paid > 0 ? fmt(pmtData.total_paid) : '$0';
+                    if (balEl) balEl.textContent = pmtData.balance > 0 ? fmt(pmtData.balance) : 'Paid!';
+                    if (dueEl && pmtData.due_date) dueEl.textContent = 'Due ' + pmtData.due_date;
+                    if (actionEl) {
+                        if (pmtData.balance <= 0) {
+                            actionEl.innerHTML = '<div style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:rgba(138,158,122,0.12);border-radius:10px;color:var(--sage);font-family:\'Cormorant Garamond\',serif;font-size:1rem;font-weight:700;">&#10003; You\'re all paid up!</div>';
+                        } else if (pmtData.payment_url) {
+                            actionEl.innerHTML = '<a href="' + pmtData.payment_url + '" target="_blank" rel="noopener" style="display:inline-block;padding:12px 28px;background:var(--accent);color:white;border-radius:10px;font-family:\'Cormorant Garamond\',serif;font-size:1rem;font-weight:700;text-decoration:none;">Make a Payment &rarr;</a>';
+                        } else if (pmtData.total_owed > 0) {
+                            actionEl.innerHTML = '<div style="font-family:\'Cormorant Garamond\',serif;font-size:0.88rem;color:var(--light-text);font-style:italic;">Payment link coming soon</div>';
+                        }
+                    }
+                    pmtCard.style.display = 'block';
+                }
+            } catch (e) { /* payment card stays hidden if fetch fails */ }
+        }
+
         // profile shows she's paid (reconciled server-side from the church's
         // CSV export, not tracked here).
         async function loadRegistrationCard() {
@@ -11557,7 +11775,7 @@
             if (now >= retreatEnd) {
                 // 2026-specific content: only for women who attended the 2026 retreat
                 // (retreat_year < 2027) or who are currently toggled into 2026 archive view
-                const show2026Content = viewingYear < 2027 || !currentUser || (currentUser.retreat_year || 2026) < 2027;
+                const show2026Content = viewingYear < 2027 || (currentUser && (currentUser.retreat_year || 2026) < 2027);
                 if (show2026Content) {
                     buildLectioDivinaCard();
                     initFeedbackForm();
@@ -11575,7 +11793,8 @@
                     loadCelebrationsHomeCard(),
                     loadMyCelebrationStatus(),
                     show2026Content ? loadWeeklySecretSisterCard() : Promise.resolve(),
-                    loadRegistrationCard()
+                    loadRegistrationCard(),
+                    load2027PreRetreatHome()
                 ]).catch(function(){});
 
                 if (!localStorage.getItem('g4feedback_sent') && show2026Content) {

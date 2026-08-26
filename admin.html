@@ -1423,6 +1423,12 @@
                             <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Which year the app is currently running. Controls what sisters see by default.</div>
                         </div>
                     </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;margin-bottom:1rem;">
+                        <div>
+                            <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Payment link (Venmo / PayPal / etc.)</label>
+                            <input type="url" id="reg-payment-url" placeholder="https://venmo.com/u/yourname" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" />
+                        </div>
+                    </div>
                     <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;color:var(--dark-text);cursor:pointer;">
                         <input type="checkbox" id="reg-open-toggle" style="width:16px;height:16px;" /> Registration is open (show the card on home)
                     </label>
@@ -4480,6 +4486,7 @@ async function loadRegistrationSettings() {
         document.getElementById('reg-open-toggle').checked = settings.registration_open !== '0';
         document.getElementById('reg-access-code').value = settings.registration_access_code || '';
         document.getElementById('reg-active-year').value = settings.active_retreat_year || '2027';
+        document.getElementById('reg-payment-url').value = settings.payment_url || '';
         document.getElementById('reg-ov-goal').textContent = settings.registration_goal ? fmtMoney(parseFloat(settings.registration_goal) || 0) : '—';
     } catch (e) {
         showToast('Could not load registration settings: ' + (e.message || ''));
@@ -4493,7 +4500,8 @@ async function saveRegistrationSettings() {
         registration_goal: document.getElementById('reg-goal').value,
         registration_open: document.getElementById('reg-open-toggle').checked ? '1' : '0',
         registration_access_code: document.getElementById('reg-access-code').value.trim(),
-        active_retreat_year: document.getElementById('reg-active-year').value
+        active_retreat_year: document.getElementById('reg-active-year').value,
+        payment_url: document.getElementById('reg-payment-url').value.trim()
     };
     try {
         await apiFetch('/api/admin/registration/settings', { method: 'POST', body: payload });

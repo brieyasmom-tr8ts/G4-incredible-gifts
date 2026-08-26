@@ -3054,7 +3054,7 @@ export default {
           )`).run();
         } catch (e) { /* exists */ }
         const { results } = await env.DB.prepare(
-          "SELECT key, value FROM game_settings WHERE key LIKE 'registration_%' OR key = 'active_retreat_year'"
+          "SELECT key, value FROM game_settings WHERE key LIKE 'registration_%' OR key = 'active_retreat_year' OR key = 'payment_due_date' OR key = 'payment_url'"
         ).all();
         const settings = {};
         (results || []).forEach(r => { settings[r.key] = r.value; });
@@ -3065,6 +3065,33 @@ export default {
           delete settings.registration_access_code;
         }
         return json(settings, corsHeaders);
+      }
+
+      // GET /api/me/payments?user_id=N - user's payment summary for the home card
+      if (path === '/api/me/payments' && request.method === 'GET') {
+        const uid = parseInt(url.searchParams.get('user_id') || '0', 10);
+        if (!uid) return json({ error: 'user_id required' }, corsHeaders, 400);
+        await ensurePaymentTables(env.DB);
+        const user = await env.DB.prepare(
+          'SELECT total_owed, first_name FROM users WHERE id = ?'
+        ).bind(uid).first();
+        if (!user) return json({ error: 'User not found' }, corsHeaders, 404);
+        const activeYear = await getActiveYear(env.DB);
+        const pmtRow = await env.DB.prepare(
+          'SELECT COALESCE(SUM(amount), 0) as total_paid FROM payments WHERE user_id = ? AND retreat_year = ?'
+        ).bind(uid, activeYear).first();
+        let dueDate = '';
+        let paymentUrl = '';
+        try {
+          const ddRow = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'payment_due_date'").first();
+          dueDate = (ddRow && ddRow.value) || '';
+          const puRow = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'payment_url'").first();
+          paymentUrl = (puRow && puRow.value) || '';
+        } catch (e) {}
+        const totalOwed = user.total_owed || 0;
+        const totalPaid = (pmtRow && pmtRow.total_paid) || 0;
+        const balance = Math.max(0, totalOwed - totalPaid);
+        return json({ total_owed: totalOwed, total_paid: totalPaid, balance, due_date: dueDate, payment_url: paymentUrl }, corsHeaders);
       }
 
       // POST /api/admin/registration/settings - admin batch upsert (form URL,
@@ -3083,7 +3110,7 @@ export default {
           )`).run();
         } catch (e) { /* exists */ }
         for (const key of Object.keys(body)) {
-          if (!key.startsWith('registration_') && key !== 'active_retreat_year') continue;
+          if (!key.startsWith('registration_') && key !== 'active_retreat_year' && key !== 'payment_url' && key !== 'payment_due_date') continue;
           const value = body[key] == null ? '' : String(body[key]);
           await env.DB.prepare(
             "INSERT INTO game_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
@@ -3168,6 +3195,8 @@ export default {
           const roomPref = parseInt(entry.room_size_preference) || 0;
           const roommateReqs = (entry.roommate_requests || '').toString().trim();
           let userId = parseInt(entry.user_id, 10);
+          let freshInsert = false;
+
           if (!userId) {
             const rawName = (entry.name || '').toString().trim();
             if (!rawName) continue;
@@ -3175,11 +3204,23 @@ export default {
             const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
             const lastName = parts.slice(1).join(' ');
             const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
-            const result = await env.DB.prepare(
-              'INSERT INTO users (first_name, last_initial, last_name, retreat_year, reg_registered, reg_amount_paid, reg_paid_date, reg_source, total_owed, room_size_preference, roommate_requests) VALUES (?, ?, ?, 2027, 1, ?, ?, ?, ?, ?, ?)'
-            ).bind(first, lastInitial, lastName, amount, date, source, amount, roomPref, roommateReqs).run();
-            userId = result.meta.last_row_id;
-          } else {
+            // Check if a user with this name already exists (dedup on re-import)
+            const existingByName = await env.DB.prepare(
+              'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND (LOWER(last_name) = LOWER(?) OR (last_name = \'\' AND UPPER(last_initial) = UPPER(?))) LIMIT 1'
+            ).bind(first, lastName, lastInitial).first();
+            if (existingByName) {
+              userId = existingByName.id;
+            } else {
+              const result = await env.DB.prepare(
+                'INSERT INTO users (first_name, last_initial, last_name, retreat_year, reg_registered, reg_amount_paid, reg_paid_date, reg_source, total_owed, room_size_preference, roommate_requests) VALUES (?, ?, ?, 2027, 1, ?, ?, ?, ?, ?, ?)'
+              ).bind(first, lastInitial, lastName, amount, date, source, amount, roomPref, roommateReqs).run();
+              userId = result.meta.last_row_id;
+              freshInsert = true;
+            }
+          }
+
+          // Update existing user record (skipped only for brand-new inserts, which set fields on INSERT)
+          if (userId && !freshInsert) {
             const userUpdates = ['reg_registered = 1', 'retreat_year = 2027', 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
             const userBinds = [amount, date, source, notes];
             if (roomPref > 0) { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
@@ -3193,6 +3234,7 @@ export default {
             userBinds.push(userId);
             await env.DB.prepare(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`).bind(...userBinds).run();
           }
+
           // Add to payments table if amount > 0 (deduped by user+amount+date)
           if (amount > 0) {
             const existingPmt = await env.DB.prepare(

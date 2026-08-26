@@ -4793,13 +4793,17 @@ function renderParticipantsTable() {
         return;
     }
 
-    const roomLabels = { 0: 'No hotel', 1: 'Solo', 2: '2-person', 3: '3-person', 4: '4-person' };
+    // Store participant data by ID so buttons can look it up safely (avoids esc() breaking onclick strings)
+    window._participantById = {};
+    list.forEach(p => { window._participantById[p.id] = p; });
+
+    const roomLabels = { 0: 'No hotel ($130)', 1: '1 person ($430)', 2: '2 people ($280)', 3: '3 people ($230)', 4: '4 people ($190)' };
     container.innerHTML = `
         <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
             <thead>
                 <tr style="border-bottom:2px solid var(--warm-grey);text-align:left;">
                     <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Name</th>
-                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Room Pref</th>
+                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Room Size</th>
                     <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Roommates</th>
                     <th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Owed</th>
                     <th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Paid</th>
@@ -4814,25 +4818,46 @@ function renderParticipantsTable() {
                     const balance = (p.total_owed || 0) - (p.total_paid || 0);
                     const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
                     const roomPref = roomLabels[p.room_size_preference] || '—';
-                    const roommates = (p.roommate_requests || '').substring(0, 40) || '—';
+                    const roommates = (p.roommate_requests || '') || '—';
                     return `<tr style="border-bottom:1px solid rgba(200,185,176,0.2);">
                         <td style="padding:8px 6px;font-weight:600;">${esc(name)}</td>
-                        <td style="padding:8px 6px;color:var(--light-text);">${roomPref}</td>
-                        <td style="padding:8px 6px;color:var(--light-text);font-size:0.78rem;" title="${esc(p.roommate_requests || '')}">${esc(roommates)}</td>
+                        <td style="padding:8px 6px;color:var(--light-text);font-size:0.8rem;">${roomPref}</td>
+                        <td style="padding:8px 6px;color:var(--dark-text);font-size:0.82rem;" title="${esc(p.roommate_requests || '')}">${esc(roommates)}</td>
                         <td style="padding:8px 6px;text-align:right;">${fmtMoney(p.total_owed || 0)}</td>
                         <td style="padding:8px 6px;text-align:right;color:#5b9a6f;">${fmtMoney(p.total_paid || 0)}</td>
                         <td style="padding:8px 6px;text-align:right;font-weight:600;color:${balance > 0 ? 'var(--accent)' : '#5b9a6f'};">${fmtMoney(balance)}</td>
                         <td style="padding:8px 6px;"><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;background:${status.color}20;color:${status.color};">${status.label}</span></td>
                         <td style="padding:8px 6px;white-space:nowrap;">
-                            <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.15);color:var(--sage);" onclick="openAddPaymentModal(${p.id},'${esc(name)}',${balance})">+ Pay</button>
-                            <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.10);color:var(--taupe);margin-left:4px;" onclick="openEditParticipantModal(${p.id},'${esc(name)}',${p.room_size_preference || 0},${p.total_owed || 0},'${esc(p.roommate_requests || '')}')">Edit</button>
-                            ${balance > 0 && p.email ? `<button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(181,112,106,0.12);color:var(--accent);margin-left:4px;" onclick="sendOneReminder(${p.id},'${esc(name)}')">Remind</button>` : ''}
+                            <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.15);color:var(--sage);" data-pid="${p.id}" onclick="openAddPaymentModalById(this.dataset.pid)">+ Pay</button>
+                            <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.10);color:var(--taupe);margin-left:4px;" data-pid="${p.id}" onclick="openEditParticipantModalById(this.dataset.pid)">Edit</button>
+                            ${balance > 0 && p.email ? `<button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(181,112,106,0.12);color:var(--accent);margin-left:4px;" data-pid="${p.id}" onclick="sendOneReminderById(this.dataset.pid)">Remind</button>` : ''}
                         </td>
                     </tr>`;
                 }).join('')}
             </tbody>
         </table>
     `;
+}
+
+// Safe wrappers that read participant data from the lookup table instead of inline JS strings
+function openEditParticipantModalById(id) {
+    const p = window._participantById && window._participantById[id];
+    if (!p) return;
+    const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
+    openEditParticipantModal(p.id, name, p.room_size_preference || 0, p.total_owed || 0, p.roommate_requests || '');
+}
+function openAddPaymentModalById(id) {
+    const p = window._participantById && window._participantById[id];
+    if (!p) return;
+    const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
+    const balance = (p.total_owed || 0) - (p.total_paid || 0);
+    openAddPaymentModal(p.id, name, balance);
+}
+function sendOneReminderById(id) {
+    const p = window._participantById && window._participantById[id];
+    if (!p) return;
+    const name = p.last_name ? (p.first_name + ' ' + p.last_name) : p.first_name;
+    sendOneReminder(p.id, name);
 }
 
 function openEditParticipantModal(userId, name, roomPref, totalOwed, roommateRequests) {
@@ -4869,6 +4894,9 @@ function openEditParticipantModal(userId, name, roomPref, totalOwed, roommateReq
                 <button class="btn btn-refresh" onclick="saveEditParticipant(${userId})" style="flex:1;">Save</button>
                 <button class="btn" onclick="document.getElementById('edit-participant-modal').remove()" style="flex:1;">Cancel</button>
             </div>
+            <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(200,185,176,0.3);text-align:center;">
+                <button class="btn" onclick="deleteParticipant(${userId},'${esc(name)}')" style="font-size:0.78rem;padding:6px 14px;color:var(--accent);background:rgba(201,144,138,0.10);border:1px solid rgba(201,144,138,0.25);">Remove ${name} from 2027</button>
+            </div>
         </div>`;
     document.getElementById('ep-room').value = roomPref;
     document.body.appendChild(modal);
@@ -4890,6 +4918,20 @@ async function saveEditParticipant(userId) {
         loadRoomAssignments();
     } catch (e) {
         showToast('Could not save: ' + (e.message || ''));
+    }
+}
+
+async function deleteParticipant(userId, name) {
+    if (!confirm('Remove ' + name + ' from the 2027 retreat? This clears their payments and room assignment for 2027 but keeps their account.')) return;
+    try {
+        await apiFetch('/api/admin/participants/' + userId, { method: 'DELETE' });
+        const modal = document.getElementById('edit-participant-modal');
+        if (modal) modal.remove();
+        showToast(name + ' removed from 2027 ✓');
+        loadParticipants();
+        loadRoomAssignments();
+    } catch (e) {
+        showToast('Could not delete: ' + (e.message || ''));
     }
 }
 

@@ -3401,6 +3401,21 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
+      // DELETE /api/admin/participants/:id - remove participant and their payments/room assignments
+      if (participantMatch && request.method === 'DELETE') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        const userId = parseInt(participantMatch[1]);
+        const activeYear = await getActiveYear(env.DB);
+        await Promise.allSettled([
+          env.DB.prepare('DELETE FROM payments WHERE user_id = ? AND retreat_year = ?').bind(userId, activeYear).run(),
+          env.DB.prepare('DELETE FROM room_assignments WHERE user_id = ? AND retreat_year = ?').bind(userId, activeYear).run(),
+          env.DB.prepare('DELETE FROM reminder_log WHERE user_id = ?').bind(userId).run(),
+          env.DB.prepare("UPDATE users SET reg_registered = 0, total_owed = 0, room_size_preference = 0, roommate_requests = '', participant_status = 'inactive', retreat_year = 2026 WHERE id = ?").bind(userId).run()
+        ]);
+        return json({ success: true }, corsHeaders);
+      }
+
       // GET /api/admin/payments/:userId - payment history for one user
       const paymentsGetMatch = path.match(/^\/api\/admin\/payments\/(\d+)$/);
       if (paymentsGetMatch && request.method === 'GET') {

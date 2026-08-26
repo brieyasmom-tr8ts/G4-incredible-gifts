@@ -4790,50 +4790,62 @@ function renderParticipantsTable() {
         return;
     }
 
-    // Store participant data by ID so buttons can look it up safely (avoids esc() breaking onclick strings)
     window._participantById = {};
     list.forEach(p => { window._participantById[p.id] = p; });
 
     const roomLabels = { 0: 'No hotel ($130)', 1: '1 person ($430)', 2: '2 people ($280)', 3: '3 people ($230)', 4: '4 people ($190)' };
-    container.innerHTML = `
-        <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
-            <thead>
-                <tr style="border-bottom:2px solid var(--warm-grey);text-align:left;">
-                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Name</th>
-                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Room Size</th>
-                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Roommates</th>
-                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Owed</th>
-                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Paid</th>
-                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Balance</th>
-                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Status</th>
-                    <th style="padding:8px 6px;font-weight:600;color:var(--taupe);"></th>
-                </tr>
-            </thead>
-            <tbody>
-                ${list.map(p => {
-                    const status = getPaymentStatus(p);
-                    const balance = (p.total_owed || 0) - (p.total_paid || 0);
-                    const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
-                    const roomPref = roomLabels[p.room_size_preference] || '—';
-                    const roommates = (p.roommate_requests || '') || '—';
-                    return `<tr style="border-bottom:1px solid rgba(200,185,176,0.2);">
-                        <td style="padding:8px 6px;font-weight:600;">${esc(name)}</td>
-                        <td style="padding:8px 6px;color:var(--light-text);font-size:0.8rem;">${roomPref}</td>
-                        <td style="padding:8px 6px;color:var(--dark-text);font-size:0.82rem;" title="${esc(p.roommate_requests || '')}">${esc(roommates)}</td>
-                        <td style="padding:8px 6px;text-align:right;">${fmtMoney(p.total_owed || 0)}</td>
-                        <td style="padding:8px 6px;text-align:right;color:#5b9a6f;">${fmtMoney(p.total_paid || 0)}</td>
-                        <td style="padding:8px 6px;text-align:right;font-weight:600;color:${balance > 0 ? 'var(--accent)' : '#5b9a6f'};">${fmtMoney(balance)}</td>
-                        <td style="padding:8px 6px;"><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;background:${status.color}20;color:${status.color};">${status.label}</span></td>
-                        <td style="padding:8px 6px;white-space:nowrap;">
-                            <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.15);color:var(--sage);" data-pid="${p.id}" onclick="openAddPaymentModalById(this.dataset.pid)">+ Pay</button>
-                            <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.10);color:var(--taupe);margin-left:4px;" data-pid="${p.id}" onclick="openEditParticipantModalById(this.dataset.pid)">Edit</button>
-                            ${balance > 0 && p.email ? `<button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(181,112,106,0.12);color:var(--accent);margin-left:4px;" data-pid="${p.id}" onclick="sendOneReminderById(this.dataset.pid)">Remind</button>` : ''}
-                        </td>
-                    </tr>`;
-                }).join('')}
-            </tbody>
-        </table>
-    `;
+
+    const tbody = list.map(p => {
+        const status = getPaymentStatus(p);
+        const balance = (p.total_owed || 0) - (p.total_paid || 0);
+        const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
+        const roomPref = roomLabels[p.room_size_preference] || '—';
+        const roommates = (p.roommate_requests || '') || '—';
+        const remindBtn = (balance > 0 && p.email) ? '<button class="btn pt-remind" style="font-size:0.72rem;padding:4px 10px;background:rgba(181,112,106,0.12);color:var(--accent);margin-left:4px;">Remind</button>' : '';
+        return '<tr data-pid="' + p.id + '" style="border-bottom:1px solid rgba(200,185,176,0.2);">'
+            + '<td style="padding:8px 6px;font-weight:600;">' + esc(name) + '</td>'
+            + '<td style="padding:8px 6px;color:var(--light-text);font-size:0.8rem;">' + roomPref + '</td>'
+            + '<td style="padding:8px 6px;color:var(--dark-text);font-size:0.82rem;" title="' + esc(p.roommate_requests || '') + '">' + esc(roommates) + '</td>'
+            + '<td style="padding:8px 6px;text-align:right;">' + fmtMoney(p.total_owed || 0) + '</td>'
+            + '<td style="padding:8px 6px;text-align:right;color:#5b9a6f;">' + fmtMoney(p.total_paid || 0) + '</td>'
+            + '<td style="padding:8px 6px;text-align:right;font-weight:600;color:' + (balance > 0 ? 'var(--accent)' : '#5b9a6f') + ';">' + fmtMoney(balance) + '</td>'
+            + '<td style="padding:8px 6px;"><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;background:' + status.color + '20;color:' + status.color + ';">' + status.label + '</span></td>'
+            + '<td style="padding:8px 6px;white-space:nowrap;">'
+            + '<button class="btn pt-pay" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.15);color:var(--sage);">+ Pay</button>'
+            + '<button class="btn pt-edit" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.10);color:var(--taupe);margin-left:4px;">Edit</button>'
+            + '<button class="btn pt-delete" style="font-size:0.72rem;padding:4px 10px;background:rgba(201,144,138,0.10);color:var(--accent);margin-left:4px;">Remove</button>'
+            + remindBtn
+            + '</td></tr>';
+    }).join('');
+
+    container.innerHTML = '<table style="width:100%;border-collapse:collapse;font-size:0.82rem;">'
+        + '<thead><tr style="border-bottom:2px solid var(--warm-grey);text-align:left;">'
+        + '<th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Name</th>'
+        + '<th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Room Size</th>'
+        + '<th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Roommates</th>'
+        + '<th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Owed</th>'
+        + '<th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Paid</th>'
+        + '<th style="padding:8px 6px;font-weight:600;color:var(--taupe);text-align:right;">Balance</th>'
+        + '<th style="padding:8px 6px;font-weight:600;color:var(--taupe);">Status</th>'
+        + '<th style="padding:8px 6px;font-weight:600;color:var(--taupe);"></th>'
+        + '</tr></thead><tbody>' + tbody + '</tbody></table>';
+
+    // Attach event listeners after innerHTML is set — avoids all string-escaping issues
+    container.querySelectorAll('tr[data-pid]').forEach(function(row) {
+        var pid = row.dataset.pid;
+        var p = window._participantById[pid];
+        if (!p) return;
+        var payBtn = row.querySelector('.pt-pay');
+        var editBtn = row.querySelector('.pt-edit');
+        var deleteBtn = row.querySelector('.pt-delete');
+        var remindBtn = row.querySelector('.pt-remind');
+        var name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
+        var balance = (p.total_owed || 0) - (p.total_paid || 0);
+        if (payBtn) payBtn.addEventListener('click', function() { openAddPaymentModal(p.id, name, balance); });
+        if (editBtn) editBtn.addEventListener('click', function() { openEditParticipantModal(p.id, name, p.room_size_preference || 0, p.total_owed || 0, p.roommate_requests || ''); });
+        if (deleteBtn) deleteBtn.addEventListener('click', function() { deleteParticipant(p.id); });
+        if (remindBtn) remindBtn.addEventListener('click', function() { sendOneReminder(p.id, name); });
+    });
 }
 
 // Safe wrappers that read participant data from the lookup table instead of inline JS strings

@@ -4817,6 +4817,7 @@ function renderParticipantsTable() {
                         <td style="padding:8px 6px;"><span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:0.72rem;font-weight:600;background:${status.color}20;color:${status.color};">${status.label}</span></td>
                         <td style="padding:8px 6px;white-space:nowrap;">
                             <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.15);color:var(--sage);" onclick="openAddPaymentModal(${p.id},'${esc(name)}',${balance})">+ Pay</button>
+                            <button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.10);color:var(--taupe);margin-left:4px;" onclick="openEditParticipantModal(${p.id},'${esc(name)}',${p.room_size_preference || 0},${p.total_owed || 0},'${esc(p.roommate_requests || '')}')">Edit</button>
                             ${balance > 0 && p.email ? `<button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(181,112,106,0.12);color:var(--accent);margin-left:4px;" onclick="sendOneReminder(${p.id},'${esc(name)}')">Remind</button>` : ''}
                         </td>
                     </tr>`;
@@ -4824,6 +4825,64 @@ function renderParticipantsTable() {
             </tbody>
         </table>
     `;
+}
+
+function openEditParticipantModal(userId, name, roomPref, totalOwed, roommateRequests) {
+    const existing = document.getElementById('edit-participant-modal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'edit-participant-modal';
+    modal.className = 'modal-overlay';
+    modal.style.display = 'flex';
+    modal.innerHTML = `
+        <div class="modal-box" style="max-width:420px;">
+            <h2 style="font-family:Playfair Display,serif;font-size:1.1rem;margin-bottom:4px;">Edit: ${name}</h2>
+            <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
+                <div>
+                    <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Room Size</label>
+                    <select id="ep-room" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;">
+                        <option value="0">No hotel ($130)</option>
+                        <option value="1">Solo – 1 person ($430)</option>
+                        <option value="2">2-person room ($280)</option>
+                        <option value="3">3-person room ($230)</option>
+                        <option value="4">4-person room ($190)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Roommate Request(s)</label>
+                    <input type="text" id="ep-roommates" value="${roommateRequests}" placeholder="Name(s) she wants to room with" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Total Owed ($)</label>
+                    <input type="number" id="ep-owed" value="${totalOwed}" step="1" min="0" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;box-sizing:border-box;">
+                </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:18px;">
+                <button class="btn btn-refresh" onclick="saveEditParticipant(${userId})" style="flex:1;">Save</button>
+                <button class="btn" onclick="document.getElementById('edit-participant-modal').remove()" style="flex:1;">Cancel</button>
+            </div>
+        </div>`;
+    document.getElementById('ep-room').value = roomPref;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+}
+
+async function saveEditParticipant(userId) {
+    const roomPref = parseInt(document.getElementById('ep-room').value, 10);
+    const roommateRequests = document.getElementById('ep-roommates').value.trim();
+    const totalOwed = parseFloat(document.getElementById('ep-owed').value) || 0;
+    // Auto-set total_owed from room size if it matches a standard tier
+    const ROOM_PRICE = { 0: 130, 1: 430, 2: 280, 3: 230, 4: 190 };
+    const owed = totalOwed > 0 ? totalOwed : (ROOM_PRICE[roomPref] || 0);
+    try {
+        await apiFetch('/api/admin/participants/' + userId, { method: 'POST', body: { room_size_preference: roomPref, roommate_requests: roommateRequests, total_owed: owed } });
+        document.getElementById('edit-participant-modal').remove();
+        showToast('Saved ✓');
+        loadParticipants();
+        loadRoomAssignments();
+    } catch (e) {
+        showToast('Could not save: ' + (e.message || ''));
+    }
 }
 
 function openAddPaymentModal(userId, name, balance) {

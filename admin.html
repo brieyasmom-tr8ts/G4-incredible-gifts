@@ -1466,6 +1466,14 @@
                                 <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Date column</label>
                                 <select id="reg-col-date" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"></select>
                             </div>
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Room size column <span style="font-weight:400;color:var(--light-text);">(optional)</span></label>
+                                <select id="reg-col-room" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"><option value="-1">— None —</option></select>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Roommate prefs column <span style="font-weight:400;color:var(--light-text);">(optional)</span></label>
+                                <select id="reg-col-roommate" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"><option value="-1">— None —</option></select>
+                            </div>
                         </div>
                         <button class="btn btn-refresh" onclick="previewRegMatches()">Preview Matches</button>
                         <span id="reg-csv-rowcount" style="font-size:0.8rem;color:var(--light-text);margin-left:10px;"></span>
@@ -4578,11 +4586,17 @@ function handleRegCsvUpload(event) {
         const nameIdx = guess(['name']);
         const amountIdx = guess(['amount', 'paid', 'total', 'price']);
         const dateIdx = guess(['date']);
+        const roomIdx = guess(['room', 'people per room', 'how many']);
+        const roommateIdx = guess(['roommate', 'room preference', 'room pref']);
         const optionsHtml = _regCsv.headers.map((h, i) => `<option value="${i}">${esc(h || '(column ' + (i + 1) + ')')}</option>`).join('');
+        const optionalOptionsHtml = '<option value="-1">— None —</option>' + optionsHtml;
         ['reg-col-name', 'reg-col-amount', 'reg-col-date'].forEach(id => { document.getElementById(id).innerHTML = optionsHtml; });
+        ['reg-col-room', 'reg-col-roommate'].forEach(id => { document.getElementById(id).innerHTML = optionalOptionsHtml; });
         if (nameIdx >= 0) document.getElementById('reg-col-name').value = nameIdx;
         if (amountIdx >= 0) document.getElementById('reg-col-amount').value = amountIdx;
         if (dateIdx >= 0) document.getElementById('reg-col-date').value = dateIdx;
+        if (roomIdx >= 0) document.getElementById('reg-col-room').value = roomIdx;
+        if (roommateIdx >= 0) document.getElementById('reg-col-roommate').value = roommateIdx;
         document.getElementById('reg-csv-rowcount').textContent = _regCsv.rows.length + ' rows found';
         document.getElementById('reg-csv-mapping').style.display = 'block';
         document.getElementById('reg-csv-preview').style.display = 'none';
@@ -4595,10 +4609,14 @@ async function previewRegMatches() {
     const nameCol = parseInt(document.getElementById('reg-col-name').value, 10);
     const amountCol = parseInt(document.getElementById('reg-col-amount').value, 10);
     const dateCol = parseInt(document.getElementById('reg-col-date').value, 10);
+    const roomCol = parseInt(document.getElementById('reg-col-room').value, 10);
+    const roommateCol = parseInt(document.getElementById('reg-col-roommate').value, 10);
     const rows = _regCsv.rows.map(r => ({
         name: (r[nameCol] || '').trim(),
         amount: (r[amountCol] || '').replace(/[^0-9.-]/g, ''),
-        date: (r[dateCol] || '').trim()
+        date: (r[dateCol] || '').trim(),
+        room_size_preference: roomCol >= 0 ? (r[roomCol] || '').trim() : '',
+        roommate_requests: roommateCol >= 0 ? (r[roommateCol] || '').trim() : ''
     })).filter(r => r.name);
     if (!rows.length) { showToast('No named rows to match'); return; }
     try {
@@ -4638,7 +4656,7 @@ async function commitRegImport() {
     _regPreview.forEach((row, i) => {
         const sel = document.getElementById('reg-match-' + i);
         if (!sel || sel.value === 'skip') return;
-        const entry = { amount: row.amount, date: row.date, source: 'csv_import' };
+        const entry = { amount: row.amount, date: row.date, source: 'csv_import', room_size_preference: row.room_size_preference || '', roommate_requests: row.roommate_requests || '' };
         if (sel.value === 'new') entry.name = row.name;
         else entry.user_id = parseInt(sel.value, 10);
         entries.push(entry);

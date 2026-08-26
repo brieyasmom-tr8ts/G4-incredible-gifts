@@ -3186,14 +3186,31 @@ export default {
         await ensureRegColumns(env.DB);
         await ensurePaymentTables(env.DB);
         const activeYear = await getActiveYear(env.DB);
+        // Room size → total cost lookup (matches the budget calculator tiers)
+        const ROOM_PRICE = { 1: 430, 2: 280, 3: 230, 4: 190, 0: 130 };
+
+        // Parse room size from text or number. Handles:
+        // "2 people", "2 person", "3 person room", "4 or 5 person", "1", "single", "no hotel"
+        function parseRoomSize(val) {
+          if (!val) return 0;
+          const s = val.toString().toLowerCase().trim();
+          if (s.includes('no hotel') || s.includes('commute') || s.includes('day only')) return 0;
+          const match = s.match(/\d+/);
+          const n = match ? parseInt(match[0], 10) : 0;
+          if (n >= 4) return 4; // "4 or 5 person" → 4
+          return n || 0;
+        }
+
         let applied = 0;
         for (const entry of entries) {
           const amount = parseFloat(entry.amount) || 0;
           const date = (entry.date || '').toString().trim();
           const notes = (entry.notes || '').toString().trim();
           const source = (entry.source || 'csv_import').toString();
-          const roomPref = parseInt(entry.room_size_preference) || 0;
+          const roomPref = parseRoomSize(entry.room_size_preference);
           const roommateReqs = (entry.roommate_requests || '').toString().trim();
+          // total_owed = room price based on size; fall back to payment amount only if no room pref
+          const totalOwed = ROOM_PRICE[roomPref] !== undefined && roomPref > 0 ? ROOM_PRICE[roomPref] : (amount || 0);
           let userId = parseInt(entry.user_id, 10);
           let freshInsert = false;
 
@@ -3213,7 +3230,7 @@ export default {
             } else {
               const result = await env.DB.prepare(
                 'INSERT INTO users (first_name, last_initial, last_name, retreat_year, reg_registered, reg_amount_paid, reg_paid_date, reg_source, total_owed, room_size_preference, roommate_requests) VALUES (?, ?, ?, 2027, 1, ?, ?, ?, ?, ?, ?)'
-              ).bind(first, lastInitial, lastName, amount, date, source, amount, roomPref, roommateReqs).run();
+              ).bind(first, lastInitial, lastName, amount, date, source, totalOwed, roomPref, roommateReqs).run();
               userId = result.meta.last_row_id;
               freshInsert = true;
             }
@@ -3225,11 +3242,11 @@ export default {
             const userBinds = [amount, date, source, notes];
             if (roomPref > 0) { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
             if (roommateReqs) { userUpdates.push('roommate_requests = ?'); userBinds.push(roommateReqs); }
-            // Set total_owed only if not already set
+            // Set total_owed from room price; only overwrite if not already set or if we have a better value
             const existingUser = await env.DB.prepare('SELECT total_owed FROM users WHERE id = ?').bind(userId).first();
-            if (!existingUser || !(existingUser.total_owed > 0)) {
+            if (totalOwed > 0 && (!(existingUser && existingUser.total_owed > 0) || roomPref > 0)) {
               userUpdates.push('total_owed = ?');
-              userBinds.push(amount);
+              userBinds.push(totalOwed);
             }
             userBinds.push(userId);
             await env.DB.prepare(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`).bind(...userBinds).run();

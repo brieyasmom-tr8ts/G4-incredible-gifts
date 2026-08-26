@@ -4639,13 +4639,15 @@ function renderRegPreview() {
     el.innerHTML = `
         <table style="width:100%;border-collapse:collapse;font-size:0.86rem;">
             <thead><tr style="text-align:left;color:var(--taupe);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">
-                <th style="padding:6px 8px;">CSV name</th><th style="padding:6px 8px;">Amount</th><th style="padding:6px 8px;">Date</th><th style="padding:6px 8px;">Match</th>
+                <th style="padding:6px 8px;">CSV name</th><th style="padding:6px 8px;">Paid</th><th style="padding:6px 8px;">Date</th><th style="padding:6px 8px;">Room</th><th style="padding:6px 8px;">Roommates</th><th style="padding:6px 8px;">Match</th>
             </tr></thead>
             <tbody>${_regPreview.map((row, i) => `
                 <tr style="border-top:1px solid rgba(200,185,176,0.2);">
                     <td style="padding:6px 8px;">${esc(row.name)}</td>
-                    <td style="padding:6px 8px;">$${esc(row.amount)}</td>
-                    <td style="padding:6px 8px;">${esc(row.date)}</td>
+                    <td style="padding:6px 8px;">${row.amount ? '$' + esc(row.amount) : '—'}</td>
+                    <td style="padding:6px 8px;">${esc(row.date) || '—'}</td>
+                    <td style="padding:6px 8px;color:${row.room_size_preference ? 'var(--dark-text)' : 'var(--light-text)'};">${esc(row.room_size_preference) || '—'}</td>
+                    <td style="padding:6px 8px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${row.roommate_requests ? 'var(--dark-text)' : 'var(--light-text)'};" title="${esc(row.roommate_requests)}">${esc(row.roommate_requests) || '—'}</td>
                     <td style="padding:6px 8px;">
                         <select id="reg-match-${i}" style="padding:4px 6px;border:1px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.82rem;">
                             <option value="skip">— Skip —</option>

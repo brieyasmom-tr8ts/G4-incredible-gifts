@@ -1453,8 +1453,8 @@
 
                 <!-- CSV import -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Import Payments from CSV</div>
-                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">Export your roster/payments from the church platform the way you used to for Excel, then upload it here. You'll review every match before anything is saved.</div>
+                    <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;margin-bottom:0.3rem;">Import from Church CSV</div>
+                    <div style="font-size:0.85rem;color:var(--light-text);margin-bottom:1rem;">Export the registration list from the church platform and upload it here. You'll map the columns and review every match before anything is saved.</div>
                     <input type="file" id="reg-csv-file" accept=".csv,text/csv" onchange="handleRegCsvUpload(event)" />
 
                     <div id="reg-csv-mapping" style="display:none;margin-top:1.25rem;">
@@ -1540,10 +1540,7 @@
                             </select>
                         </div>
                         <div style="margin-left:auto;display:flex;gap:0.5rem;">
-                            <label class="btn" style="background:rgba(138,158,122,0.15);color:var(--sage);font-size:0.78rem;padding:6px 14px;cursor:pointer;">
-                                Import CSV <input type="file" accept=".csv" style="display:none;" onchange="handleParticipantCsvUpload(event)">
-                            </label>
-                            <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);font-size:0.78rem;padding:6px 14px;" onclick="downloadParticipantsCsv()">Export</button>
+                            <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);font-size:0.78rem;padding:6px 14px;" onclick="downloadParticipantsCsv()">Export CSV</button>
                         </div>
                     </div>
                     <!-- Summary cards -->

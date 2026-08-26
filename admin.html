@@ -5136,7 +5136,7 @@ function renderRoomBoard() {
     _roomAssignments.forEach(a => { if (a.room_number > maxRoom) maxRoom = a.room_number; });
 
     // Render unassigned pool
-    const unassignedUsers = _participants.filter(p => !assignedIds.has(p.id) && p.participant_status !== 'inactive' && p.reg_registered);
+    const unassignedUsers = _participants.filter(p => !assignedIds.has(p.id) && p.participant_status !== 'inactive');
     unassigned.innerHTML = unassignedUsers.length
         ? unassignedUsers.map(p => renderRoomChip(p)).join('')
         : '<div style="font-size:0.82rem;color:var(--light-text);font-style:italic;padding:8px;">Everyone is assigned to a room.</div>';

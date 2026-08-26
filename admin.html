@@ -4679,6 +4679,8 @@ async function commitRegImport() {
         document.getElementById('reg-csv-preview').style.display = 'none';
         document.getElementById('reg-csv-file').value = '';
         loadRegistrationsList();
+        loadParticipants();
+        loadRoomAssignments();
     } catch (e) {
         showToast('Import failed: ' + (e.message || ''));
     } finally {

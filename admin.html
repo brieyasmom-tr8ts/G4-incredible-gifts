@@ -4895,11 +4895,11 @@ function openEditParticipantModal(userId, name, roomPref, totalOwed, roommateReq
                 <button class="btn" onclick="document.getElementById('edit-participant-modal').remove()" style="flex:1;">Cancel</button>
             </div>
             <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(200,185,176,0.3);text-align:center;">
-                <button class="btn" onclick="deleteParticipant(${userId},'${esc(name)}')" style="font-size:0.78rem;padding:6px 14px;color:var(--accent);background:rgba(201,144,138,0.10);border:1px solid rgba(201,144,138,0.25);">Remove ${name} from 2027</button>
+                <button class="btn" data-pid="${userId}" onclick="deleteParticipant(this.dataset.pid)" style="font-size:0.78rem;padding:6px 14px;color:var(--accent);background:rgba(201,144,138,0.10);border:1px solid rgba(201,144,138,0.25);">Remove ${esc(name)} from 2027</button>
             </div>
         </div>`;
-    document.getElementById('ep-room').value = roomPref;
     document.body.appendChild(modal);
+    document.getElementById('ep-room').value = roomPref;
     modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
 }
 
@@ -4921,7 +4921,9 @@ async function saveEditParticipant(userId) {
     }
 }
 
-async function deleteParticipant(userId, name) {
+async function deleteParticipant(userId) {
+    const p = window._participantById && window._participantById[userId];
+    const name = p ? (p.last_name ? p.first_name + ' ' + p.last_name : p.first_name) : 'this person';
     if (!confirm('Remove ' + name + ' from the 2027 retreat? This clears their payments and room assignment for 2027 but keeps their account.')) return;
     try {
         await apiFetch('/api/admin/participants/' + userId, { method: 'DELETE' });

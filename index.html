@@ -4978,6 +4978,19 @@
             if (typeof loadStoryFeed === 'function') loadStoryFeed();
             if (typeof loadCelebrationsHomeCard === 'function') loadCelebrationsHomeCard();
             if (typeof initSlideshow === 'function') initSlideshow();
+
+            // Show or hide 2026-specific home cards based on viewing year
+            if (viewingYear < 2027) {
+                if (typeof buildLectioDivinaCard === 'function') buildLectioDivinaCard();
+                if (typeof buildDevotionHomeCards === 'function') buildDevotionHomeCards();
+                if (typeof maybeShowDevotionWeekReminder === 'function') maybeShowDevotionWeekReminder();
+                if (typeof loadWeeklySecretSisterCard === 'function') loadWeeklySecretSisterCard();
+            } else {
+                ['devotion-week-card', 'devotion-personal-card', 'lectio-divina-card', 'weekly-ss-card'].forEach(function(id) {
+                    var el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+            }
         }
 
         function initLandingPage() {
@@ -5574,7 +5587,7 @@
                 // 2027 users: hide 2026 women who opted out (opted_in_2027 === -1)
                 const viewerIs2027 = currentUser && (currentUser.retreat_year || 2026) >= 2027;
                 allDirectoryUsers = viewerIs2027
-                    ? users.filter(u => !(u.retreat_year === 2026 && u.opted_in_2027 === -1))
+                    ? users.filter(u => u.retreat_year >= 2027 || u.opted_in_2027 === 1)
                     : users;
                 updateConnectBadge(allDirectoryUsers.length);
 
@@ -5746,7 +5759,7 @@
 
                 <div style="font-size:0.78rem;color:var(--light-text);font-style:italic;text-align:center;margin-bottom:14px;">Social links are always visible to your sisters</div>
 
-                ${currentUser.returning ? `<div style="margin-top:4px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06);">
+                ${currentUser.opted_in_2027 ? `<div style="margin-top:4px;padding-top:16px;border-top:1px solid rgba(0,0,0,0.06);">
                     <div style="font-size:0.78rem;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px;">Past Retreats</div>
                     <button type="button" id="toggle-year-btn" style="padding:10px 20px;background:${viewingYear === 2026 ? 'var(--accent)' : 'var(--taupe)'};color:white;border:none;border-radius:20px;font-family:'Cormorant Garamond',serif;font-size:0.92rem;font-weight:600;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;">${viewingYear === 2026 ? 'Back to 2027' : 'View 2026 Memories'}</button>
                 </div>` : ''}
@@ -8522,6 +8535,17 @@
         function buildContinue() {
             const container = document.getElementById('continue-container');
             container.innerHTML = '';
+
+            // 2027 women see a coming-soon message — their devotions start after the April 2027 retreat
+            if (currentUser && (currentUser.retreat_year || 2026) >= 2027 && viewingYear >= 2027) {
+                container.innerHTML = `<div class="devotion-hub-intro" style="text-align:center;padding:2.5rem 1rem;">
+                    <div style="font-size:2.5rem;margin-bottom:1rem;">✨</div>
+                    <div class="devotion-hub-title">Coming After the Retreat</div>
+                    <div class="devotion-hub-subtitle" style="margin-top:0.5rem;">Your post-retreat devotions begin the week after the April 2027 retreat. This is where your journey continues — check back then.</div>
+                </div>`;
+                return;
+            }
+
             const now = new Date();
             const retreatEnd = new Date('2026-04-11T12:00:00-04:00');
             if (now < retreatEnd) {
@@ -11531,11 +11555,15 @@
             const now = new Date();
             const retreatEnd = new Date('2026-04-11T12:00:00-04:00');
             if (now >= retreatEnd) {
-                // Synchronous card builds (no fetches, instant)
-                buildLectioDivinaCard();
-                initFeedbackForm();
-                buildDevotionHomeCards();
-                maybeShowDevotionWeekReminder();
+                // 2026-specific content: only for women who attended the 2026 retreat
+                // (retreat_year < 2027) or who are currently toggled into 2026 archive view
+                const show2026Content = viewingYear < 2027 || !currentUser || (currentUser.retreat_year || 2026) < 2027;
+                if (show2026Content) {
+                    buildLectioDivinaCard();
+                    initFeedbackForm();
+                    buildDevotionHomeCards();
+                    maybeShowDevotionWeekReminder();
+                }
                 initCelebrationModal();
                 initCelebrationScrapbookModal();
                 handleSurveyDeepLink();
@@ -11546,11 +11574,11 @@
                     initSlideshow(),
                     loadCelebrationsHomeCard(),
                     loadMyCelebrationStatus(),
-                    loadWeeklySecretSisterCard(),
+                    show2026Content ? loadWeeklySecretSisterCard() : Promise.resolve(),
                     loadRegistrationCard()
                 ]).catch(function(){});
 
-                if (!localStorage.getItem('g4feedback_sent') && !(currentUser && (currentUser.retreat_year || 2026) >= 2027)) {
+                if (!localStorage.getItem('g4feedback_sent') && show2026Content) {
                     setTimeout(function() {
                         if (!localStorage.getItem('g4feedback_sent')) {
                             showToast('Please take a moment to share your feedback \ud83d\udcdd');

@@ -309,6 +309,9 @@ export default {
       try { await env.DB.prepare('ALTER TABLE users ADD COLUMN opted_in_2027 INTEGER DEFAULT 0').run(); } catch(e) {}
       try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
       try { await env.DB.prepare('ALTER TABLE users ADD COLUMN password_hash TEXT').run(); } catch(e) {}
+      try { await env.DB.prepare("ALTER TABLE users ADD COLUMN last_name TEXT DEFAULT ''").run(); } catch(e) {}
+      try { await env.DB.prepare("ALTER TABLE users ADD COLUMN church TEXT DEFAULT ''").run(); } catch(e) {}
+      try { await env.DB.prepare("ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''").run(); } catch(e) {}
 
       // Helper: get active retreat year from settings
       async function getActiveYear(db) {
@@ -767,6 +770,11 @@ export default {
           if (cleanLast && !existing.last_name) {
             updates.push('last_name = ?');
             binds.push(cleanLast);
+          }
+          // If she was a 2026 retreatant, mark her as opted_in_2027 so she
+          // keeps her 2026 memories toggle in profile
+          if ((existing.retreat_year || 2026) < 2027) {
+            updates.push('opted_in_2027 = 1');
           }
           updates.push('retreat_year = 2027');
           updates.push('reg_registered = 1');
@@ -3149,12 +3157,16 @@ export default {
         const entries = Array.isArray(body && body.entries) ? body.entries : [];
         if (!entries.length) return json({ error: 'No entries to import' }, corsHeaders, 400);
         await ensureRegColumns(env.DB);
+        await ensurePaymentTables(env.DB);
+        const activeYear = await getActiveYear(env.DB);
         let applied = 0;
         for (const entry of entries) {
           const amount = parseFloat(entry.amount) || 0;
           const date = (entry.date || '').toString().trim();
           const notes = (entry.notes || '').toString().trim();
           const source = (entry.source || 'csv_import').toString();
+          const roomPref = parseInt(entry.room_size_preference) || 0;
+          const roommateReqs = (entry.roommate_requests || '').toString().trim();
           let userId = parseInt(entry.user_id, 10);
           if (!userId) {
             const rawName = (entry.name || '').toString().trim();
@@ -3164,13 +3176,34 @@ export default {
             const lastName = parts.slice(1).join(' ');
             const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
             const result = await env.DB.prepare(
-              'INSERT INTO users (first_name, last_initial, last_name, retreat_year) VALUES (?, ?, ?, 2027)'
-            ).bind(first, lastInitial, lastName).run();
+              'INSERT INTO users (first_name, last_initial, last_name, retreat_year, reg_registered, reg_amount_paid, reg_paid_date, reg_source, total_owed, room_size_preference, roommate_requests) VALUES (?, ?, ?, 2027, 1, ?, ?, ?, ?, ?, ?)'
+            ).bind(first, lastInitial, lastName, amount, date, source, amount, roomPref, roommateReqs).run();
             userId = result.meta.last_row_id;
+          } else {
+            const userUpdates = ['reg_registered = 1', 'retreat_year = 2027', 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
+            const userBinds = [amount, date, source, notes];
+            if (roomPref > 0) { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
+            if (roommateReqs) { userUpdates.push('roommate_requests = ?'); userBinds.push(roommateReqs); }
+            // Set total_owed only if not already set
+            const existingUser = await env.DB.prepare('SELECT total_owed FROM users WHERE id = ?').bind(userId).first();
+            if (!existingUser || !(existingUser.total_owed > 0)) {
+              userUpdates.push('total_owed = ?');
+              userBinds.push(amount);
+            }
+            userBinds.push(userId);
+            await env.DB.prepare(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`).bind(...userBinds).run();
           }
-          await env.DB.prepare(
-            'UPDATE users SET reg_registered = 1, reg_amount_paid = ?, reg_paid_date = ?, reg_source = ?, reg_notes = ? WHERE id = ?'
-          ).bind(amount, date, source, notes, userId).run();
+          // Add to payments table if amount > 0 (deduped by user+amount+date)
+          if (amount > 0) {
+            const existingPmt = await env.DB.prepare(
+              'SELECT id FROM payments WHERE user_id = ? AND amount = ? AND date = ? AND retreat_year = ?'
+            ).bind(userId, amount, date, activeYear).first();
+            if (!existingPmt) {
+              await env.DB.prepare(
+                'INSERT INTO payments (user_id, amount, method, date, notes, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
+              ).bind(userId, amount, 'csv_import', date, notes || source, activeYear).run();
+            }
+          }
           applied++;
         }
         return json({ success: true, applied }, corsHeaders);

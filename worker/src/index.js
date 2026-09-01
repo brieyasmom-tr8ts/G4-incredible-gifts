@@ -189,6 +189,14 @@ async function ensureWeeklySSTable(db) {
 
 async function ensureSSRoundExists(db, roundNumber) {
   if (roundNumber <= 0) return false;
+  // Admin pause switch — when set, no new rounds are generated (lazily on
+  // view, via cron, or via the admin force-round button) until she flips
+  // it back on. Used to hold the rotation between retreats while old
+  // history gets wiped for a fresh cohort.
+  try {
+    const paused = await db.prepare("SELECT value FROM game_settings WHERE key = 'weekly_secret_sister_paused'").first();
+    if (paused && paused.value === '1') return false;
+  } catch (e) { /* game_settings may not exist yet */ }
   // Claim the lock — only the winning request generates pairings. Other
   // concurrent callers hit UNIQUE(round_number) on the lock table and bail
   // out, then read the pairings the winner created.
@@ -2597,6 +2605,22 @@ export default {
         }
         const created = await ensureSSRoundExists(env.DB, round);
         return json({ success: true, round, created }, corsHeaders);
+      }
+
+      // POST /api/admin/secretsister/weekly/reset - admin: wipe all weekly
+      // rotation history (pairings, round locks, admin-sent notes) so it
+      // starts completely fresh for a new group of women. Does not touch
+      // per-user opt-out flags or the retreat-time secret_sister table.
+      // Combine with the weekly_secret_sister_paused game setting to wipe
+      // and hold the rotation until it's ready to restart.
+      if (path === '/api/admin/secretsister/weekly/reset' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensureWeeklySSTable(env.DB);
+        await env.DB.prepare('DELETE FROM secret_sister_pairings').run();
+        await env.DB.prepare('DELETE FROM secret_sister_round_locks').run();
+        try { await env.DB.prepare('DELETE FROM secret_sister_admin_notes').run(); } catch(e) {}
+        return json({ success: true }, corsHeaders);
       }
 
       // GET /api/secretsister/participation - admin: per-woman rotation stats
@@ -5894,6 +5918,13 @@ async function sendSecretSisterEmail(env) {
     console.log('[ss-email] before anchor date, skipping');
     return;
   }
+  try {
+    const paused = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'weekly_secret_sister_paused'").first();
+    if (paused && paused.value === '1') {
+      console.log('[ss-email] weekly rotation paused, skipping');
+      return;
+    }
+  } catch (e) { /* game_settings may not exist yet */ }
 
   await ensureWeeklySSTable(env.DB);
   await ensureSSRoundExists(env.DB, round);

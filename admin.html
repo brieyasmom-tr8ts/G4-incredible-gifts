@@ -1096,6 +1096,20 @@
             <h2>Weekly Emails</h2>
             <p style="color:var(--light-text);font-size:0.9rem;margin-bottom:1.5rem;">Preview and test the automated emails that go out each week. Monday = devotion, Wednesday = secret sister.</p>
 
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(201,144,138,0.08);border-radius:10px;margin-bottom:0.75rem;">
+                <div>
+                    <span style="font-size:0.9rem;color:var(--taupe);">Pause devotion emails</span>
+                    <div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;">While on, the Monday devotion email stops completely — the cron AND the "Send Devotion to Everyone" button below both skip.</div>
+                </div>
+                <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;margin-left:1rem;">
+                    <input type="checkbox" id="toggle-devotion-paused" style="opacity:0;width:0;height:0;" onchange="toggleGame('devotion_emails_paused', this.checked)">
+                    <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                </label>
+            </div>
+            <div style="margin-bottom:1.5rem;">
+                <button class="btn btn-danger-outline" onclick="resetDevotionEmailLog()">Reset Devotion Send History</button>
+            </div>
+
             <div style="display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap;">
                 <button class="btn btn-refresh" onclick="previewEmail('devotion')">Preview Devotion Email</button>
                 <button class="btn btn-refresh" onclick="previewEmail('secretsister')">Preview Secret Sister Email</button>
@@ -3068,6 +3082,7 @@ async function loadGameSettings() {
         document.getElementById('toggle-secret-sister').checked = settings.secret_sister === '1';
         document.getElementById('toggle-ss-reveal').checked = settings.secret_sister_reveal === '1';
         document.getElementById('toggle-weekly-ss-paused').checked = settings.weekly_secret_sister_paused === '1';
+        document.getElementById('toggle-devotion-paused').checked = settings.devotion_emails_paused === '1';
         document.getElementById('toggle-wyr-on-polls').checked = settings.show_wyr_on_polls !== '0';
         renderVisibilityToggles();
     } catch (e) { console.error('Game settings:', e); }
@@ -5470,6 +5485,15 @@ async function sendBlastEmail(type) {
         status.textContent = 'Failed: ' + e.message;
         status.style.color = 'var(--accent)';
     }
+}
+
+function resetDevotionEmailLog() {
+    showModal('Reset Devotion Send History', 'This clears the record of which weeks have already been emailed, so the rotation forgets everything sent so far. Turn on "Pause devotion emails" first if you don\'t want it to immediately email this week\'s gift to everyone. Continue?', async () => {
+        try {
+            await apiFetch('/api/admin/devotion/reset', { method: 'POST', body: {} });
+            showToast('Devotion send history cleared');
+        } catch (e) { showToast('Error: ' + (e.message || 'Could not reset')); }
+    });
 }
 
 function loadEmailTemplate() {

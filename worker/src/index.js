@@ -530,6 +530,19 @@ export default {
         return json({ success: true, type, week: weekOverride || 'auto', force, result }, corsHeaders);
       }
 
+      // POST /api/admin/devotion/reset - admin: clear the devotion send-log
+      // dedup table so the 15-week rotation forgets which weeks it has
+      // already emailed. Pairs with the devotion_emails_paused game setting
+      // to stop the rotation and clear its history before restarting it for
+      // a new group of women.
+      if (path === '/api/admin/devotion/reset' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS devotion_email_log (week_number INTEGER PRIMARY KEY, sent_at TEXT DEFAULT (datetime('now')))`).run(); } catch (e) {}
+        await env.DB.prepare('DELETE FROM devotion_email_log').run();
+        return json({ success: true }, corsHeaders);
+      }
+
       // POST /api/admin/email/custom — send a custom message to all sisters
       // body: { subject, message, button_text?, button_url? }
       if (path === '/api/admin/email/custom' && request.method === 'POST') {
@@ -5849,6 +5862,15 @@ async function sendEmail(env, to, subject, html) {
 async function sendDevotionEmail(env, weekOverride, opts) {
   // weekOverride lets the cron handler pass a deterministic week number.
   // opts.force = true skips the dedup log (admin re-send).
+  // Admin pause switch — blocks the cron AND manual Send Now/force sends
+  // alike, so there's exactly one off switch and no surprise re-sends.
+  try {
+    const paused = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'devotion_emails_paused'").first();
+    if (paused && paused.value === '1') {
+      console.log('[devotion-email] devotion emails paused, skipping');
+      return { skipped: 'paused' };
+    }
+  } catch (e) { /* game_settings may not exist yet */ }
   let weekNum;
   if (weekOverride && Number.isInteger(weekOverride) && weekOverride >= 1 && weekOverride <= 15) {
     weekNum = weekOverride;

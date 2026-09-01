@@ -1195,6 +1195,16 @@
                 <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px dashed rgba(200,185,176,0.5);">
                     <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;margin-bottom:0.35rem;">Weekly Rotation (Post-Retreat)</div>
                     <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.75rem;">Auto-assigned every Wednesday 5am EDT starting April 15, 2026. Pairings are generated lazily the first time anyone opens the app after the rollover.</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(201,144,138,0.08);border-radius:10px;margin-bottom:0.75rem;">
+                        <div>
+                            <span style="font-size:0.9rem;color:var(--taupe);">Pause weekly rotation</span>
+                            <div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;">While on, no new rounds are created — not automatically, not by opening the app, not by "Run This Week's Assignment Now".</div>
+                        </div>
+                        <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;margin-left:1rem;">
+                            <input type="checkbox" id="toggle-weekly-ss-paused" style="opacity:0;width:0;height:0;" onchange="toggleGame('weekly_secret_sister_paused', this.checked)">
+                            <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
+                        </label>
+                    </div>
                     <div style="font-size:0.88rem;color:var(--taupe);margin-bottom:0.6rem;line-height:1.8;">
                         Current round: <strong id="weekly-ss-round">—</strong> &nbsp;|&nbsp;
                         Pairs: <strong id="weekly-ss-pair-count">—</strong> &nbsp;|&nbsp;
@@ -1204,6 +1214,7 @@
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem;">
                         <button class="btn btn-refresh" onclick="loadWeeklySSStatus()">Refresh</button>
                         <button class="btn btn-refresh" onclick="forceWeeklySSRound()">Run This Week's Assignment Now</button>
+                        <button class="btn btn-danger-outline" onclick="resetWeeklySecretSister()">Reset for New Women — Wipe All History</button>
                     </div>
                     <div id="weekly-ss-pair-list" style="max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
                 </div>
@@ -3056,6 +3067,7 @@ async function loadGameSettings() {
         document.getElementById('toggle-show-packing-names').checked = settings.show_packing_names === '1';
         document.getElementById('toggle-secret-sister').checked = settings.secret_sister === '1';
         document.getElementById('toggle-ss-reveal').checked = settings.secret_sister_reveal === '1';
+        document.getElementById('toggle-weekly-ss-paused').checked = settings.weekly_secret_sister_paused === '1';
         document.getElementById('toggle-wyr-on-polls').checked = settings.show_wyr_on_polls !== '0';
         renderVisibilityToggles();
     } catch (e) { console.error('Game settings:', e); }
@@ -3671,6 +3683,16 @@ async function forceWeeklySSRound() {
         showToast('This week\'s pairings are ready');
         loadWeeklySSStatus();
     } catch (e) { showToast('Error: ' + (e.message || 'Could not run')); }
+}
+
+function resetWeeklySecretSister() {
+    showModal('Reset Weekly Secret Sister', 'This permanently deletes every pairing, note, and admin-sent note from the weekly rotation so it starts completely fresh. This cannot be undone. Consider turning on "Pause weekly rotation" first so it doesn\'t immediately re-pair everyone.', async () => {
+        try {
+            await apiFetch('/api/admin/secretsister/weekly/reset', { method: 'POST', body: {} });
+            showToast('Weekly Secret Sister history wiped');
+            loadWeeklySSStatus();
+        } catch (e) { showToast('Error: ' + (e.message || 'Could not reset')); }
+    });
 }
 
 // --- Secret Sister Participation Analytics ---

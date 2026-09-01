@@ -5696,7 +5696,7 @@ function devotionEmailHtml(firstName, devotion, userId) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#8a9e7a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Open Your Devotion</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -5719,7 +5719,7 @@ function secretSisterEmailHtml(firstName, sisterName, userId) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#c9908a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Write Her a Note</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -5741,7 +5741,7 @@ function secretSisterReceivedEmailHtml(firstName, userId) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#c9908a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Open Your Note</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -5778,7 +5778,7 @@ function customEmailHtml(firstName, message, buttonText, buttonUrl, userId) {
   return `
 <div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px 20px;color:#3a3632;">
   <div style="text-align:center;margin-bottom:20px;">
-    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.4rem;font-weight:700;color:#8a9e7a;">G4 Incredible Gifts</div>
+    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.4rem;font-weight:700;color:#8a9e7a;">G4 Retreat 2027</div>
   </div>
   <div style="font-size:1rem;line-height:1.7;color:#3a3632;">
     ${greeting ? '<p style="margin:0 0 12px;font-weight:600;">' + greeting + '</p>' : ''}
@@ -5786,7 +5786,7 @@ function customEmailHtml(firstName, message, buttonText, buttonUrl, userId) {
   </div>
   ${buttonHtml}
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }

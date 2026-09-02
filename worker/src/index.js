@@ -3368,6 +3368,17 @@ export default {
             user_id INTEGER NOT NULL,
             retreat_year INTEGER DEFAULT 2027,
             UNIQUE(user_id, retreat_year)
+          )`).run(),
+          // Rooms as their own persisted entity (capacity + existence), not
+          // just inferred from who happens to be assigned to a room number.
+          // Without this an empty room the admin just created would vanish
+          // on refresh, since nothing about it was ever saved.
+          db.prepare(`CREATE TABLE IF NOT EXISTS rooms (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            room_number INTEGER NOT NULL,
+            capacity INTEGER NOT NULL DEFAULT 4,
+            retreat_year INTEGER DEFAULT 2027,
+            UNIQUE(room_number, retreat_year)
           )`).run()
         ]);
         // Extra columns on users for room/payment tracking
@@ -3591,13 +3602,13 @@ export default {
         return json({ success: true, imported, created }, corsHeaders);
       }
 
-      // GET /api/admin/rooms - room assignments for active year
+      // GET /api/admin/rooms - rooms + assignments for active year
       if (path === '/api/admin/rooms' && request.method === 'GET') {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
         await ensurePaymentTables(env.DB);
         const activeYear = await getActiveYear(env.DB);
-        const { results } = await env.DB.prepare(
+        const { results: assignments } = await env.DB.prepare(
           `SELECT r.id, r.room_number, r.room_label, r.user_id,
                   u.first_name, u.last_name, u.last_initial, u.room_size_preference, u.roommate_requests
            FROM room_assignments r
@@ -3605,7 +3616,25 @@ export default {
            WHERE r.retreat_year = ?
            ORDER BY r.room_number ASC`
         ).bind(activeYear).all();
-        return json(results || [], corsHeaders);
+        let { results: rooms } = await env.DB.prepare(
+          'SELECT room_number, capacity FROM rooms WHERE retreat_year = ? ORDER BY room_number ASC'
+        ).bind(activeYear).all();
+        rooms = rooms || [];
+        // Self-heal: a room number that only exists because someone was
+        // assigned to it (created before the rooms table existed) gets a
+        // default-capacity row backfilled now, so it persists going forward.
+        const knownRoomNumbers = new Set(rooms.map(r => r.room_number));
+        const missingNumbers = [...new Set((assignments || []).map(a => a.room_number))].filter(n => !knownRoomNumbers.has(n));
+        for (const n of missingNumbers) {
+          try {
+            await env.DB.prepare(
+              'INSERT INTO rooms (room_number, capacity, retreat_year) VALUES (?, 4, ?) ON CONFLICT(room_number, retreat_year) DO NOTHING'
+            ).bind(n, activeYear).run();
+            rooms.push({ room_number: n, capacity: 4 });
+          } catch (e) {}
+        }
+        rooms.sort((a, b) => a.room_number - b.room_number);
+        return json({ rooms, assignments: assignments || [] }, corsHeaders);
       }
 
       // POST /api/admin/rooms - assign user to a room
@@ -3635,16 +3664,36 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
-      // POST /api/admin/rooms/create - create a new empty room
+      // POST /api/admin/rooms/create - create a new empty room, persisted
+      // immediately (even with nobody assigned yet) with its capacity.
       if (path === '/api/admin/rooms/create' && request.method === 'POST') {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
         const body = await request.json();
+        const capacity = [1, 2, 3, 4].includes(parseInt(body.capacity)) ? parseInt(body.capacity) : 4;
         const activeYear = await getActiveYear(env.DB);
-        // Find next room number
-        const max = await env.DB.prepare('SELECT MAX(room_number) as mx FROM room_assignments WHERE retreat_year = ?').bind(activeYear).first();
-        const nextRoom = ((max && max.mx) || 0) + 1;
-        return json({ success: true, room_number: body.room_number || nextRoom }, corsHeaders);
+        // Find next room number across both rooms and any legacy
+        // assignment-only room numbers
+        const maxRoom = await env.DB.prepare('SELECT MAX(room_number) as mx FROM rooms WHERE retreat_year = ?').bind(activeYear).first();
+        const maxAssignment = await env.DB.prepare('SELECT MAX(room_number) as mx FROM room_assignments WHERE retreat_year = ?').bind(activeYear).first();
+        const nextRoom = Math.max((maxRoom && maxRoom.mx) || 0, (maxAssignment && maxAssignment.mx) || 0) + 1;
+        await env.DB.prepare(
+          'INSERT INTO rooms (room_number, capacity, retreat_year) VALUES (?, ?, ?)'
+        ).bind(nextRoom, capacity, activeYear).run();
+        return json({ success: true, room_number: nextRoom, capacity }, corsHeaders);
+      }
+
+      // DELETE /api/admin/rooms/room/:roomNumber - delete a room record
+      // itself (call after freeing its occupants via the per-user DELETE)
+      const roomRecordDeleteMatch = path.match(/^\/api\/admin\/rooms\/room\/(\d+)$/);
+      if (roomRecordDeleteMatch && request.method === 'DELETE') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        const roomNumber = parseInt(roomRecordDeleteMatch[1]);
+        const activeYear = await getActiveYear(env.DB);
+        await env.DB.prepare('DELETE FROM rooms WHERE room_number = ? AND retreat_year = ?').bind(roomNumber, activeYear).run();
+        return json({ success: true }, corsHeaders);
       }
 
       // POST /api/admin/settings/payment-due-date - set shared due date

@@ -5176,15 +5176,20 @@ async function sendAllReminders() {
 }
 
 // --- Room Assignment Board ---
+let _rooms = [];
+
 async function loadRoomAssignments() {
     try {
-        const assignments = await apiFetch('/api/admin/rooms');
-        _roomAssignments = assignments || [];
+        const data = await apiFetch('/api/admin/rooms');
+        _rooms = (data && data.rooms) || [];
+        _roomAssignments = (data && data.assignments) || [];
         renderRoomBoard();
     } catch (e) {
         console.warn('Room load failed:', e);
     }
 }
+
+const ROOM_CAPACITY_LABELS = { 1: 'Solo', 2: '2-person', 3: '3-person', 4: '4-person' };
 
 function renderRoomBoard() {
     const board = document.getElementById('room-board');
@@ -5194,10 +5199,6 @@ function renderRoomBoard() {
     // Build set of assigned user IDs
     const assignedIds = new Set(_roomAssignments.map(a => a.user_id));
 
-    // Find max room number
-    let maxRoom = 0;
-    _roomAssignments.forEach(a => { if (a.room_number > maxRoom) maxRoom = a.room_number; });
-
     // Render unassigned pool
     const unassignedUsers = _participants.filter(p => !assignedIds.has(p.id) && p.participant_status !== 'inactive');
     unassigned.innerHTML = unassignedUsers.length
@@ -5205,23 +5206,28 @@ function renderRoomBoard() {
         : '<div style="font-size:0.82rem;color:var(--light-text);font-style:italic;padding:8px;">Everyone is assigned to a room.</div>';
 
     // Group assignments by room
-    const rooms = {};
+    const membersByRoom = {};
     _roomAssignments.forEach(a => {
-        if (!rooms[a.room_number]) rooms[a.room_number] = [];
-        rooms[a.room_number].push(a);
+        if (!membersByRoom[a.room_number]) membersByRoom[a.room_number] = [];
+        membersByRoom[a.room_number].push(a);
     });
 
-    // Render room cards
+    // Render one card per persisted room (capacity comes from the room
+    // itself now, not guessed from how many people happen to be in it)
     let html = '';
-    for (let r = 1; r <= maxRoom; r++) {
-        const members = rooms[r] || [];
-        const capacity = members.length >= 4 ? 4 : (members.length || 1);
-        const emptySlots = Math.max(0, 4 - members.length);
+    _rooms.forEach(room => {
+        const r = room.room_number;
+        const capacity = room.capacity || 4;
+        const members = membersByRoom[r] || [];
+        const emptySlots = Math.max(0, capacity - members.length);
         html += `
             <div style="background:rgba(247,240,235,0.5);border:1.5px solid var(--warm-grey);border-radius:14px;padding:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                    <div style="font-family:Playfair Display,serif;font-weight:700;font-size:0.95rem;">Room ${r}</div>
-                    <div style="font-size:0.72rem;color:var(--light-text);">${members.length}/4</div>
+                    <div>
+                        <span style="font-family:Playfair Display,serif;font-weight:700;font-size:0.95rem;">Room ${r}</span>
+                        <span style="font-size:0.72rem;color:var(--light-text);margin-left:4px;">(${ROOM_CAPACITY_LABELS[capacity] || capacity + '-person'})</span>
+                    </div>
+                    <div style="font-size:0.72rem;color:var(--light-text);">${members.length}/${capacity}</div>
                 </div>
                 <div class="room-drop-zone" data-room="${r}" style="min-height:40px;display:flex;flex-direction:column;gap:6px;">
                     ${members.map(m => {
@@ -5233,7 +5239,7 @@ function renderRoomBoard() {
                 <button class="btn" style="width:100%;margin-top:8px;font-size:0.72rem;padding:4px;background:rgba(200,185,176,0.2);color:var(--taupe);" onclick="deleteRoom(${r})">Remove Room</button>
             </div>
         `;
-    }
+    });
     board.innerHTML = html;
 
     // Wire up drag and drop
@@ -5304,26 +5310,14 @@ function initRoomDragDrop() {
 }
 
 async function addNewRoom() {
-    // Just add to the next room number
-    let maxRoom = 0;
-    _roomAssignments.forEach(a => { if (a.room_number > maxRoom) maxRoom = a.room_number; });
-    // Create a placeholder — we need at least one room in the board to drag into
-    // Just re-render with one more room card
-    const board = document.getElementById('room-board');
-    const nextRoom = maxRoom + 1;
-    board.innerHTML += `
-        <div style="background:rgba(247,240,235,0.5);border:1.5px solid var(--warm-grey);border-radius:14px;padding:14px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                <div style="font-family:Playfair Display,serif;font-weight:700;font-size:0.95rem;">Room ${nextRoom}</div>
-                <div style="font-size:0.72rem;color:var(--light-text);">0/4</div>
-            </div>
-            <div class="room-drop-zone" data-room="${nextRoom}" style="min-height:40px;display:flex;flex-direction:column;gap:6px;">
-                <div style="padding:8px;border:1.5px dashed rgba(200,185,176,0.4);border-radius:8px;text-align:center;font-size:0.75rem;color:var(--light-text);">Drop here</div>
-            </div>
-            <button class="btn" style="width:100%;margin-top:8px;font-size:0.72rem;padding:4px;background:rgba(200,185,176,0.2);color:var(--taupe);" onclick="deleteRoom(${nextRoom})">Remove Room</button>
-        </div>
-    `;
-    initRoomDragDrop();
+    const input = prompt('How many people will this room hold? (1-4)', '4');
+    if (input === null) return;
+    const capacity = parseInt(input, 10);
+    if (![1, 2, 3, 4].includes(capacity)) { showToast('Enter a number from 1 to 4'); return; }
+    try {
+        await apiFetch('/api/admin/rooms/create', { method: 'POST', body: { capacity } });
+        loadRoomAssignments();
+    } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
 
 async function deleteRoom(roomNum) {
@@ -5333,6 +5327,7 @@ async function deleteRoom(roomNum) {
         for (const a of inRoom) {
             await apiFetch('/api/admin/rooms/' + a.user_id, { method: 'DELETE' });
         }
+        await apiFetch('/api/admin/rooms/room/' + roomNum, { method: 'DELETE' });
         loadRoomAssignments();
     } catch (e) { showToast('Error: ' + (e.message || '')); }
 }

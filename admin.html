@@ -4894,7 +4894,7 @@ function renderParticipantsTable() {
         var name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
         var balance = (p.total_owed || 0) - (p.total_paid || 0);
         if (payBtn) payBtn.addEventListener('click', function() { openAddPaymentModal(p.id, name, balance); });
-        if (editBtn) editBtn.addEventListener('click', function() { openEditParticipantModal(p.id, name, p.room_size_preference || 0, p.total_owed || 0, p.roommate_requests || ''); });
+        if (editBtn) editBtn.addEventListener('click', function() { openEditParticipantModal(p.id, p.first_name || '', p.last_name || '', p.room_size_preference || 0, p.total_owed || 0, p.roommate_requests || ''); });
         if (deleteBtn) deleteBtn.addEventListener('click', function() { deleteParticipant(p.id); });
         if (remindBtn) remindBtn.addEventListener('click', function() { sendOneReminder(p.id, name); });
     });
@@ -4904,8 +4904,7 @@ function renderParticipantsTable() {
 function openEditParticipantModalById(id) {
     const p = window._participantById && window._participantById[id];
     if (!p) return;
-    const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
-    openEditParticipantModal(p.id, name, p.room_size_preference || 0, p.total_owed || 0, p.roommate_requests || '');
+    openEditParticipantModal(p.id, p.first_name || '', p.last_name || '', p.room_size_preference || 0, p.total_owed || 0, p.roommate_requests || '');
 }
 function openAddPaymentModalById(id) {
     const p = window._participantById && window._participantById[id];
@@ -4921,17 +4920,28 @@ function sendOneReminderById(id) {
     sendOneReminder(p.id, name);
 }
 
-function openEditParticipantModal(userId, name, roomPref, totalOwed, roommateRequests) {
+function openEditParticipantModal(userId, firstName, lastName, roomPref, totalOwed, roommateRequests) {
     const existing = document.getElementById('edit-participant-modal');
     if (existing) existing.remove();
+    const name = lastName ? (firstName + ' ' + lastName) : firstName;
     const modal = document.createElement('div');
     modal.id = 'edit-participant-modal';
     modal.className = 'modal-overlay show';
     modal.style.display = 'flex';
     modal.innerHTML = `
         <div class="modal-box" style="max-width:420px;">
-            <h2 style="font-family:Playfair Display,serif;font-size:1.1rem;margin-bottom:4px;">Edit: ${name}</h2>
+            <h2 style="font-family:Playfair Display,serif;font-size:1.1rem;margin-bottom:4px;">Edit: ${esc(name)}</h2>
             <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
+                <div style="display:flex;gap:10px;">
+                    <div style="flex:1;">
+                        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">First Name</label>
+                        <input type="text" id="ep-first-name" value="${esc(firstName || '')}" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;box-sizing:border-box;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Last Name</label>
+                        <input type="text" id="ep-last-name" value="${esc(lastName || '')}" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;box-sizing:border-box;">
+                    </div>
+                </div>
                 <div>
                     <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Room Size</label>
                     <select id="ep-room" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;">
@@ -4965,6 +4975,9 @@ function openEditParticipantModal(userId, name, roomPref, totalOwed, roommateReq
 }
 
 async function saveEditParticipant(userId) {
+    const firstName = document.getElementById('ep-first-name').value.trim();
+    const lastName = document.getElementById('ep-last-name').value.trim();
+    if (!firstName) { showToast('First name is required'); return; }
     const roomPref = parseInt(document.getElementById('ep-room').value, 10);
     const roommateRequests = document.getElementById('ep-roommates').value.trim();
     const totalOwed = parseFloat(document.getElementById('ep-owed').value) || 0;
@@ -4972,7 +4985,7 @@ async function saveEditParticipant(userId) {
     const ROOM_PRICE = { 0: 130, 1: 430, 2: 280, 3: 230, 4: 190 };
     const owed = totalOwed > 0 ? totalOwed : (ROOM_PRICE[roomPref] || 0);
     try {
-        await apiFetch('/api/admin/participants/' + userId, { method: 'POST', body: { room_size_preference: roomPref, roommate_requests: roommateRequests, total_owed: owed } });
+        await apiFetch('/api/admin/participants/' + userId, { method: 'POST', body: { first_name: firstName, last_name: lastName, room_size_preference: roomPref, roommate_requests: roommateRequests, total_owed: owed } });
         document.getElementById('edit-participant-modal').remove();
         showToast('Saved ✓');
         loadParticipants();

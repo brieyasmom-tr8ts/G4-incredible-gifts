@@ -4048,9 +4048,13 @@ function renderBudgetCategoriesTable(cats) {
     let totalPlanned = 0, totalActual = 0;
     cats.forEach(c => { totalPlanned += Number(c.planned) || 0; totalActual += Number(c.actual) || 0; });
     const totalDiff = totalPlanned - totalActual;
-    // Push into the overview state and refresh the top cards
+    // Push into the overview state and refresh the top cards, and the
+    // Retreat Cost Calculator's Projected Total (its "All costs" figure
+    // includes these planned line items alongside rooms/conference/tax)
     _budgetOverview.budgetSpent = totalActual;
+    _budgetOverview.budgetPlanned = totalPlanned;
     refreshBudgetOverview();
+    if (document.getElementById('calc-per-woman')) recalcRetreatCalculator();
 
     // Header
     let html = `
@@ -4240,7 +4244,8 @@ const _budgetOverview = {
     hotelCost: 0,
     revenue: 0,
     actualRevenue: 0,
-    budgetSpent: 0
+    budgetSpent: 0,
+    budgetPlanned: 0
 };
 
 function refreshBudgetOverview() {
@@ -4509,7 +4514,12 @@ function recalcRetreatCalculator() {
     const totalConfCost = confCost;
     const totalSubtotal = totalRoomCost + totalConfCost;
     const totalTax = totalSubtotal * taxRate;
-    const totalCost = totalSubtotal + totalTax;
+    // Budget by Category's planned line items (speaker, dinner, decor, etc.)
+    // are real costs on top of the venue math above — "All costs" isn't
+    // complete without them. Not run through the venue tax rate; those
+    // planned amounts are whatever she budgeted them at.
+    const budgetPlanned = _budgetOverview.budgetPlanned || 0;
+    const totalCost = totalSubtotal + totalTax + budgetPlanned;
     const totalRevenue = (n0 * charge0) + (n1 * charge1) + (n2 * 2 * charge2) + (n3 * 3 * charge3) + (n4 * 4 * charge4);
     const totalProfit = totalRevenue - totalCost;
     const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
@@ -4524,7 +4534,7 @@ function recalcRetreatCalculator() {
             <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Margin</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:${profitColor};">${totalRevenue > 0 ? margin.toFixed(1) + '%' : '—'}</div></div>
         </div>
         <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(138,158,122,0.25);font-size:0.78rem;color:var(--light-text);">
-            Rooms ${fmtMoney(totalRoomCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(totalTax)}
+            Rooms ${fmtMoney(totalRoomCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(totalTax)} &middot; Budget Categories ${fmtMoney(budgetPlanned)}
         </div>
     `;
 

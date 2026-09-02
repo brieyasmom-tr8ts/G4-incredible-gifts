@@ -4742,7 +4742,7 @@ function renderRegPreview() {
                     <td style="padding:6px 8px;">
                         <select id="reg-match-${i}" style="padding:4px 6px;border:1px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.82rem;">
                             <option value="skip">— Skip —</option>
-                            <option value="new">Create new: "${esc(row.name)}"</option>
+                            <option value="new" ${!row.best_match_id ? 'selected' : ''}>Create new: "${esc(row.name)}"</option>
                             ${row.candidates.map(c => `<option value="${c.user_id}" ${row.best_match_id === c.user_id ? 'selected' : ''}>${esc(c.display_name)} (${c.score}%)</option>`).join('')}
                         </select>
                     </td>

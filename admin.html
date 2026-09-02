@@ -1333,7 +1333,11 @@
                     </div>
 
                     <!-- Room occupancy -->
-                    <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Expected rooms</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:0.5rem;">
+                        <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;">Expected rooms</div>
+                        <button class="btn btn-refresh" style="font-size:0.72rem;padding:4px 10px;" onclick="useActualRegistrations()">Use Actual Registrations</button>
+                    </div>
+                    <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:0.5rem;">Loads current room-size preferences into the boxes below as a starting point — feel free to change them afterward to try different what-if scenarios.</div>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;margin-bottom:1.25rem;">
                         <div>
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">1-woman rooms</label>
@@ -4362,6 +4366,35 @@ async function initRetreatCalculator() {
         window.addEventListener('pagehide', saveCalcStateNow);
     }
     recalcRetreatCalculator();
+}
+
+// Pulls current room-size preferences from active registrations into the
+// "Expected rooms" boxes as a one-time snapshot — not a live binding, so
+// she can freely tweak the numbers afterward for what-if scenarios without
+// them getting overwritten again until she clicks this a second time.
+// room_size_preference is what each woman asked for, not a finalized room
+// assignment, so shared rooms (2/3/4-person) are estimated by dividing her
+// preference-tier headcount by the room size and rounding up.
+async function useActualRegistrations() {
+    try {
+        const data = await apiFetch('/api/admin/participants');
+        const participants = ((data && data.participants) || []).filter(p => p.participant_status !== 'inactive');
+        const prefCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
+        participants.forEach(p => {
+            const pref = prefCounts.hasOwnProperty(p.room_size_preference) ? p.room_size_preference : 0;
+            prefCounts[pref]++;
+        });
+        document.getElementById('calc-n0').value = prefCounts[0];
+        document.getElementById('calc-n1').value = prefCounts[1];
+        document.getElementById('calc-n2').value = Math.ceil(prefCounts[2] / 2);
+        document.getElementById('calc-n3').value = Math.ceil(prefCounts[3] / 3);
+        document.getElementById('calc-n4').value = Math.ceil(prefCounts[4] / 4);
+        recalcRetreatCalculator();
+        scheduleCalcStateSave();
+        showToast('Loaded from ' + participants.length + ' active registration' + (participants.length === 1 ? '' : 's'));
+    } catch (e) {
+        showToast('Could not load registrations: ' + (e.message || ''));
+    }
 }
 
 // Returns the total room cost for the whole retreat (nights × nightly rate)

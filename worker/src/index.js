@@ -102,6 +102,13 @@ function buildPaymentReminderHtml(firstName, balance, dueDate) {
   `;
 }
 
+// Room size preference (1-4 people, 0 = not sleeping at the hotel) → total
+// cost. Matches the budget calculator tiers and the landing page pricing.
+// Shared by both CSV import paths (Registrations tab and Participants &
+// Payments) so total_owed is always derived from room size, never from a
+// payment amount.
+const ROOM_PRICE = { 1: 430, 2: 280, 3: 230, 4: 190, 0: 130 };
+
 // Blocked words filter
 const BLOCKED_WORDS = [
   'damn', 'hell', 'shit', 'fuck', 'ass', 'bitch', 'crap',
@@ -3223,8 +3230,6 @@ export default {
         await ensureRegColumns(env.DB);
         await ensurePaymentTables(env.DB);
         const activeYear = await getActiveYear(env.DB);
-        // Room size → total cost lookup (matches the budget calculator tiers)
-        const ROOM_PRICE = { 1: 430, 2: 280, 3: 230, 4: 190, 0: 130 };
 
         // Parse room size from text or number. Handles:
         // "2 people", "2 person", "3 person room", "4 or 5 person", "1", "single", "no hotel"
@@ -3523,7 +3528,14 @@ export default {
           const church = (row.church || '').trim();
           const roomPref = parseInt(row.room_size_preference) || 0;
           const roommateReqs = (row.roommate_requests || '').trim();
+          // "Form Total" is what she actually paid on THIS form submission
+          // (a $50 deposit, or the full room cost if she paid in full) — it
+          // is a payment amount, not her total cost. Total cost is derived
+          // from her room size below, same as the Registrations importer.
           const formTotal = parseFloat(row.form_total) || 0;
+          const paymentDate = (row.payment_date || '').trim();
+          const paymentStatus = (row.payment_status || '').trim();
+          const totalOwed = ROOM_PRICE[roomPref] !== undefined ? ROOM_PRICE[roomPref] : 0;
 
           // Match existing user by name or email
           let user = await env.DB.prepare(
@@ -3540,14 +3552,14 @@ export default {
             // Create new user
             const result = await env.DB.prepare(
               'INSERT INTO users (first_name, last_initial, last_name, email, phone, church, retreat_year, reg_registered, total_owed, room_size_preference, roommate_requests) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)'
-            ).bind(cleanFirst, cleanInitial, lastName, email || null, phone || null, church || null, activeYear, formTotal, roomPref, roommateReqs).run();
+            ).bind(cleanFirst, cleanInitial, lastName, email || null, phone || null, church || null, activeYear, totalOwed, roomPref, roommateReqs).run();
             user = { id: result.meta.last_row_id };
             created++;
           } else {
             // Update existing user
             const updates = ['reg_registered = 1', 'retreat_year = ?'];
             const binds = [activeYear];
-            if (formTotal > 0) { updates.push('total_owed = ?'); binds.push(formTotal); }
+            if (totalOwed > 0) { updates.push('total_owed = ?'); binds.push(totalOwed); }
             if (roomPref > 0) { updates.push('room_size_preference = ?'); binds.push(roomPref); }
             if (roommateReqs) { updates.push('roommate_requests = ?'); binds.push(roommateReqs); }
             if (email) { updates.push('email = ?'); binds.push(email); }
@@ -3558,10 +3570,18 @@ export default {
             await env.DB.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).bind(...binds).run();
           }
 
-          // Note: this import intentionally never creates a payment record.
-          // The church form only reports the total cost, not what's actually
-          // been paid — use the Registrations tab's CSV import or the manual
-          // Pay button for real payment amounts.
+          // Record the actual payment from this submission (deduped by
+          // user+amount+date so re-importing the same export is a no-op).
+          if (formTotal > 0) {
+            const existingPmt = await env.DB.prepare(
+              'SELECT id FROM payments WHERE user_id = ? AND amount = ? AND date = ? AND retreat_year = ?'
+            ).bind(user.id, formTotal, paymentDate, activeYear).first();
+            if (!existingPmt) {
+              await env.DB.prepare(
+                'INSERT INTO payments (user_id, amount, method, date, notes, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
+              ).bind(user.id, formTotal, 'csv_import', paymentDate, paymentStatus || '', activeYear).run();
+            }
+          }
 
           imported++;
         }

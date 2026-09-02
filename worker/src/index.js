@@ -3524,9 +3524,6 @@ export default {
           const roomPref = parseInt(row.room_size_preference) || 0;
           const roommateReqs = (row.roommate_requests || '').trim();
           const formTotal = parseFloat(row.form_total) || 0;
-          const paymentAmount = parseFloat(row.payment_amount) || 0;
-          const paymentDate = (row.payment_date || '').trim();
-          const paymentStatus = (row.payment_status || '').trim();
 
           // Match existing user by name or email
           let user = await env.DB.prepare(
@@ -3561,18 +3558,10 @@ export default {
             await env.DB.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).bind(...binds).run();
           }
 
-          // Add payment if there's an amount
-          if (paymentAmount > 0) {
-            // Check for duplicate (same user, same amount, same date)
-            const existing = await env.DB.prepare(
-              'SELECT id FROM payments WHERE user_id = ? AND amount = ? AND date = ? AND retreat_year = ?'
-            ).bind(user.id, paymentAmount, paymentDate, activeYear).first();
-            if (!existing) {
-              await env.DB.prepare(
-                'INSERT INTO payments (user_id, amount, method, date, notes, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
-              ).bind(user.id, paymentAmount, 'csv_import', paymentDate, paymentStatus || '', activeYear).run();
-            }
-          }
+          // Note: this import intentionally never creates a payment record.
+          // The church form only reports the total cost, not what's actually
+          // been paid — use the Registrations tab's CSV import or the manual
+          // Pay button for real payment amounts.
 
           imported++;
         }

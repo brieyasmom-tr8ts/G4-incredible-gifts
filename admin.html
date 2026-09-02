@@ -5059,11 +5059,11 @@ async function handleParticipantCsvUpload(event) {
     const headerMap = {};
     headers.forEach((h, i) => { headerMap[clean(h)] = i; });
 
-    // Map church form field names to our fields. No "amount paid" field is
-    // mapped here on purpose — the church form only reports the total cost
-    // ("form total"), not what she's actually paid, so this import never
-    // fabricates a payment. Use the Registrations tab's CSV import (or the
-    // manual Pay button) to record real payment amounts.
+    // Map church form field names to our fields. "Form Total" is what she
+    // actually paid on THIS form submission (a $50 deposit, or the full
+    // amount if she paid in full) — it's a payment amount, not her total
+    // cost. Total cost is derived server-side from her room size instead,
+    // same as the Registrations tab's CSV import.
     const fieldMap = {
         first_name: ['first name', 'firstname'],
         last_name: ['last name', 'lastname'],
@@ -5072,7 +5072,9 @@ async function handleParticipantCsvUpload(event) {
         church: ['do you attend a church? if so where?', 'church'],
         form_total: ['form total', 'total'],
         room_size_preference: ['how many people per room', 'people per room'],
-        roommate_requests: ['roommate preferences', 'roommate']
+        roommate_requests: ['roommate preferences', 'roommate'],
+        payment_date: ['date submitted'],
+        payment_status: ['payment status']
     };
 
     function findCol(keys) {
@@ -5112,7 +5114,9 @@ async function handleParticipantCsvUpload(event) {
             church: get(cols.church),
             form_total: parseFloat(get(cols.form_total)) || 0,
             room_size_preference: roomPref,
-            roommate_requests: get(cols.roommate_requests)
+            roommate_requests: get(cols.roommate_requests),
+            payment_date: get(cols.payment_date),
+            payment_status: get(cols.payment_status)
         });
     }
 

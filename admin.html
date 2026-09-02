@@ -5038,15 +5038,32 @@ async function handleParticipantCsvUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     const text = await file.text();
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-    if (lines.length < 2) { showToast('CSV appears empty'); return; }
+    const isTabDelimited = (text.split('\n')[0] || '').split('\t').length > 1;
+    let headers, dataRows;
+    if (isTabDelimited) {
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length < 2) { showToast('CSV appears empty'); return; }
+        headers = lines[0].split('\t').map(h => h.replace(/['"]/g, '').trim());
+        dataRows = lines.slice(1).map(l => l.split('\t').map(f => f.replace(/['"]/g, '').trim()));
+    } else {
+        // Quote-aware parse — a plain split(',') breaks the moment any church
+        // form answer (church name, roommate list) contains a comma, shifting
+        // every column after it out of alignment for that row.
+        const parsed = parseRegCsv(text);
+        if (!parsed.headers.length) { showToast('CSV appears empty'); return; }
+        headers = parsed.headers.map(h => h.trim());
+        dataRows = parsed.rows;
+    }
 
-    const headers = lines[0].split('\t').length > 1 ? lines[0].split('\t') : lines[0].split(',');
     const clean = h => h.replace(/['"]/g, '').trim().toLowerCase();
     const headerMap = {};
     headers.forEach((h, i) => { headerMap[clean(h)] = i; });
 
-    // Map church form field names to our fields
+    // Map church form field names to our fields. No "amount paid" field is
+    // mapped here on purpose — the church form only reports the total cost
+    // ("form total"), not what she's actually paid, so this import never
+    // fabricates a payment. Use the Registrations tab's CSV import (or the
+    // manual Pay button) to record real payment amounts.
     const fieldMap = {
         first_name: ['first name', 'firstname'],
         last_name: ['last name', 'lastname'],
@@ -5055,10 +5072,7 @@ async function handleParticipantCsvUpload(event) {
         church: ['do you attend a church? if so where?', 'church'],
         form_total: ['form total', 'total'],
         room_size_preference: ['how many people per room', 'people per room'],
-        roommate_requests: ['roommate preferences', 'roommate'],
-        payment_amount: ['form total'],
-        payment_date: ['date submitted'],
-        payment_status: ['payment status']
+        roommate_requests: ['roommate preferences', 'roommate']
     };
 
     function findCol(keys) {
@@ -5076,14 +5090,13 @@ async function handleParticipantCsvUpload(event) {
     }
 
     const rows = [];
-    for (let i = 1; i < lines.length; i++) {
-        const parts = headers.length > 1 && lines[0].includes('\t') ? lines[i].split('\t') : lines[i].split(',');
-        const get = idx => (idx >= 0 && idx < parts.length) ? parts[idx].replace(/['"]/g, '').trim() : '';
+    for (const parts of dataRows) {
+        const get = idx => (idx >= 0 && idx < parts.length) ? (parts[idx] || '').trim() : '';
 
         const firstName = get(cols.first_name);
         if (!firstName) continue;
 
-        // Determine room size from the payment columns or "how many" field
+        // Determine room size from the "how many people per room" field
         let roomPref = 0;
         const roomField = get(cols.room_size_preference);
         if (roomField) {
@@ -5091,21 +5104,15 @@ async function handleParticipantCsvUpload(event) {
             if (num >= 1 && num <= 4) roomPref = num;
         }
 
-        // Figure out payment amount from whichever payment column has a value
-        let payAmount = parseFloat(get(cols.payment_amount)) || 0;
-
         rows.push({
             first_name: firstName,
             last_name: get(cols.last_name),
             email: get(cols.email),
             phone: get(cols.phone),
             church: get(cols.church),
-            form_total: parseFloat(get(cols.form_total)) || payAmount,
+            form_total: parseFloat(get(cols.form_total)) || 0,
             room_size_preference: roomPref,
-            roommate_requests: get(cols.roommate_requests),
-            payment_amount: payAmount,
-            payment_date: get(cols.payment_date),
-            payment_status: get(cols.payment_status)
+            roommate_requests: get(cols.roommate_requests)
         });
     }
 

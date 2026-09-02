@@ -3440,7 +3440,7 @@ export default {
         await ensurePaymentTables(env.DB);
         const userId = parseInt(participantMatch[1]);
         const body = await request.json();
-        const allowed = ['total_owed', 'room_size_preference', 'roommate_requests', 'participant_status', 'payment_due_date'];
+        const allowed = ['total_owed', 'room_size_preference', 'roommate_requests', 'participant_status', 'payment_due_date', 'first_name', 'last_name'];
         const updates = [];
         const binds = [];
         for (const key of allowed) {
@@ -3448,6 +3448,12 @@ export default {
             updates.push(`${key} = ?`);
             binds.push(body[key] === null ? '' : body[key]);
           }
+        }
+        // Keep last_initial in sync — it's what CSV import name-matching and
+        // the profile directory fall back to when last_name isn't shown.
+        if (body.last_name !== undefined) {
+          updates.push('last_initial = ?');
+          binds.push((body.last_name || '').toString().trim().charAt(0).toUpperCase());
         }
         if (updates.length) {
           binds.push(userId);

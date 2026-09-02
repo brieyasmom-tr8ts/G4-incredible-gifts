@@ -4625,9 +4625,24 @@ function handleRegCsvUpload(event) {
     reader.onload = () => {
         _regCsv = parseRegCsv(reader.result);
         if (!_regCsv.headers.length) { showToast('Could not read that file — is it a CSV?'); return; }
-        const guess = (needles) => _regCsv.headers.findIndex(h => needles.some(n => h.toLowerCase().includes(n)));
+        // Check needles in priority order across ALL headers before falling
+        // back to the next needle, rather than scanning headers left-to-right
+        // for the first that matches ANY needle — otherwise an early, loosely
+        // matching column (e.g. "Subtotal" containing "total") wins over a
+        // later, more specific one ("Form Total") purely by column position.
+        const guess = (needles) => {
+            for (const n of needles) {
+                const idx = _regCsv.headers.findIndex(h => h.toLowerCase().includes(n));
+                if (idx >= 0) return idx;
+            }
+            return -1;
+        };
         const nameIdx = guess(['name']);
-        const amountIdx = guess(['amount', 'paid', 'total', 'price']);
+        // "Form Total" (church form's actual charge for this submission) is
+        // preferred over generic 'total'/'amount' matches, which can land on
+        // an unrelated column like "Subtotal" that doesn't track the real
+        // payment (e.g. it can read $0 while Form Total reads $50).
+        const amountIdx = guess(['form total', 'amount paid', 'amount', 'paid', 'price', 'total']);
         const dateIdx = guess(['date']);
         // Detect roommate FIRST so headers like "Roommate Preferences" don't get stolen by the room-size check
         const roommateIdx = guess(['roommate', 'room with', 'who would you like', 'rooming preference', 'room preference', 'room pref']);

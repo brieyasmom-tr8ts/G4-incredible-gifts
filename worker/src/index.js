@@ -3209,6 +3209,8 @@ export default {
             name,
             amount: row.amount || '',
             date: row.date || '',
+            room_size_preference: row.room_size_preference || '',
+            roommate_requests: row.roommate_requests || '',
             candidates,
             best_match_id: (candidates.length && candidates[0].score >= 50) ? candidates[0].user_id : null
           };

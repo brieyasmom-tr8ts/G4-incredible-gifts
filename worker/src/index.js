@@ -3755,16 +3755,36 @@ export default {
         return json({ success: true, room_number: nextRoom, capacity }, corsHeaders);
       }
 
-      // DELETE /api/admin/rooms/room/:roomNumber - delete a room record
-      // itself (call after freeing its occupants via the per-user DELETE)
+      // DELETE /api/admin/rooms/room/:roomNumber - delete a room, send its
+      // occupants back to unassigned, then close the gap by renumbering the
+      // remaining rooms 1..N so the highest number is the room count.
       const roomRecordDeleteMatch = path.match(/^\/api\/admin\/rooms\/room\/(\d+)$/);
       if (roomRecordDeleteMatch && request.method === 'DELETE') {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
         const roomNumber = parseInt(roomRecordDeleteMatch[1]);
         const activeYear = await getActiveYear(env.DB);
+        await env.DB.prepare('DELETE FROM room_assignments WHERE room_number = ? AND retreat_year = ?').bind(roomNumber, activeYear).run();
         await env.DB.prepare('DELETE FROM rooms WHERE room_number = ? AND retreat_year = ?').bind(roomNumber, activeYear).run();
-        return json({ success: true }, corsHeaders);
+
+        // Compact the remaining rooms. Only real rooms (>= 1) are touched —
+        // the "not staying at the hotel" bucket at -1 keeps its sentinel.
+        // Walking in ascending order is collision-safe: each room only ever
+        // moves DOWN, and the slot it moves into was already vacated.
+        const { results: remaining } = await env.DB.prepare(
+          'SELECT room_number FROM rooms WHERE retreat_year = ? AND room_number >= 1 ORDER BY room_number ASC'
+        ).bind(activeYear).all();
+        let next = 1;
+        for (const room of (remaining || [])) {
+          const oldNumber = room.room_number;
+          if (oldNumber !== next) {
+            await env.DB.prepare('UPDATE rooms SET room_number = ? WHERE room_number = ? AND retreat_year = ?').bind(next, oldNumber, activeYear).run();
+            await env.DB.prepare('UPDATE room_assignments SET room_number = ? WHERE room_number = ? AND retreat_year = ?').bind(next, oldNumber, activeYear).run();
+          }
+          next++;
+        }
+        return json({ success: true, rooms_remaining: next - 1 }, corsHeaders);
       }
 
       // POST /api/admin/settings/payment-due-date - set shared due date

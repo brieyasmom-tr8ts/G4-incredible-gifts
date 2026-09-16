@@ -3301,7 +3301,13 @@ export default {
           ).bind(userId, activeYear).first();
           const cumulativePaid = (paidSum && paidSum.total) || 0;
 
-          const userUpdates = ['reg_registered = 1', 'retreat_year = 2027', 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
+          // participant_status is reset to active: being in the church's
+          // registration export means she's registered, and without this a
+          // woman who was ever removed stays hidden from Participants &
+          // Payments forever (that view skips inactive rows) even though
+          // she reappears in Registered Sisters, which only checks
+          // reg_registered.
+          const userUpdates = ['reg_registered = 1', 'retreat_year = 2027', "participant_status = 'active'", 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
           const userBinds = [cumulativePaid, date, source, notes];
           if (roomPref > 0) { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
           if (roommateReqs) { userUpdates.push('roommate_requests = ?'); userBinds.push(roommateReqs); }
@@ -3595,8 +3601,11 @@ export default {
             user = { id: result.meta.last_row_id };
             created++;
           } else {
-            // Update existing user
-            const updates = ['reg_registered = 1', 'retreat_year = ?'];
+            // Update existing user. participant_status is reset to active
+            // for the same reason as the Registrations importer — otherwise
+            // a previously-removed woman reappears in Registered Sisters but
+            // stays invisible in Participants & Payments.
+            const updates = ['reg_registered = 1', 'retreat_year = ?', "participant_status = 'active'"];
             const binds = [activeYear];
             if (totalOwed > 0) { updates.push('total_owed = ?'); binds.push(totalOwed); }
             if (roomPref > 0) { updates.push('room_size_preference = ?'); binds.push(roomPref); }

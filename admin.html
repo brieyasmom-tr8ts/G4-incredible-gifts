@@ -4781,6 +4781,7 @@ async function commitRegImport() {
         loadRegistrationsList();
         loadParticipants();
         loadRoomAssignments();
+        loadUsers();
     } catch (e) {
         showToast('Import failed: ' + (e.message || ''));
     } finally {
@@ -5203,6 +5204,7 @@ async function handleParticipantCsvUpload(event) {
             );
         }
         loadParticipants();
+        loadUsers();
     } catch (e) { showToast('Import error: ' + (e.message || '')); }
     event.target.value = '';
 }

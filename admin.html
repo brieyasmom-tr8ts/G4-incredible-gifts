@@ -4259,6 +4259,9 @@ async function deleteBudgetCategory(id, name) {
 const _budgetOverview = {
     rooms: 0,
     hotelCost: 0,
+    // Conference space + tax & fees. Tracked separately from hotelCost so
+    // What's Left can subtract the full venue bill, not just the rooms.
+    venueOtherCost: 0,
     revenue: 0,
     actualRevenue: 0,
     budgetSpent: 0,
@@ -4278,9 +4281,15 @@ function refreshBudgetOverview() {
     spentEl.textContent = fmtMoney(_budgetOverview.budgetSpent || 0);
     var actualRevEl = document.getElementById('ov-actual-revenue');
     if (actualRevEl) actualRevEl.textContent = fmtMoney(_budgetOverview.actualRevenue || 0);
-    // "What's Left" uses actual revenue if there is any, otherwise projected
+    // "What's Left" uses actual revenue if there is any, otherwise projected.
+    // Costs subtracted are the full venue bill (rooms + conference + tax)
+    // plus what's actually been spent from the budget categories — leaving
+    // out conference and tax overstated what was left by their whole value.
     const revenueForCalc = (_budgetOverview.actualRevenue > 0) ? _budgetOverview.actualRevenue : (_budgetOverview.revenue || 0);
-    const remaining = revenueForCalc - (_budgetOverview.hotelCost || 0) - (_budgetOverview.budgetSpent || 0);
+    const remaining = revenueForCalc
+        - (_budgetOverview.hotelCost || 0)
+        - (_budgetOverview.venueOtherCost || 0)
+        - (_budgetOverview.budgetSpent || 0);
     leftEl.textContent = fmtMoney(remaining);
     leftEl.style.color = remaining >= 0 ? 'var(--rose)' : '#a13224';
 }
@@ -4455,8 +4464,11 @@ function recalcRetreatCalculator() {
     // these with the budget-categories actual total.
     _budgetOverview.rooms = n1 + n2 + n3 + n4;
     _budgetOverview.revenue = (n0 * charge0) + (n1 * charge1) + (n2 * 2 * charge2) + (n3 * 3 * charge3) + (n4 * 4 * charge4);
-    // hotelCost is computed below for the projected total path; default 0
+    // hotelCost/venueOtherCost are computed below for the projected total
+    // path; reset here so a cleared calculator doesn't leave stale costs
+    // subtracting from What's Left
     _budgetOverview.hotelCost = 0;
+    _budgetOverview.venueOtherCost = 0;
 
     // No costs entered yet — show a gentle hint
     if (baseNightly <= 0 && confCost <= 0) {
@@ -4537,6 +4549,7 @@ function recalcRetreatCalculator() {
     // planned amounts are whatever she budgeted them at.
     const budgetPlanned = _budgetOverview.budgetPlanned || 0;
     const totalCost = totalSubtotal + totalTax + budgetPlanned;
+    _budgetOverview.venueOtherCost = totalConfCost + totalTax;
     const totalRevenue = (n0 * charge0) + (n1 * charge1) + (n2 * 2 * charge2) + (n3 * 3 * charge3) + (n4 * 4 * charge4);
     const totalProfit = totalRevenue - totalCost;
     const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;

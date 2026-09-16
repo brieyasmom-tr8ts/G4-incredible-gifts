@@ -109,6 +109,24 @@ function buildPaymentReminderHtml(firstName, balance, dueDate) {
 // payment amount.
 const ROOM_PRICE = { 1: 430, 2: 280, 3: 230, 4: 190, 0: 130 };
 
+// users.reg_amount_paid is a stored copy of what she's paid, shown on the
+// Registrations tab, while Participants & Payments sums the payments table
+// live. Any write to payments must call this or the two views disagree.
+async function syncRegAmountPaid(db, userId, retreatYear) {
+  if (!userId) return 0;
+  try {
+    const row = await db.prepare(
+      'SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE user_id = ? AND retreat_year = ?'
+    ).bind(userId, retreatYear).first();
+    const total = (row && row.total) || 0;
+    await db.prepare('UPDATE users SET reg_amount_paid = ? WHERE id = ?').bind(total, userId).run();
+    return total;
+  } catch (e) {
+    console.error('[sync-paid] failed', userId, e && e.message);
+    return 0;
+  }
+}
+
 // Blocked words filter
 const BLOCKED_WORDS = [
   'damn', 'hell', 'shit', 'fuck', 'ass', 'bitch', 'crap',
@@ -3255,14 +3273,19 @@ export default {
 
         // Parse room size from text or number. Handles:
         // "2 people", "2 person", "3 person room", "4 or 5 person", "1", "single", "no hotel"
+        // Returns 0-4 for a recognized tier (0 = explicitly not staying at
+        // the hotel), or null when the answer is blank/unreadable. The two
+        // are NOT the same: 0 means she owes the $130 no-hotel rate, null
+        // means we don't know and must not invent a price for her.
         function parseRoomSize(val) {
-          if (!val) return 0;
+          if (!val) return null;
           const s = val.toString().toLowerCase().trim();
-          if (s.includes('no hotel') || s.includes('commute') || s.includes('day only')) return 0;
+          if (s.includes('no hotel') || s.includes('not sleeping') || s.includes('commute') || s.includes('day only')) return 0;
           const match = s.match(/\d+/);
-          const n = match ? parseInt(match[0], 10) : 0;
+          if (!match) return null;
+          const n = parseInt(match[0], 10);
           if (n >= 4) return 4; // "4 or 5 person" → 4
-          return n || 0;
+          return n >= 1 ? n : null;
         }
 
         let applied = 0;
@@ -3272,10 +3295,15 @@ export default {
           const notes = (entry.notes || '').toString().trim();
           const source = (entry.source || 'csv_import').toString();
           const roomPref = parseRoomSize(entry.room_size_preference);
+          const knownRoom = roomPref !== null;
           const roommateReqs = (entry.roommate_requests || '').toString().trim();
           const email = (entry.email || '').toString().trim().toLowerCase();
           // total_owed = room price based on size; fall back to payment amount only if no room pref
-          const totalOwed = ROOM_PRICE[roomPref] !== undefined && roomPref > 0 ? ROOM_PRICE[roomPref] : (amount || 0);
+          // Price comes from her room tier, including the $130 no-hotel tier.
+          // Only when the tier is genuinely unknown do we fall back to what
+          // she paid — otherwise a no-hotel woman who's only paid a $50
+          // deposit would be recorded as owing $50 and look paid in full.
+          const totalOwed = knownRoom ? ROOM_PRICE[roomPref] : (amount || 0);
           let userId = parseInt(entry.user_id, 10);
 
           if (!userId) {
@@ -3327,10 +3355,7 @@ export default {
           // not just this one CSV row/submission — so re-importing a woman
           // who's since made a second (or third) payment updates her total
           // instead of overwriting it with just the latest amount.
-          const paidSum = await env.DB.prepare(
-            'SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE user_id = ? AND retreat_year = ?'
-          ).bind(userId, activeYear).first();
-          const cumulativePaid = (paidSum && paidSum.total) || 0;
+          const cumulativePaid = await syncRegAmountPaid(env.DB, userId, activeYear);
 
           // participant_status is reset to active: being in the church's
           // registration export means she's registered, and without this a
@@ -3341,11 +3366,11 @@ export default {
           const userUpdates = ['reg_registered = 1', 'retreat_year = 2027', "participant_status = 'active'", 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
           const userBinds = [cumulativePaid, date, source, notes];
           if (email) { userUpdates.push('email = ?'); userBinds.push(email); }
-          if (roomPref > 0) { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
+          if (knownRoom) { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
           if (roommateReqs) { userUpdates.push('roommate_requests = ?'); userBinds.push(roommateReqs); }
           // Set total_owed from room price; only overwrite if not already set or if we have a better value
           const existingUser = await env.DB.prepare('SELECT total_owed FROM users WHERE id = ?').bind(userId).first();
-          if (totalOwed > 0 && (!(existingUser && existingUser.total_owed > 0) || roomPref > 0)) {
+          if (totalOwed > 0 && (!(existingUser && existingUser.total_owed > 0) || knownRoom)) {
             userUpdates.push('total_owed = ?');
             userBinds.push(totalOwed);
           }
@@ -3544,16 +3569,18 @@ export default {
         const body = await request.json();
         if (!body.user_id || !body.amount) return json({ error: 'user_id and amount required' }, corsHeaders, 400);
         const activeYear = await getActiveYear(env.DB);
+        const payUserId = parseInt(body.user_id);
         await env.DB.prepare(
           'INSERT INTO payments (user_id, amount, method, date, notes, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
         ).bind(
-          parseInt(body.user_id),
+          payUserId,
           parseFloat(body.amount) || 0,
           body.method || 'manual',
           body.date || new Date().toISOString().split('T')[0],
           body.notes || '',
           activeYear
         ).run();
+        await syncRegAmountPaid(env.DB, payUserId, activeYear);
         return json({ success: true }, corsHeaders);
       }
 
@@ -3563,7 +3590,11 @@ export default {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
         const payId = parseInt(paymentDeleteMatch[1]);
+        const activeYear = await getActiveYear(env.DB);
+        // Grab the owner before deleting so her stored total can be resynced
+        const owner = await env.DB.prepare('SELECT user_id FROM payments WHERE id = ?').bind(payId).first();
         await env.DB.prepare('DELETE FROM payments WHERE id = ?').bind(payId).run();
+        if (owner && owner.user_id) await syncRegAmountPaid(env.DB, owner.user_id, activeYear);
         return json({ success: true }, corsHeaders);
       }
 
@@ -3662,6 +3693,9 @@ export default {
               ).bind(user.id, formTotal, 'csv_import', paymentDate, paymentStatus || '', activeYear).run();
             }
           }
+          // Keep the Registrations tab's stored total in step with the
+          // payments table this importer just wrote to
+          await syncRegAmountPaid(env.DB, user.id, activeYear);
 
           imported++;
         }

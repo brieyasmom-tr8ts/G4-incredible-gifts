@@ -1486,8 +1486,16 @@
                         <div style="font-size:0.78rem;color:var(--light-text);margin-bottom:0.75rem;">Auto-detected based on header names. Adjust any that look wrong, then click Preview.</div>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:1rem;">
                             <div>
-                                <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Name column</label>
+                                <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">First name column</label>
                                 <select id="reg-col-name" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"></select>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Last name column <span style="font-weight:400;color:var(--light-text);">(optional)</span></label>
+                                <select id="reg-col-last-name" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"><option value="-1">— None —</option></select>
+                            </div>
+                            <div>
+                                <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Email column <span style="font-weight:400;color:var(--light-text);">(optional)</span></label>
+                                <select id="reg-col-email" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"><option value="-1">— None —</option></select>
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Amount paid column</label>
@@ -4678,7 +4686,15 @@ function handleRegCsvUpload(event) {
             }
             return -1;
         };
-        const nameIdx = guess(['name']);
+        // Prefer an explicit "First Name" column over a generic "Name" one,
+        // so first and last can be mapped separately and matched as a full
+        // name rather than a first name alone.
+        const nameIdx = guess(['first name', 'firstname', 'name']);
+        const lastNameIdx = (() => {
+            const idx = guess(['last name', 'lastname', 'surname']);
+            return idx !== nameIdx ? idx : -1;
+        })();
+        const emailIdx = guess(['email']);
         // "Form Total" (church form's actual charge for this submission) is
         // preferred over generic 'total'/'amount' matches, which can land on
         // an unrelated column like "Subtotal" that doesn't track the real
@@ -4697,8 +4713,10 @@ function handleRegCsvUpload(event) {
         const optionsHtml = _regCsv.headers.map((h, i) => `<option value="${i}">${esc(h || '(column ' + (i + 1) + ')')}</option>`).join('');
         const optionalOptionsHtml = '<option value="-1">— None —</option>' + optionsHtml;
         ['reg-col-name', 'reg-col-amount', 'reg-col-date'].forEach(id => { document.getElementById(id).innerHTML = optionsHtml; });
-        ['reg-col-room', 'reg-col-roommate'].forEach(id => { document.getElementById(id).innerHTML = optionalOptionsHtml; });
+        ['reg-col-last-name', 'reg-col-email', 'reg-col-room', 'reg-col-roommate'].forEach(id => { document.getElementById(id).innerHTML = optionalOptionsHtml; });
         if (nameIdx >= 0) document.getElementById('reg-col-name').value = nameIdx;
+        if (lastNameIdx >= 0) document.getElementById('reg-col-last-name').value = lastNameIdx;
+        if (emailIdx >= 0) document.getElementById('reg-col-email').value = emailIdx;
         if (amountIdx >= 0) document.getElementById('reg-col-amount').value = amountIdx;
         if (dateIdx >= 0) document.getElementById('reg-col-date').value = dateIdx;
         if (roomIdx >= 0) document.getElementById('reg-col-room').value = roomIdx;
@@ -4713,17 +4731,28 @@ function handleRegCsvUpload(event) {
 let _regPreview = [];
 async function previewRegMatches() {
     const nameCol = parseInt(document.getElementById('reg-col-name').value, 10);
+    const lastNameCol = parseInt(document.getElementById('reg-col-last-name').value, 10);
+    const emailCol = parseInt(document.getElementById('reg-col-email').value, 10);
     const amountCol = parseInt(document.getElementById('reg-col-amount').value, 10);
     const dateCol = parseInt(document.getElementById('reg-col-date').value, 10);
     const roomCol = parseInt(document.getElementById('reg-col-room').value, 10);
     const roommateCol = parseInt(document.getElementById('reg-col-roommate').value, 10);
-    const rows = _regCsv.rows.map(r => ({
-        name: (r[nameCol] || '').trim(),
-        amount: (r[amountCol] || '').replace(/[^0-9.-]/g, ''),
-        date: (r[dateCol] || '').trim(),
-        room_size_preference: roomCol >= 0 ? (r[roomCol] || '').trim() : '',
-        roommate_requests: roommateCol >= 0 ? (r[roommateCol] || '').trim() : ''
-    })).filter(r => r.name);
+    const rows = _regCsv.rows.map(r => {
+        const firstName = (r[nameCol] || '').trim();
+        const lastName = lastNameCol >= 0 ? (r[lastNameCol] || '').trim() : '';
+        return {
+            // `name` stays the full name so matching scores against both
+            // parts, not just the first name
+            name: [firstName, lastName].filter(Boolean).join(' '),
+            first_name: firstName,
+            last_name: lastName,
+            email: emailCol >= 0 ? (r[emailCol] || '').trim() : '',
+            amount: (r[amountCol] || '').replace(/[^0-9.-]/g, ''),
+            date: (r[dateCol] || '').trim(),
+            room_size_preference: roomCol >= 0 ? (r[roomCol] || '').trim() : '',
+            roommate_requests: roommateCol >= 0 ? (r[roommateCol] || '').trim() : ''
+        };
+    }).filter(r => r.name);
     if (!rows.length) { showToast('No named rows to match'); return; }
     try {
         const data = await apiFetch('/api/admin/registrations/match', { method: 'POST', body: { rows } });
@@ -4737,11 +4766,12 @@ function renderRegPreview() {
     el.innerHTML = `
         <table style="width:100%;border-collapse:collapse;font-size:0.86rem;">
             <thead><tr style="text-align:left;color:var(--taupe);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">
-                <th style="padding:6px 8px;">CSV name</th><th style="padding:6px 8px;">Paid</th><th style="padding:6px 8px;">Date</th><th style="padding:6px 8px;">Room</th><th style="padding:6px 8px;">Roommates</th><th style="padding:6px 8px;">Match</th>
+                <th style="padding:6px 8px;">CSV name</th><th style="padding:6px 8px;">Email</th><th style="padding:6px 8px;">Paid</th><th style="padding:6px 8px;">Date</th><th style="padding:6px 8px;">Room</th><th style="padding:6px 8px;">Roommates</th><th style="padding:6px 8px;">Match</th>
             </tr></thead>
             <tbody>${_regPreview.map((row, i) => `
                 <tr style="border-top:1px solid rgba(200,185,176,0.2);">
                     <td style="padding:6px 8px;">${esc(row.name)}</td>
+                    <td style="padding:6px 8px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${row.email ? 'var(--dark-text)' : 'var(--light-text)'};" title="${esc(row.email || '')}">${esc(row.email) || '—'}</td>
                     <td style="padding:6px 8px;">${row.amount ? '$' + esc(row.amount) : '—'}</td>
                     <td style="padding:6px 8px;">${esc(row.date) || '—'}</td>
                     <td style="padding:6px 8px;color:${row.room_size_preference ? 'var(--dark-text)' : 'var(--light-text)'};">${esc(row.room_size_preference) || '—'}</td>
@@ -4750,7 +4780,7 @@ function renderRegPreview() {
                         <select id="reg-match-${i}" style="padding:4px 6px;border:1px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.82rem;">
                             <option value="skip">— Skip —</option>
                             <option value="new" ${!row.best_match_id ? 'selected' : ''}>Create new: "${esc(row.name)}"</option>
-                            ${row.candidates.map(c => `<option value="${c.user_id}" ${row.best_match_id === c.user_id ? 'selected' : ''}>${esc(c.display_name)} (${c.score}%)</option>`).join('')}
+                            ${row.candidates.map(c => `<option value="${c.user_id}" ${row.best_match_id === c.user_id ? 'selected' : ''}>${esc(c.display_name)} (${c.matched_by === 'email' ? 'email match' : c.score + '% name'})</option>`).join('')}
                         </select>
                     </td>
                 </tr>`).join('')}
@@ -4764,7 +4794,9 @@ async function commitRegImport() {
     _regPreview.forEach((row, i) => {
         const sel = document.getElementById('reg-match-' + i);
         if (!sel || sel.value === 'skip') return;
-        const entry = { amount: row.amount, date: row.date, source: 'csv_import', room_size_preference: row.room_size_preference || '', roommate_requests: row.roommate_requests || '' };
+        // Email always goes through, even when matched to an existing user,
+        // so her address gets filled in/updated from the church form.
+        const entry = { amount: row.amount, date: row.date, source: 'csv_import', room_size_preference: row.room_size_preference || '', roommate_requests: row.roommate_requests || '', email: row.email || '' };
         if (sel.value === 'new') entry.name = row.name;
         else entry.user_id = parseInt(sel.value, 10);
         entries.push(entry);

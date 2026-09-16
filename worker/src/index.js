@@ -3691,7 +3691,11 @@ export default {
         // assigned to it (created before the rooms table existed) gets a
         // default-capacity row backfilled now, so it persists going forward.
         const knownRoomNumbers = new Set(rooms.map(r => r.room_number));
-        const missingNumbers = [...new Set((assignments || []).map(a => a.room_number))].filter(n => !knownRoomNumbers.has(n));
+        // Room numbers below 1 are sentinels, not rooms (-1 is the "not
+        // staying at the hotel" bucket), so they must never be backfilled
+        // into the rooms table or they'd render as a phantom room card.
+        const missingNumbers = [...new Set((assignments || []).map(a => a.room_number))]
+          .filter(n => n >= 1 && !knownRoomNumbers.has(n));
         for (const n of missingNumbers) {
           try {
             await env.DB.prepare(

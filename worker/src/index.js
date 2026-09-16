@@ -3556,10 +3556,14 @@ export default {
           const paymentStatus = (row.payment_status || '').trim();
           const totalOwed = ROOM_PRICE[roomPref] !== undefined ? ROOM_PRICE[roomPref] : 0;
 
-          // Match existing user by name or email
+          // Match existing user by name or email. Require a full last_name
+          // match when the existing record has one on file — matching on
+          // first_name + last_initial alone (a single letter) risks merging
+          // a brand-new registrant into an unrelated woman from a prior
+          // year who happens to share a first name and initial.
           let user = await env.DB.prepare(
-            'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND UPPER(last_initial) = UPPER(?)'
-          ).bind(cleanFirst, cleanInitial).first();
+            'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND (LOWER(last_name) = LOWER(?) OR (last_name = \'\' AND UPPER(last_initial) = UPPER(?))) LIMIT 1'
+          ).bind(cleanFirst, lastName, cleanInitial).first();
 
           if (!user && email) {
             user = await env.DB.prepare(

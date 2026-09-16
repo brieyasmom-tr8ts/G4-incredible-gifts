@@ -3502,6 +3502,188 @@ export default {
         return json({ participants: users || [], summary, due_date: dueDate }, corsHeaders);
       }
 
+      // GET /api/admin/reconcile - standing accuracy check on the money.
+      // Two versions of "what she's paid" exist: users.reg_amount_paid (a
+      // stored copy the Registrations tab reads) and SUM(payments) (the live
+      // truth). total_owed is meant to be the room-size tier price. Rows that
+      // drifted apart before the sync helper existed won't fix themselves, so
+      // this surfaces them instead of leaving them to be caught by eye.
+      if (path === '/api/admin/reconcile' && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        await ensureRegColumns(env.DB);
+        const activeYear = await getActiveYear(env.DB);
+
+        const round2 = n => Math.round((Number(n) || 0) * 100) / 100;
+        const fmt = n => '$' + round2(n).toFixed(2);
+
+        const { results: rows } = await env.DB.prepare(
+          `SELECT u.id, u.first_name, u.last_name, u.last_initial, u.email,
+                  u.total_owed, u.reg_amount_paid, u.room_size_preference,
+                  u.reg_registered, u.participant_status,
+                  COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?), 0) as total_paid,
+                  (SELECT COUNT(*) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?) as payment_count
+           FROM users u
+           WHERE (u.retreat_year = ? OR u.reg_registered = 1)
+             AND COALESCE(u.participant_status, '') != 'inactive'
+           ORDER BY u.first_name ASC`
+        ).bind(activeYear, activeYear, activeYear).all();
+
+        const issues = [];
+        for (const u of (rows || [])) {
+          const name = [u.first_name, u.last_name || u.last_initial].filter(Boolean).join(' ').trim();
+          const stored = round2(u.reg_amount_paid);
+          const actual = round2(u.total_paid);
+          const owed = round2(u.total_owed);
+          const pref = Number(u.room_size_preference);
+          const flags = [];
+
+          if (Math.abs(stored - actual) >= 0.01) {
+            flags.push({
+              type: 'paid_drift',
+              fix: 'paid',
+              label: 'Paid totals disagree',
+              detail: `Registrations tab shows ${fmt(stored)}, her payment records add up to ${fmt(actual)}.`,
+              delta: round2(stored - actual)
+            });
+          }
+
+          const tierPrice = ROOM_PRICE[pref];
+          if (pref >= 1 && pref <= 4 && tierPrice !== undefined && Math.abs(owed - tierPrice) >= 0.01) {
+            flags.push({
+              type: 'owed_drift',
+              fix: 'owed',
+              label: 'Owed does not match room tier',
+              detail: `A ${pref}-person room is ${fmt(tierPrice)}, but she is down for ${fmt(owed)}.`,
+              delta: round2(owed - tierPrice)
+            });
+          }
+
+          if (owed === 0) {
+            flags.push({
+              type: 'no_amount_owed',
+              fix: null,
+              label: 'No amount owed on file',
+              detail: 'She will never show a balance or get a payment reminder. Set her room size or enter her total by hand.',
+              delta: 0
+            });
+          } else if (actual - owed >= 0.01) {
+            flags.push({
+              type: 'overpaid',
+              fix: null,
+              label: 'Paid more than she owes',
+              detail: `Owes ${fmt(owed)} but has paid ${fmt(actual)}. Usually a payment entered twice.`,
+              delta: round2(actual - owed)
+            });
+          }
+
+          if (flags.length) {
+            issues.push({
+              user_id: u.id,
+              name: name || `User ${u.id}`,
+              email: u.email || '',
+              total_owed: owed,
+              stored_paid: stored,
+              actual_paid: actual,
+              room_size_preference: isNaN(pref) ? null : pref,
+              payment_count: u.payment_count || 0,
+              flags
+            });
+          }
+        }
+
+        // Payments whose user row no longer exists. They sit in the table
+        // forever and never land in anyone's total, so the payments table and
+        // the roster quietly disagree about how much came in.
+        let orphans = [];
+        try {
+          const { results } = await env.DB.prepare(
+            `SELECT p.id, p.user_id, p.amount, p.date, p.method, p.notes
+             FROM payments p LEFT JOIN users u ON u.id = p.user_id
+             WHERE p.retreat_year = ? AND u.id IS NULL
+             ORDER BY p.date DESC`
+          ).bind(activeYear).all();
+          orphans = results || [];
+        } catch (e) {
+          console.error('[reconcile] orphan lookup failed', e && e.message);
+        }
+
+        const countFlag = t => issues.filter(i => i.flags.some(f => f.type === t)).length;
+        const summary = {
+          checked: (rows || []).length,
+          flagged: issues.length,
+          paid_drift: countFlag('paid_drift'),
+          owed_drift: countFlag('owed_drift'),
+          no_amount_owed: countFlag('no_amount_owed'),
+          overpaid: countFlag('overpaid'),
+          orphan_payments: orphans.length,
+          orphan_total: round2(orphans.reduce((s, o) => s + (Number(o.amount) || 0), 0))
+        };
+
+        return json({ issues, orphan_payments: orphans, summary, year: activeYear }, corsHeaders);
+      }
+
+      // POST /api/admin/reconcile/fix - repair the drift the check found.
+      // Body: { fix: 'paid'|'owed', user_id } for one woman, or
+      // { fix: 'paid'|'owed', all: true } to repair every drifted row.
+      // Only these two are fixable automatically: the right answer is already
+      // known (the payments table, the room tier). The other flags need a
+      // human decision, so they have no fix button.
+      if (path === '/api/admin/reconcile/fix' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensurePaymentTables(env.DB);
+        await ensureRegColumns(env.DB);
+        const activeYear = await getActiveYear(env.DB);
+        const body = await request.json().catch(() => ({}));
+        const fix = body.fix;
+        if (fix !== 'paid' && fix !== 'owed') {
+          return json({ error: 'fix must be "paid" or "owed"' }, corsHeaders, 400);
+        }
+
+        let targets = [];
+        if (body.all) {
+          const { results } = await env.DB.prepare(
+            `SELECT u.id, u.total_owed, u.reg_amount_paid, u.room_size_preference,
+                    COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?), 0) as total_paid
+             FROM users u
+             WHERE (u.retreat_year = ? OR u.reg_registered = 1)
+               AND COALESCE(u.participant_status, '') != 'inactive'`
+          ).bind(activeYear, activeYear).all();
+          targets = results || [];
+        } else if (body.user_id) {
+          const row = await env.DB.prepare(
+            `SELECT u.id, u.total_owed, u.reg_amount_paid, u.room_size_preference,
+                    COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?), 0) as total_paid
+             FROM users u WHERE u.id = ?`
+          ).bind(activeYear, parseInt(body.user_id)).first();
+          if (row) targets = [row];
+        } else {
+          return json({ error: 'Pass a user_id or all: true' }, corsHeaders, 400);
+        }
+
+        let fixed = 0;
+        for (const u of targets) {
+          if (fix === 'paid') {
+            const stored = Number(u.reg_amount_paid) || 0;
+            const actual = Number(u.total_paid) || 0;
+            if (Math.abs(stored - actual) < 0.01) continue;
+            await syncRegAmountPaid(env.DB, u.id, activeYear);
+            fixed++;
+          } else {
+            const pref = Number(u.room_size_preference);
+            const tierPrice = ROOM_PRICE[pref];
+            if (!(pref >= 1 && pref <= 4) || tierPrice === undefined) continue;
+            if (Math.abs((Number(u.total_owed) || 0) - tierPrice) < 0.01) continue;
+            await env.DB.prepare('UPDATE users SET total_owed = ? WHERE id = ?').bind(tierPrice, u.id).run();
+            fixed++;
+          }
+        }
+
+        return json({ success: true, fixed }, corsHeaders);
+      }
+
       // POST /api/admin/participants/:id - update participant fields
       const participantMatch = path.match(/^\/api\/admin\/participants\/(\d+)$/);
       if (participantMatch && request.method === 'POST') {

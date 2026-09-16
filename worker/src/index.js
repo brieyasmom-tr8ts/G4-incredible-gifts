@@ -3256,7 +3256,6 @@ export default {
           // total_owed = room price based on size; fall back to payment amount only if no room pref
           const totalOwed = ROOM_PRICE[roomPref] !== undefined && roomPref > 0 ? ROOM_PRICE[roomPref] : (amount || 0);
           let userId = parseInt(entry.user_id, 10);
-          let freshInsert = false;
 
           if (!userId) {
             const rawName = (entry.name || '').toString().trim();
@@ -3273,30 +3272,15 @@ export default {
               userId = existingByName.id;
             } else {
               const result = await env.DB.prepare(
-                'INSERT INTO users (first_name, last_initial, last_name, retreat_year, reg_registered, reg_amount_paid, reg_paid_date, reg_source, total_owed, room_size_preference, roommate_requests) VALUES (?, ?, ?, 2027, 1, ?, ?, ?, ?, ?, ?)'
-              ).bind(first, lastInitial, lastName, amount, date, source, totalOwed, roomPref, roommateReqs).run();
+                'INSERT INTO users (first_name, last_initial, last_name, retreat_year, reg_registered) VALUES (?, ?, ?, 2027, 1)'
+              ).bind(first, lastInitial, lastName).run();
               userId = result.meta.last_row_id;
-              freshInsert = true;
             }
           }
 
-          // Update existing user record (skipped only for brand-new inserts, which set fields on INSERT)
-          if (userId && !freshInsert) {
-            const userUpdates = ['reg_registered = 1', 'retreat_year = 2027', 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
-            const userBinds = [amount, date, source, notes];
-            if (roomPref > 0) { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
-            if (roommateReqs) { userUpdates.push('roommate_requests = ?'); userBinds.push(roommateReqs); }
-            // Set total_owed from room price; only overwrite if not already set or if we have a better value
-            const existingUser = await env.DB.prepare('SELECT total_owed FROM users WHERE id = ?').bind(userId).first();
-            if (totalOwed > 0 && (!(existingUser && existingUser.total_owed > 0) || roomPref > 0)) {
-              userUpdates.push('total_owed = ?');
-              userBinds.push(totalOwed);
-            }
-            userBinds.push(userId);
-            await env.DB.prepare(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`).bind(...userBinds).run();
-          }
-
-          // Add to payments table if amount > 0 (deduped by user+amount+date)
+          // Add to payments table if amount > 0 (deduped by user+amount+date) —
+          // do this BEFORE recomputing her total so a repeat CSV row (e.g. a
+          // second submission with a balance payment) is reflected below.
           if (amount > 0) {
             const existingPmt = await env.DB.prepare(
               'SELECT id FROM payments WHERE user_id = ? AND amount = ? AND date = ? AND retreat_year = ?'
@@ -3307,6 +3291,29 @@ export default {
               ).bind(userId, amount, 'csv_import', date, notes || source, activeYear).run();
             }
           }
+
+          // reg_amount_paid reflects everything she's ever paid this year,
+          // not just this one CSV row/submission — so re-importing a woman
+          // who's since made a second (or third) payment updates her total
+          // instead of overwriting it with just the latest amount.
+          const paidSum = await env.DB.prepare(
+            'SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE user_id = ? AND retreat_year = ?'
+          ).bind(userId, activeYear).first();
+          const cumulativePaid = (paidSum && paidSum.total) || 0;
+
+          const userUpdates = ['reg_registered = 1', 'retreat_year = 2027', 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
+          const userBinds = [cumulativePaid, date, source, notes];
+          if (roomPref > 0) { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
+          if (roommateReqs) { userUpdates.push('roommate_requests = ?'); userBinds.push(roommateReqs); }
+          // Set total_owed from room price; only overwrite if not already set or if we have a better value
+          const existingUser = await env.DB.prepare('SELECT total_owed FROM users WHERE id = ?').bind(userId).first();
+          if (totalOwed > 0 && (!(existingUser && existingUser.total_owed > 0) || roomPref > 0)) {
+            userUpdates.push('total_owed = ?');
+            userBinds.push(totalOwed);
+          }
+          userBinds.push(userId);
+          await env.DB.prepare(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`).bind(...userBinds).run();
+
           applied++;
         }
         return json({ success: true, applied }, corsHeaders);

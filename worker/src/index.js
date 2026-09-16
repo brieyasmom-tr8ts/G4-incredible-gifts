@@ -3192,27 +3192,47 @@ export default {
         const body = await request.json();
         const rows = Array.isArray(body && body.rows) ? body.rows : [];
         const { results: allUsers } = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, last_name FROM users'
+          'SELECT id, first_name, last_initial, last_name, email FROM users'
         ).all();
         const matched = rows.map(row => {
           const name = (row.name || '').toString().trim();
+          const email = (row.email || '').toString().trim().toLowerCase();
           const candidates = allUsers
-            .map(u => ({
-              user_id: u.id,
-              display_name: u.last_name ? `${u.first_name} ${u.last_name}` : (u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name),
-              score: scoreNameMatch(name, u.first_name, u.last_name || u.last_initial)
-            }))
+            .map(u => {
+              const userEmail = (u.email || '').toString().trim().toLowerCase();
+              // An email match is an identity match — nobody shares one —
+              // so it beats any name score outright.
+              const emailMatch = !!(email && userEmail && email === userEmail);
+              const nameScore = scoreNameMatch(name, u.first_name, u.last_name || u.last_initial);
+              return {
+                user_id: u.id,
+                display_name: u.last_name ? `${u.first_name} ${u.last_name}` : (u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name),
+                score: emailMatch ? 100 : nameScore,
+                matched_by: emailMatch ? 'email' : 'name'
+              };
+            })
             .filter(c => c.score > 0)
             .sort((a, b) => b.score - a.score)
             .slice(0, 5);
+          // Auto-select only on a confident match: an email hit, or a first
+          // name plus a last name/initial that agree. A first-name-only hit
+          // scores 50 and is NOT enough — "Joanne" shouldn't silently claim
+          // an existing "Joanne Kramer". Those still appear in the dropdown
+          // to pick manually, and the commit endpoint dedups by email and
+          // full name anyway, so choosing "Create new" can't duplicate her.
+          const top = candidates[0];
+          const confident = top && (top.matched_by === 'email' || top.score >= 75);
           return {
             name,
+            first_name: row.first_name || '',
+            last_name: row.last_name || '',
+            email: row.email || '',
             amount: row.amount || '',
             date: row.date || '',
             room_size_preference: row.room_size_preference || '',
             roommate_requests: row.roommate_requests || '',
             candidates,
-            best_match_id: (candidates.length && candidates[0].score >= 50) ? candidates[0].user_id : null
+            best_match_id: confident ? top.user_id : null
           };
         });
         return json({ matched }, corsHeaders);
@@ -3253,6 +3273,7 @@ export default {
           const source = (entry.source || 'csv_import').toString();
           const roomPref = parseRoomSize(entry.room_size_preference);
           const roommateReqs = (entry.roommate_requests || '').toString().trim();
+          const email = (entry.email || '').toString().trim().toLowerCase();
           // total_owed = room price based on size; fall back to payment amount only if no room pref
           const totalOwed = ROOM_PRICE[roomPref] !== undefined && roomPref > 0 ? ROOM_PRICE[roomPref] : (amount || 0);
           let userId = parseInt(entry.user_id, 10);
@@ -3264,12 +3285,22 @@ export default {
             const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
             const lastName = parts.slice(1).join(' ');
             const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
-            // Check if a user with this name already exists (dedup on re-import)
-            const existingByName = await env.DB.prepare(
-              'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND (LOWER(last_name) = LOWER(?) OR (last_name = \'\' AND UPPER(last_initial) = UPPER(?))) LIMIT 1'
-            ).bind(first, lastName, lastInitial).first();
-            if (existingByName) {
-              userId = existingByName.id;
+            // Dedup on re-import: email first (it's an identity, and it
+            // catches her even if she married/changed her last name), then
+            // full name.
+            let existing = null;
+            if (email) {
+              existing = await env.DB.prepare(
+                "SELECT id FROM users WHERE LOWER(TRIM(email)) = ? LIMIT 1"
+              ).bind(email).first();
+            }
+            if (!existing) {
+              existing = await env.DB.prepare(
+                'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND (LOWER(last_name) = LOWER(?) OR (last_name = \'\' AND UPPER(last_initial) = UPPER(?))) LIMIT 1'
+              ).bind(first, lastName, lastInitial).first();
+            }
+            if (existing) {
+              userId = existing.id;
             } else {
               const result = await env.DB.prepare(
                 'INSERT INTO users (first_name, last_initial, last_name, retreat_year, reg_registered) VALUES (?, ?, ?, 2027, 1)'
@@ -3309,6 +3340,7 @@ export default {
           // reg_registered.
           const userUpdates = ['reg_registered = 1', 'retreat_year = 2027', "participant_status = 'active'", 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
           const userBinds = [cumulativePaid, date, source, notes];
+          if (email) { userUpdates.push('email = ?'); userBinds.push(email); }
           if (roomPref > 0) { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
           if (roommateReqs) { userUpdates.push('roommate_requests = ?'); userBinds.push(roommateReqs); }
           // Set total_owed from room price; only overwrite if not already set or if we have a better value

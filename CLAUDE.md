@@ -65,7 +65,7 @@
   points, schedule view, connect directory with profiles, Journey
   (20 gifts × 4 responses), Journal (private, localStorage only).
 
-### Post-retreat (everything built in this branch)
+### Post-retreat
 - **Feedback survey** — overall + per-category + per-speaker ratings
   (Mandy, Jeanette, Sandy, Leigh each have 1-5 stars + comment) + app
   feedback (ease/fun/design/usefulness/connection) + text fields.
@@ -129,6 +129,25 @@
   Home Buttons pages. Each feature has one row with two toggles
   (In nav / On home). Features that only exist in one place show
   a "—" in the other column.
+
+### Admin / retreat operations
+The admin side is now roughly half the project. Detailed sections
+below; the shape of it is:
+- **Registrations tab** — CSV import from the church form with a
+  review-before-commit preview, manual add, roster + total collected.
+- **Participants & Payments** — the working roster. Per-woman owed /
+  paid / balance / derived status, payment entry, reminder sends,
+  filters, CSV export.
+- **Reconciliation** — standing check that the stored money matches
+  the payment records, with one-click repair.
+- **Room board** — drag-and-drop assignment with capacities, a
+  no-hotel bucket, and a rooming list export.
+- **Budget** — calculator seeded from real registrations, Budget by
+  Category for expenses, overview cards for projected vs actual.
+- **Email** — templated devotion / secret sister / payment reminder
+  sends plus a custom broadcast, with pause switches.
+- **Content moderation** — stories queue, theme suggestions, feedback
+  results, visibility toggles.
 
 ## Core design decisions (do not re-litigate)
 
@@ -200,6 +219,22 @@
 - **Devotion personalization maps `gift_key` to Journey gift name
   via `deriveJourneyKeyForDevotion`**. Don't rename gift_keys in
   DEVOTIONS without updating that map.
+- **Every write to `payments` must call `syncRegAmountPaid()`.**
+  `users.reg_amount_paid` is a stored copy of what she's paid, read by
+  the Registrations tab, while Participants & Payments sums the
+  payments table live. Skip the sync and the two views disagree, and
+  nothing will tell you. Applies to adds, deletes, and both importers.
+- **`total_owed` comes from `ROOM_PRICE[room_size_preference]`, never
+  from a payment amount.** A woman who paid the $50 deposit for a
+  3-person room owes $230, not $50. This was a real bug.
+- **`parseRoomSize` distinguishes unknown from no-hotel.** `null` means
+  we don't know her room size; `0` means she explicitly isn't sleeping
+  at the hotel and owes $130. Collapsing them prices no-hotel women
+  wrong in one direction or invents a total for unknown ones in the
+  other.
+- **CSV parsing: a quote only opens a quoted field at field start.**
+  `if (c === '"' && field === '') inQuotes = true;` — otherwise a
+  stray apostrophe or inch mark mid-field swallows the rest of the row.
 
 ## File organization reference
 
@@ -242,6 +277,18 @@ Key functions and roughly where they live in `index.html`:
   tracking and export
 - `showJourneyNewGiftsCard` / `updateJourneyBadge` — Journey bridges
 
+Key worker functions in `worker/src/index.js`:
+
+- `ROOM_PRICE` / `parseRoomSize` / `syncRegAmountPaid` — module-scope
+  money helpers shared by every import and payment path
+- `getActiveYear` / `getRequestedYear` — year separation
+- `requireAdmin` — `X-Admin-Key` check on every `/api/admin/*` route
+- `ensurePaymentTables` / `ensureRegColumns` — lazy migrations
+- `brevoAddContact` / `buildPaymentReminderHtml` /
+  `sendDevotionEmail` / `sendSecretSisterEmail` /
+  `sendMonthlyPaymentReminders` — email
+- `scheduled()` — cron dispatch by exact cron string
+
 Key admin functions in `admin.html`:
 
 - `renderVisibilityToggles` / `toggleVisibilityKey` — unified
@@ -259,7 +306,12 @@ Key admin functions in `admin.html`:
   `openAddPaymentModal` / `submitPayment` / `handleParticipantCsvUpload` /
   `downloadParticipantsCsv` — Participants & Payments section
 - `loadRoomAssignments` / `renderRoomBoard` / `renderRoomChip` /
-  `initRoomDragDrop` / `addNewRoom` / `deleteRoom` — Room board
+  `initRoomDragDrop` / `addNewRoom` / `deleteRoom` /
+  `downloadRoomingListCsv` — Room board and rooming list export
+- `loadReconcile` / `renderReconcile` / `fixReconcile` /
+  `fixAllReconcile` — Reconciliation panel
+- `_budgetOverview` / `refreshBudgetOverview` — shared budget math read
+  by the overview cards, the calculator, and Budget by Category
 - `sendOneReminder` / `sendAllReminders` — Brevo email triggers
 
 ## Landing page & access-code gating (shipped Aug 2024)
@@ -311,42 +363,114 @@ Key admin functions in `admin.html`:
 
 - **Registration is NOT processed in this app.** Church runs the form.
   App tracks who registered/paid via CSV import or manual entry.
-- Reconciliation on `users`: `reg_registered`, `reg_amount_paid`,
+- Reconciliation columns on `users`: `reg_registered`, `reg_amount_paid`,
   `reg_paid_date`, `reg_source` (`csv_import` | `manual`), `reg_notes`.
-- CSV import: `POST /api/admin/registrations/match` (fuzzy name-match,
-  no writes) then `POST /api/admin/registrations/commit` (after review).
+- **Two separate CSV importers exist** and they are NOT the same code
+  path. Fixing one does not fix the other:
+  - Registrations tab: `POST /api/admin/registrations/match` (scores
+    candidates, writes nothing) then `POST /api/admin/registrations/commit`
+    after the admin reviews the preview.
+  - Participants & Payments: `POST /api/admin/participants/import`
+    (single step).
+- **Matching is on name AND email, never first name alone.** An email
+  match scores 100 and is reported as `matched_by: 'email'`. A row is
+  only auto-selected when the top candidate is an email match or scores
+  75+. First-name-only used to score exactly 50, which was also the old
+  auto-select threshold, so two brand-new women were silently merged
+  into unrelated existing users. Do not lower the bar back.
+- **Import adds new women as users and updates existing ones.** Both
+  importers dedupe by email first, then full name, and set
+  `participant_status = 'active'`. Re-uploading a newer export is the
+  intended way to bring totals up to date. It will NOT repair a row
+  that was wrongly merged earlier, because the real woman isn't in
+  that row — those need manual cleanup.
 - **Budget calculator** has 5 ticket price tiers: 1-person ($430),
   2-person ($280), 3-person ($230), 4-person ($190), no-hotel ($130).
-  Revenue calculated per-tier. Overview cards show Projected Revenue
-  (from calculator) and Actual Revenue (from registration payments).
-  "What's Left" uses actual revenue when available.
+  These live in one place, `ROOM_PRICE` at module scope in the worker,
+  shared by both importers so `total_owed` always comes from room size
+  and never from whatever she happened to pay.
+- **Calculator room counts seed from actual registrations** but stay
+  editable, so what-if scenarios don't clobber the real numbers.
+  Editing is a local override, not a save.
+- **Budget overview math:** `_budgetOverview` holds `rooms`, `hotelCost`,
+  `venueOtherCost` (conference space + tax/fees), `revenue` (projected,
+  from the calculator), `actualRevenue` (from payments), `budgetSpent`
+  and `budgetPlanned` (from Budget by Category). "What's Left" is
+  `revenue - hotelCost - venueOtherCost - budgetSpent`, preferring
+  actual revenue when there is any.
+- **Food is not a calculator line item.** It's tracked in Budget by
+  Category like every other expense. Don't reintroduce it above, it
+  would double-count. Same hazard applies if Hotel or Conference are
+  ever added as Budget by Category rows.
 - Room pricing on landing page: $430/$280/$230/$190 with roommate
   arrangement note.
 
-## Payment tracking & room assignments (shipped Aug 25, 2026)
+## Payment tracking & room assignments
 
 - **Tables:** `payments` (individual entries per woman), `budget_expenses`,
-  `room_assignments`, `reminder_log`.
+  `room_assignments`, `rooms` (capacity + existence as its own entity),
+  `reminder_log`.
 - **User columns:** `total_owed`, `room_size_preference`,
   `roommate_requests`, `participant_status`, `payment_due_date`.
-- **Payment status is derived**, never stored: No Payment, Deposit Only,
-  Partial, Paid in Full, Overdue. Deposit ($50) is part of total owed.
+- **Payment status is derived**, never stored: Registered, No Payment,
+  Deposit Only, Partial, Paid in Full, Overdue. Deposit ($50) is part
+  of total owed, not on top of it.
 - **Shared due date** for everyone (stored in `game_settings` as
   `payment_due_date`).
 - **Participants table** in admin: name, room pref, roommate requests,
   owed, paid, balance, status badge, + Pay button, Remind button.
-  Filterable by all/owes/paid/overdue/no payment.
-- **CSV import** from church form: maps first/last name, email, phone,
-  church, room preference, roommate requests, payment amount. Dedupes
-  payments by user+amount+date. Endpoint: `POST /api/admin/participants/import`.
-- **Room assignment board** in admin: drag-and-drop. Unassigned pool,
-  room cards (up to 4 per room). Chips show name, payment status,
-  room preference, roommate requests.
+  Filterable by all/owes/paid/overdue/no payment. Scoped to the active
+  year.
+- **Removing a participant is a soft delete** — sets
+  `participant_status = 'inactive'`, `reg_registered = 0`, moves her
+  `retreat_year` back to 2026, and deletes her payments, room
+  assignment, and reminder log for the active year.
+- **Room assignment board** in admin: drag-and-drop, with an
+  Unassigned pool at the top and a no-hotel bucket at the bottom.
+  Chips show name, payment status, room preference, roommate requests.
+- **Room numbers are sentinels:** `0` = unassign, `-1` = the no-hotel
+  bucket (`NO_HOTEL_ROOM`), `>= 1` = a real room. Anything listing
+  rooms must filter to `>= 1` or the bucket leaks into the room list.
+- **Capacity is chosen when the room is created** (1-4). A full room
+  turns sage and reads "Full"; an over-filled one turns rose and reads
+  "Over by N".
+- **Deleting a room renumbers the rest** so the highest room number
+  always equals the room count. Occupants of the deleted room go back
+  to Unassigned.
+- **Rooming list export** (`downloadRoomingListCsv`) — the room-shaped
+  export, separate from the money-shaped participants export. One row
+  per woman grouped by room in order, then the no-hotel women, then
+  anyone still unassigned, so nobody is quietly left off. Empty rooms
+  appear as `(empty)` rows.
 - **Endpoints:** `GET/POST /api/admin/participants`,
-  `POST /api/admin/participants/:id`, `GET/POST/DELETE /api/admin/payments`,
-  `GET/POST/DELETE /api/admin/rooms`.
+  `POST/DELETE /api/admin/participants/:id`,
+  `GET/POST/DELETE /api/admin/payments`,
+  `GET/POST /api/admin/rooms`, `DELETE /api/admin/rooms/:userId`,
+  `POST /api/admin/rooms/create`,
+  `DELETE /api/admin/rooms/room/:roomNumber`.
 
-## Brevo email integration (shipped Aug 25, 2026)
+## Reconciliation
+
+- **`GET /api/admin/reconcile`** is the standing money check. It walks
+  the active-year roster and flags four things: a stored paid total
+  that disagrees with the payment records (`paid_drift`), an amount
+  owed that doesn't match the room tier (`owed_drift`), a woman with
+  nothing owed on file (`no_amount_owed` — she'll never show a balance
+  or get a reminder), and a woman who has paid more than she owes
+  (`overpaid`). It also finds payments whose user row is gone, which
+  sit in the table counted toward nobody.
+- **`POST /api/admin/reconcile/fix`** repairs the first two, per-woman
+  (`{fix, user_id}`) or in bulk (`{fix, all: true}`), because the right
+  answer is already known: the payments table for paid, `ROOM_PRICE`
+  for owed. The other two need a human decision and get no fix button.
+- Panel lives under Participants & Payments and runs whenever that
+  section loads. Shows a green "everything ties out" state when clean.
+- Float comparisons use a 1-cent threshold so rounding noise doesn't
+  read as drift. `room_size_preference` of 0 means no-hotel and is
+  priced at $130 — only flagged when the price is actually wrong, not
+  for being zero.
+
+## Brevo email integration
 
 - **Brevo List ID:** 8 (G4 2027 Retreat list).
 - **Sender:** `G4Retreat <Heather@HeatherLynWilson.com>`.
@@ -364,16 +488,49 @@ Key admin functions in `admin.html`:
   Runs `sendMonthlyPaymentReminders()`. Skips paid-in-full, inactive,
   and anyone already reminded this month (checked via `reminder_log`).
 - **Reminder log:** `GET /api/admin/reminders/log` shows history.
-- **Cron schedule:** Mon 5am EDT (devotions), Wed 5am EDT (secret
-  sister), 1st monthly 10am EDT (payment reminders).
+- **Custom broadcast:** `POST /api/admin/email/custom` sends a one-off
+  message to the whole list (subject, body paragraphs, optional button
+  text + URL). This is how the "registration is open" announcement went
+  out. Preview/test/send-now for the templated emails:
+  `GET /api/admin/email/preview`, `POST /api/admin/email/test`,
+  `POST /api/admin/email/send-now`.
+- **Pause switches in `game_settings`:** `devotion_emails_paused` and
+  `weekly_secret_sister_paused`, both `'1'` to pause. The devotion
+  switch blocks the cron AND manual send-now/force alike, so there is
+  exactly one off switch and no surprise re-sends. Both were turned on
+  in Sept 2026 to stop last year's content from looping; turning them
+  back off before the 2027 content is ready will resend 2026 material.
+- **Email branding is "G4 Retreat 2027".** Not "Incredible Gifts" —
+  that was the 2026 theme and must not appear in anything sent now.
+  The 2027 theme is still TBD.
+- **Broadcast copy says "friend", not "sister".** Heather's call: the
+  announcement list includes women who have never attended, so the
+  in-app community voice doesn't fit. In-app copy still says sisters.
+- **Never put the access code in a broadcast.** Women get it from the
+  church's confirmation email after they register, not before.
+- **Cron schedule:** Mon 5am EDT / `0 9 * * 1` (devotions),
+  Wed 5am EDT / `0 9 * * 3` (secret sister), 1st monthly 10am EDT /
+  `0 14 1 * *` (payment reminders). Declared in `worker/wrangler.toml`
+  and dispatched in the `scheduled()` handler by exact cron string.
 
 ## Deployment
 
-- **Cloudflare Pages git integration is broken** (last auto-deploy was
-  May 2024). Deploy manually:
-  `npx wrangler pages deploy . --project-name g4-incredible-gifts`
-- Worker deploy: `cd worker && npx wrangler deploy`
-- Always deploy both after changes.
+- **Both deploys are automatic via GitHub Actions on push to `main`.**
+  `.github/workflows/deploy-worker.yml` runs `wrangler deploy` for the
+  worker; `.github/workflows/deploy-pages.yml` runs
+  `wrangler pages deploy . --project-name g4-incredible-gifts` for the
+  frontend. Both authenticate with the `CLOUDFLARE_API_TOKEN` repo
+  secret. Merging a PR to `main` ships both. There is nothing to run
+  by hand.
+- **Verify a deploy** by listing recent workflow runs on `main` and
+  checking both workflows succeeded on the merge commit SHA.
+- **`api.cloudflare.com` is blocked by the agent proxy** (403 on
+  CONNECT), so an agent session cannot deploy directly with wrangler
+  even holding a valid token. Don't ask Heather for an API token to
+  work around this, it won't help. Push to `main` and let Actions run.
+- Manual fallback, if Actions is ever down:
+  `npx wrangler pages deploy . --project-name g4-incredible-gifts` and
+  `cd worker && npx wrangler deploy`.
 
 ## Roadmap & open threads
 
@@ -386,6 +543,18 @@ Key admin functions in `admin.html`:
 - **Monthly "Hey from Heather" video** — admin-recorded short video.
 - **Sister Spotlight** — weekly featured sister rotation.
 - **Per-speaker CSV export of testimonies**.
+- **Secret Sister is wiped and not started.** Cleared in Sept 2026 to
+  start fresh with the 2027 women. `weekly_secret_sister_paused` is on.
+  Don't restart it without asking Heather.
+- **2027 devotion content** — the 15-week rotation currently holds 2026
+  material and is paused. New content is needed before
+  `devotion_emails_paused` comes back off.
+- **Known data cleanup (Sept 2026):** Carolyn Topper and Joanne Kramer
+  hold data that belongs to Carolyn Verteramo and Joanne Eusi, from the
+  first-name-only merge bug. Re-importing will not fix it, since the
+  real women aren't in those rows. Heather needs to Remove or Edit them
+  by hand or ~$380 is double-counted. Check the Reconciliation panel
+  before trusting the revenue totals.
 
 ## What NOT to touch
 

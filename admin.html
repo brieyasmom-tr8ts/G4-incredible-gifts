@@ -5459,14 +5459,14 @@ async function addNewRoom() {
 }
 
 async function deleteRoom(roomNum) {
-    if (!confirm('Remove Room ' + roomNum + '? Women in it will go back to unassigned.')) return;
-    const inRoom = _roomAssignments.filter(a => a.room_number === roomNum);
+    if (!confirm('Remove Room ' + roomNum + '? Anyone in it goes back to Unassigned, and the rooms after it get renumbered to close the gap.')) return;
     try {
-        for (const a of inRoom) {
-            await apiFetch('/api/admin/rooms/' + a.user_id, { method: 'DELETE' });
-        }
-        await apiFetch('/api/admin/rooms/room/' + roomNum, { method: 'DELETE' });
+        // One call — the endpoint frees the occupants and renumbers the rest
+        const res = await apiFetch('/api/admin/rooms/room/' + roomNum, { method: 'DELETE' });
         loadRoomAssignments();
+        if (res && typeof res.rooms_remaining === 'number') {
+            showToast(res.rooms_remaining + ' room' + (res.rooms_remaining === 1 ? '' : 's') + ' left');
+        }
     } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
 

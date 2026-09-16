@@ -1616,6 +1616,15 @@
                     <!-- Room cards -->
                     <div id="room-board" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;">
                     </div>
+                    <!-- Not staying at the hotel — a holding bucket, not a room -->
+                    <div style="margin-top:1rem;">
+                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0.5rem;">
+                            <div style="font-size:0.78rem;font-weight:600;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;">Not staying at the hotel</div>
+                            <span id="room-no-hotel-count" style="font-size:0.72rem;color:var(--light-text);"></span>
+                        </div>
+                        <div id="room-no-hotel" class="room-drop-zone" data-room="-1" style="min-height:50px;padding:8px;background:rgba(201,144,138,0.07);border:2px dashed rgba(201,144,138,0.35);border-radius:12px;display:flex;flex-wrap:wrap;gap:8px;">
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -5286,6 +5295,9 @@ async function loadRoomAssignments() {
 }
 
 const ROOM_CAPACITY_LABELS = { 1: 'Solo', 2: '2-person', 3: '3-person', 4: '4-person' };
+// Sentinel room number for the "not staying at the hotel" bucket. 0 already
+// means "unassign", and real rooms start at 1.
+const NO_HOTEL_ROOM = -1;
 
 function renderRoomBoard() {
     const board = document.getElementById('room-board');
@@ -5311,7 +5323,7 @@ function renderRoomBoard() {
     // Render one card per persisted room (capacity comes from the room
     // itself now, not guessed from how many people happen to be in it)
     let html = '';
-    _rooms.forEach(room => {
+    _rooms.filter(room => room.room_number >= 1).forEach(room => {
         const r = room.room_number;
         const capacity = room.capacity || 4;
         const members = membersByRoom[r] || [];
@@ -5348,6 +5360,25 @@ function renderRoomBoard() {
         `;
     });
     board.innerHTML = html;
+
+    // "Not staying at the hotel" bucket — room_number -1 is a holding spot,
+    // not a real room, so it has no capacity and never renders as a card.
+    const noHotelEl = document.getElementById('room-no-hotel');
+    if (noHotelEl) {
+        const noHotelMembers = membersByRoom[NO_HOTEL_ROOM] || [];
+        noHotelEl.innerHTML = noHotelMembers.length
+            ? noHotelMembers.map(m => renderRoomChip(_participants.find(p => p.id === m.user_id) || m, NO_HOTEL_ROOM)).join('')
+            : '<div style="font-size:0.82rem;color:var(--light-text);font-style:italic;padding:8px;">Drag the women who aren\'t sleeping at the hotel here.</div>';
+        // Flag any no-hotel women still sitting in Unassigned, so it's clear
+        // who still needs dragging over
+        const stillUnassigned = unassignedUsers.filter(p => (p.room_size_preference || 0) === 0).length;
+        const countEl = document.getElementById('room-no-hotel-count');
+        if (countEl) {
+            countEl.textContent = noHotelMembers.length + ' here'
+                + (stillUnassigned ? ' · ' + stillUnassigned + ' still in Unassigned' : '');
+            countEl.style.color = stillUnassigned ? 'var(--accent)' : 'var(--light-text)';
+        }
+    }
 
     // Wire up drag and drop
     initRoomDragDrop();

@@ -5410,13 +5410,16 @@ async function handleParticipantCsvUpload(event) {
     event.target.value = '';
 }
 
-// The rooming list the hotel actually needs: one row per woman, grouped by
-// room in order, with the no-hotel women and anyone still unassigned at the
-// bottom so nobody is quietly left off. Separate from the participants
-// export, which is money-shaped rather than room-shaped.
+// The rooming list the hotel gets. Same columns as the version Heather
+// approved and tested in April 2026: Room, Room Size, Name, Email, Phone,
+// Roommate Preference. Deliberately no money on it — the hotel has no
+// business seeing who has paid. The planning view is the board itself.
+//
+// Women not staying at the hotel are left off entirely, and anyone still
+// unassigned can't go on a rooming list at all, so the toast names how
+// many are missing rather than letting them vanish quietly.
 function downloadRoomingListCsv() {
     if (!_participants.length) { showToast('No data to export'); return; }
-    const roomLabels = { 0: 'No hotel', 1: 'Solo', 2: '2-person', 3: '3-person', 4: '4-person' };
     const byId = {};
     _participants.forEach(p => { byId[p.id] = p; });
     const membersByRoom = {};
@@ -5426,40 +5429,34 @@ function downloadRoomingListCsv() {
     });
     const assignedIds = new Set(_roomAssignments.map(a => a.user_id));
 
-    const headers = ['Room', 'Capacity', 'Spots Open', 'Name', 'Email', 'Phone', 'Room Preference', 'Roommate Requests', 'Payment Status'];
+    const headers = ['Room', 'Room Size', 'Name', 'Email', 'Phone', 'Roommate Preference'];
     const rows = [];
-    const pushWoman = (roomLabel, capacity, spotsOpen, p) => {
-        if (!p) return;
-        const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name || '');
-        let status = '';
-        try { status = getPaymentStatus(p).label; } catch (e) { status = ''; }
-        rows.push([roomLabel, capacity, spotsOpen, name, p.email || '', p.phone || '',
-                   roomLabels[p.room_size_preference] || '', p.roommate_requests || '', status]);
-    };
-
     _rooms.filter(r => r.room_number >= 1)
         .sort((a, b) => a.room_number - b.room_number)
         .forEach(room => {
-            const capacity = room.capacity || 4;
             const members = membersByRoom[room.room_number] || [];
-            const open = Math.max(0, capacity - members.length);
-            if (!members.length) {
-                rows.push(['Room ' + room.room_number, capacity, open, '(empty)', '', '', '', '', '']);
-                return;
-            }
-            members.forEach(m => pushWoman('Room ' + room.room_number, capacity, open, byId[m.user_id] || m));
+            if (!members.length) return;
+            const size = Math.max(room.capacity || 4, members.length);
+            members.forEach(m => {
+                const p = byId[m.user_id] || m;
+                const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name || '');
+                rows.push(['Room ' + room.room_number, size + '-person', name,
+                           p.email || '', p.phone || '', p.roommate_requests || '']);
+            });
         });
 
-    (membersByRoom[NO_HOTEL_ROOM] || []).forEach(m => pushWoman('No hotel', '', '', byId[m.user_id] || m));
+    if (!rows.length) { showToast('No one is assigned to a room yet'); return; }
 
-    _participants
-        .filter(p => !assignedIds.has(p.id) && p.participant_status !== 'inactive')
-        .forEach(p => pushWoman('UNASSIGNED', '', '', p));
-
-    if (!rows.length) { showToast('No rooms or participants to export'); return; }
     const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'g4-rooming-list.csv'; a.click();
+
+    const unassigned = _participants.filter(p => !assignedIds.has(p.id) && p.participant_status !== 'inactive').length;
+    const noHotel = (membersByRoom[NO_HOTEL_ROOM] || []).length;
+    const notes = [];
+    if (unassigned) notes.push(unassigned + ' still unassigned, not on the list');
+    if (noHotel) notes.push(noHotel + ' not staying at the hotel, left off');
+    showToast(notes.length ? 'Downloaded. ' + notes.join('; ') + '.' : 'Rooming list downloaded');
 }
 
 function downloadParticipantsCsv() {

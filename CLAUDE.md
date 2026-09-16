@@ -437,11 +437,24 @@ Key admin functions in `admin.html`:
 - **Deleting a room renumbers the rest** so the highest room number
   always equals the room count. Occupants of the deleted room go back
   to Unassigned.
-- **Rooming list export** (`downloadRoomingListCsv`) — the room-shaped
-  export, separate from the money-shaped participants export. One row
-  per woman grouped by room in order, then the no-hotel women, then
-  anyone still unassigned, so nobody is quietly left off. Empty rooms
-  appear as `(empty)` rows.
+- **Rooming list export** (`downloadRoomingListCsv`) — the sheet the
+  hotel gets. Columns are fixed: Room, Room Size, Name, Email, Phone,
+  Roommate Preference. **No money on it**, ever — the hotel has no
+  business seeing who has paid. Empty rooms, no-hotel women, and women
+  still unassigned are all left off, because none of them belong on a
+  hotel rooming list; the toast names how many were omitted so they
+  aren't forgotten. This format was approved and tested by Heather in
+  April 2026, don't redesign it without asking.
+- **History note:** a roster export called `downloadRoomRoster` ("⬇
+  Roster") was built April 12 2026 in PR #96 alongside an auto-assign
+  room board and hotel bill. None of it reached today's `main` — that
+  work is stranded on `origin/claude/budget-calculator-persistence-DOcy3`
+  and the current `main` history only goes back to May 22 2026. The
+  August room board was a fresh build on a different data model
+  (`_participants` / `_roomAssignments` rather than `signups` /
+  `room_label` / `room_occupancy`), so nothing carried over. **If
+  Heather says a feature existed, check the old branches before saying
+  it doesn't** — several April features may still be stranded there.
 - **Endpoints:** `GET/POST /api/admin/participants`,
   `POST/DELETE /api/admin/participants/:id`,
   `GET/POST/DELETE /api/admin/payments`,

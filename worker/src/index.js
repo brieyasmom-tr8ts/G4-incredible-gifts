@@ -3534,11 +3534,20 @@ export default {
         const activeYear = await getActiveYear(env.DB);
         let imported = 0;
         let created = 0;
+        // Track skipped rows with why, instead of silently dropping them —
+        // a blank first name usually means the CSV row's columns shifted
+        // (e.g. a stray unescaped quote earlier in the file), not that the
+        // row was genuinely blank.
+        const skipped = [];
 
-        for (const row of rows) {
+        for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+          const row = rows[rowIdx];
           const firstName = (row.first_name || '').trim();
           const lastName = (row.last_name || '').trim();
-          if (!firstName) continue;
+          if (!firstName) {
+            skipped.push({ row: rowIdx + 1, reason: 'no first name found in this row', raw: JSON.stringify(row).slice(0, 200) });
+            continue;
+          }
 
           const cleanFirst = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
           const cleanInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
@@ -3609,7 +3618,7 @@ export default {
           imported++;
         }
 
-        return json({ success: true, imported, created }, corsHeaders);
+        return json({ success: true, imported, created, skipped }, corsHeaders);
       }
 
       // GET /api/admin/rooms - rooms + assignments for active year

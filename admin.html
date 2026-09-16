@@ -4636,7 +4636,14 @@ function parseRegCsv(text) {
                 else inQuotes = false;
             } else field += c;
         } else {
-            if (c === '"') inQuotes = true;
+            // A quote only opens a quoted field at the very START of a
+            // field. A stray quote mid-field (e.g. a 3" heels or a quoted
+            // phrase in a free-text church-form answer) is common in real
+            // exports and would otherwise swallow everything after it,
+            // including subsequent commas and newlines, until the next
+            // unrelated quote character turned up somewhere later in the
+            // file - corrupting every row in between.
+            if (c === '"' && field === '') inQuotes = true;
             else if (c === ',') { row.push(field); field = ''; }
             else if (c === '\n' || c === '\r') {
                 if (c === '\r' && text[i + 1] === '\n') i++;
@@ -5187,6 +5194,14 @@ async function handleParticipantCsvUpload(event) {
     try {
         const result = await apiFetch('/api/admin/participants/import', { method: 'POST', body: { rows } });
         showToast(`Imported ${result.imported} participants (${result.created} new)`);
+        const skipped = result.skipped || [];
+        if (skipped.length) {
+            alert(
+                skipped.length + ' row(s) were skipped (no first name could be read):\n\n' +
+                skipped.map(s => 'CSV row ' + s.row + ': ' + s.raw).join('\n\n') +
+                '\n\nThis usually means the columns shifted for that row — often a stray quote mark in an earlier answer (like a church name or "how did you hear" response) confusing the CSV parser. Check that row in the original file.'
+            );
+        }
         loadParticipants();
     } catch (e) { showToast('Import error: ' + (e.message || '')); }
     event.target.value = '';

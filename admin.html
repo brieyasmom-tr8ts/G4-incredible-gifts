@@ -5316,14 +5316,25 @@ function renderRoomBoard() {
         const capacity = room.capacity || 4;
         const members = membersByRoom[r] || [];
         const emptySlots = Math.max(0, capacity - members.length);
+        // Full rooms go green at a glance; over-capacity goes rose, since
+        // dragging doesn't stop you from putting a 5th woman in a 4-person
+        // room and that's worth catching before the hotel does.
+        const isFull = members.length === capacity;
+        const isOver = members.length > capacity;
+        const cardBg = isOver ? 'rgba(201,144,138,0.12)' : (isFull ? 'rgba(138,158,122,0.12)' : 'rgba(247,240,235,0.5)');
+        const cardBorder = isOver ? 'var(--accent)' : (isFull ? 'var(--sage)' : 'var(--warm-grey)');
+        const countColor = isOver ? 'var(--accent)' : (isFull ? 'var(--sage)' : 'var(--light-text)');
+        const badge = isOver
+            ? `<span style="font-size:0.66rem;font-weight:700;color:white;background:var(--accent);border-radius:8px;padding:1px 7px;margin-left:6px;">Over by ${members.length - capacity}</span>`
+            : (isFull ? '<span style="font-size:0.66rem;font-weight:700;color:white;background:var(--sage);border-radius:8px;padding:1px 7px;margin-left:6px;">Full</span>' : '');
         html += `
-            <div style="background:rgba(247,240,235,0.5);border:1.5px solid var(--warm-grey);border-radius:14px;padding:14px;">
+            <div style="background:${cardBg};border:1.5px solid ${cardBorder};border-radius:14px;padding:14px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                     <div>
                         <span style="font-family:Playfair Display,serif;font-weight:700;font-size:0.95rem;">Room ${r}</span>
                         <span style="font-size:0.72rem;color:var(--light-text);margin-left:4px;">(${ROOM_CAPACITY_LABELS[capacity] || capacity + '-person'})</span>
                     </div>
-                    <div style="font-size:0.72rem;color:var(--light-text);">${members.length}/${capacity}</div>
+                    <div style="font-size:0.72rem;color:${countColor};font-weight:${isFull || isOver ? '700' : '400'};white-space:nowrap;">${members.length}/${capacity}${badge}</div>
                 </div>
                 <div class="room-drop-zone" data-room="${r}" style="min-height:40px;display:flex;flex-direction:column;gap:6px;">
                     ${members.map(m => {

@@ -1505,22 +1505,6 @@
                     </div>
                 </div>
 
-                <!-- Registered sisters -->
-                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;">
-                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.3rem;">
-                        <div>
-                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Registered Sisters</div>
-                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Everyone marked registered, from CSV import or added by hand.</div>
-                        </div>
-                    </div>
-                    <div id="reg-list-body" style="margin-top:1rem;overflow-x:auto;">
-                        <div style="font-size:0.85rem;color:var(--light-text);font-style:italic;padding:10px 0;">Loading...</div>
-                    </div>
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:1rem;">
-                        <button class="btn btn-refresh" onclick="openAddRegistrationModal()">+ Add manually</button>
-                        <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);" onclick="loadRegistrationsList()">Refresh</button>
-                    </div>
-                </div>
 
                 <!-- Participants & Payments -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
@@ -4001,7 +3985,6 @@ function showBudgetContent() {
     initRetreatCalculator();
     loadBudgetCategories();
     loadRegistrationSettings();
-    loadRegistrationsList();
     loadParticipants();
 }
 

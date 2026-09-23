@@ -1096,20 +1096,6 @@
             <h2>Weekly Emails</h2>
             <p style="color:var(--light-text);font-size:0.9rem;margin-bottom:1.5rem;">Preview and test the automated emails that go out each week. Monday = devotion, Wednesday = secret sister.</p>
 
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(201,144,138,0.08);border-radius:10px;margin-bottom:0.75rem;">
-                <div>
-                    <span style="font-size:0.9rem;color:var(--taupe);">Pause devotion emails</span>
-                    <div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;">While on, the Monday devotion email stops completely — the cron AND the "Send Devotion to Everyone" button below both skip.</div>
-                </div>
-                <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;margin-left:1rem;">
-                    <input type="checkbox" id="toggle-devotion-paused" style="opacity:0;width:0;height:0;" onchange="toggleGame('devotion_emails_paused', this.checked)">
-                    <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
-                </label>
-            </div>
-            <div style="margin-bottom:1.5rem;">
-                <button class="btn btn-danger-outline" onclick="resetDevotionEmailLog()">Reset Devotion Send History</button>
-            </div>
-
             <div style="display:flex;gap:12px;margin-bottom:1.5rem;flex-wrap:wrap;">
                 <button class="btn btn-refresh" onclick="previewEmail('devotion')">Preview Devotion Email</button>
                 <button class="btn btn-refresh" onclick="previewEmail('secretsister')">Preview Secret Sister Email</button>
@@ -1209,16 +1195,6 @@
                 <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px dashed rgba(200,185,176,0.5);">
                     <div style="font-family:Playfair Display,serif;font-size:0.95rem;font-weight:700;margin-bottom:0.35rem;">Weekly Rotation (Post-Retreat)</div>
                     <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.75rem;">Auto-assigned every Wednesday 5am EDT starting April 15, 2026. Pairings are generated lazily the first time anyone opens the app after the rollover.</div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(201,144,138,0.08);border-radius:10px;margin-bottom:0.75rem;">
-                        <div>
-                            <span style="font-size:0.9rem;color:var(--taupe);">Pause weekly rotation</span>
-                            <div style="font-size:0.78rem;color:var(--light-text);margin-top:2px;">While on, no new rounds are created — not automatically, not by opening the app, not by "Run This Week's Assignment Now".</div>
-                        </div>
-                        <label style="position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0;margin-left:1rem;">
-                            <input type="checkbox" id="toggle-weekly-ss-paused" style="opacity:0;width:0;height:0;" onchange="toggleGame('weekly_secret_sister_paused', this.checked)">
-                            <span style="position:absolute;cursor:pointer;inset:0;background:var(--warm-grey);border-radius:28px;transition:0.3s;" class="game-slider"></span>
-                        </label>
-                    </div>
                     <div style="font-size:0.88rem;color:var(--taupe);margin-bottom:0.6rem;line-height:1.8;">
                         Current round: <strong id="weekly-ss-round">—</strong> &nbsp;|&nbsp;
                         Pairs: <strong id="weekly-ss-pair-count">—</strong> &nbsp;|&nbsp;
@@ -1228,7 +1204,6 @@
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem;">
                         <button class="btn btn-refresh" onclick="loadWeeklySSStatus()">Refresh</button>
                         <button class="btn btn-refresh" onclick="forceWeeklySSRound()">Run This Week's Assignment Now</button>
-                        <button class="btn btn-danger-outline" onclick="resetWeeklySecretSister()">Reset for New Women — Wipe All History</button>
                     </div>
                     <div id="weekly-ss-pair-list" style="max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
                 </div>
@@ -1264,37 +1239,44 @@
             <!-- Everything below only shows after the gate opens -->
             <div id="budget-content" style="display:none;">
                 <!-- Overview cards -->
-                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.75rem;margin-bottom:1.5rem;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.75rem;margin-bottom:0.5rem;">
+                    <!-- Revenue side -->
                     <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--taupe);">
-                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Total Rooms</div>
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Women</div>
                         <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--taupe);" id="ov-rooms">0</div>
                         <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;" id="ov-rooms-sub">From calculator</div>
-                    </div>
-                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--accent);">
-                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Hotel Charges</div>
-                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--accent);" id="ov-hotel">$0</div>
-                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">For the rooms</div>
                     </div>
                     <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--sage);">
                         <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Projected Revenue</div>
                         <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--sage);" id="ov-revenue">$0</div>
-                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Based on room counts &times; prices</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Ticket prices × women</div>
                     </div>
                     <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid #5b9a6f;">
                         <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Actual Revenue</div>
                         <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:#5b9a6f;" id="ov-actual-revenue">$0</div>
                         <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Payments received</div>
                     </div>
+                    <!-- Cost side -->
+                    <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--accent);">
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Hotel Cost</div>
+                        <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--accent);" id="ov-hotel">$0</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Rooms + conf + tax</div>
+                    </div>
                     <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--blush);">
                         <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Budget Spent</div>
                         <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--blush);" id="ov-spent">$0</div>
-                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Actual across categories</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">Food, gifts, supplies…</div>
                     </div>
+                    <!-- Bottom line -->
                     <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1rem 1.25rem;text-align:center;border-top:4px solid var(--rose);">
-                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">What's Left</div>
+                        <div style="font-size:0.7rem;color:var(--light-text);text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:4px;">Net Profit</div>
                         <div style="font-family:Playfair Display,serif;font-size:1.6rem;font-weight:700;color:var(--rose);" id="ov-remaining">$0</div>
-                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;">After hotel + spending</div>
+                        <div style="font-size:0.72rem;color:var(--light-text);margin-top:2px;" id="ov-margin">Revenue − all costs</div>
                     </div>
+                </div>
+                <!-- Formula explanation -->
+                <div style="font-size:0.75rem;color:var(--light-text);margin-bottom:1.25rem;padding:8px 12px;background:rgba(247,240,235,0.6);border-radius:8px;line-height:1.6;">
+                    Net Profit = <span id="ov-formula-rev" style="color:var(--sage);font-weight:600;">Revenue</span> − Hotel Cost − Budget Spent &nbsp;·&nbsp; Uses actual revenue when available, projected otherwise.
                 </div>
 
                 <!-- Retreat Cost Calculator -->
@@ -1320,6 +1302,7 @@
                             <div style="display:flex;align-items:center;gap:6px;"><input type="number" id="calc-nights" placeholder="2" step="1" min="1" value="2" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
                             <div style="font-size:0.72rem;color:var(--light-text);margin-top:3px;">Typical G4 retreat is 2 nights</div>
                         </div>
+                        <!-- Food cost moved to Budget by Category -->
                         <div>
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Conference space</label>
                             <div style="display:flex;align-items:center;gap:6px;"><span style="font-size:0.95rem;color:var(--taupe);">$</span><input type="number" id="calc-conference-cost" placeholder="800" step="0.01" min="0" style="flex:1;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;color:var(--dark-text);background:white;box-sizing:border-box;" /></div>
@@ -1333,11 +1316,7 @@
                     </div>
 
                     <!-- Room occupancy -->
-                    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:0.5rem;">
-                        <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;">Expected rooms</div>
-                        <button class="btn btn-refresh" style="font-size:0.72rem;padding:4px 10px;" onclick="useActualRegistrations()">Use Actual Registrations</button>
-                    </div>
-                    <div style="font-size:0.72rem;color:var(--light-text);margin-bottom:0.5rem;">Loads current room-size preferences into the boxes below as a starting point — feel free to change them afterward to try different what-if scenarios.</div>
+                    <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Expected rooms</div>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;margin-bottom:1.25rem;">
                         <div>
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">1-woman rooms</label>
@@ -1491,7 +1470,7 @@
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Last name column <span style="font-weight:400;color:var(--light-text);">(optional)</span></label>
-                                <select id="reg-col-last-name" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"><option value="-1">— None —</option></select>
+                                <select id="reg-col-lastname" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;color:var(--dark-text);background:white;"><option value="-1">— None —</option></select>
                             </div>
                             <div>
                                 <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Email column <span style="font-weight:400;color:var(--light-text);">(optional)</span></label>
@@ -1598,18 +1577,6 @@
                     <div id="participants-table" style="overflow-x:auto;"></div>
                 </div>
 
-                <!-- Reconciliation -->
-                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
-                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.75rem;">
-                        <div>
-                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Reconciliation</div>
-                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Checks each woman's stored totals against her actual payment records. Anything that disagrees shows up here.</div>
-                        </div>
-                        <button class="btn btn-refresh" onclick="loadReconcile()" style="font-size:0.78rem;padding:6px 14px;flex-shrink:0;">Run check</button>
-                    </div>
-                    <div id="reconcile-body"><div style="font-size:0.85rem;color:var(--light-text);padding:6px 0;">Not run yet.</div></div>
-                </div>
-
                 <!-- Room Assignment Board -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
                     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem;">
@@ -1617,10 +1584,17 @@
                             <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Room Assignments</div>
                             <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Drag women into rooms. See roommate requests and unfilled spots.</div>
                         </div>
-                        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-                            <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);font-size:0.78rem;padding:6px 14px;" onclick="downloadRoomingListCsv()">Rooming List</button>
-                            <button class="btn btn-refresh" onclick="addNewRoom()" style="font-size:0.78rem;padding:6px 14px;">+ New Room</button>
-                        </div>
+                        <button class="btn btn-refresh" onclick="addNewRoom()" style="font-size:0.78rem;padding:6px 14px;">+ New Room</button>
+                        <button class="btn btn-refresh" onclick="exportRoomingList()" style="font-size:0.78rem;padding:6px 14px;margin-left:6px;">Export Hotel List</button>
+                    </div>
+                    <!-- Color legend -->
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;">
+                        <span style="font-size:0.72rem;font-weight:600;color:var(--taupe);align-self:center;margin-right:4px;">Room type:</span>
+                        <span style="font-size:0.72rem;padding:2px 10px;border-radius:12px;background:#fef9c3;border:1.5px solid #facc15;color:#854d0e;font-weight:600;">Solo ($430)</span>
+                        <span style="font-size:0.72rem;padding:2px 10px;border-radius:12px;background:#dbeafe;border:1.5px solid #60a5fa;color:#1e40af;font-weight:600;">2-person ($280)</span>
+                        <span style="font-size:0.72rem;padding:2px 10px;border-radius:12px;background:#dcfce7;border:1.5px solid #4ade80;color:#166534;font-weight:600;">3-person ($230)</span>
+                        <span style="font-size:0.72rem;padding:2px 10px;border-radius:12px;background:#ffedd5;border:1.5px solid #fb923c;color:#9a3412;font-weight:600;">4-person ($190)</span>
+                        <span style="font-size:0.72rem;padding:2px 10px;border-radius:12px;background:#f3e8ff;border:1.5px solid #c084fc;color:#7e22ce;font-weight:600;">No hotel ($130)</span>
                     </div>
                     <!-- Unassigned pool -->
                     <div style="margin-bottom:1rem;">
@@ -1628,17 +1602,14 @@
                         <div id="room-unassigned" style="min-height:50px;padding:8px;background:rgba(247,240,235,0.5);border:2px dashed var(--warm-grey);border-radius:12px;display:flex;flex-wrap:wrap;gap:8px;" data-room="0">
                         </div>
                     </div>
+                    <!-- Not staying at hotel -->
+                    <div style="margin-bottom:1rem;">
+                        <div style="font-size:0.78rem;font-weight:600;color:#7e22ce;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Not staying at hotel</div>
+                        <div id="room-no-hotel" style="min-height:50px;padding:8px;background:#f3e8ff;border:2px dashed #c084fc;border-radius:12px;display:flex;flex-wrap:wrap;gap:8px;" data-room="-1">
+                        </div>
+                    </div>
                     <!-- Room cards -->
                     <div id="room-board" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;">
-                    </div>
-                    <!-- Not staying at the hotel — a holding bucket, not a room -->
-                    <div style="margin-top:1rem;">
-                        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:0.5rem;">
-                            <div style="font-size:0.78rem;font-weight:600;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;">Not staying at the hotel</div>
-                            <span id="room-no-hotel-count" style="font-size:0.72rem;color:var(--light-text);"></span>
-                        </div>
-                        <div id="room-no-hotel" class="room-drop-zone" data-room="-1" style="min-height:50px;padding:8px;background:rgba(201,144,138,0.07);border:2px dashed rgba(201,144,138,0.35);border-radius:12px;display:flex;flex-wrap:wrap;gap:8px;">
-                        </div>
                     </div>
                 </div>
 
@@ -2374,7 +2345,7 @@ async function saveNewsEdit(id, message, icon) {
 let usersData = [];
 let usersSortCol = 'created_at';
 let usersSortAsc = false;
-let usersFilter = '2027';
+let usersFilter = 'all';
 
 function userMatchesFilter(u, f) {
     const year = u.retreat_year || 2026;
@@ -3112,8 +3083,6 @@ async function loadGameSettings() {
         document.getElementById('toggle-show-packing-names').checked = settings.show_packing_names === '1';
         document.getElementById('toggle-secret-sister').checked = settings.secret_sister === '1';
         document.getElementById('toggle-ss-reveal').checked = settings.secret_sister_reveal === '1';
-        document.getElementById('toggle-weekly-ss-paused').checked = settings.weekly_secret_sister_paused === '1';
-        document.getElementById('toggle-devotion-paused').checked = settings.devotion_emails_paused === '1';
         document.getElementById('toggle-wyr-on-polls').checked = settings.show_wyr_on_polls !== '0';
         renderVisibilityToggles();
     } catch (e) { console.error('Game settings:', e); }
@@ -3731,16 +3700,6 @@ async function forceWeeklySSRound() {
     } catch (e) { showToast('Error: ' + (e.message || 'Could not run')); }
 }
 
-function resetWeeklySecretSister() {
-    showModal('Reset Weekly Secret Sister', 'This permanently deletes every pairing, note, and admin-sent note from the weekly rotation so it starts completely fresh. This cannot be undone. Consider turning on "Pause weekly rotation" first so it doesn\'t immediately re-pair everyone.', async () => {
-        try {
-            await apiFetch('/api/admin/secretsister/weekly/reset', { method: 'POST', body: {} });
-            showToast('Weekly Secret Sister history wiped');
-            loadWeeklySSStatus();
-        } catch (e) { showToast('Error: ' + (e.message || 'Could not reset')); }
-    });
-}
-
 // --- Secret Sister Participation Analytics ---
 const SS_DROUGHT_WEEKS = 3; // Red-flag threshold
 
@@ -4080,13 +4039,20 @@ function renderBudgetCategoriesTable(cats) {
     let totalPlanned = 0, totalActual = 0;
     cats.forEach(c => { totalPlanned += Number(c.planned) || 0; totalActual += Number(c.actual) || 0; });
     const totalDiff = totalPlanned - totalActual;
-    // Push into the overview state and refresh the top cards, and the
-    // Retreat Cost Calculator's Projected Total (its "All costs" figure
-    // includes these planned line items alongside rooms/conference/tax)
-    _budgetOverview.budgetSpent = totalActual;
+    // Effective budget = actual per category when entered, otherwise planned
+    // This way the projected total reflects real spending as it comes in
+    let totalEffective = 0;
+    cats.forEach(c => {
+        const actual = Number(c.actual) || 0;
+        const planned = Number(c.planned) || 0;
+        totalEffective += actual > 0 ? actual : planned;
+    });
+    _budgetOverview.budgetSpent = totalEffective;
     _budgetOverview.budgetPlanned = totalPlanned;
+    _budgetOverview.budgetActual = totalActual;
     refreshBudgetOverview();
-    if (document.getElementById('calc-per-woman')) recalcRetreatCalculator();
+    // Re-run the calculator projected total so it includes budget costs
+    recalcRetreatCalculator();
 
     // Header
     let html = `
@@ -4120,8 +4086,8 @@ function renderBudgetCategoryRow(c) {
     return `
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto auto;gap:0.4rem;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(200,185,176,0.18);">
             <input type="text" value="${esc(c.name)}" data-cat-id="${c.id}" data-field="name" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--dark-text);background:transparent;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
-            <input type="number" step="0.01" min="0" value="${Number(c.planned) || 0}" data-cat-id="${c.id}" data-field="planned" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--taupe);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
-            <input type="number" step="0.01" min="0" value="${Number(c.actual) || 0}" data-cat-id="${c.id}" data-field="actual" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)'" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
+            <input type="number" step="50" min="0" value="${Number(c.planned) || 0}" data-cat-id="${c.id}" data-field="planned" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--taupe);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)';this.select()" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
+            <input type="number" step="50" min="0" value="${Number(c.actual) || 0}" data-cat-id="${c.id}" data-field="actual" style="padding:6px 8px;border:1px solid transparent;border-radius:6px;font-family:inherit;font-size:0.92rem;color:var(--accent);background:transparent;text-align:right;" onfocus="this.style.background='white';this.style.borderColor='var(--warm-grey)';this.select()" oninput="budgetCatInput(this)" onblur="budgetCatBlur(this)" />
             <div style="text-align:right;font-size:0.9rem;font-weight:600;color:${diffColor};padding:6px 8px;">${fmtMoney(diff)}</div>
             <button type="button" onclick='openBudgetReceiptsModal(${c.id}, ${safeName})' style="background:none;border:none;color:var(--taupe);font-size:1rem;cursor:pointer;padding:4px 8px;" title="Receipts">&#x1f4ce;</button>
             <button type="button" onclick='deleteBudgetCategory(${c.id}, ${safeName})' style="background:none;border:none;color:var(--light-text);font-size:1.1rem;cursor:pointer;padding:4px 8px;" title="Delete">&times;</button>
@@ -4274,13 +4240,9 @@ async function deleteBudgetCategory(id, name) {
 const _budgetOverview = {
     rooms: 0,
     hotelCost: 0,
-    // Conference space + tax & fees. Tracked separately from hotelCost so
-    // What's Left can subtract the full venue bill, not just the rooms.
-    venueOtherCost: 0,
     revenue: 0,
     actualRevenue: 0,
-    budgetSpent: 0,
-    budgetPlanned: 0
+    budgetSpent: 0
 };
 
 function refreshBudgetOverview() {
@@ -4290,23 +4252,41 @@ function refreshBudgetOverview() {
     const spentEl = document.getElementById('ov-spent');
     const leftEl = document.getElementById('ov-remaining');
     if (!roomsEl) return;
-    roomsEl.textContent = _budgetOverview.rooms || 0;
-    hotelEl.textContent = fmtMoney(_budgetOverview.hotelCost || 0);
-    revEl.textContent = fmtMoney(_budgetOverview.revenue || 0);
-    spentEl.textContent = fmtMoney(_budgetOverview.budgetSpent || 0);
+
+    const totalWomen = _budgetOverview.rooms || 0;
+    const hotelCost = _budgetOverview.hotelCost || 0;
+    const budgetSpent = _budgetOverview.budgetSpent || 0;
+    const projectedRev = _budgetOverview.revenue || 0;
+    const actualRev = _budgetOverview.actualRevenue || 0;
+
+    // Use actual revenue if any payments have come in, otherwise projected
+    const revenueUsed = actualRev > 0 ? actualRev : projectedRev;
+    const totalCosts = hotelCost + budgetSpent;
+    const profit = revenueUsed - totalCosts;
+    const margin = revenueUsed > 0 ? ((profit / revenueUsed) * 100) : null;
+
+    roomsEl.textContent = totalWomen;
+    hotelEl.textContent = fmtMoney(hotelCost);
+    revEl.textContent = fmtMoney(projectedRev);
+    spentEl.textContent = fmtMoney(budgetSpent);
+
     var actualRevEl = document.getElementById('ov-actual-revenue');
-    if (actualRevEl) actualRevEl.textContent = fmtMoney(_budgetOverview.actualRevenue || 0);
-    // "What's Left" uses actual revenue if there is any, otherwise projected.
-    // Costs subtracted are the full venue bill (rooms + conference + tax)
-    // plus what's actually been spent from the budget categories — leaving
-    // out conference and tax overstated what was left by their whole value.
-    const revenueForCalc = (_budgetOverview.actualRevenue > 0) ? _budgetOverview.actualRevenue : (_budgetOverview.revenue || 0);
-    const remaining = revenueForCalc
-        - (_budgetOverview.hotelCost || 0)
-        - (_budgetOverview.venueOtherCost || 0)
-        - (_budgetOverview.budgetSpent || 0);
-    leftEl.textContent = fmtMoney(remaining);
-    leftEl.style.color = remaining >= 0 ? 'var(--rose)' : '#a13224';
+    if (actualRevEl) actualRevEl.textContent = fmtMoney(actualRev);
+
+    leftEl.textContent = fmtMoney(profit);
+    leftEl.style.color = profit >= 0 ? 'var(--rose)' : '#a13224';
+
+    // Margin % under the profit card
+    var marginEl = document.getElementById('ov-margin');
+    if (marginEl) {
+        marginEl.textContent = margin !== null ? margin.toFixed(1) + '% margin' : 'Revenue − all costs';
+    }
+
+    // Formula bar: show which revenue source is active
+    var formulaRevEl = document.getElementById('ov-formula-rev');
+    if (formulaRevEl) {
+        formulaRevEl.textContent = actualRev > 0 ? 'Actual Revenue (' + fmtMoney(actualRev) + ')' : 'Projected Revenue (' + fmtMoney(projectedRev) + ')';
+    }
 }
 
 // --- Retreat Cost Calculator (Phase 2) ---
@@ -4328,6 +4308,7 @@ const _calcFieldMap = {
     'calc-room-base':       'retreat_calc_room_base',
     'calc-room-extra':      'retreat_calc_room_extra',
     'calc-nights':          'retreat_calc_nights',
+    'calc-food-cost':       'retreat_calc_food_cost',
     'calc-conference-cost': 'retreat_calc_conference_cost',
     'calc-tax-rate':        'retreat_calc_tax_rate',
     'calc-n1':              'retreat_calc_n1',
@@ -4414,35 +4395,6 @@ async function initRetreatCalculator() {
     recalcRetreatCalculator();
 }
 
-// Pulls current room-size preferences from active registrations into the
-// "Expected rooms" boxes as a one-time snapshot — not a live binding, so
-// she can freely tweak the numbers afterward for what-if scenarios without
-// them getting overwritten again until she clicks this a second time.
-// room_size_preference is what each woman asked for, not a finalized room
-// assignment, so shared rooms (2/3/4-person) are estimated by dividing her
-// preference-tier headcount by the room size and rounding up.
-async function useActualRegistrations() {
-    try {
-        const data = await apiFetch('/api/admin/participants');
-        const participants = ((data && data.participants) || []).filter(p => p.participant_status !== 'inactive');
-        const prefCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
-        participants.forEach(p => {
-            const pref = prefCounts.hasOwnProperty(p.room_size_preference) ? p.room_size_preference : 0;
-            prefCounts[pref]++;
-        });
-        document.getElementById('calc-n0').value = prefCounts[0];
-        document.getElementById('calc-n1').value = prefCounts[1];
-        document.getElementById('calc-n2').value = Math.ceil(prefCounts[2] / 2);
-        document.getElementById('calc-n3').value = Math.ceil(prefCounts[3] / 3);
-        document.getElementById('calc-n4').value = Math.ceil(prefCounts[4] / 4);
-        recalcRetreatCalculator();
-        scheduleCalcStateSave();
-        showToast('Loaded from ' + participants.length + ' active registration' + (participants.length === 1 ? '' : 's'));
-    } catch (e) {
-        showToast('Could not load registrations: ' + (e.message || ''));
-    }
-}
-
 // Returns the total room cost for the whole retreat (nights × nightly rate)
 // for a given room occupancy. 1 or 2 women pay the base rate; 3 and 4 women
 // add the per-extra-woman surcharge for the 3rd and 4th.
@@ -4456,6 +4408,7 @@ function recalcRetreatCalculator() {
     const baseNightly = parseFloat(document.getElementById('calc-room-base').value) || 0;
     const extraNightly = parseFloat(document.getElementById('calc-room-extra').value) || 0;
     const nights = parseInt(document.getElementById('calc-nights').value, 10) || 0;
+    const foodCost = 0; // Food is tracked in Budget by Category
     const confCost = parseFloat(document.getElementById('calc-conference-cost').value) || 0;
     const taxRate = (parseFloat(document.getElementById('calc-tax-rate').value) || 0) / 100;
     const n1 = parseInt(document.getElementById('calc-n1').value, 10) || 0;
@@ -4477,13 +4430,10 @@ function recalcRetreatCalculator() {
     // Keep the top overview cards in sync with whatever's typed into the
     // calculator (live projected values). The "What's Left" card combines
     // these with the budget-categories actual total.
-    _budgetOverview.rooms = n1 + n2 + n3 + n4;
+    _budgetOverview.rooms = totalWomen;
     _budgetOverview.revenue = (n0 * charge0) + (n1 * charge1) + (n2 * 2 * charge2) + (n3 * 3 * charge3) + (n4 * 4 * charge4);
-    // hotelCost/venueOtherCost are computed below for the projected total
-    // path; reset here so a cleared calculator doesn't leave stale costs
-    // subtracting from What's Left
+    // hotelCost is computed below for the projected total path; default 0
     _budgetOverview.hotelCost = 0;
-    _budgetOverview.venueOtherCost = 0;
 
     // No costs entered yet — show a gentle hint
     if (baseNightly <= 0 && confCost <= 0) {
@@ -4499,8 +4449,8 @@ function recalcRetreatCalculator() {
     // Per-occupancy breakdown: no hotel, 1, 2, 3, 4 women per room
     const rows = [1, 2, 3, 4, 0].map(occ => {
         if (occ === 0) {
-            // No hotel — only conference + tax
-            const subtotal = (confPerWoman || 0);
+            // No hotel — only food + conference + tax
+            const subtotal = foodCost + (confPerWoman || 0);
             const tax = subtotal * taxRate;
             const total = subtotal + tax;
             const occCharge = charges[0] || 0;
@@ -4509,7 +4459,7 @@ function recalcRetreatCalculator() {
         }
         const roomTotal = roomCostForOccupancy(occ, baseNightly, extraNightly, nights);
         const roomPerWoman = roomTotal / occ;
-        const subtotal = roomPerWoman + (confPerWoman || 0);
+        const subtotal = roomPerWoman + foodCost + (confPerWoman || 0);
         const tax = subtotal * taxRate;
         const total = subtotal + tax;
         const occCharge = charges[occ] || 0;
@@ -4553,33 +4503,40 @@ function recalcRetreatCalculator() {
         (n2 * roomCostForOccupancy(2, baseNightly, extraNightly, nights)) +
         (n3 * roomCostForOccupancy(3, baseNightly, extraNightly, nights)) +
         (n4 * roomCostForOccupancy(4, baseNightly, extraNightly, nights));
-    // Push the hotel number into the overview cards
-    _budgetOverview.hotelCost = totalRoomCost;
     const totalConfCost = confCost;
-    const totalSubtotal = totalRoomCost + totalConfCost;
-    const totalTax = totalSubtotal * taxRate;
-    // Budget by Category's planned line items (speaker, dinner, decor, etc.)
-    // are real costs on top of the venue math above — "All costs" isn't
-    // complete without them. Not run through the venue tax rate; those
-    // planned amounts are whatever she budgeted them at.
+    const hotelSubtotal = totalRoomCost + totalConfCost;
+    const hotelTax = hotelSubtotal * taxRate;
+    const hotelTotal = hotelSubtotal + hotelTax;
+    // Push the full hotel total (rooms + conf + tax) into the overview cards
+    _budgetOverview.hotelCost = hotelTotal;
+
+    // Budget categories: actual per line if entered, else planned
+    const budgetTotal = _budgetOverview.budgetSpent || 0;
+    const budgetActual = _budgetOverview.budgetActual || 0;
     const budgetPlanned = _budgetOverview.budgetPlanned || 0;
-    const totalCost = totalSubtotal + totalTax + budgetPlanned;
-    _budgetOverview.venueOtherCost = totalConfCost + totalTax;
+    const budgetLabel = budgetActual > 0
+        ? 'Budget actual (' + fmtMoney(budgetActual) + ' of ' + fmtMoney(budgetPlanned) + ' planned)'
+        : (budgetPlanned > 0 ? 'Budget planned' : 'Budget (none entered)');
+
+    const totalCost = hotelTotal + budgetTotal;
     const totalRevenue = (n0 * charge0) + (n1 * charge1) + (n2 * 2 * charge2) + (n3 * 3 * charge3) + (n4 * 4 * charge4);
     const totalProfit = totalRevenue - totalCost;
     const margin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100) : 0;
     const profitColor = totalProfit >= 0 ? 'var(--sage)' : '#a13224';
 
     totalEl.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;margin-bottom:12px;">
             <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Women</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--taupe);">${totalWomen}</div></div>
             <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Revenue</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--sage);">${fmtMoney(totalRevenue)}</div></div>
-            <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">All costs</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--accent);">${fmtMoney(totalCost)}</div></div>
+            <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">All Costs</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:var(--accent);">${fmtMoney(totalCost)}</div></div>
             <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Profit</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:${profitColor};">${fmtMoney(totalProfit)}</div></div>
             <div><div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--light-text);font-weight:600;">Margin</div><div style="font-family:Playfair Display,serif;font-size:1.3rem;font-weight:700;color:${profitColor};">${totalRevenue > 0 ? margin.toFixed(1) + '%' : '—'}</div></div>
         </div>
-        <div style="margin-top:10px;padding-top:10px;border-top:1px dashed rgba(138,158,122,0.25);font-size:0.78rem;color:var(--light-text);">
-            Rooms ${fmtMoney(totalRoomCost)} &middot; Conference ${fmtMoney(totalConfCost)} &middot; Tax &amp; fees ${fmtMoney(totalTax)} &middot; Budget Categories ${fmtMoney(budgetPlanned)}
+        <div style="display:flex;flex-direction:column;gap:4px;padding:10px 12px;background:rgba(247,240,235,0.6);border-radius:8px;font-size:0.8rem;">
+            <div style="display:flex;justify-content:space-between;color:var(--light-text);"><span>Hotel &amp; venue (rooms + conf + tax)</span><span style="color:var(--taupe);font-weight:600;">${fmtMoney(hotelTotal)}</span></div>
+            <div style="display:flex;justify-content:space-between;color:var(--light-text);"><span>${budgetLabel}</span><span style="color:var(--taupe);font-weight:600;">${fmtMoney(budgetTotal)}</span></div>
+            <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(200,185,176,0.4);margin-top:4px;padding-top:4px;font-weight:700;color:var(--taupe);"><span>Total costs</span><span>${fmtMoney(totalCost)}</span></div>
+            <div style="display:flex;justify-content:space-between;font-weight:700;color:${profitColor};"><span>Profit</span><span>${fmtMoney(totalProfit)} ${totalRevenue > 0 ? '(' + margin.toFixed(1) + '%)' : ''}</span></div>
         </div>
     `;
 
@@ -4681,14 +4638,7 @@ function parseRegCsv(text) {
                 else inQuotes = false;
             } else field += c;
         } else {
-            // A quote only opens a quoted field at the very START of a
-            // field. A stray quote mid-field (e.g. a 3" heels or a quoted
-            // phrase in a free-text church-form answer) is common in real
-            // exports and would otherwise swallow everything after it,
-            // including subsequent commas and newlines, until the next
-            // unrelated quote character turned up somewhere later in the
-            // file - corrupting every row in between.
-            if (c === '"' && field === '') inQuotes = true;
+            if (c === '"') inQuotes = true;
             else if (c === ',') { row.push(field); field = ''; }
             else if (c === '\n' || c === '\r') {
                 if (c === '\r' && text[i + 1] === '\n') i++;
@@ -4711,32 +4661,15 @@ function handleRegCsvUpload(event) {
     reader.onload = () => {
         _regCsv = parseRegCsv(reader.result);
         if (!_regCsv.headers.length) { showToast('Could not read that file — is it a CSV?'); return; }
-        // Check needles in priority order across ALL headers before falling
-        // back to the next needle, rather than scanning headers left-to-right
-        // for the first that matches ANY needle — otherwise an early, loosely
-        // matching column (e.g. "Subtotal" containing "total") wins over a
-        // later, more specific one ("Form Total") purely by column position.
-        const guess = (needles) => {
-            for (const n of needles) {
-                const idx = _regCsv.headers.findIndex(h => h.toLowerCase().includes(n));
-                if (idx >= 0) return idx;
-            }
-            return -1;
-        };
-        // Prefer an explicit "First Name" column over a generic "Name" one,
-        // so first and last can be mapped separately and matched as a full
-        // name rather than a first name alone.
-        const nameIdx = guess(['first name', 'firstname', 'name']);
-        const lastNameIdx = (() => {
-            const idx = guess(['last name', 'lastname', 'surname']);
-            return idx !== nameIdx ? idx : -1;
+        const guess = (needles) => _regCsv.headers.findIndex(h => needles.some(n => h.toLowerCase().includes(n)));
+        // Prefer explicit "first name" column; fall back to any "name" column
+        const firstNameIdx = (() => {
+            const explicit = _regCsv.headers.findIndex(h => /first\s*name|first/i.test(h));
+            return explicit >= 0 ? explicit : guess(['name']);
         })();
+        const lastNameIdx = _regCsv.headers.findIndex(h => /last\s*name|last|surname/i.test(h));
         const emailIdx = guess(['email']);
-        // "Form Total" (church form's actual charge for this submission) is
-        // preferred over generic 'total'/'amount' matches, which can land on
-        // an unrelated column like "Subtotal" that doesn't track the real
-        // payment (e.g. it can read $0 while Form Total reads $50).
-        const amountIdx = guess(['form total', 'amount paid', 'amount', 'paid', 'price', 'total']);
+        const amountIdx = guess(['amount', 'paid', 'total', 'price']);
         const dateIdx = guess(['date']);
         // Detect roommate FIRST so headers like "Roommate Preferences" don't get stolen by the room-size check
         const roommateIdx = guess(['roommate', 'room with', 'who would you like', 'rooming preference', 'room preference', 'room pref']);
@@ -4750,9 +4683,9 @@ function handleRegCsvUpload(event) {
         const optionsHtml = _regCsv.headers.map((h, i) => `<option value="${i}">${esc(h || '(column ' + (i + 1) + ')')}</option>`).join('');
         const optionalOptionsHtml = '<option value="-1">— None —</option>' + optionsHtml;
         ['reg-col-name', 'reg-col-amount', 'reg-col-date'].forEach(id => { document.getElementById(id).innerHTML = optionsHtml; });
-        ['reg-col-last-name', 'reg-col-email', 'reg-col-room', 'reg-col-roommate'].forEach(id => { document.getElementById(id).innerHTML = optionalOptionsHtml; });
-        if (nameIdx >= 0) document.getElementById('reg-col-name').value = nameIdx;
-        if (lastNameIdx >= 0) document.getElementById('reg-col-last-name').value = lastNameIdx;
+        ['reg-col-lastname', 'reg-col-email', 'reg-col-room', 'reg-col-roommate'].forEach(id => { document.getElementById(id).innerHTML = optionalOptionsHtml; });
+        if (firstNameIdx >= 0) document.getElementById('reg-col-name').value = firstNameIdx;
+        if (lastNameIdx >= 0) document.getElementById('reg-col-lastname').value = lastNameIdx;
         if (emailIdx >= 0) document.getElementById('reg-col-email').value = emailIdx;
         if (amountIdx >= 0) document.getElementById('reg-col-amount').value = amountIdx;
         if (dateIdx >= 0) document.getElementById('reg-col-date').value = dateIdx;
@@ -4768,7 +4701,7 @@ function handleRegCsvUpload(event) {
 let _regPreview = [];
 async function previewRegMatches() {
     const nameCol = parseInt(document.getElementById('reg-col-name').value, 10);
-    const lastNameCol = parseInt(document.getElementById('reg-col-last-name').value, 10);
+    const lastNameCol = parseInt(document.getElementById('reg-col-lastname').value, 10);
     const emailCol = parseInt(document.getElementById('reg-col-email').value, 10);
     const amountCol = parseInt(document.getElementById('reg-col-amount').value, 10);
     const dateCol = parseInt(document.getElementById('reg-col-date').value, 10);
@@ -4777,19 +4710,18 @@ async function previewRegMatches() {
     const rows = _regCsv.rows.map(r => {
         const firstName = (r[nameCol] || '').trim();
         const lastName = lastNameCol >= 0 ? (r[lastNameCol] || '').trim() : '';
+        const fullName = lastName ? firstName + ' ' + lastName : firstName;
         return {
-            // `name` stays the full name so matching scores against both
-            // parts, not just the first name
-            name: [firstName, lastName].filter(Boolean).join(' '),
+            name: fullName,
             first_name: firstName,
             last_name: lastName,
             email: emailCol >= 0 ? (r[emailCol] || '').trim() : '',
             amount: (r[amountCol] || '').replace(/[^0-9.-]/g, ''),
             date: (r[dateCol] || '').trim(),
-            room_size_preference: roomCol >= 0 ? (r[roomCol] || '').trim() : '',
-            roommate_requests: roommateCol >= 0 ? (r[roommateCol] || '').trim() : ''
+            room_size_preference: roomCol >= 0 ? (r[roomCol] || '').trim() : undefined,
+            roommate_requests: roommateCol >= 0 ? (r[roommateCol] || '').trim() : undefined
         };
-    }).filter(r => r.name);
+    }).filter(r => r.first_name);
     if (!rows.length) { showToast('No named rows to match'); return; }
     try {
         const data = await apiFetch('/api/admin/registrations/match', { method: 'POST', body: { rows } });
@@ -4803,12 +4735,11 @@ function renderRegPreview() {
     el.innerHTML = `
         <table style="width:100%;border-collapse:collapse;font-size:0.86rem;">
             <thead><tr style="text-align:left;color:var(--taupe);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">
-                <th style="padding:6px 8px;">CSV name</th><th style="padding:6px 8px;">Email</th><th style="padding:6px 8px;">Paid</th><th style="padding:6px 8px;">Date</th><th style="padding:6px 8px;">Room</th><th style="padding:6px 8px;">Roommates</th><th style="padding:6px 8px;">Match</th>
+                <th style="padding:6px 8px;">CSV name</th><th style="padding:6px 8px;">Paid</th><th style="padding:6px 8px;">Date</th><th style="padding:6px 8px;">Room</th><th style="padding:6px 8px;">Roommates</th><th style="padding:6px 8px;">Match</th>
             </tr></thead>
             <tbody>${_regPreview.map((row, i) => `
                 <tr style="border-top:1px solid rgba(200,185,176,0.2);">
                     <td style="padding:6px 8px;">${esc(row.name)}</td>
-                    <td style="padding:6px 8px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:${row.email ? 'var(--dark-text)' : 'var(--light-text)'};" title="${esc(row.email || '')}">${esc(row.email) || '—'}</td>
                     <td style="padding:6px 8px;">${row.amount ? '$' + esc(row.amount) : '—'}</td>
                     <td style="padding:6px 8px;">${esc(row.date) || '—'}</td>
                     <td style="padding:6px 8px;color:${row.room_size_preference ? 'var(--dark-text)' : 'var(--light-text)'};">${esc(row.room_size_preference) || '—'}</td>
@@ -4816,8 +4747,8 @@ function renderRegPreview() {
                     <td style="padding:6px 8px;">
                         <select id="reg-match-${i}" style="padding:4px 6px;border:1px solid var(--warm-grey);border-radius:8px;font-family:inherit;font-size:0.82rem;">
                             <option value="skip">— Skip —</option>
-                            <option value="new" ${!row.best_match_id ? 'selected' : ''}>Create new: "${esc(row.name)}"</option>
-                            ${row.candidates.map(c => `<option value="${c.user_id}" ${row.best_match_id === c.user_id ? 'selected' : ''}>${esc(c.display_name)} (${c.matched_by === 'email' ? 'email match' : c.score + '% name'})</option>`).join('')}
+                            <option value="new">Create new: "${esc(row.name)}"</option>
+                            ${row.candidates.map(c => `<option value="${c.user_id}" ${row.best_match_id === c.user_id ? 'selected' : ''}>${esc(c.display_name)} (${c.score}%)</option>`).join('')}
                         </select>
                     </td>
                 </tr>`).join('')}
@@ -4831,10 +4762,8 @@ async function commitRegImport() {
     _regPreview.forEach((row, i) => {
         const sel = document.getElementById('reg-match-' + i);
         if (!sel || sel.value === 'skip') return;
-        // Email always goes through, even when matched to an existing user,
-        // so her address gets filled in/updated from the church form.
-        const entry = { amount: row.amount, date: row.date, source: 'csv_import', room_size_preference: row.room_size_preference || '', roommate_requests: row.roommate_requests || '', email: row.email || '' };
-        if (sel.value === 'new') entry.name = row.name;
+        const entry = { amount: row.amount, date: row.date, source: 'csv_import', email: row.email || '', room_size_preference: row.room_size_preference, roommate_requests: row.roommate_requests };
+        if (sel.value === 'new') { entry.first_name = row.first_name; entry.last_name = row.last_name; entry.name = row.name; }
         else entry.user_id = parseInt(sel.value, 10);
         entries.push(entry);
     });
@@ -4850,7 +4779,6 @@ async function commitRegImport() {
         loadRegistrationsList();
         loadParticipants();
         loadRoomAssignments();
-        loadUsers();
     } catch (e) {
         showToast('Import failed: ' + (e.message || ''));
     } finally {
@@ -4921,140 +4849,8 @@ async function loadParticipants() {
         }
         renderParticipantsTable();
         loadRoomAssignments();
-        loadReconcile();
     } catch (e) {
         showToast('Could not load participants: ' + (e.message || ''));
-    }
-}
-
-// ---- Reconciliation -------------------------------------------------
-// The roster stores what each woman has paid in two places: a copy on her
-// user row (what the Registrations tab reads) and the payments table (the
-// real record). New payments keep both in step, but rows that drifted
-// before that was true stay wrong until someone notices. This panel is
-// that someone.
-let _reconcile = null;
-
-const RECONCILE_FLAG_STYLE = {
-    paid_drift: { color: '#a13224', bg: 'rgba(161,50,36,0.10)' },
-    owed_drift: { color: '#c4882d', bg: 'rgba(196,136,45,0.12)' },
-    no_amount_owed: { color: 'var(--taupe)', bg: 'rgba(200,185,176,0.25)' },
-    overpaid: { color: '#c4882d', bg: 'rgba(196,136,45,0.12)' }
-};
-
-async function loadReconcile() {
-    const body = document.getElementById('reconcile-body');
-    if (!body) return;
-    body.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);padding:6px 0;">Checking…</div>';
-    try {
-        _reconcile = await apiFetch('/api/admin/reconcile');
-        renderReconcile();
-    } catch (e) {
-        body.innerHTML = '<div style="font-size:0.85rem;color:#a13224;padding:6px 0;">Could not run the check: ' + esc(e.message || '') + '</div>';
-    }
-}
-
-function renderReconcile() {
-    const body = document.getElementById('reconcile-body');
-    if (!body || !_reconcile) return;
-    const s = _reconcile.summary || {};
-    const issues = _reconcile.issues || [];
-    const orphans = _reconcile.orphan_payments || [];
-
-    if (!issues.length && !orphans.length) {
-        body.innerHTML = '<div style="padding:14px 16px;background:rgba(91,154,111,0.10);border-radius:10px;font-size:0.9rem;color:#3f7350;">'
-            + '<strong>Everything ties out.</strong> All ' + (s.checked || 0) + ' women on the ' + (_reconcile.year || '') + ' roster have stored totals that match their payment records.'
-            + '</div>';
-        return;
-    }
-
-    let html = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.9rem;">'
-        + reconcileChip(s.flagged || 0, (s.flagged === 1 ? 'woman' : 'women') + ' flagged', '#a13224')
-        + reconcileChip(s.checked || 0, 'checked', 'var(--light-text)')
-        + '</div>';
-
-    if (s.paid_drift) {
-        html += '<div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:10px 14px;background:rgba(161,50,36,0.07);border-radius:10px;">'
-            + '<span style="font-size:0.85rem;color:var(--dark-text);">' + s.paid_drift + ' ' + (s.paid_drift === 1 ? 'row has' : 'rows have') + ' a stored paid total that disagrees with her payment records.</span>'
-            + '<button class="btn" style="margin-left:auto;font-size:0.75rem;padding:5px 12px;background:rgba(161,50,36,0.15);color:#a13224;" onclick="fixAllReconcile(\'paid\')">Resync all</button>'
-            + '</div>';
-    }
-    if (s.owed_drift) {
-        html += '<div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:10px 14px;background:rgba(196,136,45,0.08);border-radius:10px;">'
-            + '<span style="font-size:0.85rem;color:var(--dark-text);">' + s.owed_drift + ' ' + (s.owed_drift === 1 ? 'row does' : 'rows do') + ' not match the price of the room size on file.</span>'
-            + '<button class="btn" style="margin-left:auto;font-size:0.75rem;padding:5px 12px;background:rgba(196,136,45,0.18);color:#8a5d17;" onclick="fixAllReconcile(\'owed\')">Reprice all</button>'
-            + '</div>';
-    }
-
-    if (issues.length) {
-        html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.85rem;">'
-            + '<thead><tr style="text-align:left;color:var(--light-text);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">'
-            + '<th style="padding:8px 10px;">Who</th><th style="padding:8px 10px;">What is off</th>'
-            + '<th style="padding:8px 10px;text-align:right;">Owed</th><th style="padding:8px 10px;text-align:right;">Paid</th>'
-            + '<th style="padding:8px 10px;"></th></tr></thead><tbody>';
-        issues.forEach(i => {
-            const flagHtml = i.flags.map(f => {
-                const st = RECONCILE_FLAG_STYLE[f.type] || RECONCILE_FLAG_STYLE.no_amount_owed;
-                return '<div style="margin-bottom:4px;">'
-                    + '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:' + st.bg + ';color:' + st.color + ';font-size:0.7rem;font-weight:600;">' + esc(f.label) + '</span>'
-                    + '<div style="color:var(--light-text);font-size:0.78rem;margin-top:2px;">' + esc(f.detail) + '</div>'
-                    + '</div>';
-            }).join('');
-            const fixable = i.flags.filter(f => f.fix);
-            const buttons = fixable.map(f => '<button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.18);color:var(--sage);white-space:nowrap;" onclick="fixReconcile(\'' + f.fix + '\', ' + i.user_id + ')">'
-                + (f.fix === 'paid' ? 'Resync' : 'Reprice') + '</button>').join(' ');
-            html += '<tr style="border-top:1px solid rgba(200,185,176,0.4);vertical-align:top;">'
-                + '<td style="padding:10px;"><div style="font-weight:600;">' + esc(i.name) + '</div>'
-                + (i.email ? '<div style="color:var(--light-text);font-size:0.76rem;">' + esc(i.email) + '</div>' : '')
-                + '</td>'
-                + '<td style="padding:10px;">' + flagHtml + '</td>'
-                + '<td style="padding:10px;text-align:right;font-family:-apple-system,sans-serif;font-variant-numeric:tabular-nums;">' + fmtMoney(i.total_owed) + '</td>'
-                + '<td style="padding:10px;text-align:right;font-family:-apple-system,sans-serif;font-variant-numeric:tabular-nums;">' + fmtMoney(i.actual_paid)
-                + (Math.abs(i.stored_paid - i.actual_paid) >= 0.01 ? '<div style="color:var(--light-text);font-size:0.72rem;">stored ' + fmtMoney(i.stored_paid) + '</div>' : '')
-                + '</td>'
-                + '<td style="padding:10px;text-align:right;white-space:nowrap;">' + (buttons || '<span style="color:var(--light-text);font-size:0.75rem;">needs your call</span>') + '</td>'
-                + '</tr>';
-        });
-        html += '</tbody></table></div>';
-    }
-
-    if (orphans.length) {
-        html += '<div style="margin-top:1rem;padding:12px 14px;background:rgba(161,50,36,0.07);border-radius:10px;">'
-            + '<div style="font-weight:600;font-size:0.88rem;color:#a13224;">' + orphans.length + ' payment' + (orphans.length === 1 ? '' : 's')
-            + ' totalling ' + fmtMoney(_reconcile.summary.orphan_total || 0) + ' belong to women who are no longer on the roster.</div>'
-            + '<div style="font-size:0.8rem;color:var(--light-text);margin-top:4px;">They are in the payments table but not counted in anyone\'s total. Usually left behind when someone was removed. Worth checking she really did not attend before writing the money off.</div>'
-            + '</div>';
-    }
-
-    body.innerHTML = html;
-}
-
-function reconcileChip(n, label, color) {
-    return '<span style="padding:4px 12px;border-radius:999px;background:rgba(200,185,176,0.2);font-size:0.78rem;color:' + color + ';">'
-        + '<strong style="font-family:-apple-system,sans-serif;font-variant-numeric:tabular-nums;">' + n + '</strong> ' + label + '</span>';
-}
-
-async function fixReconcile(field, userId) {
-    try {
-        await apiFetch('/api/admin/reconcile/fix', { method: 'POST', body: { fix: field, user_id: userId } });
-        showToast(field === 'paid' ? 'Paid total resynced' : 'Amount owed repriced');
-        await loadParticipants();
-    } catch (e) {
-        showToast('Could not fix that: ' + (e.message || ''));
-    }
-}
-
-async function fixAllReconcile(field) {
-    const what = field === 'paid'
-        ? 'Resync every drifted paid total from the payment records?'
-        : 'Reset every mismatched total owed to the price of her room size?';
-    if (!confirm(what)) return;
-    try {
-        const res = await apiFetch('/api/admin/reconcile/fix', { method: 'POST', body: { fix: field, all: true } });
-        showToast('Fixed ' + (res.fixed || 0) + ' row' + (res.fixed === 1 ? '' : 's'));
-        await loadParticipants();
-    } catch (e) {
-        showToast('Could not fix those: ' + (e.message || ''));
     }
 }
 
@@ -5137,7 +4933,7 @@ function renderParticipantsTable() {
         var name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
         var balance = (p.total_owed || 0) - (p.total_paid || 0);
         if (payBtn) payBtn.addEventListener('click', function() { openAddPaymentModal(p.id, name, balance); });
-        if (editBtn) editBtn.addEventListener('click', function() { openEditParticipantModal(p.id, p.first_name || '', p.last_name || '', p.room_size_preference || 0, p.total_owed || 0, p.roommate_requests || ''); });
+        if (editBtn) editBtn.addEventListener('click', function() { openEditParticipantModal(p.id, name, p.room_size_preference || 0, p.total_owed || 0, p.roommate_requests || ''); });
         if (deleteBtn) deleteBtn.addEventListener('click', function() { deleteParticipant(p.id); });
         if (remindBtn) remindBtn.addEventListener('click', function() { sendOneReminder(p.id, name); });
     });
@@ -5147,7 +4943,8 @@ function renderParticipantsTable() {
 function openEditParticipantModalById(id) {
     const p = window._participantById && window._participantById[id];
     if (!p) return;
-    openEditParticipantModal(p.id, p.first_name || '', p.last_name || '', p.room_size_preference || 0, p.total_owed || 0, p.roommate_requests || '');
+    const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
+    openEditParticipantModal(p.id, name, p.room_size_preference || 0, p.total_owed || 0, p.roommate_requests || '');
 }
 function openAddPaymentModalById(id) {
     const p = window._participantById && window._participantById[id];
@@ -5163,28 +4960,16 @@ function sendOneReminderById(id) {
     sendOneReminder(p.id, name);
 }
 
-function openEditParticipantModal(userId, firstName, lastName, roomPref, totalOwed, roommateRequests) {
+function openEditParticipantModal(userId, name, roomPref, totalOwed, roommateRequests) {
     const existing = document.getElementById('edit-participant-modal');
     if (existing) existing.remove();
-    const name = lastName ? (firstName + ' ' + lastName) : firstName;
     const modal = document.createElement('div');
     modal.id = 'edit-participant-modal';
     modal.className = 'modal-overlay show';
-    modal.style.display = 'flex';
     modal.innerHTML = `
         <div class="modal-box" style="max-width:420px;">
-            <h2 style="font-family:Playfair Display,serif;font-size:1.1rem;margin-bottom:4px;">Edit: ${esc(name)}</h2>
+            <h2 style="font-family:Playfair Display,serif;font-size:1.1rem;margin-bottom:4px;">Edit: ${name}</h2>
             <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px;">
-                <div style="display:flex;gap:10px;">
-                    <div style="flex:1;">
-                        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">First Name</label>
-                        <input type="text" id="ep-first-name" value="${esc(firstName || '')}" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;box-sizing:border-box;">
-                    </div>
-                    <div style="flex:1;">
-                        <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Last Name</label>
-                        <input type="text" id="ep-last-name" value="${esc(lastName || '')}" style="width:100%;padding:8px 12px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:16px;box-sizing:border-box;">
-                    </div>
-                </div>
                 <div>
                     <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">Room Size</label>
                     <select id="ep-room" style="width:100%;padding:8px 10px;border:1.5px solid var(--warm-grey);border-radius:10px;font-family:inherit;font-size:0.9rem;">
@@ -5218,9 +5003,6 @@ function openEditParticipantModal(userId, firstName, lastName, roomPref, totalOw
 }
 
 async function saveEditParticipant(userId) {
-    const firstName = document.getElementById('ep-first-name').value.trim();
-    const lastName = document.getElementById('ep-last-name').value.trim();
-    if (!firstName) { showToast('First name is required'); return; }
     const roomPref = parseInt(document.getElementById('ep-room').value, 10);
     const roommateRequests = document.getElementById('ep-roommates').value.trim();
     const totalOwed = parseFloat(document.getElementById('ep-owed').value) || 0;
@@ -5228,7 +5010,7 @@ async function saveEditParticipant(userId) {
     const ROOM_PRICE = { 0: 130, 1: 430, 2: 280, 3: 230, 4: 190 };
     const owed = totalOwed > 0 ? totalOwed : (ROOM_PRICE[roomPref] || 0);
     try {
-        await apiFetch('/api/admin/participants/' + userId, { method: 'POST', body: { first_name: firstName, last_name: lastName, room_size_preference: roomPref, roommate_requests: roommateRequests, total_owed: owed } });
+        await apiFetch('/api/admin/participants/' + userId, { method: 'POST', body: { room_size_preference: roomPref, roommate_requests: roommateRequests, total_owed: owed } });
         document.getElementById('edit-participant-modal').remove();
         showToast('Saved ✓');
         loadParticipants();
@@ -5260,7 +5042,6 @@ function openAddPaymentModal(userId, name, balance) {
     const modal = document.createElement('div');
     modal.id = 'add-payment-modal';
     modal.className = 'modal-overlay show';
-    modal.style.display = 'flex';
     modal.innerHTML = `
         <div class="modal-box" style="max-width:400px;">
             <h2 style="font-family:Playfair Display,serif;font-size:1.1rem;margin-bottom:4px;">Add Payment</h2>
@@ -5309,32 +5090,15 @@ async function handleParticipantCsvUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
     const text = await file.text();
-    const isTabDelimited = (text.split('\n')[0] || '').split('\t').length > 1;
-    let headers, dataRows;
-    if (isTabDelimited) {
-        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-        if (lines.length < 2) { showToast('CSV appears empty'); return; }
-        headers = lines[0].split('\t').map(h => h.replace(/['"]/g, '').trim());
-        dataRows = lines.slice(1).map(l => l.split('\t').map(f => f.replace(/['"]/g, '').trim()));
-    } else {
-        // Quote-aware parse — a plain split(',') breaks the moment any church
-        // form answer (church name, roommate list) contains a comma, shifting
-        // every column after it out of alignment for that row.
-        const parsed = parseRegCsv(text);
-        if (!parsed.headers.length) { showToast('CSV appears empty'); return; }
-        headers = parsed.headers.map(h => h.trim());
-        dataRows = parsed.rows;
-    }
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) { showToast('CSV appears empty'); return; }
 
+    const headers = lines[0].split('\t').length > 1 ? lines[0].split('\t') : lines[0].split(',');
     const clean = h => h.replace(/['"]/g, '').trim().toLowerCase();
     const headerMap = {};
     headers.forEach((h, i) => { headerMap[clean(h)] = i; });
 
-    // Map church form field names to our fields. "Form Total" is what she
-    // actually paid on THIS form submission (a $50 deposit, or the full
-    // amount if she paid in full) — it's a payment amount, not her total
-    // cost. Total cost is derived server-side from her room size instead,
-    // same as the Registrations tab's CSV import.
+    // Map church form field names to our fields
     const fieldMap = {
         first_name: ['first name', 'firstname'],
         last_name: ['last name', 'lastname'],
@@ -5344,6 +5108,7 @@ async function handleParticipantCsvUpload(event) {
         form_total: ['form total', 'total'],
         room_size_preference: ['how many people per room', 'people per room'],
         roommate_requests: ['roommate preferences', 'roommate'],
+        payment_amount: ['form total'],
         payment_date: ['date submitted'],
         payment_status: ['payment status']
     };
@@ -5363,13 +5128,14 @@ async function handleParticipantCsvUpload(event) {
     }
 
     const rows = [];
-    for (const parts of dataRows) {
-        const get = idx => (idx >= 0 && idx < parts.length) ? (parts[idx] || '').trim() : '';
+    for (let i = 1; i < lines.length; i++) {
+        const parts = headers.length > 1 && lines[0].includes('\t') ? lines[i].split('\t') : lines[i].split(',');
+        const get = idx => (idx >= 0 && idx < parts.length) ? parts[idx].replace(/['"]/g, '').trim() : '';
 
         const firstName = get(cols.first_name);
         if (!firstName) continue;
 
-        // Determine room size from the "how many people per room" field
+        // Determine room size from the payment columns or "how many" field
         let roomPref = 0;
         const roomField = get(cols.room_size_preference);
         if (roomField) {
@@ -5377,15 +5143,19 @@ async function handleParticipantCsvUpload(event) {
             if (num >= 1 && num <= 4) roomPref = num;
         }
 
+        // Figure out payment amount from whichever payment column has a value
+        let payAmount = parseFloat(get(cols.payment_amount)) || 0;
+
         rows.push({
             first_name: firstName,
             last_name: get(cols.last_name),
             email: get(cols.email),
             phone: get(cols.phone),
             church: get(cols.church),
-            form_total: parseFloat(get(cols.form_total)) || 0,
+            form_total: parseFloat(get(cols.form_total)) || payAmount,
             room_size_preference: roomPref,
             roommate_requests: get(cols.roommate_requests),
+            payment_amount: payAmount,
             payment_date: get(cols.payment_date),
             payment_status: get(cols.payment_status)
         });
@@ -5396,67 +5166,9 @@ async function handleParticipantCsvUpload(event) {
     try {
         const result = await apiFetch('/api/admin/participants/import', { method: 'POST', body: { rows } });
         showToast(`Imported ${result.imported} participants (${result.created} new)`);
-        const skipped = result.skipped || [];
-        if (skipped.length) {
-            alert(
-                skipped.length + ' row(s) were skipped (no first name could be read):\n\n' +
-                skipped.map(s => 'CSV row ' + s.row + ': ' + s.raw).join('\n\n') +
-                '\n\nThis usually means the columns shifted for that row — often a stray quote mark in an earlier answer (like a church name or "how did you hear" response) confusing the CSV parser. Check that row in the original file.'
-            );
-        }
         loadParticipants();
-        loadUsers();
     } catch (e) { showToast('Import error: ' + (e.message || '')); }
     event.target.value = '';
-}
-
-// The rooming list the hotel gets. Same columns as the version Heather
-// approved and tested in April 2026: Room, Room Size, Name, Email, Phone,
-// Roommate Preference. Deliberately no money on it — the hotel has no
-// business seeing who has paid. The planning view is the board itself.
-//
-// Women not staying at the hotel are left off entirely, and anyone still
-// unassigned can't go on a rooming list at all, so the toast names how
-// many are missing rather than letting them vanish quietly.
-function downloadRoomingListCsv() {
-    if (!_participants.length) { showToast('No data to export'); return; }
-    const byId = {};
-    _participants.forEach(p => { byId[p.id] = p; });
-    const membersByRoom = {};
-    _roomAssignments.forEach(a => {
-        if (!membersByRoom[a.room_number]) membersByRoom[a.room_number] = [];
-        membersByRoom[a.room_number].push(a);
-    });
-    const assignedIds = new Set(_roomAssignments.map(a => a.user_id));
-
-    const headers = ['Room', 'Room Size', 'Name', 'Email', 'Phone', 'Roommate Preference'];
-    const rows = [];
-    _rooms.filter(r => r.room_number >= 1)
-        .sort((a, b) => a.room_number - b.room_number)
-        .forEach(room => {
-            const members = membersByRoom[room.room_number] || [];
-            if (!members.length) return;
-            const size = Math.max(room.capacity || 4, members.length);
-            members.forEach(m => {
-                const p = byId[m.user_id] || m;
-                const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name || '');
-                rows.push(['Room ' + room.room_number, size + '-person', name,
-                           p.email || '', p.phone || '', p.roommate_requests || '']);
-            });
-        });
-
-    if (!rows.length) { showToast('No one is assigned to a room yet'); return; }
-
-    const csv = [headers, ...rows].map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'g4-rooming-list.csv'; a.click();
-
-    const unassigned = _participants.filter(p => !assignedIds.has(p.id) && p.participant_status !== 'inactive').length;
-    const noHotel = (membersByRoom[NO_HOTEL_ROOM] || []).length;
-    const notes = [];
-    if (unassigned) notes.push(unassigned + ' still unassigned, not on the list');
-    if (noHotel) notes.push(noHotel + ' not staying at the hotel, left off');
-    showToast(notes.length ? 'Downloaded. ' + notes.join('; ') + '.' : 'Rooming list downloaded');
 }
 
 function downloadParticipantsCsv() {
@@ -5490,192 +5202,328 @@ async function sendAllReminders() {
 }
 
 // --- Room Assignment Board ---
-let _rooms = [];
+let _pendingRooms = new Set(); // empty rooms created via addNewRoom, not yet in DB
+let _collapsedRooms = new Set(); // rooms currently collapsed
+let _roomsInitialized = false;  // whether we've defaulted all rooms to collapsed
 
 async function loadRoomAssignments() {
     try {
-        const data = await apiFetch('/api/admin/rooms');
-        _rooms = (data && data.rooms) || [];
-        _roomAssignments = (data && data.assignments) || [];
-        renderRoomBoard();
+        const assignments = await apiFetch('/api/admin/rooms');
+        // API returns an array directly; guard against unexpected shapes
+        _roomAssignments = Array.isArray(assignments) ? assignments
+            : Array.isArray(assignments && assignments.rooms) ? assignments.rooms
+            : Array.isArray(assignments && assignments.results) ? assignments.results
+            : [];
+        // Remove pending room numbers that now have real assignments
+        _roomAssignments.forEach(a => _pendingRooms.delete(a.room_number));
     } catch (e) {
         console.warn('Room load failed:', e);
+        _roomAssignments = [];
     }
+    renderRoomBoard();
 }
-
-const ROOM_CAPACITY_LABELS = { 1: 'Solo', 2: '2-person', 3: '3-person', 4: '4-person' };
-// Sentinel room number for the "not staying at the hotel" bucket. 0 already
-// means "unassign", and real rooms start at 1.
-const NO_HOTEL_ROOM = -1;
 
 function renderRoomBoard() {
     const board = document.getElementById('room-board');
     const unassigned = document.getElementById('room-unassigned');
+    const noHotelZone = document.getElementById('room-no-hotel');
     if (!board || !unassigned) return;
 
-    // Build set of assigned user IDs
-    const assignedIds = new Set(_roomAssignments.map(a => a.user_id));
+    // Build set of assigned user IDs (stringify to avoid number/string type mismatches)
+    const assignedIds = new Set(_roomAssignments.map(a => String(a.user_id)));
 
-    // Render unassigned pool
-    const unassignedUsers = _participants.filter(p => !assignedIds.has(p.id) && p.participant_status !== 'inactive');
+    // Find max room number (include pending empty rooms; skip room -1 which is "no hotel")
+    let maxRoom = 0;
+    _roomAssignments.forEach(a => { if (a.room_number > maxRoom) maxRoom = a.room_number; });
+    _pendingRooms.forEach(r => { if (r > maxRoom) maxRoom = r; });
+
+    // Render unassigned pool (exclude no-hotel zone occupants, they're in room -1)
+    const unassignedUsers = _participants.filter(p => !assignedIds.has(String(p.id)) && p.participant_status !== 'inactive');
     unassigned.innerHTML = unassignedUsers.length
         ? unassignedUsers.map(p => renderRoomChip(p)).join('')
         : '<div style="font-size:0.82rem;color:var(--light-text);font-style:italic;padding:8px;">Everyone is assigned to a room.</div>';
 
+    // Render "Not staying at hotel" zone (room -1)
+    if (noHotelZone) {
+        const noHotelMembers = _roomAssignments.filter(a => a.room_number === -1);
+        noHotelZone.innerHTML = noHotelMembers.length
+            ? noHotelMembers.map(function(m) { const user = _participants.find(function(p) { return String(p.id) === String(m.user_id); }) || m; return renderRoomChip(user, -1); }).join('')
+            : '<div style="font-size:0.82rem;color:#9c4dc4;font-style:italic;padding:8px;">Drag women here who are not staying at the hotel.</div>';
+    }
+
     // Group assignments by room
-    const membersByRoom = {};
+    const rooms = {};
     _roomAssignments.forEach(a => {
-        if (!membersByRoom[a.room_number]) membersByRoom[a.room_number] = [];
-        membersByRoom[a.room_number].push(a);
+        if (!rooms[a.room_number]) rooms[a.room_number] = [];
+        rooms[a.room_number].push(a);
     });
 
-    // Render one card per persisted room (capacity comes from the room
-    // itself now, not guessed from how many people happen to be in it)
-    let html = '';
-    _rooms.filter(room => room.room_number >= 1).forEach(room => {
-        const r = room.room_number;
-        const capacity = room.capacity || 4;
-        const members = membersByRoom[r] || [];
-        const emptySlots = Math.max(0, capacity - members.length);
-        // Full rooms go green at a glance; over-capacity goes rose, since
-        // dragging doesn't stop you from putting a 5th woman in a 4-person
-        // room and that's worth catching before the hotel does.
-        const isFull = members.length === capacity;
-        const isOver = members.length > capacity;
-        const cardBg = isOver ? 'rgba(201,144,138,0.12)' : (isFull ? 'rgba(138,158,122,0.12)' : 'rgba(247,240,235,0.5)');
-        const cardBorder = isOver ? 'var(--accent)' : (isFull ? 'var(--sage)' : 'var(--warm-grey)');
-        const countColor = isOver ? 'var(--accent)' : (isFull ? 'var(--sage)' : 'var(--light-text)');
-        const badge = isOver
-            ? `<span style="font-size:0.66rem;font-weight:700;color:white;background:var(--accent);border-radius:8px;padding:1px 7px;margin-left:6px;">Over by ${members.length - capacity}</span>`
-            : (isFull ? '<span style="font-size:0.66rem;font-weight:700;color:white;background:var(--sage);border-radius:8px;padding:1px 7px;margin-left:6px;">Full</span>' : '');
-        html += `
-            <div style="background:${cardBg};border:1.5px solid ${cardBorder};border-radius:14px;padding:14px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                    <div>
-                        <span style="font-family:Playfair Display,serif;font-weight:700;font-size:0.95rem;">Room ${r}</span>
-                        <span style="font-size:0.72rem;color:var(--light-text);margin-left:4px;">(${ROOM_CAPACITY_LABELS[capacity] || capacity + '-person'})</span>
-                    </div>
-                    <div style="font-size:0.72rem;color:${countColor};font-weight:${isFull || isOver ? '700' : '400'};white-space:nowrap;">${members.length}/${capacity}${badge}</div>
-                </div>
-                <div class="room-drop-zone" data-room="${r}" style="min-height:40px;display:flex;flex-direction:column;gap:6px;">
-                    ${members.map(m => {
-                        const user = _participants.find(p => p.id === m.user_id) || m;
-                        return renderRoomChip(user, r);
-                    }).join('')}
-                    ${emptySlots > 0 ? `<div style="padding:8px;border:1.5px dashed rgba(200,185,176,0.4);border-radius:8px;text-align:center;font-size:0.75rem;color:var(--light-text);">Drop here</div>` : ''}
-                </div>
-                <button class="btn" style="width:100%;margin-top:8px;font-size:0.72rem;padding:4px;background:rgba(200,185,176,0.2);color:var(--taupe);" onclick="deleteRoom(${r})">Remove Room</button>
-            </div>
-        `;
-    });
-    board.innerHTML = html;
-
-    // "Not staying at the hotel" bucket — room_number -1 is a holding spot,
-    // not a real room, so it has no capacity and never renders as a card.
-    const noHotelEl = document.getElementById('room-no-hotel');
-    if (noHotelEl) {
-        const noHotelMembers = membersByRoom[NO_HOTEL_ROOM] || [];
-        noHotelEl.innerHTML = noHotelMembers.length
-            ? noHotelMembers.map(m => renderRoomChip(_participants.find(p => p.id === m.user_id) || m, NO_HOTEL_ROOM)).join('')
-            : '<div style="font-size:0.82rem;color:var(--light-text);font-style:italic;padding:8px;">Drag the women who aren\'t sleeping at the hotel here.</div>';
-        // Flag any no-hotel women still sitting in Unassigned, so it's clear
-        // who still needs dragging over
-        const stillUnassigned = unassignedUsers.filter(p => (p.room_size_preference || 0) === 0).length;
-        const countEl = document.getElementById('room-no-hotel-count');
-        if (countEl) {
-            countEl.textContent = noHotelMembers.length + ' here'
-                + (stillUnassigned ? ' · ' + stillUnassigned + ' still in Unassigned' : '');
-            countEl.style.color = stillUnassigned ? 'var(--accent)' : 'var(--light-text)';
+    // On first load: collapse only empty rooms; rooms with members start expanded
+    if (!_roomsInitialized && maxRoom > 0) {
+        _roomsInitialized = true;
+        for (let r = 1; r <= maxRoom; r++) {
+            if ((rooms[r] || []).length === 0) _collapsedRooms.add(r);
         }
     }
+
+    // Render room cards — skip empty slots that aren't explicitly pending
+    let html = '';
+    for (let r = 1; r <= maxRoom; r++) {
+        const members = rooms[r] || [];
+        if (members.length === 0 && !_pendingRooms.has(r)) continue; // room was removed
+        const firstUser = members.length ? (_participants.find(p => p.id === members[0].user_id) || members[0]) : null;
+        const cardPref = firstUser ? (firstUser.room_size_preference || 0) : -1;
+        // Capacity by preference: 1=solo,2=double,3=triple,4=quad; 0=no-hotel (never "full" visually)
+        const capacity = (cardPref > 0) ? cardPref : 4;
+        const isFull = cardPref > 0 && members.length >= capacity;
+        const emptySlots = Math.max(0, capacity - members.length);
+
+        // Card colors: green override when full, otherwise preference color
+        let cardBg, cardBorder;
+        if (isFull) {
+            cardBg = '#dcfce7'; cardBorder = '#4ade80';
+        } else {
+            const cardCol = ROOM_COLORS[cardPref] || null;
+            cardBg = cardCol ? cardCol.bg : 'rgba(247,240,235,0.5)';
+            cardBorder = cardCol ? cardCol.border : 'var(--warm-grey)';
+        }
+
+        const isCollapsed = _collapsedRooms.has(r);
+        const countLabel = members.length + (cardPref > 0 ? '/' + capacity : '');
+
+        html += '<div style="background:' + cardBg + ';border:2px solid ' + cardBorder + ';border-radius:14px;overflow:hidden;">';
+
+        // Header — always visible, click to toggle
+        html += '<div class="room-card-header" data-room="' + r + '" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;user-select:none;">' +
+            '<div style="font-family:Playfair Display,serif;font-weight:700;font-size:0.95rem;">Room ' + r + (isFull ? ' (Full)' : '') + '</div>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<div style="font-size:0.72rem;color:var(--light-text);">' + countLabel + '</div>' +
+            '<div style="font-size:0.65rem;color:var(--light-text);">' + (isCollapsed ? '[+]' : '[-]') + '</div>' +
+            '</div></div>';
+
+        if (isCollapsed) {
+            // Collapsed: slim drop target strip
+            html += '<div class="room-collapsed-drop" data-room="' + r + '" ' +
+                'style="padding:5px 14px 8px;border-top:1px dashed rgba(200,185,176,0.4);font-size:0.72rem;color:var(--light-text);text-align:center;cursor:default;">Drop here to add</div>';
+        } else {
+            // Expanded: full member list + remove button
+            html += '<div style="padding:0 14px 14px;">' +
+                '<div class="room-drop-zone" data-room="' + r + '" style="min-height:60px;display:flex;flex-direction:column;gap:6px;padding:4px 0;">' +
+                members.map(function(m) { const user = _participants.find(function(p) { return String(p.id) === String(m.user_id); }) || m; return renderRoomChip(user, r); }).join('') +
+                (emptySlots > 0 ? '<div style="padding:10px 8px;border:1.5px dashed rgba(200,185,176,0.5);border-radius:8px;text-align:center;font-size:0.75rem;color:var(--light-text);">Drop here</div>' : '') +
+                '</div>' +
+                '<button type="button" class="btn" style="width:100%;margin-top:8px;font-size:0.72rem;padding:4px;background:rgba(200,185,176,0.2);color:var(--taupe);" onclick="deleteRoom(' + r + ')">Remove Room</button>' +
+                '</div>';
+        }
+
+        html += '</div>';
+    }
+    board.innerHTML = html;
 
     // Wire up drag and drop
     initRoomDragDrop();
 }
 
+function toggleRoomCollapse(roomNum) {
+    if (_collapsedRooms.has(roomNum)) {
+        _collapsedRooms.delete(roomNum);
+    } else {
+        _collapsedRooms.add(roomNum);
+    }
+    renderRoomBoard();
+}
+
+// Room size color palette
+const ROOM_COLORS = {
+    0: { bg: '#f3e8ff', border: '#c084fc', text: '#7e22ce', label: 'No hotel' },   // purple
+    1: { bg: '#fef9c3', border: '#facc15', text: '#854d0e', label: 'Solo' },        // yellow
+    2: { bg: '#dbeafe', border: '#60a5fa', text: '#1e40af', label: '2-person' },    // blue
+    3: { bg: '#dcfce7', border: '#4ade80', text: '#166534', label: '3-person' },    // green
+    4: { bg: '#ffedd5', border: '#fb923c', text: '#9a3412', label: '4-person' },    // orange
+};
+
 function renderRoomChip(p, roomNum) {
     const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name + (p.last_initial ? ' ' + p.last_initial + '.' : ''));
-    const roomPrefLabels = { 0: 'no hotel', 1: 'solo', 2: '2-ppl', 3: '3-ppl', 4: '4-ppl' };
-    const pref = roomPrefLabels[p.room_size_preference] || '';
+    const pref = p.room_size_preference || 0;
+    const col = ROOM_COLORS[pref] || ROOM_COLORS[0];
     const reqText = (p.roommate_requests || '').substring(0, 30);
     const status = getPaymentStatus(p);
-    return `
-        <div class="room-chip" draggable="true" data-user-id="${p.id}" data-name="${esc(name)}"
-             style="padding:8px 10px;background:white;border:1px solid var(--warm-grey);border-radius:10px;cursor:grab;font-size:0.82rem;display:flex;flex-direction:column;gap:2px;"
-             title="Wants: ${esc(p.roommate_requests || 'no preference')}">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-weight:600;">${esc(name)}</span>
-                <span style="font-size:0.68rem;padding:1px 6px;border-radius:8px;background:${status.color}20;color:${status.color};">${status.label}</span>
-            </div>
-            ${pref || reqText ? `<div style="font-size:0.72rem;color:var(--light-text);">${pref ? 'Wants ' + pref : ''}${pref && reqText ? ' · ' : ''}${reqText ? 'w/ ' + esc(reqText) : ''}</div>` : ''}
-        </div>
-    `;
+    return '<div class="room-chip" draggable="true" data-user-id="' + p.id + '"' +
+        ' style="padding:8px 10px;background:' + col.bg + ';border:1.5px solid ' + col.border + ';border-radius:10px;cursor:grab;font-size:0.82rem;display:flex;flex-direction:column;gap:2px;touch-action:none;"' +
+        ' title="Wants: ' + esc(p.roommate_requests || 'no preference') + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<span style="font-weight:600;color:#1a1a1a;">' + esc(name) + '</span>' +
+        '<span style="font-size:0.65rem;padding:1px 6px;border-radius:8px;background:' + status.color + '22;color:' + status.color + ';font-weight:600;">' + status.label + '</span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;">' +
+        '<span style="font-size:0.68rem;font-weight:700;color:' + col.text + ';background:' + col.border + '33;padding:1px 6px;border-radius:6px;">' + col.label + '</span>' +
+        (reqText ? '<span style="font-size:0.68rem;color:#555;">w/ ' + esc(reqText) + '</span>' : '') +
+        '</div>' +
+        '</div>';
+}
+
+function roomDropHandler(e) {
+    e.preventDefault();
+    const zone = e.currentTarget;
+    zone.style.background = '';
+    const userId = parseInt(e.dataTransfer.getData('text/plain'));
+    const roomNum = parseInt(zone.dataset.room);
+    if (isNaN(userId) || isNaN(roomNum)) return;
+
+    if (roomNum === 0) {
+        apiFetch('/api/admin/rooms/' + userId, { method: 'DELETE' })
+            .then(() => loadRoomAssignments())
+            .catch(err => showToast('Error: ' + (err.message || '')));
+    } else {
+        _pendingRooms.delete(roomNum);
+        apiFetch('/api/admin/rooms', { method: 'POST', body: { user_id: userId, room_number: roomNum } })
+            .then(() => loadRoomAssignments())
+            .catch(err => showToast('Error: ' + (err.message || '')));
+    }
 }
 
 function initRoomDragDrop() {
-    // Make chips draggable
-    document.querySelectorAll('.room-chip').forEach(chip => {
+    // Chips are always re-created by renderRoomBoard — safe to attach
+    document.querySelectorAll('.room-chip').forEach(function(chip) {
         chip.addEventListener('dragstart', function(e) {
             e.dataTransfer.setData('text/plain', chip.dataset.userId);
-            chip.style.opacity = '0.5';
+            setTimeout(function() { chip.style.opacity = '0.4'; }, 0);
         });
         chip.addEventListener('dragend', function() { chip.style.opacity = '1'; });
     });
 
-    // Make drop zones accept drops
-    const zones = document.querySelectorAll('.room-drop-zone, #room-unassigned');
-    zones.forEach(zone => {
-        zone.addEventListener('dragover', function(e) {
+    // room-drop-zones (expanded rooms) — re-created by innerHTML, safe to attach
+    document.querySelectorAll('.room-drop-zone').forEach(function(zone) {
+        zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.background = 'rgba(138,158,122,0.15)'; });
+        zone.addEventListener('dragleave', function() { zone.style.background = ''; });
+        zone.addEventListener('drop', roomDropHandler);
+    });
+
+    // Collapsed room drop strips
+    document.querySelectorAll('.room-collapsed-drop').forEach(function(zone) {
+        zone.addEventListener('dragover', function(e) { e.preventDefault(); zone.style.background = 'rgba(138,158,122,0.15)'; zone.style.color = 'var(--sage)'; });
+        zone.addEventListener('dragleave', function() { zone.style.background = ''; zone.style.color = ''; });
+        zone.addEventListener('drop', function(e) {
             e.preventDefault();
-            zone.style.background = 'rgba(138,158,122,0.12)';
-        });
-        zone.addEventListener('dragleave', function() {
-            zone.style.background = '';
-        });
-        zone.addEventListener('drop', async function(e) {
-            e.preventDefault();
-            zone.style.background = '';
+            zone.style.background = ''; zone.style.color = '';
             const userId = parseInt(e.dataTransfer.getData('text/plain'));
             const roomNum = parseInt(zone.dataset.room);
-            if (isNaN(userId)) return;
-
-            if (roomNum === 0) {
-                // Remove from room
-                try {
-                    await apiFetch('/api/admin/rooms/' + userId, { method: 'DELETE' });
-                    loadRoomAssignments();
-                } catch (err) { showToast('Error: ' + (err.message || '')); }
-            } else {
-                // Assign to room
-                try {
-                    await apiFetch('/api/admin/rooms', { method: 'POST', body: { user_id: userId, room_number: roomNum } });
-                    loadRoomAssignments();
-                } catch (err) { showToast('Error: ' + (err.message || '')); }
-            }
+            if (isNaN(userId) || isNaN(roomNum)) return;
+            _pendingRooms.delete(roomNum);
+            _collapsedRooms.delete(roomNum); // expand after drop so she can see it
+            apiFetch('/api/admin/rooms', { method: 'POST', body: { user_id: userId, room_number: roomNum } })
+                .then(() => loadRoomAssignments())
+                .catch(err => showToast('Error: ' + (err.message || '')));
         });
     });
+
+    // Room card headers — click to collapse/expand
+    document.querySelectorAll('.room-card-header').forEach(function(header) {
+        header.addEventListener('click', function() {
+            toggleRoomCollapse(parseInt(header.dataset.room));
+        });
+    });
+
+    // #room-unassigned and #room-no-hotel are STABLE elements — guard against stacking listeners
+    const unassigned = document.getElementById('room-unassigned');
+    if (unassigned && !unassigned._ddInit) {
+        unassigned._ddInit = true;
+        unassigned.addEventListener('dragover', function(e) { e.preventDefault(); unassigned.style.background = 'rgba(181,112,106,0.08)'; });
+        unassigned.addEventListener('dragleave', function() { unassigned.style.background = ''; });
+        unassigned.addEventListener('drop', roomDropHandler);
+    }
+    const noHotelZone = document.getElementById('room-no-hotel');
+    if (noHotelZone && !noHotelZone._ddInit) {
+        noHotelZone._ddInit = true;
+        noHotelZone.addEventListener('dragover', function(e) { e.preventDefault(); noHotelZone.style.background = 'rgba(192,132,252,0.15)'; });
+        noHotelZone.addEventListener('dragleave', function() { noHotelZone.style.background = ''; });
+        noHotelZone.addEventListener('drop', roomDropHandler);
+    }
+
+    // Auto-scroll when dragging near top/bottom of window — runs once per page load
+    if (!document._roomDragScrollInit) {
+        document._roomDragScrollInit = true;
+        document.addEventListener('dragover', function(e) {
+            const EDGE = 80, SPEED = 14;
+            const y = e.clientY, h = window.innerHeight;
+            if (y < EDGE) window.scrollBy(0, -SPEED);
+            else if (y > h - EDGE) window.scrollBy(0, SPEED);
+        });
+    }
 }
 
 async function addNewRoom() {
-    const input = prompt('How many people will this room hold? (1-4)', '4');
-    if (input === null) return;
-    const capacity = parseInt(input, 10);
-    if (![1, 2, 3, 4].includes(capacity)) { showToast('Enter a number from 1 to 4'); return; }
-    try {
-        await apiFetch('/api/admin/rooms/create', { method: 'POST', body: { capacity } });
-        loadRoomAssignments();
-    } catch (e) { showToast('Error: ' + (e.message || '')); }
+    let maxRoom = 0;
+    _roomAssignments.forEach(a => { if (a.room_number > maxRoom) maxRoom = a.room_number; });
+    _pendingRooms.forEach(r => { if (r > maxRoom) maxRoom = r; });
+    const newRoom = maxRoom + 1;
+    _pendingRooms.add(newRoom);
+    _collapsedRooms.add(newRoom); // start collapsed — drop into it or click to expand
+    renderRoomBoard();
+}
+
+function exportRoomingList() {
+    // Group assignments by room number
+    const rooms = {};
+    _roomAssignments.forEach(a => {
+        if (!rooms[a.room_number]) rooms[a.room_number] = [];
+        rooms[a.room_number].push(a);
+    });
+
+    const roomNums = Object.keys(rooms).map(Number).sort((a, b) => a - b);
+    if (!roomNums.length) { showToast('No room assignments to export'); return; }
+
+    // 2027 retreat: April 8–10, Ocean City MD, Hyatt Place Oceanfront
+    const checkIn = '8-Apr-27';
+    const checkOut = '10-Apr-27';
+    const billing = 'Guarantee to Master';
+
+    const csvRows = [
+        ['Guest 1 Prefix','Guest 1 First Name','Guest 1 Last Name','Check In Date','Check Out Date','Email Address','Hyatt Loyalty Program Number','Billing','Guest 2 First Name','Guest 2 Last Name','Guest 3 First Name','Guest 3 Last Name','Guest 4 First Name','Guest 4 Last Name']
+    ];
+
+    roomNums.forEach(roomNum => {
+        const occupants = rooms[roomNum];
+        const g = [1,2,3,4].map(i => occupants[i-1] || null);
+        const lastName = (u) => u ? (u.last_name || (u.last_initial ? u.last_initial + '.' : '')) : '';
+        csvRows.push([
+            '',                                          // Guest 1 Prefix
+            g[0] ? g[0].first_name : '',                // G1 First
+            g[0] ? lastName(g[0]) : '',                 // G1 Last
+            checkIn,
+            checkOut,
+            g[0] ? (g[0].email || '') : '',             // Email (guest 1)
+            '',                                          // Hyatt Loyalty
+            billing,
+            g[1] ? g[1].first_name : '',                // G2 First
+            g[1] ? lastName(g[1]) : '',                 // G2 Last
+            g[2] ? g[2].first_name : '',                // G3 First
+            g[2] ? lastName(g[2]) : '',                 // G3 Last
+            g[3] ? g[3].first_name : '',                // G4 First
+            g[3] ? lastName(g[3]) : '',                 // G4 Last
+        ]);
+    });
+
+    const csvText = csvRows.map(row => row.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+    const blob = new Blob([csvText], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'G4-2027-Rooming-List.csv';
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 async function deleteRoom(roomNum) {
-    if (!confirm('Remove Room ' + roomNum + '? Anyone in it goes back to Unassigned, and the rooms after it get renumbered to close the gap.')) return;
+    if (!confirm('Remove Room ' + roomNum + '? Women in it will go back to unassigned.')) return;
+    const inRoom = _roomAssignments.filter(a => a.room_number === roomNum);
     try {
-        // One call — the endpoint frees the occupants and renumbers the rest
-        const res = await apiFetch('/api/admin/rooms/room/' + roomNum, { method: 'DELETE' });
-        loadRoomAssignments();
-        if (res && typeof res.rooms_remaining === 'number') {
-            showToast(res.rooms_remaining + ' room' + (res.rooms_remaining === 1 ? '' : 's') + ' left');
+        for (const a of inRoom) {
+            await apiFetch('/api/admin/rooms/' + a.user_id, { method: 'DELETE' });
         }
+        _pendingRooms.delete(roomNum); // also clear from pending so it disappears from board
+        _collapsedRooms.delete(roomNum);
+        loadRoomAssignments();
     } catch (e) { showToast('Error: ' + (e.message || '')); }
 }
 
@@ -5853,15 +5701,6 @@ async function sendBlastEmail(type) {
         status.textContent = 'Failed: ' + e.message;
         status.style.color = 'var(--accent)';
     }
-}
-
-function resetDevotionEmailLog() {
-    showModal('Reset Devotion Send History', 'This clears the record of which weeks have already been emailed, so the rotation forgets everything sent so far. Turn on "Pause devotion emails" first if you don\'t want it to immediately email this week\'s gift to everyone. Continue?', async () => {
-        try {
-            await apiFetch('/api/admin/devotion/reset', { method: 'POST', body: {} });
-            showToast('Devotion send history cleared');
-        } catch (e) { showToast('Error: ' + (e.message || 'Could not reset')); }
-    });
 }
 
 function loadEmailTemplate() {

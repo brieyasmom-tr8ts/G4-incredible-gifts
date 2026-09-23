@@ -5,11 +5,11 @@ const BREVO_LIST_ID = 8;
 const BREVO_SENDER = { name: 'G4Retreat', email: 'Heather@HeatherLynWilson.com' };
 
 async function brevoAddContact(env, email, firstName, lastName) {
-  if (!env.BREVO_API_KEY || !email) return;
+  if (!env.G4key || !email) return;
   try {
     await fetch('https://api.brevo.com/v3/contacts', {
       method: 'POST',
-      headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json' },
+      headers: { 'api-key': env.G4key, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email,
         attributes: { FIRSTNAME: firstName || '', LASTNAME: lastName || '' },
@@ -21,11 +21,11 @@ async function brevoAddContact(env, email, firstName, lastName) {
 }
 
 async function brevoSendEmail(env, to, subject, htmlContent) {
-  if (!env.BREVO_API_KEY || !to) return false;
+  if (!env.G4key || !to) return { ok: false, error: env.G4key ? 'No recipient email' : 'G4key not set' };
   try {
     const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
-      headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json' },
+      headers: { 'api-key': env.G4key, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         sender: BREVO_SENDER,
         to: [{ email: to }],
@@ -33,8 +33,10 @@ async function brevoSendEmail(env, to, subject, htmlContent) {
         htmlContent
       })
     });
-    return resp.ok;
-  } catch(e) { console.warn('Brevo send failed:', e.message); return false; }
+    if (resp.ok) return { ok: true };
+    const body = await resp.text().catch(() => '');
+    return { ok: false, error: 'Brevo ' + resp.status + ': ' + body.substring(0, 200) };
+  } catch(e) { return { ok: false, error: e.message }; }
 }
 
 async function sendMonthlyPaymentReminders(env) {
@@ -72,9 +74,11 @@ async function sendMonthlyPaymentReminders(env) {
 
     const html = buildPaymentReminderHtml(u.first_name, balance, dueDate);
     const sent = await brevoSendEmail(env, u.email, 'G4 Retreat — Payment Reminder', html);
-    if (sent) {
+    if (sent.ok) {
       await env.DB.prepare('INSERT INTO reminder_log (user_id, email, type, retreat_year) VALUES (?, ?, ?, ?)').bind(u.id, u.email, 'payment', activeYear).run();
       count++;
+    } else {
+      console.log('[cron] reminder failed for', u.email, ':', sent.error);
     }
   }
   console.log('[cron] monthly payment reminders sent:', count);
@@ -100,31 +104,6 @@ function buildPaymentReminderHtml(firstName, balance, dueDate) {
       <p style="font-size:12px;color:#8a817a;">G4 Women's Retreat &middot; April 8-10, 2027 &middot; Ocean City, MD</p>
     </div>
   `;
-}
-
-// Room size preference (1-4 people, 0 = not sleeping at the hotel) → total
-// cost. Matches the budget calculator tiers and the landing page pricing.
-// Shared by both CSV import paths (Registrations tab and Participants &
-// Payments) so total_owed is always derived from room size, never from a
-// payment amount.
-const ROOM_PRICE = { 1: 430, 2: 280, 3: 230, 4: 190, 0: 130 };
-
-// users.reg_amount_paid is a stored copy of what she's paid, shown on the
-// Registrations tab, while Participants & Payments sums the payments table
-// live. Any write to payments must call this or the two views disagree.
-async function syncRegAmountPaid(db, userId, retreatYear) {
-  if (!userId) return 0;
-  try {
-    const row = await db.prepare(
-      'SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE user_id = ? AND retreat_year = ?'
-    ).bind(userId, retreatYear).first();
-    const total = (row && row.total) || 0;
-    await db.prepare('UPDATE users SET reg_amount_paid = ? WHERE id = ?').bind(total, userId).run();
-    return total;
-  } catch (e) {
-    console.error('[sync-paid] failed', userId, e && e.message);
-    return 0;
-  }
 }
 
 // Blocked words filter
@@ -214,14 +193,6 @@ async function ensureWeeklySSTable(db) {
 
 async function ensureSSRoundExists(db, roundNumber) {
   if (roundNumber <= 0) return false;
-  // Admin pause switch — when set, no new rounds are generated (lazily on
-  // view, via cron, or via the admin force-round button) until she flips
-  // it back on. Used to hold the rotation between retreats while old
-  // history gets wiped for a fresh cohort.
-  try {
-    const paused = await db.prepare("SELECT value FROM game_settings WHERE key = 'weekly_secret_sister_paused'").first();
-    if (paused && paused.value === '1') return false;
-  } catch (e) { /* game_settings may not exist yet */ }
   // Claim the lock — only the winning request generates pairings. Other
   // concurrent callers hit UNIQUE(round_number) on the lock table and bail
   // out, then read the pairings the winner created.
@@ -500,7 +471,7 @@ export default {
         const body = await request.json();
         const email = body.email;
         if (!email) return json({ error: 'email required' }, corsHeaders, 400);
-        if (!env.BREVO_API_KEY) return json({ error: 'BREVO_API_KEY secret not set' }, corsHeaders, 500);
+        if (!env.G4key) return json({ error: 'G4key secret not set' }, corsHeaders, 500);
         const type = url.searchParams.get('type') || 'devotion';
         let subject, html;
         if (type === 'custom') {
@@ -519,7 +490,7 @@ export default {
           const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
             method: 'POST',
             headers: {
-              'api-key': env.BREVO_API_KEY,
+              'api-key': env.G4key,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -555,25 +526,12 @@ export default {
         return json({ success: true, type, week: weekOverride || 'auto', force, result }, corsHeaders);
       }
 
-      // POST /api/admin/devotion/reset - admin: clear the devotion send-log
-      // dedup table so the 15-week rotation forgets which weeks it has
-      // already emailed. Pairs with the devotion_emails_paused game setting
-      // to stop the rotation and clear its history before restarting it for
-      // a new group of women.
-      if (path === '/api/admin/devotion/reset' && request.method === 'POST') {
-        const authErr = requireAdmin(request);
-        if (authErr) return authErr;
-        try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS devotion_email_log (week_number INTEGER PRIMARY KEY, sent_at TEXT DEFAULT (datetime('now')))`).run(); } catch (e) {}
-        await env.DB.prepare('DELETE FROM devotion_email_log').run();
-        return json({ success: true }, corsHeaders);
-      }
-
       // POST /api/admin/email/custom — send a custom message to all sisters
       // body: { subject, message, button_text?, button_url? }
       if (path === '/api/admin/email/custom' && request.method === 'POST') {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
-        if (!env.BREVO_API_KEY) return json({ error: 'BREVO_API_KEY not set' }, corsHeaders, 500);
+        if (!env.G4key) return json({ error: 'G4key not set' }, corsHeaders, 500);
         const body = await request.json();
         if (!body.subject || !body.message) return json({ error: 'subject and message required' }, corsHeaders, 400);
         try { await env.DB.prepare('ALTER TABLE users ADD COLUMN email_unsubscribed INTEGER DEFAULT 0').run(); } catch(e) {}
@@ -2645,22 +2603,6 @@ export default {
         return json({ success: true, round, created }, corsHeaders);
       }
 
-      // POST /api/admin/secretsister/weekly/reset - admin: wipe all weekly
-      // rotation history (pairings, round locks, admin-sent notes) so it
-      // starts completely fresh for a new group of women. Does not touch
-      // per-user opt-out flags or the retreat-time secret_sister table.
-      // Combine with the weekly_secret_sister_paused game setting to wipe
-      // and hold the rotation until it's ready to restart.
-      if (path === '/api/admin/secretsister/weekly/reset' && request.method === 'POST') {
-        const authErr = requireAdmin(request);
-        if (authErr) return authErr;
-        await ensureWeeklySSTable(env.DB);
-        await env.DB.prepare('DELETE FROM secret_sister_pairings').run();
-        await env.DB.prepare('DELETE FROM secret_sister_round_locks').run();
-        try { await env.DB.prepare('DELETE FROM secret_sister_admin_notes').run(); } catch(e) {}
-        return json({ success: true }, corsHeaders);
-      }
-
       // GET /api/secretsister/participation - admin: per-woman rotation stats
       // Returns every woman with her rounds_paired / notes_written /
       // notes_received / last_written / last_received. "Received" counts
@@ -3210,47 +3152,30 @@ export default {
         const body = await request.json();
         const rows = Array.isArray(body && body.rows) ? body.rows : [];
         const { results: allUsers } = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, last_name, email FROM users'
+          'SELECT id, first_name, last_initial, last_name FROM users'
         ).all();
         const matched = rows.map(row => {
           const name = (row.name || '').toString().trim();
-          const email = (row.email || '').toString().trim().toLowerCase();
           const candidates = allUsers
-            .map(u => {
-              const userEmail = (u.email || '').toString().trim().toLowerCase();
-              // An email match is an identity match — nobody shares one —
-              // so it beats any name score outright.
-              const emailMatch = !!(email && userEmail && email === userEmail);
-              const nameScore = scoreNameMatch(name, u.first_name, u.last_name || u.last_initial);
-              return {
-                user_id: u.id,
-                display_name: u.last_name ? `${u.first_name} ${u.last_name}` : (u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name),
-                score: emailMatch ? 100 : nameScore,
-                matched_by: emailMatch ? 'email' : 'name'
-              };
-            })
+            .map(u => ({
+              user_id: u.id,
+              display_name: u.last_name ? `${u.first_name} ${u.last_name}` : (u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name),
+              score: scoreNameMatch(name, u.first_name, u.last_name || u.last_initial)
+            }))
             .filter(c => c.score > 0)
             .sort((a, b) => b.score - a.score)
             .slice(0, 5);
-          // Auto-select only on a confident match: an email hit, or a first
-          // name plus a last name/initial that agree. A first-name-only hit
-          // scores 50 and is NOT enough — "Joanne" shouldn't silently claim
-          // an existing "Joanne Kramer". Those still appear in the dropdown
-          // to pick manually, and the commit endpoint dedups by email and
-          // full name anyway, so choosing "Create new" can't duplicate her.
-          const top = candidates[0];
-          const confident = top && (top.matched_by === 'email' || top.score >= 75);
           return {
             name,
-            first_name: row.first_name || '',
-            last_name: row.last_name || '',
-            email: row.email || '',
+            first_name: (row.first_name || '').toString().trim(),
+            last_name: (row.last_name || '').toString().trim(),
+            email: (row.email || '').toString().trim(),
             amount: row.amount || '',
             date: row.date || '',
-            room_size_preference: row.room_size_preference || '',
-            roommate_requests: row.roommate_requests || '',
+            room_size_preference: row.room_size_preference !== undefined ? row.room_size_preference : null,
+            roommate_requests: row.roommate_requests !== undefined ? row.roommate_requests : null,
             candidates,
-            best_match_id: confident ? top.user_id : null
+            best_match_id: (candidates.length && candidates[0].score >= 50) ? candidates[0].user_id : null
           };
         });
         return json({ matched }, corsHeaders);
@@ -3270,22 +3195,19 @@ export default {
         await ensureRegColumns(env.DB);
         await ensurePaymentTables(env.DB);
         const activeYear = await getActiveYear(env.DB);
+        // Room size → total cost lookup (matches the budget calculator tiers)
+        const ROOM_PRICE = { 1: 430, 2: 280, 3: 230, 4: 190, 0: 130 };
 
         // Parse room size from text or number. Handles:
         // "2 people", "2 person", "3 person room", "4 or 5 person", "1", "single", "no hotel"
-        // Returns 0-4 for a recognized tier (0 = explicitly not staying at
-        // the hotel), or null when the answer is blank/unreadable. The two
-        // are NOT the same: 0 means she owes the $130 no-hotel rate, null
-        // means we don't know and must not invent a price for her.
         function parseRoomSize(val) {
-          if (!val) return null;
+          if (!val) return 0;
           const s = val.toString().toLowerCase().trim();
-          if (s.includes('no hotel') || s.includes('not sleeping') || s.includes('commute') || s.includes('day only')) return 0;
+          if (s.includes('no hotel') || s.includes('commute') || s.includes('day only')) return 0;
           const match = s.match(/\d+/);
-          if (!match) return null;
-          const n = parseInt(match[0], 10);
+          const n = match ? parseInt(match[0], 10) : 0;
           if (n >= 4) return 4; // "4 or 5 person" → 4
-          return n >= 1 ? n : null;
+          return n || 0;
         }
 
         let applied = 0;
@@ -3295,51 +3217,72 @@ export default {
           const notes = (entry.notes || '').toString().trim();
           const source = (entry.source || 'csv_import').toString();
           const roomPref = parseRoomSize(entry.room_size_preference);
-          const knownRoom = roomPref !== null;
           const roommateReqs = (entry.roommate_requests || '').toString().trim();
-          const email = (entry.email || '').toString().trim().toLowerCase();
-          // total_owed = room price based on size; fall back to payment amount only if no room pref
-          // Price comes from her room tier, including the $130 no-hotel tier.
-          // Only when the tier is genuinely unknown do we fall back to what
-          // she paid — otherwise a no-hotel woman who's only paid a $50
-          // deposit would be recorded as owing $50 and look paid in full.
-          const totalOwed = knownRoom ? ROOM_PRICE[roomPref] : (amount || 0);
+          // total_owed = room price based on size (including 0=no hotel=$130); fall back to payment amount only if room pref was not provided
+          const roomPrefProvided = entry.room_size_preference !== undefined && entry.room_size_preference !== null && entry.room_size_preference !== '';
+          const totalOwed = roomPrefProvided && ROOM_PRICE[roomPref] !== undefined ? ROOM_PRICE[roomPref] : (amount || 0);
           let userId = parseInt(entry.user_id, 10);
+          let freshInsert = false;
 
           if (!userId) {
-            const rawName = (entry.name || '').toString().trim();
-            if (!rawName) continue;
-            const parts = rawName.split(/\s+/);
-            const first = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
-            const lastName = parts.slice(1).join(' ');
+            // Use explicit first/last if provided, else split the combined name
+            let first, lastName;
+            if (entry.first_name) {
+              first = entry.first_name.toString().trim();
+              lastName = (entry.last_name || '').toString().trim();
+            } else {
+              const rawName = (entry.name || '').toString().trim();
+              if (!rawName) continue;
+              const parts = rawName.split(/\s+/);
+              first = parts[0];
+              lastName = parts.slice(1).join(' ');
+            }
+            if (!first) continue;
+            first = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
             const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
-            // Dedup on re-import: email first (it's an identity, and it
-            // catches her even if she married/changed her last name), then
-            // full name.
-            let existing = null;
-            if (email) {
-              existing = await env.DB.prepare(
-                "SELECT id FROM users WHERE LOWER(TRIM(email)) = ? LIMIT 1"
-              ).bind(email).first();
-            }
-            if (!existing) {
-              existing = await env.DB.prepare(
-                'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND (LOWER(last_name) = LOWER(?) OR (last_name = \'\' AND UPPER(last_initial) = UPPER(?))) LIMIT 1'
-              ).bind(first, lastName, lastInitial).first();
-            }
-            if (existing) {
-              userId = existing.id;
+            const email = (entry.email || '').toString().trim() || null;
+            // Check if a user with this name already exists (dedup on re-import)
+            const existingByName = await env.DB.prepare(
+              'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND (LOWER(last_name) = LOWER(?) OR (last_name = \'\' AND UPPER(last_initial) = UPPER(?))) LIMIT 1'
+            ).bind(first, lastName, lastInitial).first();
+            if (existingByName) {
+              userId = existingByName.id;
             } else {
               const result = await env.DB.prepare(
-                'INSERT INTO users (first_name, last_initial, last_name, retreat_year, reg_registered) VALUES (?, ?, ?, 2027, 1)'
-              ).bind(first, lastInitial, lastName).run();
+                'INSERT INTO users (first_name, last_initial, last_name, email, retreat_year, reg_registered, reg_amount_paid, reg_paid_date, reg_source, total_owed, room_size_preference, roommate_requests) VALUES (?, ?, ?, ?, 2027, 1, ?, ?, ?, ?, ?, ?)'
+              ).bind(first, lastInitial, lastName, email, amount, date, source, totalOwed, roomPref, roommateReqs).run();
               userId = result.meta.last_row_id;
+              freshInsert = true;
             }
           }
 
-          // Add to payments table if amount > 0 (deduped by user+amount+date) —
-          // do this BEFORE recomputing her total so a repeat CSV row (e.g. a
-          // second submission with a balance payment) is reflected below.
+          // Update existing user record (skipped only for brand-new inserts, which set fields on INSERT)
+          if (userId && !freshInsert) {
+            const userUpdates = ['reg_registered = 1', "participant_status = 'active'", 'retreat_year = 2027', 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
+            const userBinds = [amount, date, source, notes];
+            const emailVal = (entry.email || '').toString().trim();
+            if (emailVal) { userUpdates.push('email = ?'); userBinds.push(emailVal); }
+            if (entry.last_name) { userUpdates.push('last_name = ?'); userBinds.push(entry.last_name.toString().trim()); }
+            if (entry.room_size_preference !== undefined && entry.room_size_preference !== null && entry.room_size_preference !== '') { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
+            if (entry.roommate_requests !== undefined && entry.roommate_requests !== null) { userUpdates.push('roommate_requests = ?'); userBinds.push(roommateReqs); }
+            // Set total_owed from room price; only overwrite if not already set or if we have a better value
+            // If room pref was in the CSV, always set total_owed from the price tier (room choice is authoritative).
+            // If no room pref in CSV, only set total_owed if not already set.
+            if (roomPrefProvided) {
+              userUpdates.push('total_owed = ?');
+              userBinds.push(totalOwed);
+            } else if (totalOwed > 0) {
+              const existingUser = await env.DB.prepare('SELECT total_owed FROM users WHERE id = ?').bind(userId).first();
+              if (!(existingUser && existingUser.total_owed > 0)) {
+                userUpdates.push('total_owed = ?');
+                userBinds.push(totalOwed);
+              }
+            }
+            userBinds.push(userId);
+            await env.DB.prepare(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`).bind(...userBinds).run();
+          }
+
+          // Add to payments table if amount > 0 (deduped by user+amount+date)
           if (amount > 0) {
             const existingPmt = await env.DB.prepare(
               'SELECT id FROM payments WHERE user_id = ? AND amount = ? AND date = ? AND retreat_year = ?'
@@ -3350,33 +3293,6 @@ export default {
               ).bind(userId, amount, 'csv_import', date, notes || source, activeYear).run();
             }
           }
-
-          // reg_amount_paid reflects everything she's ever paid this year,
-          // not just this one CSV row/submission — so re-importing a woman
-          // who's since made a second (or third) payment updates her total
-          // instead of overwriting it with just the latest amount.
-          const cumulativePaid = await syncRegAmountPaid(env.DB, userId, activeYear);
-
-          // participant_status is reset to active: being in the church's
-          // registration export means she's registered, and without this a
-          // woman who was ever removed stays hidden from Participants &
-          // Payments forever (that view skips inactive rows) even though
-          // she reappears in Registered Sisters, which only checks
-          // reg_registered.
-          const userUpdates = ['reg_registered = 1', 'retreat_year = 2027', "participant_status = 'active'", 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
-          const userBinds = [cumulativePaid, date, source, notes];
-          if (email) { userUpdates.push('email = ?'); userBinds.push(email); }
-          if (knownRoom) { userUpdates.push('room_size_preference = ?'); userBinds.push(roomPref); }
-          if (roommateReqs) { userUpdates.push('roommate_requests = ?'); userBinds.push(roommateReqs); }
-          // Set total_owed from room price; only overwrite if not already set or if we have a better value
-          const existingUser = await env.DB.prepare('SELECT total_owed FROM users WHERE id = ?').bind(userId).first();
-          if (totalOwed > 0 && (!(existingUser && existingUser.total_owed > 0) || knownRoom)) {
-            userUpdates.push('total_owed = ?');
-            userBinds.push(totalOwed);
-          }
-          userBinds.push(userId);
-          await env.DB.prepare(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`).bind(...userBinds).run();
-
           applied++;
         }
         return json({ success: true, applied }, corsHeaders);
@@ -3438,17 +3354,6 @@ export default {
             user_id INTEGER NOT NULL,
             retreat_year INTEGER DEFAULT 2027,
             UNIQUE(user_id, retreat_year)
-          )`).run(),
-          // Rooms as their own persisted entity (capacity + existence), not
-          // just inferred from who happens to be assigned to a room number.
-          // Without this an empty room the admin just created would vanish
-          // on refresh, since nothing about it was ever saved.
-          db.prepare(`CREATE TABLE IF NOT EXISTS rooms (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            room_number INTEGER NOT NULL,
-            capacity INTEGER NOT NULL DEFAULT 4,
-            retreat_year INTEGER DEFAULT 2027,
-            UNIQUE(room_number, retreat_year)
           )`).run()
         ]);
         // Extra columns on users for room/payment tracking
@@ -3502,188 +3407,6 @@ export default {
         return json({ participants: users || [], summary, due_date: dueDate }, corsHeaders);
       }
 
-      // GET /api/admin/reconcile - standing accuracy check on the money.
-      // Two versions of "what she's paid" exist: users.reg_amount_paid (a
-      // stored copy the Registrations tab reads) and SUM(payments) (the live
-      // truth). total_owed is meant to be the room-size tier price. Rows that
-      // drifted apart before the sync helper existed won't fix themselves, so
-      // this surfaces them instead of leaving them to be caught by eye.
-      if (path === '/api/admin/reconcile' && request.method === 'GET') {
-        const authErr = requireAdmin(request);
-        if (authErr) return authErr;
-        await ensurePaymentTables(env.DB);
-        await ensureRegColumns(env.DB);
-        const activeYear = await getActiveYear(env.DB);
-
-        const round2 = n => Math.round((Number(n) || 0) * 100) / 100;
-        const fmt = n => '$' + round2(n).toFixed(2);
-
-        const { results: rows } = await env.DB.prepare(
-          `SELECT u.id, u.first_name, u.last_name, u.last_initial, u.email,
-                  u.total_owed, u.reg_amount_paid, u.room_size_preference,
-                  u.reg_registered, u.participant_status,
-                  COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?), 0) as total_paid,
-                  (SELECT COUNT(*) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?) as payment_count
-           FROM users u
-           WHERE (u.retreat_year = ? OR u.reg_registered = 1)
-             AND COALESCE(u.participant_status, '') != 'inactive'
-           ORDER BY u.first_name ASC`
-        ).bind(activeYear, activeYear, activeYear).all();
-
-        const issues = [];
-        for (const u of (rows || [])) {
-          const name = [u.first_name, u.last_name || u.last_initial].filter(Boolean).join(' ').trim();
-          const stored = round2(u.reg_amount_paid);
-          const actual = round2(u.total_paid);
-          const owed = round2(u.total_owed);
-          const pref = Number(u.room_size_preference);
-          const flags = [];
-
-          if (Math.abs(stored - actual) >= 0.01) {
-            flags.push({
-              type: 'paid_drift',
-              fix: 'paid',
-              label: 'Paid totals disagree',
-              detail: `Registrations tab shows ${fmt(stored)}, her payment records add up to ${fmt(actual)}.`,
-              delta: round2(stored - actual)
-            });
-          }
-
-          const tierPrice = ROOM_PRICE[pref];
-          if (pref >= 1 && pref <= 4 && tierPrice !== undefined && Math.abs(owed - tierPrice) >= 0.01) {
-            flags.push({
-              type: 'owed_drift',
-              fix: 'owed',
-              label: 'Owed does not match room tier',
-              detail: `A ${pref}-person room is ${fmt(tierPrice)}, but she is down for ${fmt(owed)}.`,
-              delta: round2(owed - tierPrice)
-            });
-          }
-
-          if (owed === 0) {
-            flags.push({
-              type: 'no_amount_owed',
-              fix: null,
-              label: 'No amount owed on file',
-              detail: 'She will never show a balance or get a payment reminder. Set her room size or enter her total by hand.',
-              delta: 0
-            });
-          } else if (actual - owed >= 0.01) {
-            flags.push({
-              type: 'overpaid',
-              fix: null,
-              label: 'Paid more than she owes',
-              detail: `Owes ${fmt(owed)} but has paid ${fmt(actual)}. Usually a payment entered twice.`,
-              delta: round2(actual - owed)
-            });
-          }
-
-          if (flags.length) {
-            issues.push({
-              user_id: u.id,
-              name: name || `User ${u.id}`,
-              email: u.email || '',
-              total_owed: owed,
-              stored_paid: stored,
-              actual_paid: actual,
-              room_size_preference: isNaN(pref) ? null : pref,
-              payment_count: u.payment_count || 0,
-              flags
-            });
-          }
-        }
-
-        // Payments whose user row no longer exists. They sit in the table
-        // forever and never land in anyone's total, so the payments table and
-        // the roster quietly disagree about how much came in.
-        let orphans = [];
-        try {
-          const { results } = await env.DB.prepare(
-            `SELECT p.id, p.user_id, p.amount, p.date, p.method, p.notes
-             FROM payments p LEFT JOIN users u ON u.id = p.user_id
-             WHERE p.retreat_year = ? AND u.id IS NULL
-             ORDER BY p.date DESC`
-          ).bind(activeYear).all();
-          orphans = results || [];
-        } catch (e) {
-          console.error('[reconcile] orphan lookup failed', e && e.message);
-        }
-
-        const countFlag = t => issues.filter(i => i.flags.some(f => f.type === t)).length;
-        const summary = {
-          checked: (rows || []).length,
-          flagged: issues.length,
-          paid_drift: countFlag('paid_drift'),
-          owed_drift: countFlag('owed_drift'),
-          no_amount_owed: countFlag('no_amount_owed'),
-          overpaid: countFlag('overpaid'),
-          orphan_payments: orphans.length,
-          orphan_total: round2(orphans.reduce((s, o) => s + (Number(o.amount) || 0), 0))
-        };
-
-        return json({ issues, orphan_payments: orphans, summary, year: activeYear }, corsHeaders);
-      }
-
-      // POST /api/admin/reconcile/fix - repair the drift the check found.
-      // Body: { fix: 'paid'|'owed', user_id } for one woman, or
-      // { fix: 'paid'|'owed', all: true } to repair every drifted row.
-      // Only these two are fixable automatically: the right answer is already
-      // known (the payments table, the room tier). The other flags need a
-      // human decision, so they have no fix button.
-      if (path === '/api/admin/reconcile/fix' && request.method === 'POST') {
-        const authErr = requireAdmin(request);
-        if (authErr) return authErr;
-        await ensurePaymentTables(env.DB);
-        await ensureRegColumns(env.DB);
-        const activeYear = await getActiveYear(env.DB);
-        const body = await request.json().catch(() => ({}));
-        const fix = body.fix;
-        if (fix !== 'paid' && fix !== 'owed') {
-          return json({ error: 'fix must be "paid" or "owed"' }, corsHeaders, 400);
-        }
-
-        let targets = [];
-        if (body.all) {
-          const { results } = await env.DB.prepare(
-            `SELECT u.id, u.total_owed, u.reg_amount_paid, u.room_size_preference,
-                    COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?), 0) as total_paid
-             FROM users u
-             WHERE (u.retreat_year = ? OR u.reg_registered = 1)
-               AND COALESCE(u.participant_status, '') != 'inactive'`
-          ).bind(activeYear, activeYear).all();
-          targets = results || [];
-        } else if (body.user_id) {
-          const row = await env.DB.prepare(
-            `SELECT u.id, u.total_owed, u.reg_amount_paid, u.room_size_preference,
-                    COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?), 0) as total_paid
-             FROM users u WHERE u.id = ?`
-          ).bind(activeYear, parseInt(body.user_id)).first();
-          if (row) targets = [row];
-        } else {
-          return json({ error: 'Pass a user_id or all: true' }, corsHeaders, 400);
-        }
-
-        let fixed = 0;
-        for (const u of targets) {
-          if (fix === 'paid') {
-            const stored = Number(u.reg_amount_paid) || 0;
-            const actual = Number(u.total_paid) || 0;
-            if (Math.abs(stored - actual) < 0.01) continue;
-            await syncRegAmountPaid(env.DB, u.id, activeYear);
-            fixed++;
-          } else {
-            const pref = Number(u.room_size_preference);
-            const tierPrice = ROOM_PRICE[pref];
-            if (!(pref >= 1 && pref <= 4) || tierPrice === undefined) continue;
-            if (Math.abs((Number(u.total_owed) || 0) - tierPrice) < 0.01) continue;
-            await env.DB.prepare('UPDATE users SET total_owed = ? WHERE id = ?').bind(tierPrice, u.id).run();
-            fixed++;
-          }
-        }
-
-        return json({ success: true, fixed }, corsHeaders);
-      }
-
       // POST /api/admin/participants/:id - update participant fields
       const participantMatch = path.match(/^\/api\/admin\/participants\/(\d+)$/);
       if (participantMatch && request.method === 'POST') {
@@ -3692,7 +3415,7 @@ export default {
         await ensurePaymentTables(env.DB);
         const userId = parseInt(participantMatch[1]);
         const body = await request.json();
-        const allowed = ['total_owed', 'room_size_preference', 'roommate_requests', 'participant_status', 'payment_due_date', 'first_name', 'last_name'];
+        const allowed = ['total_owed', 'room_size_preference', 'roommate_requests', 'participant_status', 'payment_due_date'];
         const updates = [];
         const binds = [];
         for (const key of allowed) {
@@ -3700,12 +3423,6 @@ export default {
             updates.push(`${key} = ?`);
             binds.push(body[key] === null ? '' : body[key]);
           }
-        }
-        // Keep last_initial in sync — it's what CSV import name-matching and
-        // the profile directory fall back to when last_name isn't shown.
-        if (body.last_name !== undefined) {
-          updates.push('last_initial = ?');
-          binds.push((body.last_name || '').toString().trim().charAt(0).toUpperCase());
         }
         if (updates.length) {
           binds.push(userId);
@@ -3751,18 +3468,16 @@ export default {
         const body = await request.json();
         if (!body.user_id || !body.amount) return json({ error: 'user_id and amount required' }, corsHeaders, 400);
         const activeYear = await getActiveYear(env.DB);
-        const payUserId = parseInt(body.user_id);
         await env.DB.prepare(
           'INSERT INTO payments (user_id, amount, method, date, notes, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
         ).bind(
-          payUserId,
+          parseInt(body.user_id),
           parseFloat(body.amount) || 0,
           body.method || 'manual',
           body.date || new Date().toISOString().split('T')[0],
           body.notes || '',
           activeYear
         ).run();
-        await syncRegAmountPaid(env.DB, payUserId, activeYear);
         return json({ success: true }, corsHeaders);
       }
 
@@ -3772,11 +3487,7 @@ export default {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
         const payId = parseInt(paymentDeleteMatch[1]);
-        const activeYear = await getActiveYear(env.DB);
-        // Grab the owner before deleting so her stored total can be resynced
-        const owner = await env.DB.prepare('SELECT user_id FROM payments WHERE id = ?').bind(payId).first();
         await env.DB.prepare('DELETE FROM payments WHERE id = ?').bind(payId).run();
-        if (owner && owner.user_id) await syncRegAmountPaid(env.DB, owner.user_id, activeYear);
         return json({ success: true }, corsHeaders);
       }
 
@@ -3792,20 +3503,11 @@ export default {
         const activeYear = await getActiveYear(env.DB);
         let imported = 0;
         let created = 0;
-        // Track skipped rows with why, instead of silently dropping them —
-        // a blank first name usually means the CSV row's columns shifted
-        // (e.g. a stray unescaped quote earlier in the file), not that the
-        // row was genuinely blank.
-        const skipped = [];
 
-        for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
-          const row = rows[rowIdx];
+        for (const row of rows) {
           const firstName = (row.first_name || '').trim();
           const lastName = (row.last_name || '').trim();
-          if (!firstName) {
-            skipped.push({ row: rowIdx + 1, reason: 'no first name found in this row', raw: JSON.stringify(row).slice(0, 200) });
-            continue;
-          }
+          if (!firstName) continue;
 
           const cleanFirst = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
           const cleanInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
@@ -3814,23 +3516,15 @@ export default {
           const church = (row.church || '').trim();
           const roomPref = parseInt(row.room_size_preference) || 0;
           const roommateReqs = (row.roommate_requests || '').trim();
-          // "Form Total" is what she actually paid on THIS form submission
-          // (a $50 deposit, or the full room cost if she paid in full) — it
-          // is a payment amount, not her total cost. Total cost is derived
-          // from her room size below, same as the Registrations importer.
           const formTotal = parseFloat(row.form_total) || 0;
+          const paymentAmount = parseFloat(row.payment_amount) || 0;
           const paymentDate = (row.payment_date || '').trim();
           const paymentStatus = (row.payment_status || '').trim();
-          const totalOwed = ROOM_PRICE[roomPref] !== undefined ? ROOM_PRICE[roomPref] : 0;
 
-          // Match existing user by name or email. Require a full last_name
-          // match when the existing record has one on file — matching on
-          // first_name + last_initial alone (a single letter) risks merging
-          // a brand-new registrant into an unrelated woman from a prior
-          // year who happens to share a first name and initial.
+          // Match existing user by name or email
           let user = await env.DB.prepare(
-            'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND (LOWER(last_name) = LOWER(?) OR (last_name = \'\' AND UPPER(last_initial) = UPPER(?))) LIMIT 1'
-          ).bind(cleanFirst, lastName, cleanInitial).first();
+            'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND UPPER(last_initial) = UPPER(?)'
+          ).bind(cleanFirst, cleanInitial).first();
 
           if (!user && email) {
             user = await env.DB.prepare(
@@ -3842,19 +3536,16 @@ export default {
             // Create new user
             const result = await env.DB.prepare(
               'INSERT INTO users (first_name, last_initial, last_name, email, phone, church, retreat_year, reg_registered, total_owed, room_size_preference, roommate_requests) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)'
-            ).bind(cleanFirst, cleanInitial, lastName, email || null, phone || null, church || null, activeYear, totalOwed, roomPref, roommateReqs).run();
+            ).bind(cleanFirst, cleanInitial, lastName, email || null, phone || null, church || null, activeYear, formTotal, roomPref, roommateReqs).run();
             user = { id: result.meta.last_row_id };
             created++;
           } else {
-            // Update existing user. participant_status is reset to active
-            // for the same reason as the Registrations importer — otherwise
-            // a previously-removed woman reappears in Registered Sisters but
-            // stays invisible in Participants & Payments.
-            const updates = ['reg_registered = 1', 'retreat_year = ?', "participant_status = 'active'"];
+            // Update existing user
+            const updates = ['reg_registered = 1', 'retreat_year = ?'];
             const binds = [activeYear];
-            if (totalOwed > 0) { updates.push('total_owed = ?'); binds.push(totalOwed); }
-            if (roomPref > 0) { updates.push('room_size_preference = ?'); binds.push(roomPref); }
-            if (roommateReqs) { updates.push('roommate_requests = ?'); binds.push(roommateReqs); }
+            if (formTotal > 0) { updates.push('total_owed = ?'); binds.push(formTotal); }
+            if (row.room_size_preference !== undefined && row.room_size_preference !== null && row.room_size_preference !== '') { updates.push('room_size_preference = ?'); binds.push(roomPref); }
+            if (row.roommate_requests !== undefined && row.roommate_requests !== null) { updates.push('roommate_requests = ?'); binds.push(roommateReqs); }
             if (email) { updates.push('email = ?'); binds.push(email); }
             if (phone) { updates.push('phone = ?'); binds.push(phone); }
             if (church) { updates.push('church = ?'); binds.push(church); }
@@ -3863,65 +3554,40 @@ export default {
             await env.DB.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).bind(...binds).run();
           }
 
-          // Record the actual payment from this submission (deduped by
-          // user+amount+date so re-importing the same export is a no-op).
-          if (formTotal > 0) {
-            const existingPmt = await env.DB.prepare(
+          // Add payment if there's an amount
+          if (paymentAmount > 0) {
+            // Check for duplicate (same user, same amount, same date)
+            const existing = await env.DB.prepare(
               'SELECT id FROM payments WHERE user_id = ? AND amount = ? AND date = ? AND retreat_year = ?'
-            ).bind(user.id, formTotal, paymentDate, activeYear).first();
-            if (!existingPmt) {
+            ).bind(user.id, paymentAmount, paymentDate, activeYear).first();
+            if (!existing) {
               await env.DB.prepare(
                 'INSERT INTO payments (user_id, amount, method, date, notes, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
-              ).bind(user.id, formTotal, 'csv_import', paymentDate, paymentStatus || '', activeYear).run();
+              ).bind(user.id, paymentAmount, 'csv_import', paymentDate, paymentStatus || '', activeYear).run();
             }
           }
-          // Keep the Registrations tab's stored total in step with the
-          // payments table this importer just wrote to
-          await syncRegAmountPaid(env.DB, user.id, activeYear);
 
           imported++;
         }
 
-        return json({ success: true, imported, created, skipped }, corsHeaders);
+        return json({ success: true, imported, created }, corsHeaders);
       }
 
-      // GET /api/admin/rooms - rooms + assignments for active year
+      // GET /api/admin/rooms - room assignments for active year
       if (path === '/api/admin/rooms' && request.method === 'GET') {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
         await ensurePaymentTables(env.DB);
         const activeYear = await getActiveYear(env.DB);
-        const { results: assignments } = await env.DB.prepare(
+        const { results } = await env.DB.prepare(
           `SELECT r.id, r.room_number, r.room_label, r.user_id,
-                  u.first_name, u.last_name, u.last_initial, u.room_size_preference, u.roommate_requests
+                  u.first_name, u.last_name, u.last_initial, u.email, u.room_size_preference, u.roommate_requests
            FROM room_assignments r
            JOIN users u ON r.user_id = u.id
            WHERE r.retreat_year = ?
            ORDER BY r.room_number ASC`
         ).bind(activeYear).all();
-        let { results: rooms } = await env.DB.prepare(
-          'SELECT room_number, capacity FROM rooms WHERE retreat_year = ? ORDER BY room_number ASC'
-        ).bind(activeYear).all();
-        rooms = rooms || [];
-        // Self-heal: a room number that only exists because someone was
-        // assigned to it (created before the rooms table existed) gets a
-        // default-capacity row backfilled now, so it persists going forward.
-        const knownRoomNumbers = new Set(rooms.map(r => r.room_number));
-        // Room numbers below 1 are sentinels, not rooms (-1 is the "not
-        // staying at the hotel" bucket), so they must never be backfilled
-        // into the rooms table or they'd render as a phantom room card.
-        const missingNumbers = [...new Set((assignments || []).map(a => a.room_number))]
-          .filter(n => n >= 1 && !knownRoomNumbers.has(n));
-        for (const n of missingNumbers) {
-          try {
-            await env.DB.prepare(
-              'INSERT INTO rooms (room_number, capacity, retreat_year) VALUES (?, 4, ?) ON CONFLICT(room_number, retreat_year) DO NOTHING'
-            ).bind(n, activeYear).run();
-            rooms.push({ room_number: n, capacity: 4 });
-          } catch (e) {}
-        }
-        rooms.sort((a, b) => a.room_number - b.room_number);
-        return json({ rooms, assignments: assignments || [] }, corsHeaders);
+        return json(results || [], corsHeaders);
       }
 
       // POST /api/admin/rooms - assign user to a room
@@ -3951,56 +3617,16 @@ export default {
         return json({ success: true }, corsHeaders);
       }
 
-      // POST /api/admin/rooms/create - create a new empty room, persisted
-      // immediately (even with nobody assigned yet) with its capacity.
+      // POST /api/admin/rooms/create - create a new empty room
       if (path === '/api/admin/rooms/create' && request.method === 'POST') {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
-        await ensurePaymentTables(env.DB);
         const body = await request.json();
-        const capacity = [1, 2, 3, 4].includes(parseInt(body.capacity)) ? parseInt(body.capacity) : 4;
         const activeYear = await getActiveYear(env.DB);
-        // Find next room number across both rooms and any legacy
-        // assignment-only room numbers
-        const maxRoom = await env.DB.prepare('SELECT MAX(room_number) as mx FROM rooms WHERE retreat_year = ?').bind(activeYear).first();
-        const maxAssignment = await env.DB.prepare('SELECT MAX(room_number) as mx FROM room_assignments WHERE retreat_year = ?').bind(activeYear).first();
-        const nextRoom = Math.max((maxRoom && maxRoom.mx) || 0, (maxAssignment && maxAssignment.mx) || 0) + 1;
-        await env.DB.prepare(
-          'INSERT INTO rooms (room_number, capacity, retreat_year) VALUES (?, ?, ?)'
-        ).bind(nextRoom, capacity, activeYear).run();
-        return json({ success: true, room_number: nextRoom, capacity }, corsHeaders);
-      }
-
-      // DELETE /api/admin/rooms/room/:roomNumber - delete a room, send its
-      // occupants back to unassigned, then close the gap by renumbering the
-      // remaining rooms 1..N so the highest number is the room count.
-      const roomRecordDeleteMatch = path.match(/^\/api\/admin\/rooms\/room\/(\d+)$/);
-      if (roomRecordDeleteMatch && request.method === 'DELETE') {
-        const authErr = requireAdmin(request);
-        if (authErr) return authErr;
-        await ensurePaymentTables(env.DB);
-        const roomNumber = parseInt(roomRecordDeleteMatch[1]);
-        const activeYear = await getActiveYear(env.DB);
-        await env.DB.prepare('DELETE FROM room_assignments WHERE room_number = ? AND retreat_year = ?').bind(roomNumber, activeYear).run();
-        await env.DB.prepare('DELETE FROM rooms WHERE room_number = ? AND retreat_year = ?').bind(roomNumber, activeYear).run();
-
-        // Compact the remaining rooms. Only real rooms (>= 1) are touched —
-        // the "not staying at the hotel" bucket at -1 keeps its sentinel.
-        // Walking in ascending order is collision-safe: each room only ever
-        // moves DOWN, and the slot it moves into was already vacated.
-        const { results: remaining } = await env.DB.prepare(
-          'SELECT room_number FROM rooms WHERE retreat_year = ? AND room_number >= 1 ORDER BY room_number ASC'
-        ).bind(activeYear).all();
-        let next = 1;
-        for (const room of (remaining || [])) {
-          const oldNumber = room.room_number;
-          if (oldNumber !== next) {
-            await env.DB.prepare('UPDATE rooms SET room_number = ? WHERE room_number = ? AND retreat_year = ?').bind(next, oldNumber, activeYear).run();
-            await env.DB.prepare('UPDATE room_assignments SET room_number = ? WHERE room_number = ? AND retreat_year = ?').bind(next, oldNumber, activeYear).run();
-          }
-          next++;
-        }
-        return json({ success: true, rooms_remaining: next - 1 }, corsHeaders);
+        // Find next room number
+        const max = await env.DB.prepare('SELECT MAX(room_number) as mx FROM room_assignments WHERE retreat_year = ?').bind(activeYear).first();
+        const nextRoom = ((max && max.mx) || 0) + 1;
+        return json({ success: true, room_number: body.room_number || nextRoom }, corsHeaders);
       }
 
       // POST /api/admin/settings/payment-due-date - set shared due date
@@ -4051,7 +3677,7 @@ export default {
 
         const html = buildPaymentReminderHtml(user.first_name, balance, dueDate);
         const sent = await brevoSendEmail(env, user.email, 'G4 Retreat — Payment Reminder', html);
-        if (!sent) return json({ error: 'Failed to send email' }, corsHeaders, 500);
+        if (!sent.ok) return json({ error: sent.error || 'Failed to send email' }, corsHeaders, 500);
 
         await env.DB.prepare('INSERT INTO reminder_log (user_id, email, type, retreat_year) VALUES (?, ?, ?, ?)').bind(userId, user.email, 'payment', activeYear).run();
         return json({ success: true }, corsHeaders);
@@ -4096,6 +3722,7 @@ export default {
         const sentIds = new Set((alreadySent || []).map(r => r.user_id));
 
         let count = 0;
+        const errors = [];
         for (const u of (users || [])) {
           if (u.participant_status === 'inactive') continue;
           const balance = (u.total_owed || 0) - (u.total_paid || 0);
@@ -4104,12 +3731,14 @@ export default {
 
           const html = buildPaymentReminderHtml(u.first_name, balance, dueDate);
           const sent = await brevoSendEmail(env, u.email, 'G4 Retreat — Payment Reminder', html);
-          if (sent) {
+          if (sent.ok) {
             await env.DB.prepare('INSERT INTO reminder_log (user_id, email, type, retreat_year) VALUES (?, ?, ?, ?)').bind(u.id, u.email, 'payment', activeYear).run();
             count++;
+          } else {
+            errors.push(u.email + ': ' + (sent.error || 'unknown'));
           }
         }
-        return json({ success: true, sent: count }, corsHeaders);
+        return json({ success: true, sent: count, errors }, corsHeaders);
       }
 
       // ===== FEEDBACK =====
@@ -6008,7 +5637,7 @@ Just the JSON array, nothing else.`;
   async scheduled(event, env, ctx) {
     const isMondayCron = event.cron === '0 9 * * 1';
     const isWednesdayCron = event.cron === '0 9 * * 3';
-    console.log('[cron] scheduled run', { cron: event.cron, isMondayCron, isWednesdayCron, hasBrevoKey: !!env.BREVO_API_KEY });
+    console.log('[cron] scheduled run', { cron: event.cron, isMondayCron, isWednesdayCron, hasBrevoKey: !!env.G4key });
 
     try {
       if (isMondayCron) {
@@ -6100,7 +5729,7 @@ function devotionEmailHtml(firstName, devotion, userId) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#8a9e7a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Open Your Devotion</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -6123,7 +5752,7 @@ function secretSisterEmailHtml(firstName, sisterName, userId) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#c9908a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Write Her a Note</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -6145,7 +5774,7 @@ function secretSisterReceivedEmailHtml(firstName, userId) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#c9908a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Open Your Note</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -6182,7 +5811,7 @@ function customEmailHtml(firstName, message, buttonText, buttonUrl, userId) {
   return `
 <div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px 20px;color:#3a3632;">
   <div style="text-align:center;margin-bottom:20px;">
-    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.4rem;font-weight:700;color:#8a9e7a;">G4 Retreat 2027</div>
+    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.4rem;font-weight:700;color:#8a9e7a;">G4 Incredible Gifts</div>
   </div>
   <div style="font-size:1rem;line-height:1.7;color:#3a3632;">
     ${greeting ? '<p style="margin:0 0 12px;font-weight:600;">' + greeting + '</p>' : ''}
@@ -6190,21 +5819,21 @@ function customEmailHtml(firstName, message, buttonText, buttonUrl, userId) {
   </div>
   ${buttonHtml}
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
 
 async function sendEmail(env, to, subject, html) {
-  if (!env.BREVO_API_KEY) {
-    console.error('[email] BREVO_API_KEY not set, skipping send to', to);
+  if (!env.G4key) {
+    console.error('[email] G4key not set, skipping send to', to);
     return false;
   }
   try {
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
       headers: {
-        'api-key': env.BREVO_API_KEY,
+        'api-key': env.G4key,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -6229,15 +5858,6 @@ async function sendEmail(env, to, subject, html) {
 async function sendDevotionEmail(env, weekOverride, opts) {
   // weekOverride lets the cron handler pass a deterministic week number.
   // opts.force = true skips the dedup log (admin re-send).
-  // Admin pause switch — blocks the cron AND manual Send Now/force sends
-  // alike, so there's exactly one off switch and no surprise re-sends.
-  try {
-    const paused = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'devotion_emails_paused'").first();
-    if (paused && paused.value === '1') {
-      console.log('[devotion-email] devotion emails paused, skipping');
-      return { skipped: 'paused' };
-    }
-  } catch (e) { /* game_settings may not exist yet */ }
   let weekNum;
   if (weekOverride && Number.isInteger(weekOverride) && weekOverride >= 1 && weekOverride <= 15) {
     weekNum = weekOverride;
@@ -6307,13 +5927,6 @@ async function sendSecretSisterEmail(env) {
     console.log('[ss-email] before anchor date, skipping');
     return;
   }
-  try {
-    const paused = await env.DB.prepare("SELECT value FROM game_settings WHERE key = 'weekly_secret_sister_paused'").first();
-    if (paused && paused.value === '1') {
-      console.log('[ss-email] weekly rotation paused, skipping');
-      return;
-    }
-  } catch (e) { /* game_settings may not exist yet */ }
 
   await ensureWeeklySSTable(env.DB);
   await ensureSSRoundExists(env.DB, round);

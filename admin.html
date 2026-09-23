@@ -5278,10 +5278,10 @@ function renderRoomBoard() {
         const isFull = cardPref > 0 && members.length >= capacity;
         const emptySlots = Math.max(0, capacity - members.length);
 
-        // Card colors: green override when full, otherwise preference color
+        // Card colors: gold when full (distinct from 3-person green), otherwise preference color
         let cardBg, cardBorder;
         if (isFull) {
-            cardBg = '#dcfce7'; cardBorder = '#4ade80';
+            cardBg = '#fef9c3'; cardBorder = '#ca8a04';
         } else {
             const cardCol = ROOM_COLORS[cardPref] || null;
             cardBg = cardCol ? cardCol.bg : 'rgba(247,240,235,0.5)';

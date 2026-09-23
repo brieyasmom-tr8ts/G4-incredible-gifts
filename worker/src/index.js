@@ -583,6 +583,7 @@ export default {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
         try {
+          const activeYear = await getActiveYear(env.DB);
           const [
             usersTotal, usersWithPhoto, usersWithProfile,
             messagesTotal, messagesPrayer, messagesEncouragement,
@@ -595,9 +596,9 @@ export default {
             feedbackTotal,
             videosTotal
           ] = await Promise.all([
-            env.DB.prepare('SELECT COUNT(*) as c FROM users').first('c').catch(() => 0),
-            env.DB.prepare("SELECT COUNT(*) as c FROM users WHERE photo_data IS NOT NULL AND photo_data != ''").first('c').catch(() => 0),
-            env.DB.prepare("SELECT COUNT(*) as c FROM users WHERE (email IS NOT NULL AND email != '') OR (phone IS NOT NULL AND phone != '') OR (about IS NOT NULL AND about != '')").first('c').catch(() => 0),
+            env.DB.prepare('SELECT COUNT(*) as c FROM users WHERE retreat_year = ?').bind(activeYear).first('c').catch(() => 0),
+            env.DB.prepare("SELECT COUNT(*) as c FROM users WHERE retreat_year = ? AND photo_data IS NOT NULL AND photo_data != ''").bind(activeYear).first('c').catch(() => 0),
+            env.DB.prepare("SELECT COUNT(*) as c FROM users WHERE retreat_year = ? AND ((email IS NOT NULL AND email != '') OR (phone IS NOT NULL AND phone != '') OR (about IS NOT NULL AND about != ''))").bind(activeYear).first('c').catch(() => 0),
             env.DB.prepare('SELECT COUNT(*) as c FROM messages').first('c').catch(() => 0),
             env.DB.prepare("SELECT COUNT(*) as c FROM messages WHERE type='prayer'").first('c').catch(() => 0),
             env.DB.prepare("SELECT COUNT(*) as c FROM messages WHERE type='encouragement'").first('c').catch(() => 0),
@@ -3384,7 +3385,7 @@ export default {
                   (SELECT MAX(p.date) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?) as last_payment_date,
                   (SELECT COUNT(*) FROM payments p WHERE p.user_id = u.id AND p.retreat_year = ?) as payment_count
            FROM users u
-           WHERE u.retreat_year = ? OR u.reg_registered = 1
+           WHERE u.retreat_year = ?
            ORDER BY u.first_name ASC`
         ).bind(activeYear, activeYear, activeYear, activeYear).all();
 

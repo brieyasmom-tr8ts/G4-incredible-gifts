@@ -1316,7 +1316,11 @@
                     </div>
 
                     <!-- Room occupancy -->
-                    <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem;">Expected rooms</div>
+                    <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+                        <div style="font-family:Playfair Display,serif;font-size:0.78rem;font-weight:700;color:var(--taupe);text-transform:uppercase;letter-spacing:0.06em;">Expected rooms</div>
+                        <button type="button" onclick="fillRoomCountsFromRegistrations()" style="padding:4px 10px;font-size:0.72rem;font-weight:600;background:rgba(138,158,122,0.12);border:1.5px solid var(--sage);border-radius:8px;color:var(--sage);cursor:pointer;white-space:nowrap;">From registrations</button>
+                        <button type="button" onclick="fillRoomCountsFromRoomingList()" style="padding:4px 10px;font-size:0.72rem;font-weight:600;background:rgba(138,158,122,0.08);border:1.5px solid var(--warm-grey);border-radius:8px;color:var(--taupe);cursor:pointer;white-space:nowrap;">From rooming list</button>
+                    </div>
                     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.75rem;margin-bottom:1.25rem;">
                         <div>
                             <label style="display:block;font-size:0.78rem;font-weight:600;color:var(--taupe);margin-bottom:4px;">1-woman rooms</label>
@@ -4376,6 +4380,61 @@ async function initRetreatCalculator() {
         window.addEventListener('pagehide', saveCalcStateNow);
     }
     recalcRetreatCalculator();
+}
+
+// Fill room count inputs from participant room_size_preference data
+function fillRoomCountsFromRegistrations() {
+    const active = (_participants || []).filter(p => p.participant_status !== 'inactive');
+    let n0 = 0, n1 = 0, n2 = 0, n3 = 0, n4 = 0;
+    const pref2 = [], pref3 = [], pref4 = [];
+    active.forEach(p => {
+        const pref = parseInt(p.room_size_preference, 10) || 0;
+        if (pref === 0) n0++;
+        else if (pref === 1) n1++;
+        else if (pref === 2) pref2.push(p);
+        else if (pref === 3) pref3.push(p);
+        else if (pref === 4) pref4.push(p);
+    });
+    // Rooms = ceil(people / size)
+    n2 = Math.ceil(pref2.length / 2);
+    n3 = Math.ceil(pref3.length / 3);
+    n4 = Math.ceil(pref4.length / 4);
+    ['calc-n0','calc-n1','calc-n2','calc-n3','calc-n4'].forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (el) { el.value = [n0, n1, n2, n3, n4][i]; }
+    });
+    recalcRetreatCalculator();
+    scheduleCalcStateSave();
+    showToast('Filled from registrations (' + active.length + ' women)');
+}
+
+// Fill room count inputs from actual rooming list assignments
+function fillRoomCountsFromRoomingList() {
+    const assignments = (_roomAssignments || []);
+    // Group by room_number, excluding no-hotel (-1) and unassigned (0)
+    const roomOccupants = {};
+    let n0 = 0;
+    assignments.forEach(a => {
+        const rn = parseInt(a.room_number, 10);
+        if (rn === -1) { n0++; return; }
+        if (rn <= 0) return;
+        roomOccupants[rn] = (roomOccupants[rn] || 0) + 1;
+    });
+    let n1 = 0, n2 = 0, n3 = 0, n4 = 0;
+    Object.values(roomOccupants).forEach(count => {
+        if (count === 1) n1++;
+        else if (count === 2) n2++;
+        else if (count === 3) n3++;
+        else n4++; // 4+
+    });
+    ['calc-n0','calc-n1','calc-n2','calc-n3','calc-n4'].forEach((id, i) => {
+        const el = document.getElementById(id);
+        if (el) { el.value = [n0, n1, n2, n3, n4][i]; }
+    });
+    recalcRetreatCalculator();
+    scheduleCalcStateSave();
+    const totalRooms = n1 + n2 + n3 + n4;
+    showToast('Filled from rooming list (' + totalRooms + ' rooms, ' + n0 + ' no-hotel)');
 }
 
 // Returns the total room cost for the whole retreat (nights × nightly rate)

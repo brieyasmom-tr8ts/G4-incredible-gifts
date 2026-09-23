@@ -5282,7 +5282,7 @@
             setTimeout(() => banner.classList.add('animate-in'), 100);
 
             // Welcome guide for 2027+ women (dismissible, one-time)
-            if ((currentUser.retreat_year || 2026) >= 2027 && !localStorage.getItem('g4_welcome_2027_dismissed')) {
+            if ((currentUser.retreat_year || 2027) >= 2027 && !localStorage.getItem('g4_welcome_2027_dismissed')) {
                 var wCard = document.getElementById('welcome-2027-card');
                 if (wCard) {
                     wCard.style.display = 'block';
@@ -5713,7 +5713,7 @@
                     return;
                 }
                 // 2027 users: hide 2026 women who opted out (opted_in_2027 === -1)
-                const viewerIs2027 = currentUser && (currentUser.retreat_year || 2026) >= 2027;
+                const viewerIs2027 = currentUser && (currentUser.retreat_year || 2027) >= 2027;
                 allDirectoryUsers = viewerIs2027
                     ? users.filter(u => u.retreat_year >= 2027 || u.opted_in_2027 === 1)
                     : users;
@@ -7578,7 +7578,7 @@
             const NAV_2026_ONLY = ['nav_whoami', 'nav_survey'];
             const navKeyEnabled = (key) => {
                 if (NAV_FORCE_OFF.indexOf(key) !== -1) return false;
-                if (NAV_2026_ONLY.indexOf(key) !== -1 && currentUser && (currentUser.retreat_year || 2026) >= 2027) return false;
+                if (NAV_2026_ONLY.indexOf(key) !== -1 && currentUser && (currentUser.retreat_year || 2027) >= 2027) return false;
                 if (navSettings[key] === '1') return true;
                 if (navSettings[key] === '0') return false;
                 return DEFAULT_NAV_ON.indexOf(key) !== -1;
@@ -8665,7 +8665,7 @@
             container.innerHTML = '';
 
             // 2027 women see a coming-soon message — their devotions start after the April 2027 retreat
-            if (currentUser && (currentUser.retreat_year || 2026) >= 2027 && viewingYear >= 2027) {
+            if (currentUser && (currentUser.retreat_year || 2027) >= 2027 && viewingYear >= 2027) {
                 container.innerHTML = `<div class="devotion-hub-intro" style="text-align:center;padding:2.5rem 1rem;">
                     <div style="font-size:2.5rem;margin-bottom:1rem;">✨</div>
                     <div class="devotion-hub-title">Coming After the Retreat</div>
@@ -10696,7 +10696,7 @@
         async function load2027PreRetreatHome() {
             if (!currentUser) return;
             // Only for 2027 users in pre-retreat window
-            var userYear = currentUser.retreat_year || 2026;
+            var userYear = currentUser.retreat_year || 2027;
             var retreatStart = new Date('2027-04-08T17:00:00-04:00');
             var now = new Date();
             var is2027User = userYear >= 2027 && viewingYear >= 2027;
@@ -11760,7 +11760,7 @@
             if (!el || el.classList.contains('revealed')) return;
             el.style.display = 'block';
             var mandy = document.getElementById('mandy-resources-card');
-            if (mandy && !(currentUser && (currentUser.retreat_year || 2026) >= 2027)) mandy.style.display = 'block';
+            if (mandy && !(currentUser && (currentUser.retreat_year || 2027) >= 2027)) mandy.style.display = 'block';
             // Trigger CSS fade-in on next frame
             requestAnimationFrame(function() {
                 requestAnimationFrame(function() {
@@ -11775,7 +11775,7 @@
             if (now >= retreatEnd) {
                 // 2026-specific content: only for women who attended the 2026 retreat
                 // (retreat_year < 2027) or who are currently toggled into 2026 archive view
-                const show2026Content = viewingYear < 2027 || (currentUser && (currentUser.retreat_year || 2026) < 2027);
+                const show2026Content = viewingYear < 2027 || (currentUser && (currentUser.retreat_year || 2027) < 2027);
                 if (show2026Content) {
                     buildLectioDivinaCard();
                     initFeedbackForm();
@@ -12052,7 +12052,7 @@
         }
 
         function updateFeedbackUIState() {
-            const is2027 = currentUser && (currentUser.retreat_year || 2026) >= 2027;
+            const is2027 = currentUser && (currentUser.retreat_year || 2027) >= 2027;
             const submitted = !!localStorage.getItem('g4feedback_sent');
             const banner = document.getElementById('feedback-banner');
             if (banner) banner.style.display = (submitted || is2027) ? 'none' : 'block';
@@ -12812,7 +12812,7 @@
 
         function initFeedbackForm() {
             // 2027+ users don't see the 2026 feedback survey
-            if (currentUser && (currentUser.retreat_year || 2026) >= 2027) return;
+            if (currentUser && (currentUser.retreat_year || 2027) >= 2027) return;
             // Wire banner button (always works, even after submit the button is gone)
             const bannerBtn = document.getElementById('feedback-banner-btn');
             if (bannerBtn && !bannerBtn.dataset.wired) {
@@ -13083,7 +13083,7 @@
             const btnStyle = 'padding:16px 12px;background:white;border:1px solid rgba(200,185,176,0.18);border-radius:14px;font-family:Playfair Display,serif;font-size:0.88rem;font-weight:600;color:var(--dark-text);cursor:pointer;box-shadow:0 1px 6px rgba(74,55,40,0.04);text-align:left;';
             const s = gameSettings || {};
             const HOME_2026_ONLY = ['home_whoami', 'home_survey'];
-            const is2027 = currentUser && (currentUser.retreat_year || 2026) >= 2027;
+            const is2027 = currentUser && (currentUser.retreat_year || 2027) >= 2027;
             const visible = HOME_BUTTONS_ALL.filter(b => {
                 if (HOME_2026_ONLY.indexOf(b.key) !== -1 && is2027) return false;
                 if (s[b.key] === '1') return true;
@@ -15669,7 +15669,7 @@ function showStayConnectedCard() {
     var card = document.getElementById('stay-connected-2027-card');
     if (!card) return;
     // Only show to 2026 women who have NOT yet chosen yes or no
-    if ((currentUser.retreat_year || 2026) !== 2026) { card.style.display = 'none'; return; }
+    if ((currentUser.retreat_year || 2027) !== 2026) { card.style.display = 'none'; return; }
     if (currentUser.opted_in_2027 === 1 || currentUser.opted_in_2027 === -1) { card.style.display = 'none'; return; }
     card.style.display = 'block';
 }

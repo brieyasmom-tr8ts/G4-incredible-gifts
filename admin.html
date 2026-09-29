@@ -1579,6 +1579,20 @@
                     <div id="participants-table" style="overflow-x:auto;"></div>
                 </div>
 
+
+                <!-- Reconciliation -->
+                <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:0.75rem;">
+                        <div>
+                            <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Reconciliation</div>
+                            <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Checks each woman's stored totals against her actual payment records. Anything that disagrees shows up here.</div>
+                        </div>
+                        <button class="btn btn-refresh" onclick="loadReconcile()" style="font-size:0.78rem;padding:6px 14px;flex-shrink:0;">Run check</button>
+                    </div>
+                    <div id="reconcile-body"><div style="font-size:0.85rem;color:var(--light-text);padding:6px 0;">Not run yet.</div></div>
+                </div>
+
+
                 <!-- Room Assignment Board -->
                 <div style="background:white;border-radius:14px;box-shadow:var(--shadow-md);padding:1.5rem;margin-bottom:1.5rem;">
                     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem;">
@@ -1586,7 +1600,10 @@
                             <div style="font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;">Room Assignments</div>
                             <div style="font-size:0.85rem;color:var(--light-text);margin-top:2px;">Drag women into rooms. See roommate requests and unfilled spots.</div>
                         </div>
-                        <button class="btn btn-refresh" onclick="addNewRoom()" style="font-size:0.78rem;padding:6px 14px;">+ New Room</button>
+                        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+                            <button class="btn" style="background:rgba(200,185,176,0.3);color:var(--taupe);font-size:0.78rem;padding:6px 14px;" onclick="downloadRoomingListCsv()">Rooming List</button>
+                            <button class="btn btn-refresh" onclick="addNewRoom()" style="font-size:0.78rem;padding:6px 14px;">+ New Room</button>
+                        </div>
                         <button class="btn btn-refresh" onclick="exportRoomingList()" style="font-size:0.78rem;padding:6px 14px;margin-left:6px;">Export Hotel List</button>
                     </div>
                     <!-- Color legend -->
@@ -4964,8 +4981,140 @@ async function loadParticipants() {
         }
         renderParticipantsTable();
         loadRoomAssignments();
+        loadReconcile();
     } catch (e) {
         showToast('Could not load participants: ' + (e.message || ''));
+    }
+}
+
+// ---- Reconciliation -------------------------------------------------
+// The roster stores what each woman has paid in two places: a copy on her
+// user row (what the Registrations tab reads) and the payments table (the
+// real record). New payments keep both in step, but rows that drifted
+// before that was true stay wrong until someone notices. This panel is
+// that someone.
+let _reconcile = null;
+
+const RECONCILE_FLAG_STYLE = {
+    paid_drift: { color: '#a13224', bg: 'rgba(161,50,36,0.10)' },
+    owed_drift: { color: '#c4882d', bg: 'rgba(196,136,45,0.12)' },
+    no_amount_owed: { color: 'var(--taupe)', bg: 'rgba(200,185,176,0.25)' },
+    overpaid: { color: '#c4882d', bg: 'rgba(196,136,45,0.12)' }
+};
+
+async function loadReconcile() {
+    const body = document.getElementById('reconcile-body');
+    if (!body) return;
+    body.innerHTML = '<div style="font-size:0.85rem;color:var(--light-text);padding:6px 0;">Checking…</div>';
+    try {
+        _reconcile = await apiFetch('/api/admin/reconcile');
+        renderReconcile();
+    } catch (e) {
+        body.innerHTML = '<div style="font-size:0.85rem;color:#a13224;padding:6px 0;">Could not run the check: ' + esc(e.message || '') + '</div>';
+    }
+}
+
+function renderReconcile() {
+    const body = document.getElementById('reconcile-body');
+    if (!body || !_reconcile) return;
+    const s = _reconcile.summary || {};
+    const issues = _reconcile.issues || [];
+    const orphans = _reconcile.orphan_payments || [];
+
+    if (!issues.length && !orphans.length) {
+        body.innerHTML = '<div style="padding:14px 16px;background:rgba(91,154,111,0.10);border-radius:10px;font-size:0.9rem;color:#3f7350;">'
+            + '<strong>Everything ties out.</strong> All ' + (s.checked || 0) + ' women on the ' + (_reconcile.year || '') + ' roster have stored totals that match their payment records.'
+            + '</div>';
+        return;
+    }
+
+    let html = '<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.9rem;">'
+        + reconcileChip(s.flagged || 0, (s.flagged === 1 ? 'woman' : 'women') + ' flagged', '#a13224')
+        + reconcileChip(s.checked || 0, 'checked', 'var(--light-text)')
+        + '</div>';
+
+    if (s.paid_drift) {
+        html += '<div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:10px 14px;background:rgba(161,50,36,0.07);border-radius:10px;">'
+            + '<span style="font-size:0.85rem;color:var(--dark-text);">' + s.paid_drift + ' ' + (s.paid_drift === 1 ? 'row has' : 'rows have') + ' a stored paid total that disagrees with her payment records.</span>'
+            + '<button class="btn" style="margin-left:auto;font-size:0.75rem;padding:5px 12px;background:rgba(161,50,36,0.15);color:#a13224;" onclick="fixAllReconcile(\'paid\')">Resync all</button>'
+            + '</div>';
+    }
+    if (s.owed_drift) {
+        html += '<div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.75rem;padding:10px 14px;background:rgba(196,136,45,0.08);border-radius:10px;">'
+            + '<span style="font-size:0.85rem;color:var(--dark-text);">' + s.owed_drift + ' ' + (s.owed_drift === 1 ? 'row does' : 'rows do') + ' not match the price of the room size on file.</span>'
+            + '<button class="btn" style="margin-left:auto;font-size:0.75rem;padding:5px 12px;background:rgba(196,136,45,0.18);color:#8a5d17;" onclick="fixAllReconcile(\'owed\')">Reprice all</button>'
+            + '</div>';
+    }
+
+    if (issues.length) {
+        html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.85rem;">'
+            + '<thead><tr style="text-align:left;color:var(--light-text);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">'
+            + '<th style="padding:8px 10px;">Who</th><th style="padding:8px 10px;">What is off</th>'
+            + '<th style="padding:8px 10px;text-align:right;">Owed</th><th style="padding:8px 10px;text-align:right;">Paid</th>'
+            + '<th style="padding:8px 10px;"></th></tr></thead><tbody>';
+        issues.forEach(i => {
+            const flagHtml = i.flags.map(f => {
+                const st = RECONCILE_FLAG_STYLE[f.type] || RECONCILE_FLAG_STYLE.no_amount_owed;
+                return '<div style="margin-bottom:4px;">'
+                    + '<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:' + st.bg + ';color:' + st.color + ';font-size:0.7rem;font-weight:600;">' + esc(f.label) + '</span>'
+                    + '<div style="color:var(--light-text);font-size:0.78rem;margin-top:2px;">' + esc(f.detail) + '</div>'
+                    + '</div>';
+            }).join('');
+            const fixable = i.flags.filter(f => f.fix);
+            const buttons = fixable.map(f => '<button class="btn" style="font-size:0.72rem;padding:4px 10px;background:rgba(138,158,122,0.18);color:var(--sage);white-space:nowrap;" onclick="fixReconcile(\'' + f.fix + '\', ' + i.user_id + ')">'
+                + (f.fix === 'paid' ? 'Resync' : 'Reprice') + '</button>').join(' ');
+            html += '<tr style="border-top:1px solid rgba(200,185,176,0.4);vertical-align:top;">'
+                + '<td style="padding:10px;"><div style="font-weight:600;">' + esc(i.name) + '</div>'
+                + (i.email ? '<div style="color:var(--light-text);font-size:0.76rem;">' + esc(i.email) + '</div>' : '')
+                + '</td>'
+                + '<td style="padding:10px;">' + flagHtml + '</td>'
+                + '<td style="padding:10px;text-align:right;font-family:-apple-system,sans-serif;font-variant-numeric:tabular-nums;">' + fmtMoney(i.total_owed) + '</td>'
+                + '<td style="padding:10px;text-align:right;font-family:-apple-system,sans-serif;font-variant-numeric:tabular-nums;">' + fmtMoney(i.actual_paid)
+                + (Math.abs(i.stored_paid - i.actual_paid) >= 0.01 ? '<div style="color:var(--light-text);font-size:0.72rem;">stored ' + fmtMoney(i.stored_paid) + '</div>' : '')
+                + '</td>'
+                + '<td style="padding:10px;text-align:right;white-space:nowrap;">' + (buttons || '<span style="color:var(--light-text);font-size:0.75rem;">needs your call</span>') + '</td>'
+                + '</tr>';
+        });
+        html += '</tbody></table></div>';
+    }
+
+    if (orphans.length) {
+        html += '<div style="margin-top:1rem;padding:12px 14px;background:rgba(161,50,36,0.07);border-radius:10px;">'
+            + '<div style="font-weight:600;font-size:0.88rem;color:#a13224;">' + orphans.length + ' payment' + (orphans.length === 1 ? '' : 's')
+            + ' totalling ' + fmtMoney(_reconcile.summary.orphan_total || 0) + ' belong to women who are no longer on the roster.</div>'
+            + '<div style="font-size:0.8rem;color:var(--light-text);margin-top:4px;">They are in the payments table but not counted in anyone\'s total. Usually left behind when someone was removed. Worth checking she really did not attend before writing the money off.</div>'
+            + '</div>';
+    }
+
+    body.innerHTML = html;
+}
+
+function reconcileChip(n, label, color) {
+    return '<span style="padding:4px 12px;border-radius:999px;background:rgba(200,185,176,0.2);font-size:0.78rem;color:' + color + ';">'
+        + '<strong style="font-family:-apple-system,sans-serif;font-variant-numeric:tabular-nums;">' + n + '</strong> ' + label + '</span>';
+}
+
+async function fixReconcile(field, userId) {
+    try {
+        await apiFetch('/api/admin/reconcile/fix', { method: 'POST', body: { fix: field, user_id: userId } });
+        showToast(field === 'paid' ? 'Paid total resynced' : 'Amount owed repriced');
+        await loadParticipants();
+    } catch (e) {
+        showToast('Could not fix that: ' + (e.message || ''));
+    }
+}
+
+async function fixAllReconcile(field) {
+    const what = field === 'paid'
+        ? 'Resync every drifted paid total from the payment records?'
+        : 'Reset every mismatched total owed to the price of her room size?';
+    if (!confirm(what)) return;
+    try {
+        const res = await apiFetch('/api/admin/reconcile/fix', { method: 'POST', body: { fix: field, all: true } });
+        showToast('Fixed ' + (res.fixed || 0) + ' row' + (res.fixed === 1 ? '' : 's'));
+        await loadParticipants();
+    } catch (e) {
+        showToast('Could not fix those: ' + (e.message || ''));
     }
 }
 
@@ -5627,6 +5776,65 @@ function exportRoomingList() {
     a.download = 'G4-2027-Rooming-List.csv';
     a.click();
     URL.revokeObjectURL(url);
+}
+
+// The rooming list the hotel gets. Columns are the ones Heather approved
+// and tested in April 2026: Room, Room Size, Name, Email, Phone, Roommate
+// Preference. Deliberately no money on it — the hotel has no business
+// seeing who has paid. The board itself is the planning view.
+//
+// Capacity is derived exactly the way renderRoomBoard derives it (the first
+// occupant's room preference, falling back to 4), so the sheet always
+// agrees with what she is looking at on screen. There is no stored
+// capacity in this version of the board.
+//
+// Empty rooms, the no-hotel women and anyone still unassigned are left off,
+// since none of them belong on a hotel rooming list. Leaving them off
+// silently is how someone gets forgotten at check-in, so the toast counts
+// them.
+function downloadRoomingListCsv() {
+    if (!_participants.length) { showToast('No data to export'); return; }
+
+    const byId = {};
+    _participants.forEach(p => { byId[String(p.id)] = p; });
+    const rooms = {};
+    _roomAssignments.forEach(a => {
+        if (!rooms[a.room_number]) rooms[a.room_number] = [];
+        rooms[a.room_number].push(a);
+    });
+    const assignedIds = new Set(_roomAssignments.map(a => String(a.user_id)));
+
+    let maxRoom = 0;
+    _roomAssignments.forEach(a => { if (a.room_number > maxRoom) maxRoom = a.room_number; });
+
+    const headers = ['Room', 'Room Size', 'Name', 'Email', 'Phone', 'Roommate Preference'];
+    const rows = [];
+    for (let r = 1; r <= maxRoom; r++) {
+        const members = rooms[r] || [];
+        if (!members.length) continue;
+        const firstUser = byId[String(members[0].user_id)] || members[0];
+        const cardPref = firstUser ? (firstUser.room_size_preference || 0) : 0;
+        const capacity = cardPref > 0 ? cardPref : 4;
+        members.forEach(m => {
+            const p = byId[String(m.user_id)] || m;
+            const name = p.last_name ? (p.first_name + ' ' + p.last_name) : (p.first_name || '');
+            rows.push(['Room ' + r, capacity + '-person', name,
+                       p.email || '', p.phone || '', p.roommate_requests || '']);
+        });
+    }
+
+    if (!rows.length) { showToast('No one is assigned to a room yet'); return; }
+
+    const csv = [headers, ...rows].map(row => row.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'g4-rooming-list.csv'; a.click();
+
+    const unassigned = _participants.filter(p => !assignedIds.has(String(p.id)) && p.participant_status !== 'inactive').length;
+    const noHotel = (rooms[-1] || []).length;
+    const notes = [];
+    if (unassigned) notes.push(unassigned + ' still unassigned, not on the list');
+    if (noHotel) notes.push(noHotel + ' not staying at the hotel, left off');
+    showToast(notes.length ? 'Downloaded. ' + notes.join('; ') + '.' : 'Rooming list downloaded');
 }
 
 async function deleteRoom(roomNum) {

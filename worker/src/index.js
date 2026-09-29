@@ -107,6 +107,47 @@ function buildPaymentReminderHtml(firstName, balance, dueDate) {
 }
 
 // Blocked words filter
+// Room size preference (1-4 people, 0 = not sleeping at the hotel) → total
+// cost. Matches the budget calculator tiers and the landing page pricing.
+// Shared by both CSV import paths (Registrations tab and Participants &
+// Payments) so total_owed is always derived from room size, never from a
+// payment amount.
+const ROOM_PRICE = { 1: 430, 2: 280, 3: 230, 4: 190, 0: 130 };
+
+// null means we don't know her room size; 0 means she explicitly isn't
+// sleeping at the hotel and owes the $130 tier. Collapsing the two prices
+// no-hotel women wrong in one direction and invents a total for unknown
+// ones in the other.
+function parseRoomSize(val) {
+  if (val === 0 || val === '0') return 0;
+  if (!val) return null;
+  const s = val.toString().toLowerCase().trim();
+  if (s.includes('no hotel') || s.includes('not sleeping') || s.includes('commut') || s.includes('day only')) return 0;
+  const match = s.match(/\d+/);
+  if (!match) return null;
+  const n = parseInt(match[0], 10);
+  if (n >= 4) return 4; // "4 or 5 person" → 4
+  return n >= 1 ? n : null;
+}
+
+// users.reg_amount_paid is a stored copy of what she's paid, shown on the
+// Registrations tab, while Participants & Payments sums the payments table
+// live. Any write to payments must call this or the two views disagree.
+async function syncRegAmountPaid(db, userId, retreatYear) {
+  if (!userId) return 0;
+  try {
+    const row = await db.prepare(
+      'SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE user_id = ? AND retreat_year = ?'
+    ).bind(userId, retreatYear).first();
+    const total = (row && row.total) || 0;
+    await db.prepare('UPDATE users SET reg_amount_paid = ? WHERE id = ?').bind(total, userId).run();
+    return total;
+  } catch (e) {
+    console.error('[sync-paid] failed', userId, e && e.message);
+    return 0;
+  }
+}
+
 const BLOCKED_WORDS = [
   'damn', 'hell', 'shit', 'fuck', 'ass', 'bitch', 'crap',
   'bastard', 'dick', 'piss', 'slut', 'whore'
@@ -3235,19 +3276,36 @@ export default {
         const body = await request.json();
         const rows = Array.isArray(body && body.rows) ? body.rows : [];
         const { results: allUsers } = await env.DB.prepare(
-          'SELECT id, first_name, last_initial, last_name FROM users'
+          'SELECT id, first_name, last_initial, last_name, email FROM users'
         ).all();
         const matched = rows.map(row => {
           const name = (row.name || '').toString().trim();
+          const email = (row.email || '').toString().trim().toLowerCase();
           const candidates = allUsers
-            .map(u => ({
-              user_id: u.id,
-              display_name: u.last_name ? `${u.first_name} ${u.last_name}` : (u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name),
-              score: scoreNameMatch(name, u.first_name, u.last_name || u.last_initial)
-            }))
+            .map(u => {
+              const userEmail = (u.email || '').toString().trim().toLowerCase();
+              // An email match is an identity match — nobody shares one —
+              // so it beats any name score outright.
+              const emailMatch = !!(email && userEmail && email === userEmail);
+              const nameScore = scoreNameMatch(name, u.first_name, u.last_name || u.last_initial);
+              return {
+                user_id: u.id,
+                display_name: u.last_name ? `${u.first_name} ${u.last_name}` : (u.last_initial ? `${u.first_name} ${u.last_initial}.` : u.first_name),
+                score: emailMatch ? 100 : nameScore,
+                matched_by: emailMatch ? 'email' : 'name'
+              };
+            })
             .filter(c => c.score > 0)
             .sort((a, b) => b.score - a.score)
             .slice(0, 5);
+          // Auto-select only on a confident match: an email hit, or a first
+          // name plus a last name/initial that agree. A first-name-only hit
+          // scores 50 and is NOT enough — "Joanne" shouldn't silently claim
+          // an existing "Joanne Kramer". Those still appear in the dropdown
+          // to pick manually, and the commit endpoint dedups by email and
+          // full name anyway, so choosing "Create new" can't duplicate her.
+          const top = candidates[0];
+          const confident = top && (top.matched_by === 'email' || top.score >= 75);
           return {
             name,
             first_name: (row.first_name || '').toString().trim(),
@@ -3258,7 +3316,7 @@ export default {
             room_size_preference: row.room_size_preference !== undefined ? row.room_size_preference : null,
             roommate_requests: row.roommate_requests !== undefined ? row.roommate_requests : null,
             candidates,
-            best_match_id: (candidates.length && candidates[0].score >= 50) ? candidates[0].user_id : null
+            best_match_id: confident ? top.user_id : null
           };
         });
         return json({ matched }, corsHeaders);
@@ -3278,21 +3336,6 @@ export default {
         await ensureRegColumns(env.DB);
         await ensurePaymentTables(env.DB);
         const activeYear = await getActiveYear(env.DB);
-        // Room size → total cost lookup (matches the budget calculator tiers)
-        const ROOM_PRICE = { 1: 430, 2: 280, 3: 230, 4: 190, 0: 130 };
-
-        // Parse room size from text or number. Handles:
-        // "2 people", "2 person", "3 person room", "4 or 5 person", "1", "single", "no hotel"
-        function parseRoomSize(val) {
-          if (!val) return 0;
-          const s = val.toString().toLowerCase().trim();
-          if (s.includes('no hotel') || s.includes('commute') || s.includes('day only')) return 0;
-          const match = s.match(/\d+/);
-          const n = match ? parseInt(match[0], 10) : 0;
-          if (n >= 4) return 4; // "4 or 5 person" → 4
-          return n || 0;
-        }
-
         let applied = 0;
         for (const entry of entries) {
           const amount = parseFloat(entry.amount) || 0;
@@ -3300,10 +3343,14 @@ export default {
           const notes = (entry.notes || '').toString().trim();
           const source = (entry.source || 'csv_import').toString();
           const roomPref = parseRoomSize(entry.room_size_preference);
+          const knownRoom = roomPref !== null;
           const roommateReqs = (entry.roommate_requests || '').toString().trim();
-          // total_owed = room price based on size (including 0=no hotel=$130); fall back to payment amount only if room pref was not provided
-          const roomPrefProvided = entry.room_size_preference !== undefined && entry.room_size_preference !== null && entry.room_size_preference !== '';
-          const totalOwed = roomPrefProvided && ROOM_PRICE[roomPref] !== undefined ? ROOM_PRICE[roomPref] : (amount || 0);
+          // Price comes from her room tier, including the $130 no-hotel tier.
+          // Only when the tier is genuinely unknown do we fall back to what
+          // she paid — otherwise a no-hotel woman who's only paid a $50
+          // deposit would be recorded as owing $50 and look paid in full.
+          const roomPrefProvided = knownRoom;
+          const totalOwed = knownRoom ? ROOM_PRICE[roomPref] : (amount || 0);
           let userId = parseInt(entry.user_id, 10);
           let freshInsert = false;
 
@@ -3324,10 +3371,20 @@ export default {
             first = first.charAt(0).toUpperCase() + first.slice(1).toLowerCase();
             const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
             const email = (entry.email || '').toString().trim() || null;
-            // Check if a user with this name already exists (dedup on re-import)
-            const existingByName = await env.DB.prepare(
-              'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND (LOWER(last_name) = LOWER(?) OR (last_name = \'\' AND UPPER(last_initial) = UPPER(?))) LIMIT 1'
-            ).bind(first, lastName, lastInitial).first();
+            // Dedup on re-import: email first (it's an identity, and it
+            // catches her even if she married/changed her last name), then
+            // full name.
+            let existingByName = null;
+            if (email) {
+              existingByName = await env.DB.prepare(
+                'SELECT id FROM users WHERE LOWER(TRIM(email)) = LOWER(TRIM(?)) LIMIT 1'
+              ).bind(email).first();
+            }
+            if (!existingByName) {
+              existingByName = await env.DB.prepare(
+                'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND (LOWER(last_name) = LOWER(?) OR (last_name = \'\' AND UPPER(last_initial) = UPPER(?))) LIMIT 1'
+              ).bind(first, lastName, lastInitial).first();
+            }
             if (existingByName) {
               userId = existingByName.id;
             } else {
@@ -3339,10 +3396,29 @@ export default {
             }
           }
 
+          // Record the payment BEFORE recomputing her total, so a repeat CSV
+          // row (a second submission carrying a balance payment) is counted.
+          // Deduped by user+amount+date so re-importing the same export
+          // doesn't double-charge her.
+          if (amount > 0) {
+            const existingPmt = await env.DB.prepare(
+              'SELECT id FROM payments WHERE user_id = ? AND amount = ? AND date = ? AND retreat_year = ?'
+            ).bind(userId, amount, date, activeYear).first();
+            if (!existingPmt) {
+              await env.DB.prepare(
+                'INSERT INTO payments (user_id, amount, method, date, notes, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
+              ).bind(userId, amount, 'csv_import', date, notes || source, activeYear).run();
+            }
+          }
+
           // Update existing user record (skipped only for brand-new inserts, which set fields on INSERT)
           if (userId && !freshInsert) {
-            const userUpdates = ['reg_registered = 1', "participant_status = 'active'", 'retreat_year = 2027', 'reg_amount_paid = ?', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
-            const userBinds = [amount, date, source, notes];
+            // reg_amount_paid is deliberately absent: syncRegAmountPaid owns
+            // it and derives it from the payments table just below. Binding
+            // this row's amount here is what made a re-import overwrite her
+            // running total with the latest single payment.
+            const userUpdates = ['reg_registered = 1', "participant_status = 'active'", 'retreat_year = 2027', 'reg_paid_date = ?', 'reg_source = ?', 'reg_notes = ?'];
+            const userBinds = [date, source, notes];
             const emailVal = (entry.email || '').toString().trim();
             if (emailVal) { userUpdates.push('email = ?'); userBinds.push(emailVal); }
             if (entry.last_name) { userUpdates.push('last_name = ?'); userBinds.push(entry.last_name.toString().trim()); }
@@ -3365,17 +3441,11 @@ export default {
             await env.DB.prepare(`UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`).bind(...userBinds).run();
           }
 
-          // Add to payments table if amount > 0 (deduped by user+amount+date)
-          if (amount > 0) {
-            const existingPmt = await env.DB.prepare(
-              'SELECT id FROM payments WHERE user_id = ? AND amount = ? AND date = ? AND retreat_year = ?'
-            ).bind(userId, amount, date, activeYear).first();
-            if (!existingPmt) {
-              await env.DB.prepare(
-                'INSERT INTO payments (user_id, amount, method, date, notes, retreat_year) VALUES (?, ?, ?, ?, ?, ?)'
-              ).bind(userId, amount, 'csv_import', date, notes || source, activeYear).run();
-            }
-          }
+          // reg_amount_paid must reflect everything she's ever paid this
+          // year, not just this one CSV row. Re-importing a woman who has
+          // since made a second payment should update her total, not
+          // overwrite it with the latest amount alone.
+          await syncRegAmountPaid(env.DB, userId, activeYear);
           applied++;
         }
         return json({ success: true, applied }, corsHeaders);
@@ -3561,6 +3631,7 @@ export default {
           body.notes || '',
           activeYear
         ).run();
+        await syncRegAmountPaid(env.DB, parseInt(body.user_id), activeYear);
         return json({ success: true }, corsHeaders);
       }
 
@@ -3570,7 +3641,12 @@ export default {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
         const payId = parseInt(paymentDeleteMatch[1]);
+        const activeYear = await getActiveYear(env.DB);
+        // Read the owner before the row is gone, so her stored total can be
+        // recomputed from what's left.
+        const owner = await env.DB.prepare('SELECT user_id FROM payments WHERE id = ?').bind(payId).first();
         await env.DB.prepare('DELETE FROM payments WHERE id = ?').bind(payId).run();
+        if (owner && owner.user_id) await syncRegAmountPaid(env.DB, owner.user_id, activeYear);
         return json({ success: true }, corsHeaders);
       }
 
@@ -3597,17 +3673,26 @@ export default {
           const email = (row.email || '').trim().toLowerCase();
           const phone = (row.phone || '').trim();
           const church = (row.church || '').trim();
-          const roomPref = parseInt(row.room_size_preference) || 0;
+          const roomPref = parseRoomSize(row.room_size_preference);
           const roommateReqs = (row.roommate_requests || '').trim();
+          // "Form Total" is what she actually paid on THIS form submission
+          // (a $50 deposit, or the full room cost if she paid in full) — it
+          // is a payment amount, not her total cost. Total cost is derived
+          // from her room size below, same as the Registrations importer.
           const formTotal = parseFloat(row.form_total) || 0;
           const paymentAmount = parseFloat(row.payment_amount) || 0;
           const paymentDate = (row.payment_date || '').trim();
           const paymentStatus = (row.payment_status || '').trim();
+          const totalOwed = roomPref !== null && ROOM_PRICE[roomPref] !== undefined ? ROOM_PRICE[roomPref] : 0;
 
-          // Match existing user by name or email
+          // Match existing user by name or email. Require a full last_name
+          // match when the existing record has one on file — matching on
+          // first_name + last_initial alone (a single letter) risks merging
+          // a brand-new registrant into an unrelated woman from a prior
+          // year who happens to share a first name and initial.
           let user = await env.DB.prepare(
-            'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND UPPER(last_initial) = UPPER(?)'
-          ).bind(cleanFirst, cleanInitial).first();
+            'SELECT id FROM users WHERE LOWER(first_name) = LOWER(?) AND (LOWER(last_name) = LOWER(?) OR (last_name = \'\' AND UPPER(last_initial) = UPPER(?))) LIMIT 1'
+          ).bind(cleanFirst, lastName, cleanInitial).first();
 
           if (!user && email) {
             user = await env.DB.prepare(
@@ -3619,14 +3704,14 @@ export default {
             // Create new user
             const result = await env.DB.prepare(
               'INSERT INTO users (first_name, last_initial, last_name, email, phone, church, retreat_year, reg_registered, total_owed, room_size_preference, roommate_requests) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)'
-            ).bind(cleanFirst, cleanInitial, lastName, email || null, phone || null, church || null, activeYear, formTotal, roomPref, roommateReqs).run();
+            ).bind(cleanFirst, cleanInitial, lastName, email || null, phone || null, church || null, activeYear, totalOwed, roomPref, roommateReqs).run();
             user = { id: result.meta.last_row_id };
             created++;
           } else {
             // Update existing user
             const updates = ['reg_registered = 1', 'retreat_year = ?'];
             const binds = [activeYear];
-            if (formTotal > 0) { updates.push('total_owed = ?'); binds.push(formTotal); }
+            if (totalOwed > 0) { updates.push('total_owed = ?'); binds.push(totalOwed); }
             if (row.room_size_preference !== undefined && row.room_size_preference !== null && row.room_size_preference !== '') { updates.push('room_size_preference = ?'); binds.push(roomPref); }
             if (row.roommate_requests !== undefined && row.roommate_requests !== null) { updates.push('roommate_requests = ?'); binds.push(roommateReqs); }
             if (email) { updates.push('email = ?'); binds.push(email); }
@@ -3649,6 +3734,10 @@ export default {
               ).bind(user.id, paymentAmount, 'csv_import', paymentDate, paymentStatus || '', activeYear).run();
             }
           }
+
+          // Keep the Registrations tab's stored total in step with the
+          // payments table. Without this the two views drift apart silently.
+          await syncRegAmountPaid(env.DB, user.id, activeYear);
 
           imported++;
         }

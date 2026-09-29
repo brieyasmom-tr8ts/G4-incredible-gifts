@@ -562,6 +562,16 @@ Key admin functions in `admin.html`:
 - **2027 devotion content** — the 15-week rotation currently holds 2026
   material and is paused. New content is needed before
   `devotion_emails_paused` comes back off.
+- **Sept 23 2026 regression, partially restored.** `4484afa` reverted
+  `worker/src/index.js` by ~655 lines. The email pause switches and 2027
+  branding are back (PR #204). **Still missing and needing re-implementation
+  on top of current main:** `syncRegAmountPaid` (the payments/`reg_amount_paid`
+  sync invariant), `GET/POST /api/admin/reconcile` and the Reconciliation
+  panel, `knownRoom` / no-hotel pricing in `parseRoomSize`, room renumbering
+  after delete (`rooms_remaining`), and `downloadRoomingListCsv`. The
+  Reconciliation and Payment/room sections above describe how these worked;
+  re-apply from the design, not by reverting, since main has moved on.
+  Recover the lost code with `git show 4484afa~1:worker/src/index.js`.
 - **Known data cleanup (Sept 2026):** Carolyn Topper and Joanne Kramer
   hold data that belongs to Carolyn Verteramo and Joanne Eusi, from the
   first-name-only merge bug. Re-importing will not fix it, since the
@@ -599,7 +609,41 @@ sessions. Still follow normal safety rules: never force-push, never skip hooks,
 never bypass failing tests to merge.
 
 **PR merge divergence note:** because each PR is squash-merged, the feature
-branch's history diverges from main over time. When `mcp__github__merge_pull_request`
-returns 405 "not mergeable", run `git fetch origin main && git merge origin/main
---no-edit`, resolve conflicts with `git checkout --ours <file>` (the branch is
-the complete version), commit the merge, push, and retry the merge call.
+branch's history diverges from main over time. When
+`mcp__github__merge_pull_request` returns 405 "not mergeable", run
+`git fetch origin main && git merge origin/main --no-edit`, resolve the
+conflicts, commit the merge, push, and retry the merge call.
+
+**Resolve conflicts by keeping BOTH sides. Never blanket
+`git checkout --ours <file>`.** This instruction used to say to do exactly
+that, on the theory that the branch is always the complete version. It
+isn't. Other sessions merge to `main` while a branch sits open, so `--ours`
+silently throws their work away. On Sept 23 2026 that wiped ~655 lines of
+`worker/src/index.js`: both email pause switches (Secret Sister emails
+started going out again, and Heather noticed before we did), the 2027 email
+branding, `syncRegAmountPaid`, the whole `/api/admin/reconcile` feature,
+no-hotel pricing, and room renumbering. The commit was titled "Room board:
+collapsible rooms" and looked unrelated.
+
+How to resolve safely:
+
+- **A long-lived branch is the hazard, not the merge.** If the branch has
+  already been squash-merged, rebuild it from main instead of merging:
+  `git fetch origin main && git checkout -B <branch> origin/main`, then
+  re-apply only the new work. A clean branch cannot clobber anything.
+- **Read every conflict hunk.** Keep both changes when they touch different
+  things, which is the usual case for this repo's two big files.
+- **Before pushing, diff against main and confirm the change is additive:**
+  `git diff origin/main --stat`. A conflict resolution that shows hundreds
+  of deletions in `worker/src/index.js` or `admin.html` is a clobber, not a
+  merge. Deletions should only appear where you meant to delete something.
+- **Spot-check features you did not touch.** `git show origin/main:worker/src/index.js
+  | grep -c <marker>` for a few markers from recent work (for example
+  `syncRegAmountPaid`, `weekly_secret_sister_paused`, `api/admin/reconcile`)
+  and confirm the counts survive your merge.
+
+**Pause switches must fail closed.** Anything that stops an outgoing email
+treats a missing setting and a failed lookup as paused, never as "go ahead".
+A send that resumes because a flag row was absent looks identical to a bug,
+and Heather's sisters are the ones who get the mail. See
+`isEmailRotationPaused`.

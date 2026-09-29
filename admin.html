@@ -1201,9 +1201,23 @@
                         Notes written: <strong id="weekly-ss-written-count">—</strong> &nbsp;|&nbsp;
                         Opted out: <strong id="weekly-ss-optout-count">—</strong>
                     </div>
+                    <div id="email-pause-panel" style="padding:12px 14px;background:rgba(196,136,45,0.08);border-radius:10px;margin-bottom:0.75rem;">
+                        <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.5rem;">Both rotations still hold 2026 content. While a rotation is paused, nothing generates and nothing emails.</div>
+                        <div style="display:flex;flex-direction:column;gap:0.4rem;">
+                            <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer;">
+                                <input type="checkbox" id="pause-weekly_secret_sister_paused" onchange="toggleEmailPause('weekly_secret_sister_paused', this.checked)" style="width:16px;height:16px;cursor:pointer;">
+                                <span>Pause Secret Sister rotation &amp; emails</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer;">
+                                <input type="checkbox" id="pause-devotion_emails_paused" onchange="toggleEmailPause('devotion_emails_paused', this.checked)" style="width:16px;height:16px;cursor:pointer;">
+                                <span>Pause weekly devotion emails</span>
+                            </label>
+                        </div>
+                    </div>
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.6rem;">
                         <button class="btn btn-refresh" onclick="loadWeeklySSStatus()">Refresh</button>
                         <button class="btn btn-refresh" onclick="forceWeeklySSRound()">Run This Week's Assignment Now</button>
+                        <button class="btn btn-danger-outline" onclick="resetWeeklySS()">Reset for New Women</button>
                     </div>
                     <div id="weekly-ss-pair-list" style="max-height:280px;overflow-y:auto;padding-right:6px;scrollbar-width:thin;"></div>
                 </div>
@@ -3630,7 +3644,45 @@ function clearSecretSisters() {
 }
 
 // --- Weekly Secret Sister (Post-Retreat) ---
+// --- Email rotation pause switches ---
+// These are the only way back on once a rotation is held, so they live
+// next to the rotation controls rather than buried on the email tab.
+async function loadEmailPauseState() {
+    try {
+        const data = await apiFetch('/api/admin/email/pause');
+        ['weekly_secret_sister_paused', 'devotion_emails_paused'].forEach(key => {
+            const el = document.getElementById('pause-' + key);
+            if (el) el.checked = !!data[key];
+        });
+    } catch (e) {
+        showToast('Could not read pause settings: ' + (e.message || ''));
+    }
+}
+
+async function toggleEmailPause(key, paused) {
+    try {
+        await apiFetch('/api/admin/email/pause', { method: 'POST', body: { key, paused } });
+        const what = key === 'weekly_secret_sister_paused' ? 'Secret Sister' : 'Devotion emails';
+        showToast(paused ? what + ' paused' : what + ' will send again');
+    } catch (e) {
+        showToast('Could not save that: ' + (e.message || ''));
+        loadEmailPauseState();
+    }
+}
+
+async function resetWeeklySS() {
+    if (!confirm('Wipe every Secret Sister pairing, round lock and admin note so the rotation starts fresh for the 2027 women?\n\nThis cannot be undone. Per-woman opt-outs and the retreat-weekend Secret Sister game are not touched.')) return;
+    try {
+        await apiFetch('/api/admin/secretsister/weekly/reset', { method: 'POST', body: {} });
+        showToast('Secret Sister history wiped');
+        loadWeeklySSStatus();
+    } catch (e) {
+        showToast('Could not reset: ' + (e.message || ''));
+    }
+}
+
 async function loadWeeklySSStatus() {
+    loadEmailPauseState();
     try {
         const data = await apiFetch('/api/secretsister/status');
         if (!data) return;

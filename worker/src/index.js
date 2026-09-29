@@ -191,8 +191,43 @@ async function ensureWeeklySSTable(db) {
   } catch (e) { /* already exists */ }
 }
 
+// Both email rotations still hold 2026 content, and Heather asked twice for
+// them to stop until the 2027 material is ready. The pause flags that did
+// that were lost in a Sept 23 revert, which is why the emails came back, so
+// the paused state can no longer depend on a row somebody remembered to set.
+//
+// INSERT OR IGNORE, not UPDATE: if she has already flipped either switch,
+// her value wins. Only a *missing* row defaults to paused.
+async function ensureEmailPauseDefaults(db) {
+  try {
+    await db.prepare('CREATE TABLE IF NOT EXISTS game_settings (key TEXT PRIMARY KEY, value TEXT DEFAULT \'\')').run();
+    await db.prepare("INSERT OR IGNORE INTO game_settings (key, value) VALUES ('weekly_secret_sister_paused', '1')").run();
+    await db.prepare("INSERT OR IGNORE INTO game_settings (key, value) VALUES ('devotion_emails_paused', '1')").run();
+  } catch (e) {
+    console.error('[email-pause] could not seed pause defaults', e && e.message);
+  }
+}
+
+async function isEmailRotationPaused(db, key) {
+  await ensureEmailPauseDefaults(db);
+  try {
+    const row = await db.prepare('SELECT value FROM game_settings WHERE key = ?').bind(key).first();
+    // Fail closed: if the lookup breaks we hold the send rather than mail
+    // last year's content to everyone.
+    return !row || row.value === '1';
+  } catch (e) {
+    console.error('[email-pause] lookup failed, holding send', key, e && e.message);
+    return true;
+  }
+}
+
 async function ensureSSRoundExists(db, roundNumber) {
   if (roundNumber <= 0) return false;
+  // Admin pause switch. Blocks pairing generation from every entry point
+  // (an app view, the Wednesday cron, the admin force-round button) until
+  // she flips it back on. Holds the rotation between retreats while the
+  // old history gets wiped for a fresh cohort.
+  if (await isEmailRotationPaused(db, 'weekly_secret_sister_paused')) return false;
   // Claim the lock — only the winning request generates pairings. Other
   // concurrent callers hit UNIQUE(round_number) on the lock table and bail
   // out, then read the pairings the winner created.
@@ -2602,6 +2637,53 @@ export default {
         }
         const created = await ensureSSRoundExists(env.DB, round);
         return json({ success: true, round, created }, corsHeaders);
+      }
+
+      // POST /api/admin/secretsister/weekly/reset - admin: wipe all weekly
+      // rotation history (pairings, round locks, admin-sent notes) so it
+      // starts completely fresh for a new group of women. Does not touch
+      // per-user opt-out flags or the retreat-time secret_sister table.
+      // Combine with the weekly_secret_sister_paused game setting to wipe
+      // and hold the rotation until it's ready to restart.
+      if (path === '/api/admin/secretsister/weekly/reset' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensureWeeklySSTable(env.DB);
+        await env.DB.prepare('DELETE FROM secret_sister_pairings').run();
+        await env.DB.prepare('DELETE FROM secret_sister_round_locks').run();
+        try { await env.DB.prepare('DELETE FROM secret_sister_admin_notes').run(); } catch(e) {}
+        return json({ success: true }, corsHeaders);
+      }
+
+      // GET /api/admin/email/pause - read both rotation pause switches.
+      // POST /api/admin/email/pause { key, paused } - flip one of them.
+      // These are the only way back on once a rotation is held, so they
+      // ship together with the pause checks, never separately.
+      if (path === '/api/admin/email/pause' && request.method === 'GET') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        await ensureEmailPauseDefaults(env.DB);
+        const out = {};
+        for (const key of ['weekly_secret_sister_paused', 'devotion_emails_paused']) {
+          const row = await env.DB.prepare('SELECT value FROM game_settings WHERE key = ?').bind(key).first();
+          out[key] = !row || row.value === '1';
+        }
+        return json(out, corsHeaders);
+      }
+      if (path === '/api/admin/email/pause' && request.method === 'POST') {
+        const authErr = requireAdmin(request);
+        if (authErr) return authErr;
+        const body = await request.json().catch(() => ({}));
+        const key = body.key;
+        if (key !== 'weekly_secret_sister_paused' && key !== 'devotion_emails_paused') {
+          return json({ error: 'Unknown pause key' }, corsHeaders, 400);
+        }
+        await ensureEmailPauseDefaults(env.DB);
+        const value = body.paused ? '1' : '0';
+        await env.DB.prepare(
+          'INSERT INTO game_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+        ).bind(key, value).run();
+        return json({ success: true, key, paused: value === '1' }, corsHeaders);
       }
 
       // GET /api/secretsister/participation - admin: per-woman rotation stats
@@ -5730,7 +5812,7 @@ function devotionEmailHtml(firstName, devotion, userId) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#8a9e7a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Open Your Devotion</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -5753,7 +5835,7 @@ function secretSisterEmailHtml(firstName, sisterName, userId) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#c9908a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Write Her a Note</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -5775,7 +5857,7 @@ function secretSisterReceivedEmailHtml(firstName, userId) {
     <a href="${APP_URL}" style="display:inline-block;padding:14px 32px;background:#c9908a;color:white;text-decoration:none;border-radius:12px;font-family:Georgia,serif;font-size:1rem;font-weight:700;">Open Your Note</a>
   </div>
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -5812,7 +5894,7 @@ function customEmailHtml(firstName, message, buttonText, buttonUrl, userId) {
   return `
 <div style="font-family:Georgia,serif;max-width:520px;margin:0 auto;padding:24px 20px;color:#3a3632;">
   <div style="text-align:center;margin-bottom:20px;">
-    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.4rem;font-weight:700;color:#8a9e7a;">G4 Incredible Gifts</div>
+    <div style="font-family:'Palatino Linotype',Palatino,serif;font-size:1.4rem;font-weight:700;color:#8a9e7a;">G4 Retreat 2027</div>
   </div>
   <div style="font-size:1rem;line-height:1.7;color:#3a3632;">
     ${greeting ? '<p style="margin:0 0 12px;font-weight:600;">' + greeting + '</p>' : ''}
@@ -5820,7 +5902,7 @@ function customEmailHtml(firstName, message, buttonText, buttonUrl, userId) {
   </div>
   ${buttonHtml}
   <div style="text-align:center;font-size:0.78rem;color:#b0aaa4;margin-top:24px;border-top:1px solid #e8e4df;padding-top:16px;">
-    G4 Women's Retreat 2026 · Incredible Gifts${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
+    G4 Retreat 2027${unsubUrl ? '<br><a href="' + unsubUrl + '" style="color:#b0aaa4;text-decoration:underline;">Unsubscribe from weekly emails</a>' : ''}
   </div>
 </div>`;
 }
@@ -5859,6 +5941,12 @@ async function sendEmail(env, to, subject, html) {
 async function sendDevotionEmail(env, weekOverride, opts) {
   // weekOverride lets the cron handler pass a deterministic week number.
   // opts.force = true skips the dedup log (admin re-send).
+  // Admin pause switch — blocks the cron AND manual Send Now/force sends
+  // alike, so there's exactly one off switch and no surprise re-sends.
+  if (await isEmailRotationPaused(env.DB, 'devotion_emails_paused')) {
+    console.log('[devotion-email] devotion emails paused, skipping');
+    return { skipped: 'paused' };
+  }
   let weekNum;
   if (weekOverride && Number.isInteger(weekOverride) && weekOverride >= 1 && weekOverride <= 15) {
     weekNum = weekOverride;
@@ -5926,6 +6014,10 @@ async function sendSecretSisterEmail(env) {
   const round = getCurrentSSRound();
   if (round === 0) {
     console.log('[ss-email] before anchor date, skipping');
+    return;
+  }
+  if (await isEmailRotationPaused(env.DB, 'weekly_secret_sister_paused')) {
+    console.log('[ss-email] weekly rotation paused, skipping');
     return;
   }
 

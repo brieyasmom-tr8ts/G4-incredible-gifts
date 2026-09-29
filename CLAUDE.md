@@ -444,7 +444,9 @@ Key admin functions in `admin.html`:
   still unassigned are all left off, because none of them belong on a
   hotel rooming list; the toast names how many were omitted so they
   aren't forgotten. This format was approved and tested by Heather in
-  April 2026, don't redesign it without asking.
+  April 2026, don't redesign it without asking. Room Size is derived the
+  same way `renderRoomBoard` derives a card's capacity, so the sheet and
+  the screen always agree; there is no stored capacity to read.
 - **History note:** a roster export called `downloadRoomRoster` ("⬇
   Roster") was built April 12 2026 in PR #96 alongside an auto-assign
   room board and hotel bill. None of it reached today's `main` — that
@@ -562,16 +564,29 @@ Key admin functions in `admin.html`:
 - **2027 devotion content** — the 15-week rotation currently holds 2026
   material and is paused. New content is needed before
   `devotion_emails_paused` comes back off.
-- **Sept 23 2026 regression, partially restored.** `4484afa` reverted
-  `worker/src/index.js` by ~655 lines. The email pause switches and 2027
-  branding are back (PR #204). **Still missing and needing re-implementation
-  on top of current main:** `syncRegAmountPaid` (the payments/`reg_amount_paid`
-  sync invariant), `GET/POST /api/admin/reconcile` and the Reconciliation
-  panel, `knownRoom` / no-hotel pricing in `parseRoomSize`, room renumbering
-  after delete (`rooms_remaining`), and `downloadRoomingListCsv`. The
-  Reconciliation and Payment/room sections above describe how these worked;
-  re-apply from the design, not by reverting, since main has moved on.
-  Recover the lost code with `git show 4484afa~1:worker/src/index.js`.
+- **Sept 23 2026 regression — restored except one item.** `4484afa`
+  reverted `worker/src/index.js` by ~655 lines. Recovered across PRs #204,
+  #206 and #207: both email pause switches, 2027 branding, the CSV
+  email-matching and 75-point auto-select threshold, email-first dedup,
+  `syncRegAmountPaid` on every payments write, `ROOM_PRICE` /
+  `parseRoomSize` / `knownRoom` pricing, the Reconciliation endpoint and
+  panel, and the rooming list export.
+  **Still outstanding: room renumbering after a delete.** The original
+  compacted rooms to 1..N server-side using the `rooms` table, which the
+  rebuilt board no longer has, so it needs a new design (renumbering the
+  assignments themselves) rather than a port. Deleting a room currently
+  leaves a gap, so the board can read Room 1, Room 3, Room 4.
+- **The room board was rebuilt on a different model** after the Sept 23
+  revert, and the Payment/room section above partly describes the OLD one.
+  There is no `rooms` table and no stored capacity now: rooms are inferred
+  from `room_assignments` plus a client-side `_pendingRooms` set, and a
+  card's capacity is derived from its first occupant's
+  `room_size_preference` (falling back to 4). `-1` is still the no-hotel
+  bucket. Anything reading rooms must follow `renderRoomBoard`, not the
+  older description. Recovering pre-revert code with
+  `git show 4484afa~1:...` is the right instinct, but check it against the
+  current model before pasting — the old rooming list read
+  `_rooms[].capacity` and would have shipped a broken button.
 - **Known data cleanup (Sept 2026):** Carolyn Topper and Joanne Kramer
   hold data that belongs to Carolyn Verteramo and Joanne Eusi, from the
   first-name-only merge bug. Re-importing will not fix it, since the

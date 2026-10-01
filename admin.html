@@ -1202,7 +1202,7 @@
                         Opted out: <strong id="weekly-ss-optout-count">—</strong>
                     </div>
                     <div id="email-pause-panel" style="padding:12px 14px;background:rgba(196,136,45,0.08);border-radius:10px;margin-bottom:0.75rem;">
-                        <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.5rem;">Both rotations still hold 2026 content. While a rotation is paused, nothing generates and nothing emails.</div>
+                        <div style="font-size:0.82rem;color:var(--light-text);margin-bottom:0.5rem;">Every email that can send itself without you pressing a button. While one is paused, nothing generates and nothing emails. Nothing turns itself back on, so these stay off until you switch them on here.</div>
                         <div style="display:flex;flex-direction:column;gap:0.4rem;">
                             <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer;">
                                 <input type="checkbox" id="pause-weekly_secret_sister_paused" onchange="toggleEmailPause('weekly_secret_sister_paused', this.checked)" style="width:16px;height:16px;cursor:pointer;">
@@ -1211,6 +1211,10 @@
                             <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer;">
                                 <input type="checkbox" id="pause-devotion_emails_paused" onchange="toggleEmailPause('devotion_emails_paused', this.checked)" style="width:16px;height:16px;cursor:pointer;">
                                 <span>Pause weekly devotion emails</span>
+                            </label>
+                            <label style="display:flex;align-items:center;gap:8px;font-size:0.88rem;cursor:pointer;">
+                                <input type="checkbox" id="pause-payment_reminders_paused" onchange="toggleEmailPause('payment_reminders_paused', this.checked)" style="width:16px;height:16px;cursor:pointer;">
+                                <span>Pause monthly payment reminders <span style="color:var(--light-text);font-size:0.78rem;">(fires the 1st of each month)</span></span>
                             </label>
                         </div>
                     </div>
@@ -1533,6 +1537,7 @@
                         </div>
                         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
                             <button class="btn" style="font-size:0.78rem;padding:6px 14px;background:rgba(181,112,106,0.12);color:var(--accent);" onclick="sendAllReminders()">Send All Reminders</button>
+                            <span id="reminder-pause-note" style="display:none;align-self:center;font-size:0.72rem;padding:3px 10px;border-radius:999px;background:rgba(196,136,45,0.15);color:#8a5d17;font-weight:600;white-space:nowrap;">Reminders paused</span>
                             <button class="btn btn-refresh" onclick="loadParticipants()" style="font-size:0.78rem;padding:6px 14px;">Refresh</button>
                         </div>
                     </div>
@@ -3664,13 +3669,19 @@ function clearSecretSisters() {
 // --- Email rotation pause switches ---
 // These are the only way back on once a rotation is held, so they live
 // next to the rotation controls rather than buried on the email tab.
+const EMAIL_PAUSE_KEYS = ['weekly_secret_sister_paused', 'devotion_emails_paused', 'payment_reminders_paused'];
+
 async function loadEmailPauseState() {
     try {
         const data = await apiFetch('/api/admin/email/pause');
-        ['weekly_secret_sister_paused', 'devotion_emails_paused'].forEach(key => {
+        EMAIL_PAUSE_KEYS.forEach(key => {
             const el = document.getElementById('pause-' + key);
             if (el) el.checked = !!data[key];
         });
+        // Show the state next to Send All Reminders too, since that's where
+        // she'd act on it rather than on the Secret Sister tab.
+        const note = document.getElementById('reminder-pause-note');
+        if (note) note.style.display = data['payment_reminders_paused'] ? 'inline-block' : 'none';
     } catch (e) {
         showToast('Could not read pause settings: ' + (e.message || ''));
     }
@@ -3679,7 +3690,12 @@ async function loadEmailPauseState() {
 async function toggleEmailPause(key, paused) {
     try {
         await apiFetch('/api/admin/email/pause', { method: 'POST', body: { key, paused } });
-        const what = key === 'weekly_secret_sister_paused' ? 'Secret Sister' : 'Devotion emails';
+        const LABELS = {
+            weekly_secret_sister_paused: 'Secret Sister',
+            devotion_emails_paused: 'Devotion emails',
+            payment_reminders_paused: 'Payment reminders'
+        };
+        const what = LABELS[key] || 'Emails';
         showToast(paused ? what + ' paused' : what + ' will send again');
     } catch (e) {
         showToast('Could not save that: ' + (e.message || ''));
@@ -4982,6 +4998,10 @@ async function loadParticipants() {
         renderParticipantsTable();
         loadRoomAssignments();
         loadReconcile();
+        // The "Reminders paused" badge sits next to Send All Reminders on
+        // this tab, so its state has to load here too, not only on the
+        // Secret Sister tab where the checkboxes live.
+        loadEmailPauseState();
     } catch (e) {
         showToast('Could not load participants: ' + (e.message || ''));
     }

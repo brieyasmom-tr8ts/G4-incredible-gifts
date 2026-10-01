@@ -40,6 +40,15 @@ async function brevoSendEmail(env, to, subject, htmlContent) {
 }
 
 async function sendMonthlyPaymentReminders(env) {
+  // Nobody presses a button for this one — it fires on the 1st of the month
+  // on its own, which is exactly how a reminder went out before Heather
+  // wanted any sent. Paused by default; she turns it on when the payment
+  // window actually opens. There is deliberately no scheduled auto-resume:
+  // a date set months ahead would fire on a day she didn't choose.
+  if (await isEmailRotationPaused(env.DB, 'payment_reminders_paused')) {
+    console.log('[cron] payment reminders paused, skipping');
+    return;
+  }
   try {
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS reminder_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, email TEXT NOT NULL,
@@ -239,11 +248,21 @@ async function ensureWeeklySSTable(db) {
 //
 // INSERT OR IGNORE, not UPDATE: if she has already flipped either switch,
 // her value wins. Only a *missing* row defaults to paused.
+// Every outgoing rotation that can fire without someone pressing a button.
+// One list so adding a rotation can't miss the seeding, the read endpoint or
+// the write endpoint.
+const EMAIL_PAUSE_KEYS = [
+  'weekly_secret_sister_paused',
+  'devotion_emails_paused',
+  'payment_reminders_paused'
+];
+
 async function ensureEmailPauseDefaults(db) {
   try {
     await db.prepare('CREATE TABLE IF NOT EXISTS game_settings (key TEXT PRIMARY KEY, value TEXT DEFAULT \'\')').run();
-    await db.prepare("INSERT OR IGNORE INTO game_settings (key, value) VALUES ('weekly_secret_sister_paused', '1')").run();
-    await db.prepare("INSERT OR IGNORE INTO game_settings (key, value) VALUES ('devotion_emails_paused', '1')").run();
+    for (const key of EMAIL_PAUSE_KEYS) {
+      await db.prepare('INSERT OR IGNORE INTO game_settings (key, value) VALUES (?, ?)').bind(key, '1').run();
+    }
   } catch (e) {
     console.error('[email-pause] could not seed pause defaults', e && e.message);
   }
@@ -2705,7 +2724,7 @@ export default {
         if (authErr) return authErr;
         await ensureEmailPauseDefaults(env.DB);
         const out = {};
-        for (const key of ['weekly_secret_sister_paused', 'devotion_emails_paused']) {
+        for (const key of EMAIL_PAUSE_KEYS) {
           const row = await env.DB.prepare('SELECT value FROM game_settings WHERE key = ?').bind(key).first();
           out[key] = !row || row.value === '1';
         }
@@ -2716,7 +2735,7 @@ export default {
         if (authErr) return authErr;
         const body = await request.json().catch(() => ({}));
         const key = body.key;
-        if (key !== 'weekly_secret_sister_paused' && key !== 'devotion_emails_paused') {
+        if (!EMAIL_PAUSE_KEYS.includes(key)) {
           return json({ error: 'Unknown pause key' }, corsHeaders, 400);
         }
         await ensureEmailPauseDefaults(env.DB);
@@ -4057,6 +4076,16 @@ export default {
       if (path === '/api/admin/reminders/send-all' && request.method === 'POST') {
         const authErr = requireAdmin(request);
         if (authErr) return authErr;
+        // The pause blocks the bulk send as well as the cron. Mailing
+        // everyone is irreversible, so while reminders are held, firing it
+        // is almost certainly a slip rather than a decision. The
+        // per-participant Remind button is NOT blocked: that is one
+        // deliberate email to one woman she picked.
+        if (await isEmailRotationPaused(env.DB, 'payment_reminders_paused')) {
+          return json({
+            error: 'Payment reminders are paused. Turn them on in Admin → Secret Sister → Weekly Rotation before sending to everyone.'
+          }, corsHeaders, 409);
+        }
         await ensurePaymentTables(env.DB);
         await ensureReminderLog(env.DB);
         const activeYear = await getActiveYear(env.DB);

@@ -509,12 +509,31 @@ Key admin functions in `admin.html`:
   out. Preview/test/send-now for the templated emails:
   `GET /api/admin/email/preview`, `POST /api/admin/email/test`,
   `POST /api/admin/email/send-now`.
-- **Pause switches in `game_settings`:** `devotion_emails_paused` and
-  `weekly_secret_sister_paused`, both `'1'` to pause. The devotion
-  switch blocks the cron AND manual send-now/force alike, so there is
-  exactly one off switch and no surprise re-sends. Both were turned on
-  in Sept 2026 to stop last year's content from looping; turning them
-  back off before the 2027 content is ready will resend 2026 material.
+- **Pause switches in `game_settings`:** `devotion_emails_paused`,
+  `weekly_secret_sister_paused` and `payment_reminders_paused`, each
+  `'1'` to pause. **The list lives in one place, `EMAIL_PAUSE_KEYS` at
+  module scope, shared by the seeding, the read endpoint and the write
+  endpoint.** Add a key there, not at three call sites — payment
+  reminders were missed in Sept 2026 precisely because the switches were
+  added one at a time, and a reminder went out on Oct 1 that Heather
+  hadn't asked for.
+- **Every rotation that can send without a human pressing a button needs
+  a pause key.** Today that is the Monday devotion cron, the Wednesday
+  secret sister cron, and the monthly payment reminder cron. If a new
+  cron mails anybody, it gets a key in `EMAIL_PAUSE_KEYS` and an
+  `isEmailRotationPaused` check in the same PR.
+- **The payment reminder pause also blocks the bulk "Send All
+  Reminders"** (409, naming where the switch is), because mailing
+  everyone is irreversible. It does NOT block the per-participant
+  "Remind" button, which is one deliberate email to one woman.
+- **No scheduled auto-resume on any pause.** A date set months ahead
+  fires on a day nobody chose, which is the failure mode being fixed.
+  Heather turns rotations back on by hand.
+- All three were on as of Oct 2026: devotions and secret sister because
+  they still hold 2026 content, payment reminders because the payment
+  window doesn't open until roughly Dec 2026/Jan 2027. Turning the first
+  two back off before the 2027 content is ready will resend 2026
+  material.
 - **Email branding is "G4 Retreat 2027".** Not "Incredible Gifts" —
   that was the 2026 theme and must not appear in anything sent now.
   The 2027 theme is still TBD.
@@ -558,6 +577,10 @@ Key admin functions in `admin.html`:
 - **Monthly "Hey from Heather" video** — admin-recorded short video.
 - **Sister Spotlight** — weekly featured sister rotation.
 - **Per-speaker CSV export of testimonies**.
+- **Payment reminders are paused** (`payment_reminders_paused`) and the
+  monthly cron is held. Heather expects the payment window to open around
+  Dec 2026 or Jan 2027. Don't turn it on without asking her, and don't
+  add a scheduled resume.
 - **Secret Sister is wiped and not started.** Cleared in Sept 2026 to
   start fresh with the 2027 women. `weekly_secret_sister_paused` is on.
   Don't restart it without asking Heather.
